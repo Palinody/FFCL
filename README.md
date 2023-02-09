@@ -29,9 +29,25 @@ The implementation of the papers was helped by one of the [author's repo](https:
   - pam::build
   - kmeans++
 
-## Performance
+## Performance (only approx. for now)
+- Cpu: `Intel® Core™ i5-9600KF CPU @ 3.70GHz × 6`
+- Dataset: MNIST
+- initialization: random uniform
 
-`<...>`
+|                         | **type**   | **n_samples** | **n_features**|**n_centroids**|**n_iter (until convergence)**| **time (s)**|**n_threads**|
+------                    | -----   | ----- |--- |------|--- |--- |--- |
+**FasterPAM**             | float       | 15000     |784|10|3|2.5|1|
+**FasterPAM**             | float       | 15000     |784|100|3|3.8|1|
+**FasterPAM**             | float       | 30000     |784|10|3|11.1|1|
+**FasterPAM**             | float       | 30000     |784|100|3|13.2|1|
+**FasterMSC**             | float       | 15000     |784|10|3|4.2|1|
+**FasterMSC**             | float       | 15000     |784|100|3|5.8|1|
+**FasterMSC**             | float       | 30000     |784|10|3|18.6|1|
+**FasterMSC**             | float       | 30000     |784|100|3|27.2|1|
+**PairwiseDistanceMatrix**| float       |   15000    |784|10||40|1|
+**PairwiseDistanceMatrix**| float       |   30000    |784|10||162|1|
+**PairwiseDistanceMatrix**| float       |   15000    |784|10||6.3|6|
+**PairwiseDistanceMatrix**| float       |   30000    |784|10||26|6|
 
 ## Installation
 ```sh
