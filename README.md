@@ -44,10 +44,10 @@ The implementation of the papers was helped by one of the [author's repo](https:
 **FasterMSC**             | float       | 15000     |784|100|3|5.8|1|
 **FasterMSC**             | float       | 30000     |784|10|3|18.6|1|
 **FasterMSC**             | float       | 30000     |784|100|3|27.2|1|
-**PairwiseDistanceMatrix**| float       |   15000    |784|10||40|1|
-**PairwiseDistanceMatrix**| float       |   30000    |784|10||162|1|
-**PairwiseDistanceMatrix**| float       |   15000    |784|10||6.3|6|
-**PairwiseDistanceMatrix**| float       |   30000    |784|10||26|6|
+**PairwiseDistanceMatrix**| float       |   15000    |784|||40|1|
+**PairwiseDistanceMatrix**| float       |   30000    |784|||162|1|
+**PairwiseDistanceMatrix**| float       |   15000    |784|||6.3|6|
+**PairwiseDistanceMatrix**| float       |   30000    |784|||26|6|
 
 ## Installation
 ```sh
