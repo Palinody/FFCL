@@ -7,9 +7,10 @@ Fast iterator compatible clustering algorithms written in c++.
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
 
-## TODO
+## TODO (in order)
 
 - `cpp_clustering::containers::KDTree`
+- Proper unit testing
 - DBSCAN
 - OPTICS
 - DENCLUE
