@@ -26,7 +26,7 @@ The implementation of the papers was helped by one of the [author's repo](https:
 - ### initialization:
   - random uniform
   - spatial uniform
-  - pam::build (with(out) pairwise distance matrix)
+  - pam::build
   - kmeans++
 
 ## Performance
