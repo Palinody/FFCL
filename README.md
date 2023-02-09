@@ -1,11 +1,18 @@
 # cpp_clustering
 Fast iterator compatible clustering algorithms written in c++.
 
-- [Current algorithms](#current-algorithms)
-- [Performance](#performance)
+- [Current features](#current-features)
+- [KMedoids algorithms performance](#kmedoids-algorithms-performance)
 - [Installation](#installation)
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
+
+## TODO
+
+- `cpp_clustering::containers::KDTree`
+- DBSCAN
+- OPTICS
+- DENCLUE
 
 ## Current features
 
@@ -32,7 +39,7 @@ The implementation of the papers was helped by one of the [author's repo](https:
 - ### Selecting the number of clusters
   - silhouette method
 
-## Performance (only approx. for now)
+## KMedoids algorithms performance
 - Cpu: `Intel® Core™ i5-9600KF CPU @ 3.70GHz × 6`
 - Dataset: MNIST
 - initialization: random uniform
