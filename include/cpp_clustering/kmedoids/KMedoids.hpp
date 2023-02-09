@@ -218,8 +218,10 @@ std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesI
         std::size_t patience_iter = 0;
 
         for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
+#if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
             std::cout << pam.total_deviation() << " ";
+#endif
 
             medoids_ = pam.step();
 
@@ -235,9 +237,11 @@ std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesI
             }
             medoids_indices_candidates_prev[k] = medoids_;
         }
+#if defined(VERBOSE) && VERBOSE == true
         // last loss
         std::cout << pam.total_deviation() << " ";
         std::cout << "\n";
+#endif
 
         // once the training loop is finished, update the medoids indices candidate
         medoids_indices_candidates[k] = medoids_;
@@ -381,7 +385,9 @@ std::pair<std::size_t, std::vector<T>> KMedoids<T, PrecomputePairwiseDistanceMat
             std::swap(medoids_order[k], medoids_order[c]);
         }
     }
+#if defined(VERBOSE) && VERBOSE == true
     print_matrix(medoids_to_class_counts);
+#endif
 
     std::size_t best_match_count = 0;
     for (std::size_t k = 0; k < n_medoids_; ++k) {
@@ -393,8 +399,10 @@ std::pair<std::size_t, std::vector<T>> KMedoids<T, PrecomputePairwiseDistanceMat
         medoids_order[k] = max_index;
         best_match_count += max_value;
     }
+#if defined(VERBOSE) && VERBOSE == true
     std::cout << "medoids order after\n";
     print(medoids_order);
+#endif
     // finally save the best medoids order
     medoids_ = common::utils::permutation_from_indices(medoids_orig, medoids_order);
 

@@ -96,7 +96,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
                     std::size_t           n_medoids,
                     std::size_t           n_features,
                     std::size_t           n_iterations = 1) {
-        using KMedoids = cpp_clustering::KMedoids<dType, true>;
+        using KMedoids = cpp_clustering::KMedoids<DataType, true>;
         // using PAM = cpp_clustering::FasterMSC;
 
         auto kmedoids = KMedoids(n_medoids, n_features);
@@ -104,7 +104,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
         kmedoids.set_options(
             /*KMedoids options=*/KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
 
-        const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+        const auto centroids = kmedoids.fit<cpp_clustering::FasterPAM>(inputs_first, inputs_last);
     }
 
     template <typename InputsIterator, typename LabelsIterator>

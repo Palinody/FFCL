@@ -31,7 +31,7 @@ class Timer {
     template <typename SleepDurationType>
     inline void sleep(std::uint64_t t);
 
-    inline void print_elapsed_seconds(const uint8_t n_decimals = 3);
+    inline void print_elapsed_seconds(const std::uint8_t n_decimals = 3);
 
   private:
     std::uint64_t now_;
@@ -69,7 +69,7 @@ void Timer<DurationType>::sleep(std::uint64_t duration) {
 }
 
 template <typename DurationType>
-void Timer<DurationType>::print_elapsed_seconds(const uint8_t n_decimals) {
+void Timer<DurationType>::print_elapsed_seconds(const std::uint8_t n_decimals) {
     const std::uint64_t elapsed = this->elapsed();
 
     if constexpr (std::is_same_v<DurationType, Seconds>) {

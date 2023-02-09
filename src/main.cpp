@@ -84,9 +84,15 @@ void fit_once(const InputsIterator& inputs_first,
     auto kmedoids = KMedoids(n_medoids, n_features);
 
     kmedoids.set_options(
-        /*KMedoids options=*/KMedoids::Options().max_iter(3).early_stopping(false).patience(0).n_init(1));
+        /*KMedoids options=*/KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
 
-    const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    kmedoids.fit<cpp_clustering::FasterPAM>(inputs_first, inputs_last);
+
+#if defined(VERBOSE) && VERBOSE == true
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+#endif
 }
 
 void distance_matrix_benchmark() {
@@ -95,7 +101,13 @@ void distance_matrix_benchmark() {
     const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
 
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
     cpp_clustering::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
+
+#if defined(VERBOSE) && VERBOSE == true
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+#endif
 }
 
 void mnist_train_benchmark() {
@@ -116,19 +128,15 @@ void mnist_train_benchmark() {
 }
 
 int main() {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
-    timer.reset();
+#if defined(VERBOSE) && VERBOSE == true
+    std::cout << "Making the pairwise distance matrix: \n";
+#endif
     distance_matrix_benchmark();
-    // timer.sleep<common::timer::Milliseconds>(10000);
-#if defined(VERBOSE) && VERBOSE == true
-    timer.print_elapsed_seconds(/*n_decimals=*/6);
-#endif
 
-    timer.reset();
-    // timer.sleep<common::timer::Milliseconds>(5000);
-    mnist_train_benchmark();
 #if defined(VERBOSE) && VERBOSE == true
-    timer.print_elapsed_seconds(/*n_decimals=*/6);
+    std::cout << "Making the pairwise distance matrix and kmedoids fit: \n";
 #endif
+    mnist_train_benchmark();
+
     return 0;
 }

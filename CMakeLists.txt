@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 
-project(clustering_algorithms)
+project(cpp_clustering)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -39,7 +39,7 @@ include_directories(
     include
 )
 
-add_definitions(-DTHREADS_ENABLED=false)
+add_definitions(-DTHREADS_ENABLED=true)
 add_definitions(-DVERBOSE=true)
 
 # set(MODE "run-benchmarks")

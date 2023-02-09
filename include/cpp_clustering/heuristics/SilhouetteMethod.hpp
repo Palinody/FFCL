@@ -236,6 +236,4 @@ typename IteratorFloat::value_type get_mean_silhouette_coefficient(const Iterato
     return std::accumulate(samples_silhouette_first, samples_silhouette_last, static_cast<FloatType>(0)) / n_elements;
 }
 
-// need separate data by cluster
-
 }  // namespace cpp_clustering::silhouette_method
