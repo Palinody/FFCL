@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <vector>
 
+namespace pam {
+
 template <typename Iterator>
 std::tuple<typename Iterator::value_type, std::vector<std::size_t>, std::vector<typename Iterator::value_type>>
 build(const Iterator& samples_first, const Iterator& samples_last, std::size_t n_medoids, std::size_t n_features) {
@@ -134,3 +136,5 @@ std::tuple<typename Iterator::value_type, std::vector<std::size_t>, std::vector<
     }
     return {total_deviation, medoids_indices, samples_to_nearest_medoid_distance};
 }
+
+}  // namespace pam
