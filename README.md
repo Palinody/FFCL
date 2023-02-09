@@ -174,7 +174,7 @@ std::size_t k_max = 10;
 std::vector<float> scores(k_max - k_min);
 
 // range n_centroids/n_medoids in [2, 10[
-for (size_t k = k_min; k < k_max; ++k) {
+for (std::size_t k = k_min; k < k_max; ++k) {
     // use any clustering algorithm that better suits your use case
     common::clustering::KMeans<dType> kmeans(k, n_features);
     // fit the centroids (or medoids if it was KMedoids)
