@@ -1,0 +1,134 @@
+#include "cpp_clustering/common/Timer.hpp"
+#include "cpp_clustering/containers/LowerTriangleMatrix.hpp"
+#include "cpp_clustering/kmedoids/KMedoids.hpp"
+#include "cpp_clustering/math/random/VosesAliasMethod.hpp"
+
+#include <sys/types.h>  // std::ssize_t
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+using dType = float;
+
+const fs::path folder_root        = fs::path("../datasets/clustering");
+const fs::path inputs_folder      = folder_root / fs::path("inputs");
+const fs::path targets_folder     = folder_root / fs::path("targets");
+const fs::path predictions_folder = folder_root / fs::path("predictions");
+const fs::path centroids_folder   = folder_root / fs::path("centroids");
+
+ssize_t get_num_features_in_file(const fs::path& filepath, char delimiter = ' ') {
+    std::ifstream file(filepath);
+    ssize_t       n_features = -1;
+    if (file.is_open()) {
+        std::string line;
+        std::getline(file, line);
+        n_features = std::count(line.begin(), line.end(), ' ') + 1;
+        file.close();
+    } else {
+        throw std::ios_base::failure("Unable to open file: " + filepath.string());
+    }
+    return n_features;
+}
+
+template <typename T = float>
+std::vector<T> load_data(const fs::path& filename, char delimiter = ' ') {
+    std::ifstream  filestream(filename);
+    std::vector<T> data;
+
+    if (filestream.is_open()) {
+        // temporary string data
+        std::string row_str, elem_str;
+        while (std::getline(filestream, row_str, '\n')) {
+            std::stringstream row_str_stream(row_str);
+            while (std::getline(row_str_stream, elem_str, delimiter)) {
+                data.emplace_back(std::stof(elem_str));
+            }
+        }
+        filestream.close();
+    }
+    return data;
+}
+
+template <typename T = float>
+void write_data(const std::vector<T>& data, std::size_t n_features, const fs::path& filename) {
+    std::ofstream filestream(filename);
+
+    if (filestream.is_open()) {
+        std::size_t iter{};
+        for (const auto& elem : data) {
+            filestream << elem;
+            ++iter;
+            if (iter % n_features == 0 && iter != 0) {
+                filestream << '\n';
+            } else {
+                filestream << ' ';
+            }
+        }
+    }
+}
+
+template <typename InputsIterator, typename LabelsIterator>
+void fit_once(const InputsIterator& inputs_first,
+              const InputsIterator& inputs_last,
+              LabelsIterator        labels_first,
+              LabelsIterator        labels_last,
+              std::size_t           n_medoids,
+              std::size_t           n_features) {
+    using KMedoids = cpp_clustering::KMedoids<dType, true>;
+    // using PAM = cpp_clustering::FasterMSC;
+
+    auto kmedoids = KMedoids(n_medoids, n_features);
+
+    kmedoids.set_options(
+        /*KMedoids options=*/KMedoids::Options().max_iter(3).early_stopping(false).patience(0).n_init(1));
+
+    const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+}
+
+void distance_matrix_benchmark() {
+    fs::path filename = "mnist.txt";
+
+    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    cpp_clustering::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
+}
+
+void mnist_train_benchmark() {
+    fs::path filename = "mnist.txt";
+
+    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << data.size() << " | " << labels.size() << " | " << n_features << "\n";
+    const auto n_medoids = 10;
+    // const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
+
+    fit_once(data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features);
+
+    // write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
+    // write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+}
+
+int main() {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+    timer.reset();
+    distance_matrix_benchmark();
+    // timer.sleep<common::timer::Milliseconds>(10000);
+#if defined(VERBOSE) && VERBOSE == true
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+#endif
+
+    timer.reset();
+    // timer.sleep<common::timer::Milliseconds>(5000);
+    mnist_train_benchmark();
+#if defined(VERBOSE) && VERBOSE == true
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+#endif
+    return 0;
+}
