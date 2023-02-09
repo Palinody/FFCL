@@ -246,7 +246,6 @@ std::vector<float> input_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 std::vector<std::size_t> labels = {0, 0, 2, 1};
 // 3 for class 0, 1 and 2 from the labels vector
 const auto n_classes = 3;
-
 // must be less than n_samples
 const std::size_t n_medoids = 2;
 
