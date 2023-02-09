@@ -7,21 +7,27 @@ Fast clustering algorithms written in c++
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
 
-## Current algorithms
+## Current features
 
 - ### KMedoids:
-  - FasterMSC [paper](https://arxiv.org/pdf/2209.12553.pdf)
-  - FasterPAM [paper](https://arxiv.org/pdf/2008.05171.pdf)
+  - FasterMSC (with(out) pairwise distance matrix) [paper](https://arxiv.org/pdf/2209.12553.pdf)
+  - FasterPAM (with(out) pairwise distance matrix) [paper](https://arxiv.org/pdf/2008.05171.pdf)
 
 The implementation of the papers was helped by one of the [author's repo](https://github.com/kno10/rust-kmedoids)
 
 - ### KMeans:
   - Lloyd
-  
+
+- ### Distance functions
+  - euclidean
+  - manhattan
+  - cosine similarity
+  - auto (depends on type)
+
 - ### initialization:
   - random uniform
   - spatial uniform
-  - pam::build
+  - pam::build (with(out) pairwise distance matrix)
   - kmeans++
 
 ## Performance
