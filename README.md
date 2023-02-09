@@ -34,20 +34,22 @@ The implementation of the papers was helped by one of the [author's repo](https:
 - Dataset: MNIST
 - initialization: random uniform
 
-|                         | **type**   | **n_samples** | **n_features**|**n_centroids**|**n_iter (until convergence)**| **time (s)**|**n_threads**|
-------                    | -----   | ----- |--- |------|--- |--- |--- |
-**FasterPAM**             | float       | 15000     |784|10|3|2.5|1|
-**FasterPAM**             | float       | 15000     |784|100|3|3.8|1|
-**FasterPAM**             | float       | 30000     |784|10|3|11.1|1|
-**FasterPAM**             | float       | 30000     |784|100|3|13.2|1|
-**FasterMSC**             | float       | 15000     |784|10|3|4.2|1|
-**FasterMSC**             | float       | 15000     |784|100|3|5.8|1|
-**FasterMSC**             | float       | 30000     |784|10|3|18.6|1|
-**FasterMSC**             | float       | 30000     |784|100|3|27.2|1|
-**PairwiseDistanceMatrix**| float       |   15000    |784|||40|1|
-**PairwiseDistanceMatrix**| float       |   30000    |784|||162|1|
-**PairwiseDistanceMatrix**| float       |   15000    |784|||6.3|6|
-**PairwiseDistanceMatrix**| float       |   30000    |784|||26|6|
+The following table summarizes the results of single runs ùade with different parameters. It provides a rough estimate about what one could expect from the present library. For a more in depth analysis of the performance of the algorithms, refer to the articles [(1)](https://arxiv.org/pdf/2209.12553.pdf) and [(2)](https://arxiv.org/pdf/2008.05171.pdf)
+
+|                         | **type**   |**n_samples**|**n_features**|**n_centroids**|**n_iter (until convergence)**| **time (s)**|**n_threads**|
+------                    | -----      | -----       |---           |------         |---                           |---          |---          |
+**FasterPAM**             | float       | 15000     |784| 10|2| 1.7|1|
+**FasterPAM**             | float       | 15000     |784|100|4| 4.5|1|
+**FasterPAM**             | float       | 30000     |784| 10|3|11.1|1|
+**FasterPAM**             | float       | 30000     |784|100|4|  17|1|
+**FasterMSC**             | float       | 15000     |784| 10|2| 3.3|1|
+**FasterMSC**             | float       | 15000     |784|100|2| 6.4|1|
+**FasterMSC**             | float       | 30000     |784| 10|2|12.8|1|
+**FasterMSC**             | float       | 30000     |784|100|3|27.1|1|
+**PairwiseDistanceMatrix**| float       |   15000    |784|  | |  40|1|
+**PairwiseDistanceMatrix**| float       |   30000    |784|  | | 162|1|
+**PairwiseDistanceMatrix**| float       |   15000    |784|  | |6.27|6|
+**PairwiseDistanceMatrix**| float       |   30000    |784|  | |25.6|6|
 
 ## Installation
 ```sh
