@@ -239,6 +239,17 @@ const auto centroids = kmedoids.fit(input_data.begin(), input_data.end());
 // true: PrecomputePairwiseDistanceMatrix (set to true by default)
 using KMedoids = cpp_clustering::KMedoids<SomeDataType, true>;
 
+const std::size_t n_features = 3;
+// input_data.size() / n_features -> n_samples (4 in this case)
+std::vector<float> input_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+// each elements of the labels vector maps to a sample from input_data
+std::vector<std::size_t> labels = {0, 0, 2, 1};
+// 3 for class 0, 1 and 2 from the labels vector
+const auto n_classes = 3;
+
+// must be less than n_samples
+const std::size_t n_medoids = 2;
+
 auto kmedoids = KMedoids(n_medoids, n_features);
 // set the options. The ones presented in this example are the same as the ones by default and provide no change
 kmedoids.set_options(
@@ -257,11 +268,11 @@ const std::vector<std::size_t> predictions = kmedoids.predict(input_data.begin()
 // swap the medoids if you want them to match your labels.
 // Complexity (worst case): O(n_centroids!).
 const auto [best_match_count, swapped_centroids] =
-            kmedoids.swap_to_best_count_match(input_data.begin(), input_data.end(), labels_first, labels_last);
+            kmedoids.swap_to_best_count_match(input_data.begin(), input_data.end(), labels.begin(), labels.end());
 
 // another way to swap the medoids but much faster for larger n_centroids
 // Complexity (worst case): O(n_medoids * n_classes).
 const auto [best_match_count, swapped_centroids] =
-            kmedoids.remap_centroid_to_label_index(input_data.begin(), input_data.end(), labels_first, labels_last, n_medoids);
+            kmedoids.remap_centroid_to_label_index(input_data.begin(), input_data.end(), labels.begin(), labels.end(), n_classes);
 
 ```
