@@ -226,7 +226,7 @@ const auto centroids = kmedoids.fit(input_data.begin(), input_data.end());
 #include "cpp_clustering/kmedoids/KMedoids.hpp"
 // dType: type of the training samples
 // true: PrecomputePairwiseDistanceMatrix (set to true by default)
-using KMedoids = cpp_clustering::KMedoids<dType, true>;
+using KMedoids = cpp_clustering::KMedoids<SomeDataType, true>;
 
 auto kmedoids = KMedoids(n_medoids, n_features);
 // set the options. The ones presented in this example are the same as the ones by default and provide no change
