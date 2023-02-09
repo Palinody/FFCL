@@ -1,5 +1,5 @@
 # cpp_clustering
-Fast clustering algorithms written in c++
+Fast iterator compatible clustering algorithms written in c++.
 
 - [Current algorithms](#current-algorithms)
 - [Performance](#performance)
