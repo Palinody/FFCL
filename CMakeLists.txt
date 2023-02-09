@@ -16,6 +16,7 @@ set(HEADER_FILES
     include/cpp_clustering/kmedoids/FasterPAM.hpp
     include/cpp_clustering/kmedoids/KMedoids.hpp
     include/cpp_clustering/kmedoids/PAMUtils.hpp
+    include/cpp_clustering/kmedoids/PAMBuild.hpp
 
     include/cpp_clustering/math/random/Distributions.hpp
     include/cpp_clustering/math/random/VosesAliasMethod.hpp
@@ -38,7 +39,7 @@ include_directories(
     include
 )
 
-add_definitions(-DTHREADS_ENABLED=true)
+add_definitions(-DTHREADS_ENABLED=false)
 add_definitions(-DVERBOSE=true)
 
 # set(MODE "run-benchmarks")

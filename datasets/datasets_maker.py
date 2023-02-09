@@ -40,7 +40,7 @@ TYPE = np.float32
 n_samples = 1500
 # None to load everything else specify
 n_samples_mnist = None
-n_samples_mnist = 15000
+n_samples_mnist = 2000
 
 np.random.seed(0)
 random_state = 1

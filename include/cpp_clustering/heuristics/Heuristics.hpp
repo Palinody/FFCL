@@ -3,7 +3,6 @@
 #include "cpp_clustering/common/Utils.hpp"
 
 #include <algorithm>
-#include <execution>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -90,22 +89,6 @@ typename IteratorUInt1::value_type unsigned_manhattan_distance(const IteratorUIn
                                  [](const auto& lhs, const auto& rhs) { return lhs > rhs ? lhs - rhs : rhs - lhs; });
 }
 
-float fast_inv_sqrt(float number) {
-    long        i;
-    float       x2, y;
-    const float threehalfs = 1.5F;
-
-    x2 = number * 0.5F;
-    y  = number;
-    i  = *(long*)&y;             // evil floating point bit level hacking
-    i  = 0x5f3759df - (i >> 1);  // what the fuck?
-    y  = *(float*)&i;
-    y  = y * (threehalfs - (x2 * y * y));  // 1st iteration
-    //	y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
-
-    return y;
-}
-
 template <typename IteratorFloat1, typename IteratorFloat2>
 typename IteratorFloat1::value_type cosine_similarity(const IteratorFloat1& first_sample_begin,
                                                       const IteratorFloat1& first_sample_end,
@@ -130,7 +113,7 @@ typename IteratorFloat1::value_type cosine_similarity(const IteratorFloat1& firs
     if (!magnitude_1 || !magnitude_2) {
         return 0;
     }
-    return dot_product * fast_inv_sqrt(magnitude_1 * magnitude_2);
+    return dot_product / std::sqrt(magnitude_1 * magnitude_2);
 }
 
 template <typename Iterator1, typename Iterator2>
