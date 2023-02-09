@@ -22,7 +22,6 @@ The implementation of the papers was helped by one of the [author's repo](https:
   - euclidean
   - manhattan
   - cosine similarity
-  - auto (depends on type)
 
 - ### initialization:
   - random uniform
