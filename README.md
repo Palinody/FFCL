@@ -22,6 +22,7 @@ The implementation of the papers was helped by one of the [author's repo](https:
   - random uniform
   - spatial uniform
   - pam::build
+  - kmeans++
 
 ## Performance
 
