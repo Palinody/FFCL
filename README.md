@@ -29,6 +29,9 @@ The implementation of the papers was helped by one of the [author's repo](https:
   - pam::build
   - kmeans++
 
+- ### Selecting the number of clusters
+  - silhouette method
+
 ## Performance (only approx. for now)
 - Cpu: `Intel® Core™ i5-9600KF CPU @ 3.70GHz × 6`
 - Dataset: MNIST
