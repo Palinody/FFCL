@@ -19,8 +19,8 @@ Fast iterator compatible clustering algorithms written in c++.
 ## Current features
 
 - ### KMedoids:
-  - FasterMSC (with(out) pairwise distance matrix) [paper](https://arxiv.org/pdf/2209.12553.pdf)
-  - FasterPAM (with(out) pairwise distance matrix) [paper](https://arxiv.org/pdf/2008.05171.pdf)
+  - FasterMSC [paper](https://arxiv.org/pdf/2209.12553.pdf)
+  - FasterPAM [paper](https://arxiv.org/pdf/2008.05171.pdf)
 
 The implementation of the papers was helped by one of the [author's repo](https://github.com/kno10/rust-kmedoids)
 
