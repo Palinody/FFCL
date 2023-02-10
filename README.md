@@ -182,13 +182,13 @@ for (std::size_t k = k_min; k < k_max; ++k) {
     // map the samples to their closest centroid/medoid
     const auto predictions = kmeans.predict(data.begin(), data.end());
     // compute the silhouette scores for each sample
-    const auto samples_silhouette_values = common::clustering::silhouette_method::silhouette(data.begin(),
-                                                                                             data.end(),
-                                                                                             predictions.begin(),
-                                                                                             predictions.end(),
-                                                                                             /*n_features=*/n_features);
+    const auto samples_silhouette_values = cpp_clustering::silhouette_method::silhouette(data.begin(),
+                                                                                         data.end(),
+                                                                                         predictions.begin(),
+                                                                                         predictions.end(),
+                                                                                         /*n_features=*/n_features);
     // get the average score
-    const auto mean_silhouette_coefficient = common::clustering::silhouette_method::get_mean_silhouette_coefficient(
+    const auto mean_silhouette_coefficient = cpp_clustering::silhouette_method::get_mean_silhouette_coefficient(
         samples_silhouette_values.begin(), samples_silhouette_values.end());
     // accumulate the current scores
     scores[k - k_min] = mean_silhouette_coefficient;
@@ -209,7 +209,7 @@ std::vector<float> input_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 // must be less than n_samples
 const std::size_t n_centroids = 2;
 
-cont auto centroids_init = common::clustering::kmeansplusplus::make_centroids(input_data.begin(), input_data.end(), n_centroids, n_features))
+cont auto centroids_init = cpp_clustering::kmeansplusplus::make_centroids(input_data.begin(), input_data.end(), n_centroids, n_features))
 // initializing the centroids manually is optional
 auto kmeans = KMeans(n_centroids, n_features, centroids_init);
 
@@ -252,12 +252,7 @@ const std::size_t n_medoids = 2;
 
 auto kmedoids = KMedoids(n_medoids, n_features);
 // set the options. The ones presented in this example are the same as the ones by default and provide no change
-kmedoids.set_options(
-            /*KMedoids options=*/KMedoids::Options()
-                .max_iter(100)
-                .early_stopping(true)
-                .patience(0)
-                .n_init(1));
+kmedoids.set_options(KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
 
 // Fit the data (inputs_first, inputs_last) with a PAM algorithm. Default: cpp_clustering::FasterPAM
 const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(input_data.begin(), input_data.end());
@@ -268,11 +263,13 @@ const std::vector<std::size_t> predictions = kmedoids.predict(input_data.begin()
 // swap the medoids if you want them to match your labels.
 // Complexity (worst case): O(n_centroids!).
 const auto [best_match_count, swapped_centroids] =
-            kmedoids.swap_to_best_count_match(input_data.begin(), input_data.end(), labels.begin(), labels.end());
+    kmedoids.swap_to_best_count_match(input_data.begin(), input_data.end(), labels.begin(), labels.end());
 
 // another way to swap the medoids but much faster for larger n_centroids
 // Complexity (worst case): O(n_medoids * n_classes).
-const auto [best_match_count, swapped_centroids] =
-            kmedoids.remap_centroid_to_label_index(input_data.begin(), input_data.end(), labels.begin(), labels.end(), n_classes);
-
+const auto [best_match_count, swapped_centroids] = kmedoids.remap_centroid_to_label_index(input_data.begin(),
+                                                                                          input_data.end(),
+                                                                                          labels.begin(),
+                                                                                          labels.end(),
+                                                                                          n_classes);
 ```
