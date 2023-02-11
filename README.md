@@ -2,7 +2,7 @@
 Fast iterator compatible clustering algorithms written in c++.
 
 - [Current features](#current-features)
-- [KMedoids algorithms performance](#kmedoids-algorithms-performance)
+- [Performance](#performance)
 - [Installation](#installation)
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
@@ -41,8 +41,11 @@ The implementation of the papers was helped by one of the [author's repo](https:
 - ### Selecting the number of clusters
   - silhouette method
 
-## KMedoids algorithms performance
+## Performance
 - Cpu: `Intel® Core™ i5-9600KF CPU @ 3.70GHz × 6`
+
+### KMedoids algorithms 
+
 - Dataset: MNIST
 - initialization: random uniform
 
