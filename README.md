@@ -209,7 +209,7 @@ std::vector<float> input_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 // must be less than n_samples
 const std::size_t n_centroids = 2;
 
-cont auto centroids_init = cpp_clustering::kmeansplusplus::make_centroids(input_data.begin(), input_data.end(), n_centroids, n_features))
+const auto centroids_init = cpp_clustering::kmeansplusplus::make_centroids(input_data.begin(), input_data.end(), n_centroids, n_features))
 // initializing the centroids manually is optional
 auto kmeans = KMeans(n_centroids, n_features, centroids_init);
 
