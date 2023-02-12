@@ -16,7 +16,7 @@
 #include <tuple>
 #include <vector>
 
-namespace pam_utils {
+namespace pam::utils {
 
 /**
  * @brief division specific to PAM. Returns zero if the input denominator in an int and is zero
@@ -778,4 +778,4 @@ std::pair<typename Iterator::value_type, std::size_t> get_first_medoid_idx_td_pa
     return {total_deviation, selected_medoid};
 }
 
-}  // namespace pam_utils
+}  // namespace pam::utils

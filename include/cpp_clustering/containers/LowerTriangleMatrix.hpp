@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-#if defined(_OPENMP) && defined(THREADS_ENABLED) && THREADS_ENABLED == 1
+#if defined(_OPENMP) && THREADS_ENABLED == true
 #include <omp.h>
 #endif
 

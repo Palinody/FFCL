@@ -313,63 +313,64 @@ FasterPAM<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::Buffers(const It
                                                                         const Iterator&                 samples_last,
                                                                         std::size_t                     n_features,
                                                                         const std::vector<std::size_t>& medoids_indices)
-  : samples_to_nearest_medoid_indices_{pam_utils::samples_to_nth_nearest_medoid_indices(samples_first,
-                                                                                        samples_last,
-                                                                                        n_features,
-                                                                                        medoids_indices,
-                                                                                        /*n_closest=*/1)}
-  , samples_to_second_nearest_medoid_indices_{pam_utils::samples_to_nth_nearest_medoid_indices(samples_first,
-                                                                                               samples_last,
-                                                                                               n_features,
-                                                                                               medoids_indices,
-                                                                                               /*n_closest=*/2)}
-  , samples_to_nearest_medoid_distances_{pam_utils::samples_to_nth_nearest_medoid_distances(samples_first,
-                                                                                            samples_last,
-                                                                                            n_features,
-                                                                                            medoids_indices,
-                                                                                            /*n_closest=*/1)}
-  , samples_to_second_nearest_medoid_distances_{pam_utils::samples_to_nth_nearest_medoid_distances(samples_first,
-                                                                                                   samples_last,
-                                                                                                   n_features,
-                                                                                                   medoids_indices,
-                                                                                                   /*n_closest=*/2)}
+  : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
+                                                                                         samples_last,
+                                                                                         n_features,
+                                                                                         medoids_indices,
+                                                                                         /*n_closest=*/1)}
+  , samples_to_second_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
+                                                                                                samples_last,
+                                                                                                n_features,
+                                                                                                medoids_indices,
+                                                                                                /*n_closest=*/2)}
+  , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
+                                                                                             samples_last,
+                                                                                             n_features,
+                                                                                             medoids_indices,
+                                                                                             /*n_closest=*/1)}
+  , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
+                                                                                                    samples_last,
+                                                                                                    n_features,
+                                                                                                    medoids_indices,
+                                                                                                    /*n_closest=*/2)}
   , losses_with_closest_medoid_removal_{
-        pam_utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
-                                                                        samples_to_nearest_medoid_distances_,
-                                                                        samples_to_second_nearest_medoid_distances_,
-                                                                        medoids_indices.size())} {}
+        pam::utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
+                                                                         samples_to_nearest_medoid_distances_,
+                                                                         samples_to_second_nearest_medoid_distances_,
+                                                                         medoids_indices.size())} {}
 
 template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
 FasterPAM<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::Buffers(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids_indices)
-  : samples_to_nearest_medoid_indices_{pam_utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix,
-                                                                                        medoids_indices,
-                                                                                        /*n_closest=*/1)}
-  , samples_to_second_nearest_medoid_indices_{pam_utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix,
-                                                                                               medoids_indices,
-                                                                                               /*n_closest=*/2)}
-  , samples_to_nearest_medoid_distances_{pam_utils::samples_to_nth_nearest_medoid_distances(pairwise_distance_matrix,
-                                                                                            medoids_indices,
-                                                                                            /*n_closest=*/1)}
-  , samples_to_second_nearest_medoid_distances_{pam_utils::samples_to_nth_nearest_medoid_distances(
+  : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix,
+                                                                                         medoids_indices,
+                                                                                         /*n_closest=*/1)}
+  , samples_to_second_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(
+        pairwise_distance_matrix,
+        medoids_indices,
+        /*n_closest=*/2)}
+  , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(pairwise_distance_matrix,
+                                                                                             medoids_indices,
+                                                                                             /*n_closest=*/1)}
+  , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(
         pairwise_distance_matrix,
         medoids_indices,
         /*n_closest=*/2)}
   , losses_with_closest_medoid_removal_{
-        pam_utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
-                                                                        samples_to_nearest_medoid_distances_,
-                                                                        samples_to_second_nearest_medoid_distances_,
-                                                                        medoids_indices.size())} {}
+        pam::utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
+                                                                         samples_to_nearest_medoid_distances_,
+                                                                         samples_to_second_nearest_medoid_distances_,
+                                                                         medoids_indices.size())} {}
 
 template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
 void FasterPAM<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::update_losses_with_closest_medoid_removal(
     std::size_t n_medoids) {
     losses_with_closest_medoid_removal_ =
-        pam_utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
-                                                                        samples_to_nearest_medoid_distances_,
-                                                                        samples_to_second_nearest_medoid_distances_,
-                                                                        n_medoids);
+        pam::utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
+                                                                         samples_to_nearest_medoid_distances_,
+                                                                         samples_to_second_nearest_medoid_distances_,
+                                                                         n_medoids);
 }
 
 }  // namespace cpp_clustering

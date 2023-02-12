@@ -46,7 +46,7 @@ std::vector<T> make_distances_scores(IteratorFloat distance_first, IteratorFloat
     const auto [min, max] = std::minmax_element(distance_first, distance_last);
 
     if (*min == *max) {
-        const std::size_t n_elements = distance_last - distance_first;
+        const std::size_t n_elements = std::distance(distance_first, distance_last);
         // if all the values are the same distribute the weights equaly
         return std::vector<T>(n_elements, 1.0 / n_elements);
     }

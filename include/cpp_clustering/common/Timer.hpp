@@ -59,12 +59,6 @@ std::uint64_t Timer<DurationType>::elapsed() {
 template <typename DurationType>
 template <typename SleepDurationType>
 void Timer<DurationType>::sleep(std::uint64_t duration) {
-#if defined(_OPENMP) && THREADS_ENABLED == true
-    // int tid = omp_get_thread_num();
-    // int team_id = omp_get_team_num();
-    // int max_tid = omp_get_num_threads() - 1;
-    // std::printf("In thread: %d\n", tid);
-#endif
     std::this_thread::sleep_for(static_cast<SleepDurationType>(duration));
 }
 

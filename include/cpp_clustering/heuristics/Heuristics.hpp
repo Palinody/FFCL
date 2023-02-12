@@ -131,7 +131,9 @@ auto heuristic(const Iterator1& first_sample_begin,
     } else if constexpr (std::is_unsigned_v<ValueType>) {
         return unsigned_manhattan_distance(first_sample_begin, first_sample_end, second_sample_begin);
     }
+#if defined(VERBOSE) && VERBOSE == true
     std::cout << "[WARN] requested type for heuristic not handled. Using default: euclidean.\n";
+#endif
     return euclidean_distance(first_sample_begin, first_sample_end, second_sample_begin);
 }
 
