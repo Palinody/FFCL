@@ -329,20 +329,6 @@ typename Iterator::value_type FasterMSC<Iterator>::swap_buffers(std::size_t medo
             std::holds_alternative<FirstVariantType>(storage_variant_)
                 ? std::get<FirstVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index)
                 : std::get<SecondVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index);
-        /*
-        std::visit(
-            [&](const auto& storage) {
-                using StorageType = std::decay_t<decltype(storage)>;
-
-                if constexpr (std::is_same_v<StorageType, FirstVariantType>) {
-                    distance_oc = storage(medoid_candidate_index, other_sample_index);
-
-                } else if constexpr (std::is_same_v<StorageType, SecondVariantType>) {
-                    distance_oc = storage(medoid_candidate_index, other_sample_index);
-                }
-            },
-            storage_variant_);
-        */
 
         // nearest medoid is gone
         if (index_1 == best_swap_index) {
