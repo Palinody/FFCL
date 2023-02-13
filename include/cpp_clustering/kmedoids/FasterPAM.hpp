@@ -32,10 +32,8 @@ class FasterPAM {
     // {samples_first_, samples_last_, n_features_}
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    using FirstVariantType = cpp_clustering::containers::LowerTriangleMatrixDynamic<Iterator>;
-    // LowerTriangleMatrix
-    using SecondVariantType = cpp_clustering::containers::LowerTriangleMatrix<Iterator>;
-    // Stores {samples_first_, samples_last_, n_features_} or LowerTriangleMatrix
+    using FirstVariantType   = cpp_clustering::containers::LowerTriangleMatrixDynamic<Iterator>;
+    using SecondVariantType  = cpp_clustering::containers::LowerTriangleMatrix<Iterator>;
     using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
 
     FasterPAM(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids_indices);
@@ -65,8 +63,7 @@ class FasterPAM {
 
         Buffers(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids_indices);
 
-        Buffers(const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-                const std::vector<std::size_t>&                                  medoids_indices);
+        Buffers(const SecondVariantType& pairwise_distance_matrix, const std::vector<std::size_t>& medoids_indices);
 
         Buffers(const Buffers&) = delete;
 
@@ -107,10 +104,7 @@ FasterPAM<Iterator>::FasterPAM(const DatasetDescriptorType&    dataset_descripto
   : storage_variant_{FirstVariantType(dataset_descriptor)}
   , n_samples_{std::get<FirstVariantType>(storage_variant_).n_samples()}
   , medoids_{medoids_indices}
-  , buffers_ptr_{std::make_unique<Buffers>(std::get<0>(dataset_descriptor),
-                                           std::get<1>(dataset_descriptor),
-                                           std::get<2>(dataset_descriptor),
-                                           medoids_)}
+  , buffers_ptr_{std::make_unique<Buffers>(dataset_descriptor, medoids_)}
   , loss_{loss} {}
 
 template <typename Iterator>
@@ -176,7 +170,7 @@ std::pair<typename Iterator::value_type, std::size_t> FasterPAM<Iterator>::find_
 
     for (std::size_t other_sample_index = 0; other_sample_index < n_samples_; ++other_sample_index) {
         // candidate_to_other_distance
-        DataType distance_oc =
+        const auto distance_oc =
             std::holds_alternative<FirstVariantType>(storage_variant_)
                 ? std::get<FirstVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index)
                 : std::get<SecondVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index);
@@ -235,7 +229,7 @@ typename Iterator::value_type FasterPAM<Iterator>::swap_buffers(std::size_t medo
             continue;
         }
         // candidate_to_other_distance
-        DataType distance_oc =
+        const auto distance_oc =
             std::holds_alternative<FirstVariantType>(storage_variant_)
                 ? std::get<FirstVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index)
                 : std::get<SecondVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index);
@@ -251,11 +245,11 @@ typename Iterator::value_type FasterPAM<Iterator>::swap_buffers(std::size_t medo
                 distance_1 = distance_2;
                 // START: update second nearest medoid
                 std::size_t index_tmp    = best_swap_index;
-                DataType    distance_tmp = distance_oc;
+                auto        distance_tmp = distance_oc;
                 for (std::size_t idx = 0; idx < medoids_.size(); ++idx) {
                     if (idx != index_1 && idx != best_swap_index) {
                         // distance from other object to looped medoid
-                        DataType distance_om =
+                        const auto distance_om =
                             std::holds_alternative<FirstVariantType>(storage_variant_)
                                 ? std::get<FirstVariantType>(storage_variant_)(medoids_[idx], other_sample_index)
                                 : std::get<SecondVariantType>(storage_variant_)(medoids_[idx], other_sample_index);
@@ -286,11 +280,11 @@ typename Iterator::value_type FasterPAM<Iterator>::swap_buffers(std::size_t medo
                 // second nearest was replaced
                 // START: update second nearest medoid
                 std::size_t index_tmp    = best_swap_index;
-                DataType    distance_tmp = distance_oc;
+                auto        distance_tmp = distance_oc;
                 for (std::size_t idx = 0; idx < medoids_.size(); ++idx) {
                     if (idx != index_1 && idx != best_swap_index) {
                         // distance from other object to looped medoid
-                        DataType distance_om =
+                        const auto distance_om =
                             std::holds_alternative<FirstVariantType>(storage_variant_)
                                 ? std::get<FirstVariantType>(storage_variant_)(medoids_[idx], other_sample_index)
                                 : std::get<SecondVariantType>(storage_variant_)(medoids_[idx], other_sample_index);
@@ -351,9 +345,8 @@ FasterPAM<Iterator>::Buffers::Buffers(const DatasetDescriptorType&    dataset_de
                                           medoids_indices) {}
 
 template <typename Iterator>
-FasterPAM<Iterator>::Buffers::Buffers(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices)
+FasterPAM<Iterator>::Buffers::Buffers(const SecondVariantType&        pairwise_distance_matrix,
+                                      const std::vector<std::size_t>& medoids_indices)
   : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix,
                                                                                          medoids_indices,
                                                                                          /*n_closest=*/1)}
