@@ -73,7 +73,7 @@ class KMedoids {
 
     KMedoids<T, PrecomputePairwiseDistanceMatrix>& set_options(const Options& options);
 
-    template <template <typename, bool> class PAMClass, typename SamplesIterator>
+    template <template <typename> class PAMClass, typename SamplesIterator>
     std::vector<T> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
 
     template <typename SamplesIterator>
@@ -179,7 +179,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::assign(c
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
-template <template <typename, bool> class PAMClass, typename SamplesIterator>
+template <template <typename> class PAMClass, typename SamplesIterator>
 std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesIterator& data_first,
                                                                   const SamplesIterator& data_last) {
     // contains the medoids indices for each tries which number is defined by options_.n_init_ if medoids_
@@ -212,8 +212,17 @@ std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesI
         // assign the centroids attributes to the current centroids
         medoids_ = medoids_indices_candidates[k];
 
+        // auto pam = PAMClass<SamplesIterator, PrecomputePairwiseDistanceMatrix>(
+        // std::make_tuple(data_first, data_last, n_features_), medoids_);
+
+        using DatasetDescriptorType              = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
+        DatasetDescriptorType dataset_descriptor = std::make_tuple(data_first, data_last, n_features_);
+
         auto pam =
-            PAMClass<SamplesIterator, PrecomputePairwiseDistanceMatrix>(data_first, data_last, n_features_, medoids_);
+            PrecomputePairwiseDistanceMatrix
+                ? PAMClass<SamplesIterator>(
+                      cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>(dataset_descriptor), medoids_)
+                : PAMClass<SamplesIterator>(dataset_descriptor, medoids_);
 
         std::size_t patience_iter = 0;
 

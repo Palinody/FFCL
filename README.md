@@ -1,4 +1,5 @@
 # cpp_clustering
+
 Fast iterator compatible clustering algorithms written in c++.
 
 - [Current features](#current-features)
@@ -18,33 +19,39 @@ Fast iterator compatible clustering algorithms written in c++.
 
 ## Current features
 
-- ### KMedoids:
+- ### KMedoids
+
   - FasterMSC [paper](https://arxiv.org/pdf/2209.12553.pdf)
   - FasterPAM [paper](https://arxiv.org/pdf/2008.05171.pdf)
 
 The implementation of the papers was helped by one of the [author's repo](https://github.com/kno10/rust-kmedoids)
 
-- ### KMeans:
+- ### KMeans
+
   - Lloyd
 
 - ### Distance functions
+
   - euclidean
   - manhattan
   - cosine similarity
 
-- ### initialization:
+- ### initialization
+
   - random uniform
   - spatial uniform
   - pam::build
   - kmeans++
 
 - ### Selecting the number of clusters
+
   - silhouette method
 
 ## Performance
+
 - Cpu: `Intel® Core™ i5-9600KF CPU @ 3.70GHz × 6`
 
-### KMedoids algorithms 
+### KMedoids algorithms
 
 - Dataset: MNIST
 - initialization: random uniform
@@ -67,6 +74,7 @@ The following table summarizes the results of single runs made with different pa
 **PairwiseDistanceMatrix**| float       | 30,000      |784           |               |                      |6             |25.6                    |
 
 ## Installation
+
 ```sh
 cd <your_repo>
 git clone <this_repo>
@@ -75,20 +83,26 @@ cd build
 ```
 
 ## Compiling
+
 ### 1) As a library
+
 ```sh
 cmake ..
-build
+make
 ```
+
 This will create a `libcpp_clustering.a` file in the `build/` firectory
 
 ### 2) To run the benchmarks
 
 Generate the datasets automatically:
-```
+
+```sh
 python3 ../datasets/datasets_maker.py
 ```
+
 This will create the following files in `../datasets/clustering/`
+
 ```sh
 .
 ├── inputs
@@ -119,13 +133,17 @@ Compile (this can also be done before generating the datasets except running the
 
 ```sh
 cmake .. -DMODE="benchmark"
-build
+make
 ```
+
 This will create a `cpp_clustering` executable in the `build` folder. To run the benchmarks, simply:
-```
+
+```sh
 ./cpp_clustering
 ```
+
 The results will be written in `../datasets/clustering/` and the folder structure might now look like this:
+
 ```sh
 ├── centroids
 │   ├── aniso.txt
@@ -144,22 +162,28 @@ The results will be written in `../datasets/clustering/` and the folder structur
 <...>
     └── varied.txt
 ```
+
 The clusters can be visualised:
+
 ```sh
 python3 ../datasets/plot.py
 ```
 
 ### 3) To run the unit tests
+
 ```sh
 cmake .. -DMODE="gtest"
-build
+make
 ```
+
 Run the gtests:
+
 ```sh
 ctest -V
 ```
 
 ### \*) All cmake options (the ones with a (\*) can be accumulated)
+
 - `-DMODE="gtest"`
 - `-DMODE="benchmark"`
 - `-DVERBOSE=true` (\*)
@@ -170,6 +194,7 @@ ctest -V
 ### Silhouette method
 
 #### Example: select the best number of centroids/medoids k in a range
+
 ```c
 std::size_t k_min = 2;
 std::size_t k_max = 10;
@@ -203,6 +228,7 @@ const auto best_k = k_min + common::utils::argmax(scores.begin(), scores.end())
 ### KMeans
 
 #### Example with kmeans++ initialization
+
 ```c
 using KMeans = cpp_clustering::KMeans<float>;
 
@@ -222,6 +248,7 @@ const auto centroids = kmeans.fit(input_data.begin(), input_data.end());
 ### KMedoids
 
 #### Simple example
+
 ```c
 using KMedoids = cpp_clustering::KMedoids<float>;
 
@@ -237,6 +264,7 @@ const auto centroids = kmedoids.fit(input_data.begin(), input_data.end());
 ```
 
 #### Complete example
+
 ```c
 #include "cpp_clustering/kmedoids/KMedoids.hpp"
 // dType: type of the training samples

@@ -46,12 +46,23 @@ std::vector<std::vector<typename Iterator::value_type>> make_pairwise_low_triang
 }
 
 template <typename Iterator>
+std::vector<std::vector<typename Iterator::value_type>> make_pairwise_low_triangle_distance_matrix(
+    const std::tuple<Iterator, Iterator, std::size_t>& dataset_descriptor) {
+    return make_pairwise_low_triangle_distance_matrix(
+        std::get<0>(dataset_descriptor), std::get<1>(dataset_descriptor), std::get<2>(dataset_descriptor));
+}
+
+template <typename Iterator>
 class LowerTriangleMatrix {
   public:
-    using ValueType = typename Iterator::value_type;
+    using ValueType             = typename Iterator::value_type;
+    using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
     LowerTriangleMatrix(const Iterator& samples_first, const Iterator& samples_last, std::size_t n_features)
       : data_{make_pairwise_low_triangle_distance_matrix(samples_first, samples_last, n_features)} {}
+
+    LowerTriangleMatrix(const DatasetDescriptorType& dataset_descriptor)
+      : data_{make_pairwise_low_triangle_distance_matrix(dataset_descriptor)} {}
 
     ValueType& operator()(std::size_t sample_index, std::size_t feature_index) {
         // swap the indices if an upper triangle (diagonal excluded) quiery is made
@@ -75,6 +86,46 @@ class LowerTriangleMatrix {
 
   private:
     std::vector<std::vector<ValueType>> data_;
+};
+
+template <typename Iterator>
+class LowerTriangleMatrixDynamic {
+  public:
+    using ValueType             = typename Iterator::value_type;
+    using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
+
+    LowerTriangleMatrixDynamic(const Iterator& samples_first, const Iterator& samples_last, std::size_t n_features)
+      : samples_first_{samples_first}
+      , samples_last_{samples_last}
+      , n_features_{n_features} {}
+
+    LowerTriangleMatrixDynamic(const DatasetDescriptorType& dataset_descriptor)
+      : LowerTriangleMatrixDynamic<Iterator>(std::get<0>(dataset_descriptor),
+                                             std::get<1>(dataset_descriptor),
+                                             std::get<2>(dataset_descriptor)) {}
+
+    ValueType operator()(std::size_t sample_index, std::size_t feature_index) const {
+        // swap the indices if an upper triangle (diagonal excluded) quiery is made
+        if (feature_index > sample_index) {
+            return cpp_clustering::heuristic::heuristic(
+                /*first sample begin=*/samples_first_ + feature_index * n_features_,
+                /*first sample end=*/samples_first_ + feature_index * n_features_ + n_features_,
+                /*other sample begin=*/samples_first_ + sample_index * n_features_);
+        }
+        return cpp_clustering::heuristic::heuristic(
+            /*first sample begin=*/samples_first_ + sample_index * n_features_,
+            /*first sample end=*/samples_first_ + sample_index * n_features_ + n_features_,
+            /*other sample begin=*/samples_first_ + feature_index * n_features_);
+    }
+
+    std::size_t n_samples() const {
+        return common::utils::get_n_samples(samples_first_, samples_last_, n_features_);
+    }
+
+  private:
+    Iterator    samples_first_;
+    Iterator    samples_last_;
+    std::size_t n_features_;
 };
 
 }  // namespace cpp_clustering::containers

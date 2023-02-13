@@ -88,7 +88,7 @@ void fit_once(const InputsIterator& inputs_first,
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    kmedoids.fit<cpp_clustering::FasterPAM>(inputs_first, inputs_last);
+    kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
 
 #if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);

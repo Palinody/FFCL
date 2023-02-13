@@ -15,11 +15,12 @@
 #include <memory>
 #include <numeric>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 namespace cpp_clustering {
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix = true>
+template <typename Iterator>
 class FasterMSC {
     // couldnt make FasterMSC stable with integers so it stays disabled for now
     static_assert(std::is_floating_point_v<typename Iterator::value_type>,
@@ -28,14 +29,24 @@ class FasterMSC {
   public:
     using DataType = typename Iterator::value_type;
 
-    FasterMSC(const Iterator&                 samples_first,
-              const Iterator&                 samples_last,
-              std::size_t                     n_features,
-              const std::vector<std::size_t>& medoids_indices);
+    // {samples_first_, samples_last_, n_features_}
+    using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    FasterMSC(const Iterator&                 samples_first,
-              const Iterator&                 samples_last,
-              std::size_t                     n_features,
+    using FirstVariantType = cpp_clustering::containers::LowerTriangleMatrixDynamic<Iterator>;
+    // LowerTriangleMatrix
+    using SecondVariantType = cpp_clustering::containers::LowerTriangleMatrix<Iterator>;
+    // Stores {samples_first_, samples_last_, n_features_} or LowerTriangleMatrix
+    using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
+
+    FasterMSC(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids_indices);
+
+    FasterMSC(const DatasetDescriptorType&    dataset_descriptor,
+              const std::vector<std::size_t>& medoids_indices,
+              const DataType&                 loss);
+
+    FasterMSC(const SecondVariantType& pairwise_distance_matrix, const std::vector<std::size_t>& medoids_indices);
+
+    FasterMSC(const SecondVariantType&        pairwise_distance_matrix,
               const std::vector<std::size_t>& medoids_indices,
               const DataType&                 loss);
 
@@ -52,15 +63,14 @@ class FasterMSC {
                 std::size_t                     n_features,
                 const std::vector<std::size_t>& medoids_indices);
 
+        Buffers(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids_indices);
+
         Buffers(const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
                 const std::vector<std::size_t>&                                  medoids_indices);
 
         Buffers(const Buffers&) = delete;
 
-        void update_losses_with_closest_medoid_removal(const Iterator& samples_first,
-                                                       const Iterator& samples_last,
-                                                       std::size_t     n_features,
-                                                       std::size_t     n_medoids);
+        void update_losses_with_closest_medoid_removal(std::size_t n_medoids);
 
         std::vector<std::size_t> samples_to_nearest_medoid_indices_;
         std::vector<std::size_t> samples_to_second_nearest_medoid_indices_;
@@ -79,60 +89,63 @@ class FasterMSC {
 
     DataType swap_buffers_k2(std::size_t medoid_candidate_index, std::size_t best_swap_index);
 
-    Iterator                 samples_first_;
-    Iterator                 samples_last_;
+    StorageVariantType       storage_variant_;
     std::size_t              n_samples_;
-    std::size_t              n_features_;
     std::vector<std::size_t> medoids_;
     std::unique_ptr<Buffers> buffers_ptr_;
     DataType                 loss_;
-    // a square matrix of pairwise distance between each samples
-    std::unique_ptr<cpp_clustering::containers::LowerTriangleMatrix<Iterator>> pairwise_distance_matrix_ptr_;
 };
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::FasterMSC(const Iterator&                 samples_first,
-                                                                 const Iterator&                 samples_last,
-                                                                 std::size_t                     n_features,
-                                                                 const std::vector<std::size_t>& medoids_indices)
-  : FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::FasterMSC(samples_first,
-                                                                     samples_last,
-                                                                     n_features,
-                                                                     medoids_indices,
-                                                                     common::utils::infinity<DataType>()) {
+template <typename Iterator>
+FasterMSC<Iterator>::FasterMSC(const DatasetDescriptorType&    dataset_descriptor,
+                               const std::vector<std::size_t>& medoids_indices)
+  : FasterMSC<Iterator>::FasterMSC(dataset_descriptor, medoids_indices, common::utils::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
                             0);
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::FasterMSC(const Iterator&                 samples_first,
-                                                                 const Iterator&                 samples_last,
-                                                                 std::size_t                     n_features,
-                                                                 const std::vector<std::size_t>& medoids_indices,
-                                                                 const DataType&                 loss)
-  : samples_first_{samples_first}
-  , samples_last_{samples_last}
-  , n_samples_{common::utils::get_n_samples(samples_first_, samples_last_, n_features)}
-  , n_features_{n_features}
+template <typename Iterator>
+FasterMSC<Iterator>::FasterMSC(const DatasetDescriptorType&    dataset_descriptor,
+                               const std::vector<std::size_t>& medoids_indices,
+                               const DataType&                 loss)
+  : storage_variant_{FirstVariantType(dataset_descriptor)}
+  , n_samples_{std::get<FirstVariantType>(storage_variant_).n_samples()}
   , medoids_{medoids_indices}
-  , buffers_ptr_{std::make_unique<Buffers>(samples_first_, samples_last_, n_features_, medoids_)}
-  , loss_{loss} {
-    if constexpr (PrecomputePairwiseDistanceMatrix) {
-        pairwise_distance_matrix_ptr_ = std::make_unique<cpp_clustering::containers::LowerTriangleMatrix<Iterator>>(
-            samples_first_, samples_last_, n_features_);
-    }
+  , buffers_ptr_{std::make_unique<Buffers>(std::get<0>(dataset_descriptor),
+                                           std::get<1>(dataset_descriptor),
+                                           std::get<2>(dataset_descriptor),
+                                           medoids_)}
+  , loss_{loss} {}
+
+template <typename Iterator>
+FasterMSC<Iterator>::FasterMSC(const SecondVariantType&        pairwise_distance_matrix,
+                               const std::vector<std::size_t>& medoids_indices)
+  : FasterMSC<Iterator>::FasterMSC(pairwise_distance_matrix, medoids_indices, common::utils::infinity<DataType>()) {
+    // compute initial loss
+    loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
+                            buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
+                            0);
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-typename FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::DataType
-FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::total_deviation() const {
+template <typename Iterator>
+FasterMSC<Iterator>::FasterMSC(const SecondVariantType&        pairwise_distance_matrix,
+                               const std::vector<std::size_t>& medoids_indices,
+                               const DataType&                 loss)
+  : storage_variant_{pairwise_distance_matrix}
+  , n_samples_{std::get<SecondVariantType>(storage_variant_).n_samples()}
+  , medoids_{medoids_indices}
+  , buffers_ptr_{std::make_unique<Buffers>(pairwise_distance_matrix, medoids_)}
+  , loss_{loss} {}
+
+template <typename Iterator>
+typename FasterMSC<Iterator>::DataType FasterMSC<Iterator>::total_deviation() const {
     return loss_;
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-std::vector<std::size_t> FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::step() {
+template <typename Iterator>
+std::vector<std::size_t> FasterMSC<Iterator>::step() {
     const auto& samples_to_nearest_medoid_indices = buffers_ptr_->samples_to_nearest_medoid_indices_;
 
     for (std::size_t medoid_candidate_index = 0; medoid_candidate_index < n_samples_; ++medoid_candidate_index) {
@@ -156,8 +169,7 @@ std::vector<std::size_t> FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::
                     // update FasterMSC buffers
                     loss_ = swap_buffers(medoid_candidate_index, best_swap_index);
 
-                    buffers_ptr_->update_losses_with_closest_medoid_removal(
-                        samples_first_, samples_last_, n_features_, medoids_.size());
+                    buffers_ptr_->update_losses_with_closest_medoid_removal(medoids_.size());
                 }
             }
         }
@@ -165,9 +177,9 @@ std::vector<std::size_t> FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::
     return medoids_;
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-std::pair<typename Iterator::value_type, std::size_t>
-FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::find_best_swap(std::size_t medoid_candidate_index) const {
+template <typename Iterator>
+std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_best_swap(
+    std::size_t medoid_candidate_index) const {
     // TD set to the positive loss of removing medoid mi and assigning all of its members to the next best
     // alternative
     auto delta_td_mi = buffers_ptr_->losses_with_closest_medoid_removal_;
@@ -183,13 +195,10 @@ FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::find_best_swap(std::size_
 
     for (std::size_t other_sample_index = 0; other_sample_index < n_samples_; ++other_sample_index) {
         // candidate_to_other_distance
-        const auto distance_oc =
-            PrecomputePairwiseDistanceMatrix
-                ? (*pairwise_distance_matrix_ptr_)(medoid_candidate_index, other_sample_index)
-                : cpp_clustering::heuristic::heuristic(
-                      /*first sample begin=*/samples_first_ + medoid_candidate_index * n_features_,
-                      /*first sample end=*/samples_first_ + medoid_candidate_index * n_features_ + n_features_,
-                      /*other sample begin=*/samples_first_ + other_sample_index * n_features_);
+        DataType distance_oc =
+            std::holds_alternative<FirstVariantType>(storage_variant_)
+                ? std::get<FirstVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index)
+                : std::get<SecondVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index);
 
         // other_sample_to_nearest_medoid_index
         const auto& index_1 = samples_to_nearest_medoid_indices[other_sample_index];
@@ -237,9 +246,9 @@ FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::find_best_swap(std::size_
     return {delta_td_xc + best_swap_distance, best_swap_index};
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-std::pair<typename Iterator::value_type, std::size_t>
-FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::find_best_swap_k2(std::size_t medoid_candidate_index) const {
+template <typename Iterator>
+std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_best_swap_k2(
+    std::size_t medoid_candidate_index) const {
     // TD set to the positive loss of removing medoid mi and assigning all of its members to the next best
     // alternative
     auto delta_td_mi = std::vector<DataType>(2);
@@ -252,13 +261,10 @@ FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::find_best_swap_k2(std::si
 
     for (std::size_t other_sample_index = 0; other_sample_index < n_samples_; ++other_sample_index) {
         // candidate_to_other_distance
-        const auto distance_oc =
-            PrecomputePairwiseDistanceMatrix
-                ? (*pairwise_distance_matrix_ptr_)(medoid_candidate_index, other_sample_index)
-                : cpp_clustering::heuristic::heuristic(
-                      /*first sample begin=*/samples_first_ + medoid_candidate_index * n_features_,
-                      /*first sample end=*/samples_first_ + medoid_candidate_index * n_features_ + n_features_,
-                      /*other sample begin=*/samples_first_ + other_sample_index * n_features_);
+        DataType distance_oc =
+            std::holds_alternative<FirstVariantType>(storage_variant_)
+                ? std::get<FirstVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index)
+                : std::get<SecondVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index);
 
         // other_sample_to_nearest_medoid_distance
         const auto& distance_1 = samples_to_nearest_medoid_distances[other_sample_index];
@@ -279,10 +285,9 @@ FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::find_best_swap_k2(std::si
     return {delta_td_xc + best_swap_distance, best_swap_index};
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::swap_buffers(
-    std::size_t medoid_candidate_index,
-    std::size_t best_swap_index) {
+template <typename Iterator>
+typename Iterator::value_type FasterMSC<Iterator>::swap_buffers(std::size_t medoid_candidate_index,
+                                                                std::size_t best_swap_index) {
     DataType loss = 0;
 
     auto& samples_to_nearest_medoid_indices          = buffers_ptr_->samples_to_nearest_medoid_indices_;
@@ -320,13 +325,24 @@ typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatr
             continue;
         }
         // candidate_to_other_distance
-        const auto distance_oc =
-            PrecomputePairwiseDistanceMatrix
-                ? (*pairwise_distance_matrix_ptr_)(medoid_candidate_index, other_sample_index)
-                : cpp_clustering::heuristic::heuristic(
-                      /*first sample begin=*/samples_first_ + medoid_candidate_index * n_features_,
-                      /*first sample end=*/samples_first_ + medoid_candidate_index * n_features_ + n_features_,
-                      /*other sample begin=*/samples_first_ + other_sample_index * n_features_);
+        DataType distance_oc =
+            std::holds_alternative<FirstVariantType>(storage_variant_)
+                ? std::get<FirstVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index)
+                : std::get<SecondVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index);
+        /*
+        std::visit(
+            [&](const auto& storage) {
+                using StorageType = std::decay_t<decltype(storage)>;
+
+                if constexpr (std::is_same_v<StorageType, FirstVariantType>) {
+                    distance_oc = storage(medoid_candidate_index, other_sample_index);
+
+                } else if constexpr (std::is_same_v<StorageType, SecondVariantType>) {
+                    distance_oc = storage(medoid_candidate_index, other_sample_index);
+                }
+            },
+            storage_variant_);
+        */
 
         // nearest medoid is gone
         if (index_1 == best_swap_index) {
@@ -351,13 +367,10 @@ typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatr
                 for (std::size_t idx = 0; idx < medoids_.size(); ++idx) {
                     if (idx != index_1 && idx != best_swap_index && idx != index_2) {
                         // distance from other object to looped medoid
-                        const auto distance_om =
-                            PrecomputePairwiseDistanceMatrix
-                                ? (*pairwise_distance_matrix_ptr_)(medoids_[idx], other_sample_index)
-                                : cpp_clustering::heuristic::heuristic(
-                                      /*first sample begin=*/samples_first_ + medoids_[idx] * n_features_,
-                                      /*first sample end=*/samples_first_ + medoids_[idx] * n_features_ + n_features_,
-                                      /*other sample begin=*/samples_first_ + other_sample_index * n_features_);
+                        DataType distance_om =
+                            std::holds_alternative<FirstVariantType>(storage_variant_)
+                                ? std::get<FirstVariantType>(storage_variant_)(medoids_[idx], other_sample_index)
+                                : std::get<SecondVariantType>(storage_variant_)(medoids_[idx], other_sample_index);
 
                         if (distance_om < distance_tmp) {
                             index_tmp    = idx;
@@ -390,13 +403,10 @@ typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatr
                 for (std::size_t idx = 0; idx < medoids_.size(); ++idx) {
                     if (idx != index_1 && idx != best_swap_index && idx != index_2) {
                         // distance from other object to looped medoid
-                        const auto distance_om =
-                            PrecomputePairwiseDistanceMatrix
-                                ? (*pairwise_distance_matrix_ptr_)(medoids_[idx], other_sample_index)
-                                : cpp_clustering::heuristic::heuristic(
-                                      /*first sample begin=*/samples_first_ + medoids_[idx] * n_features_,
-                                      /*first sample end=*/samples_first_ + medoids_[idx] * n_features_ + n_features_,
-                                      /*other sample begin=*/samples_first_ + other_sample_index * n_features_);
+                        DataType distance_om =
+                            std::holds_alternative<FirstVariantType>(storage_variant_)
+                                ? std::get<FirstVariantType>(storage_variant_)(medoids_[idx], other_sample_index)
+                                : std::get<SecondVariantType>(storage_variant_)(medoids_[idx], other_sample_index);
 
                         if (distance_om < distance_tmp) {
                             index_tmp    = idx;
@@ -435,13 +445,10 @@ typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatr
                 for (std::size_t idx = 0; idx < medoids_.size(); ++idx) {
                     if (idx != index_1 && idx != best_swap_index && idx != index_2) {
                         // distance from other object to looped medoid
-                        const auto distance_om =
-                            PrecomputePairwiseDistanceMatrix
-                                ? (*pairwise_distance_matrix_ptr_)(medoids_[idx], other_sample_index)
-                                : cpp_clustering::heuristic::heuristic(
-                                      /*first sample begin=*/samples_first_ + medoids_[idx] * n_features_,
-                                      /*first sample end=*/samples_first_ + medoids_[idx] * n_features_ + n_features_,
-                                      /*other sample begin=*/samples_first_ + other_sample_index * n_features_);
+                        DataType distance_om =
+                            std::holds_alternative<FirstVariantType>(storage_variant_)
+                                ? std::get<FirstVariantType>(storage_variant_)(medoids_[idx], other_sample_index)
+                                : std::get<SecondVariantType>(storage_variant_)(medoids_[idx], other_sample_index);
 
                         if (distance_om < distance_tmp) {
                             index_tmp    = idx;
@@ -459,10 +466,9 @@ typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatr
     return loss;
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::swap_buffers_k2(
-    std::size_t medoid_candidate_index,
-    std::size_t best_swap_index) {
+template <typename Iterator>
+typename Iterator::value_type FasterMSC<Iterator>::swap_buffers_k2(std::size_t medoid_candidate_index,
+                                                                   std::size_t best_swap_index) {
     medoids_[best_swap_index] = medoid_candidate_index;
 
     DataType loss = 0;
@@ -485,13 +491,10 @@ typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatr
             continue;
         }
         // candidate_to_other_distance
-        const auto distance_oc =
-            PrecomputePairwiseDistanceMatrix
-                ? (*pairwise_distance_matrix_ptr_)(medoid_candidate_index, other_sample_index)
-                : cpp_clustering::heuristic::heuristic(
-                      /*first sample begin=*/samples_first_ + medoid_candidate_index * n_features_,
-                      /*first sample end=*/samples_first_ + medoid_candidate_index * n_features_ + n_features_,
-                      /*other sample begin=*/samples_first_ + other_sample_index * n_features_);
+        DataType distance_oc =
+            std::holds_alternative<FirstVariantType>(storage_variant_)
+                ? std::get<FirstVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index)
+                : std::get<SecondVariantType>(storage_variant_)(medoid_candidate_index, other_sample_index);
 
         if (best_swap_index == 0) {
             distance_1 = distance_oc;
@@ -516,11 +519,11 @@ typename Iterator::value_type FasterMSC<Iterator, PrecomputePairwiseDistanceMatr
     return loss;
 }
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::Buffers(const Iterator&                 samples_first,
-                                                                        const Iterator&                 samples_last,
-                                                                        std::size_t                     n_features,
-                                                                        const std::vector<std::size_t>& medoids_indices)
+template <typename Iterator>
+FasterMSC<Iterator>::Buffers::Buffers(const Iterator&                 samples_first,
+                                      const Iterator&                 samples_last,
+                                      std::size_t                     n_features,
+                                      const std::vector<std::size_t>& medoids_indices)
   : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
                                                                                          samples_last,
                                                                                          n_features,
@@ -572,8 +575,16 @@ FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::Buffers(const It
                                                 medoids_indices.size())
                                           : std::vector<DataType>({})} {}
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::Buffers(
+template <typename Iterator>
+FasterMSC<Iterator>::Buffers::Buffers(const DatasetDescriptorType&    dataset_descriptor,
+                                      const std::vector<std::size_t>& medoids_indices)
+  : FasterMSC<Iterator>::Buffers::Buffers(std::get<0>(dataset_descriptor),
+                                          std::get<1>(dataset_descriptor),
+                                          std::get<2>(dataset_descriptor),
+                                          medoids_indices) {}
+
+template <typename Iterator>
+FasterMSC<Iterator>::Buffers::Buffers(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids_indices)
   : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix,
@@ -616,12 +627,8 @@ FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::Buffers(
                                                 medoids_indices.size())
                                           : std::vector<DataType>({})} {}
 
-template <typename Iterator, bool PrecomputePairwiseDistanceMatrix>
-void FasterMSC<Iterator, PrecomputePairwiseDistanceMatrix>::Buffers::update_losses_with_closest_medoid_removal(
-    const Iterator& samples_first,
-    const Iterator& samples_last,
-    std::size_t     n_features,
-    std::size_t     n_medoids) {
+template <typename Iterator>
+void FasterMSC<Iterator>::Buffers::update_losses_with_closest_medoid_removal(std::size_t n_medoids) {
     losses_with_closest_medoid_removal_ =
         pam::utils::compute_losses_with_silhouette_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
                                                                             samples_to_second_nearest_medoid_indices_,
