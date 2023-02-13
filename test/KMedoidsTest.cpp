@@ -58,7 +58,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
 #if defined(VERBOSE) && VERBOSE == true
                 std::cout << "Directory created: " << directory_path << "\n";
             } else {
-                std::cout << "No directory created\n";
+                std::cout << "Dir. already exists\n";
 #endif
             }
         } catch (std::filesystem::filesystem_error& e) {
@@ -96,7 +96,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
                     std::size_t           n_medoids,
                     std::size_t           n_features,
                     std::size_t           n_iterations = 1) {
-        using KMedoids = cpp_clustering::KMedoids<DataType, true>;
+        using KMedoids = cpp_clustering::KMedoids<dType, true>;
         // using PAM = cpp_clustering::FasterMSC;
 
         auto kmedoids = KMedoids(n_medoids, n_features);
