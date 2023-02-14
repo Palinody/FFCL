@@ -93,7 +93,7 @@ typename IteratorUInt1::value_type unsigned_manhattan_distance(const IteratorUIn
 template <typename IteratorFloat1, typename IteratorFloat2>
 typename IteratorFloat1::value_type cosine_similarity(const IteratorFloat1& first_sample_begin,
                                                       const IteratorFloat1& first_sample_end,
-                                                      IteratorFloat2        second_sample_begin) {
+                                                      const IteratorFloat2& second_sample_begin) {
     static_assert(std::is_floating_point_v<typename IteratorFloat1::value_type>,
                   "Inputs should be floating point types.");
 
@@ -104,12 +104,14 @@ typename IteratorFloat1::value_type cosine_similarity(const IteratorFloat1& firs
 
     const std::size_t n_features = std::distance(first_sample_begin, first_sample_end);
 
-    FloatType dot_product = std::inner_product(first_sample_begin, first_sample_end, second_sample_begin, 0.0);
+    FloatType dot_product =
+        std::inner_product(first_sample_begin, first_sample_end, second_sample_begin, static_cast<FloatType>(0));
 
-    FloatType magnitude_1 = std::inner_product(first_sample_begin, first_sample_end, first_sample_begin, 0.0);
+    FloatType magnitude_1 =
+        std::inner_product(first_sample_begin, first_sample_end, first_sample_begin, static_cast<FloatType>(0));
 
-    FloatType magnitude_2 =
-        std::inner_product(second_sample_begin, second_sample_begin + n_features, second_sample_begin, 0.0);
+    FloatType magnitude_2 = std::inner_product(
+        second_sample_begin, second_sample_begin + n_features, second_sample_begin, static_cast<FloatType>(0));
 
     if (!magnitude_1 || !magnitude_2) {
         return 0;

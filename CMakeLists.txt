@@ -21,7 +21,7 @@ set(HEADER_FILES
     include/cpp_clustering/math/random/Distributions.hpp
     include/cpp_clustering/math/random/VosesAliasMethod.hpp
 
-    include/cpp_clustering/containers/KDTree.hpp
+    # include/cpp_clustering/containers/KDTree.hpp
     include/cpp_clustering/containers/LowerTriangleMatrix.hpp
 
     include/cpp_clustering/heuristics/Heuristics.hpp

@@ -100,7 +100,7 @@ FasterMSC<Iterator>::FasterMSC(const DatasetDescriptorType&    dataset_descripto
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
-                            0);
+                            static_cast<DataType>(0));
 }
 
 template <typename Iterator>
@@ -120,7 +120,7 @@ FasterMSC<Iterator>::FasterMSC(const SecondVariantType&        pairwise_distance
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
-                            0);
+                            static_cast<DataType>(0));
 }
 
 template <typename Iterator>
