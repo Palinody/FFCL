@@ -25,8 +25,10 @@ void VosesAliasMethod::init(const std::vector<double>& weights) {
     // normalization factor: n_weights / sum(weights)
     const double norm_fact = n_weights_ / std::accumulate(weights.begin(), weights.end(), 0.0);
     // renormalization of the weights (sum(fake_probs) != 1, it's normal)
-    std::transform(
-        weights.begin(), weights.end(), fake_probs.get(), std::bind1st(std::multiplies<double>(), norm_fact));
+    std::transform(weights.begin(),
+                   weights.end(),
+                   fake_probs.get(),
+                   std::bind(std::multiplies<double>(), std::placeholders::_1, norm_fact));
 
     for (std::int64_t k = n_weights_ - 1; k >= 0; --k) {
         if (fake_probs[k] < 1.0) {

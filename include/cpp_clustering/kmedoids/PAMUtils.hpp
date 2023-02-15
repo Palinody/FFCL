@@ -5,12 +5,12 @@
 #include "cpp_clustering/heuristics/Heuristics.hpp"
 #include "cpp_clustering/math/random/Distributions.hpp"
 
-#include <algorithm>  // std::minmax_element
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <iostream>
 #include <iterator>
-#include <limits>  // std::numeric_limits<T>::max()
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <tuple>
@@ -717,9 +717,9 @@ std::vector<DataType> compute_losses_with_silhouette_medoid_removal(
 }
 
 template <typename Iterator>
-std::pair<typename Iterator::value_type, std::size_t> get_first_medoid_idx_td_pair(const Iterator& data_first,
-                                                                                   const Iterator& data_last,
-                                                                                   std::size_t     n_features) {
+std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair(const Iterator& data_first,
+                                                                                 const Iterator& data_last,
+                                                                                 std::size_t     n_features) {
     using DataType = typename Iterator::value_type;
 
     const std::size_t n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
@@ -750,7 +750,7 @@ std::pair<typename Iterator::value_type, std::size_t> get_first_medoid_idx_td_pa
 }
 
 template <typename Iterator>
-std::pair<typename Iterator::value_type, std::size_t> get_first_medoid_idx_td_pair(
+std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix) {
     using DataType = typename Iterator::value_type;
 

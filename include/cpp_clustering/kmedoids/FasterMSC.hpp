@@ -6,12 +6,12 @@
 #include "cpp_clustering/kmedoids/PAMUtils.hpp"
 #include "cpp_clustering/math/random/Distributions.hpp"
 
-#include <algorithm>  // std::minmax_element
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <iostream>
 #include <iterator>
-#include <limits>  // std::numeric_limits<T>::max()
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <tuple>

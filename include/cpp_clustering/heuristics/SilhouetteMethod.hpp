@@ -2,10 +2,10 @@
 
 #include "cpp_clustering/common/Utils.hpp"
 
-#include <algorithm>  // std::minmax_element
+#include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <limits>  // std::numeric_limits<T>::max()
+#include <limits>
 #include <vector>
 
 namespace cpp_clustering::silhouette_method {

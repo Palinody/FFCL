@@ -95,6 +95,43 @@ void fit_once(const InputsIterator& inputs_first,
 #endif
 }
 
+template <typename InputsIterator, typename LabelsIterator>
+void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
+                                            const InputsIterator& inputs_last,
+                                            LabelsIterator        labels_first,
+                                            LabelsIterator        labels_last,
+                                            std::size_t           n_medoids,
+                                            std::size_t           n_features) {
+    using KMedoids = cpp_clustering::KMedoids<dType, true>;
+    // using PAM = cpp_clustering::FasterMSC;
+
+    auto kmedoids = KMedoids(n_medoids, n_features);
+
+    kmedoids.set_options(
+        /*KMedoids options=*/KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
+
+    const auto pairwise_distance_matrix =
+        cpp_clustering::containers::LowerTriangleMatrix(inputs_first, inputs_last, n_features);
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    kmedoids.fit<cpp_clustering::FasterMSC>(pairwise_distance_matrix);
+
+#if defined(VERBOSE) && VERBOSE == true
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+#endif
+
+    timer.reset();
+
+    const auto best_match_count_remap =
+        kmedoids.remap_centroid_to_label_index(pairwise_distance_matrix, labels_first, labels_last, n_medoids);
+
+#if defined(VERBOSE) && VERBOSE == true
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+#endif
+    std::cout << "Best match count remap: " << best_match_count_remap << "\n";
+}
+
 void distance_matrix_benchmark() {
     fs::path filename = "mnist.txt";
 
@@ -122,6 +159,9 @@ void mnist_train_benchmark() {
     // const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
 
     fit_once(data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features);
+
+    fit_once_with_pairwise_distance_matrix(
+        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features);
 
     // write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     // write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));

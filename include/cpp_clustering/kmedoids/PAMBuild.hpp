@@ -17,7 +17,7 @@ build(const Iterator& samples_first, const Iterator& samples_last, std::size_t n
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
     // the first medoid chosen associated with the current total deviation cost
-    auto [total_deviation, medoid_index_first] = get_first_medoid_idx_td_pair(samples_first, samples_last, n_features);
+    auto [total_deviation, medoid_index_first] = first_medoid_td_index_pair(samples_first, samples_last, n_features);
     // Create and put the first chosen medoid index in the medoid indices vector
     auto medoids_indices = std::vector<std::size_t>(1, medoid_index_first);
 
@@ -85,7 +85,7 @@ std::tuple<typename Iterator::value_type, std::vector<std::size_t>, std::vector<
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
 
     // the first medoid chosen associated with the current total deviation cost
-    auto [total_deviation, medoid_index_first] = get_first_medoid_idx_td_pair(pairwise_distance_matrix);
+    auto [total_deviation, medoid_index_first] = first_medoid_td_index_pair(pairwise_distance_matrix);
     // Create and put the first chosen medoid index in the medoid indices vector
     auto medoids_indices = std::vector<std::size_t>(1, medoid_index_first);
 
