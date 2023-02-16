@@ -29,7 +29,7 @@ class Timer {
     inline std::uint64_t elapsed();
 
     template <typename SleepDurationType>
-    inline void sleep(std::uint64_t t);
+    inline void sleep(std::uint64_t duration);
 
     inline void print_elapsed_seconds(const std::uint8_t n_decimals = 3);
 
