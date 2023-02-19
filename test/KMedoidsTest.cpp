@@ -104,7 +104,8 @@ class KMedoidsErrorsTest : public ::testing::Test {
         kmedoids.set_options(
             /*KMedoids options=*/KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
 
-        const auto centroids = kmedoids.fit<cpp_clustering::FasterPAM>(inputs_first, inputs_last);
+        const auto medoids   = kmedoids.fit<cpp_clustering::FasterPAM>(inputs_first, inputs_last);
+        const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
     }
 
     template <typename InputsIterator, typename LabelsIterator>
@@ -133,7 +134,8 @@ class KMedoidsErrorsTest : public ::testing::Test {
         kmedoids.set_options(
             /*KMedoids options=*/KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
 
-        const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+        const auto medoids   = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+        const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
         // const auto [best_match_count, swapped_centroids] =
         // kmedoids.swap_to_best_count_match(inputs_first, inputs_last, labels_first, labels_last);
@@ -176,12 +178,15 @@ class KMedoidsErrorsTest : public ::testing::Test {
                 .patience(0)
                 .n_init(10));
 
-        const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+        const auto medoids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
 
         // const auto predictions = kmedoids.predict(inputs_first, inputs_last);
 
-        const auto [best_match_count, swapped_centroids] =
+        const auto [best_match_count, swapped_medoids] =
             kmedoids.remap_centroid_to_label_index(inputs_first, inputs_last, labels_first, labels_last, n_medoids);
+
+        const auto swapped_centroids =
+            pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, swapped_medoids);
 
         const auto new_predictions = kmedoids.predict(inputs_first, inputs_last);
 

@@ -75,16 +75,18 @@ class KMedoids {
     KMedoids<T, PrecomputePairwiseDistanceMatrix>& set_options(const Options& options);
 
     template <template <typename> class PAMClass, typename SamplesIterator>
-    std::vector<T> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
+    std::vector<std::size_t> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
 
     template <typename SamplesIterator>
-    std::vector<T> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
+    std::vector<std::size_t> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
 
     template <template <typename> class PAMClass, typename SamplesIterator>
-    void fit(const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix);
+    std::vector<std::size_t> fit(
+        const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix);
 
     template <typename SamplesIterator>
-    void fit(const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix);
+    std::vector<std::size_t> fit(
+        const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix);
 
     template <typename SamplesIterator>
     std::vector<T> forward(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
@@ -101,35 +103,32 @@ class KMedoids {
         const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) const;
 
     template <typename SamplesIterator, typename LabelsIterator>
-    std::pair<std::size_t, std::vector<T>> swap_to_best_count_match(const SamplesIterator& samples_first,
-                                                                    const SamplesIterator& samples_last,
-                                                                    LabelsIterator         labels_first,
-                                                                    LabelsIterator         labels_last);
+    std::pair<std::size_t, std::vector<std::size_t>> swap_to_best_count_match(const SamplesIterator& samples_first,
+                                                                              const SamplesIterator& samples_last,
+                                                                              LabelsIterator         labels_first,
+                                                                              LabelsIterator         labels_last);
 
     template <typename SamplesIterator, typename LabelsIterator>
-    std::size_t swap_to_best_count_match(
+    std::pair<std::size_t, std::vector<std::size_t>> swap_to_best_count_match(
         const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix,
         LabelsIterator                                                          labels_first,
         LabelsIterator                                                          labels_last);
 
     template <typename SamplesIterator, typename LabelsIterator>
-    std::pair<std::size_t, std::vector<T>> remap_centroid_to_label_index(const SamplesIterator& samples_first,
-                                                                         const SamplesIterator& samples_last,
-                                                                         LabelsIterator         labels_first,
-                                                                         LabelsIterator         labels_last,
-                                                                         std::size_t            n_classes = 0);
+    std::pair<std::size_t, std::vector<std::size_t>> remap_centroid_to_label_index(const SamplesIterator& samples_first,
+                                                                                   const SamplesIterator& samples_last,
+                                                                                   LabelsIterator         labels_first,
+                                                                                   LabelsIterator         labels_last,
+                                                                                   std::size_t n_classes = 0);
 
     template <typename SamplesIterator, typename LabelsIterator>
-    std::size_t remap_centroid_to_label_index(
+    std::pair<std::size_t, std::vector<std::size_t>> remap_centroid_to_label_index(
         const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix,
         LabelsIterator                                                          labels_first,
         LabelsIterator                                                          labels_last,
         std::size_t                                                             n_classes = 0);
 
   private:
-    template <typename SamplesIterator>
-    std::vector<T> medoids_to_centroids(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
-
     // assign each sample (S) to its closest medoid (M)
     template <typename SamplesIterator>
     std::vector<std::size_t> assign(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
@@ -188,22 +187,6 @@ KMedoids<T, PrecomputePairwiseDistanceMatrix>& KMedoids<T, PrecomputePairwiseDis
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::medoids_to_centroids(
-    const SamplesIterator& data_first,
-    const SamplesIterator& data_last) const {
-    auto clusters = std::vector<T>(n_medoids_ * n_features_);
-
-    for (std::size_t k = 0; k < n_medoids_; ++k) {
-        const std::size_t sample_index = medoids_[k];
-        std::copy(data_first + sample_index * n_features_,
-                  data_first + sample_index * n_features_ + n_features_,
-                  clusters.begin() + k * n_features_);
-    }
-    return clusters;
-}
-
-template <typename T, bool PrecomputePairwiseDistanceMatrix>
-template <typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::assign(const SamplesIterator& data_first,
                                                                                const SamplesIterator& data_last) const {
     return pam::utils::samples_to_nth_nearest_medoid_indices(
@@ -219,8 +202,8 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::assign(
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <template <typename> class PAMClass, typename SamplesIterator>
-std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesIterator& data_first,
-                                                                  const SamplesIterator& data_last) {
+std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesIterator& data_first,
+                                                                            const SamplesIterator& data_last) {
     // contains the medoids indices for each tries which number is defined by options_.n_init_ if medoids_
     // werent already assigned
     auto medoids_indices_candidates = std::vector<std::vector<std::size_t>>();
@@ -299,20 +282,20 @@ std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesI
     const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
     // return best centroids accordingly to the lowest loss
     medoids_ = medoids_indices_candidates[min_loss_index];
-    return medoids_to_centroids(data_first, data_last);
+    return medoids_;
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesIterator& data_first,
-                                                                  const SamplesIterator& data_last) {
+std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesIterator& data_first,
+                                                                            const SamplesIterator& data_last) {
     // execute fit function with a default PAM algorithm
     return fit<cpp_clustering::FasterPAM>(data_first, data_last);
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <template <typename> class PAMClass, typename SamplesIterator>
-void KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
+std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
     const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) {
     // contains the medoids indices for each tries which number is defined by options_.n_init_ if medoids_
     // werent already assigned
@@ -382,14 +365,15 @@ void KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
     const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
     // update the medoids accordingly to the lowest loss
     medoids_ = medoids_indices_candidates[min_loss_index];
+    return medoids_;
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-void KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
+std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
     const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) {
     // execute fit function with a default PAM algorithm
-    fit<cpp_clustering::FasterPAM>(pairwise_distance_matrix);
+    return fit<cpp_clustering::FasterPAM>(pairwise_distance_matrix);
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
@@ -424,11 +408,11 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::predict(
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator, typename LabelsIterator>
-std::pair<std::size_t, std::vector<T>> KMedoids<T, PrecomputePairwiseDistanceMatrix>::swap_to_best_count_match(
-    const SamplesIterator& samples_first,
-    const SamplesIterator& samples_last,
-    LabelsIterator         labels_first,
-    LabelsIterator         labels_last) {
+std::pair<std::size_t, std::vector<std::size_t>>
+KMedoids<T, PrecomputePairwiseDistanceMatrix>::swap_to_best_count_match(const SamplesIterator& samples_first,
+                                                                        const SamplesIterator& samples_last,
+                                                                        LabelsIterator         labels_first,
+                                                                        LabelsIterator         labels_last) {
     const std::size_t n_labels      = std::distance(labels_first, labels_last);
     auto              medoids_order = std::vector<std::size_t>(n_medoids_);
     // Initial order is in increasing order (no swap)
@@ -441,7 +425,7 @@ std::pair<std::size_t, std::vector<T>> KMedoids<T, PrecomputePairwiseDistanceMat
 
     // if the first best math count matches all the labels then theres nothing to swap
     if (best_match_count == n_labels) {
-        return {best_match_count, medoids_to_centroids(samples_first, samples_last)};
+        return {best_match_count, pam::utils::medoids_to_centroids(samples_first, samples_last, n_features_, medoids_)};
     }
     // keep a record of the best bedoid order
     auto best_medoids_indices = medoids_;
@@ -463,19 +447,21 @@ std::pair<std::size_t, std::vector<T>> KMedoids<T, PrecomputePairwiseDistanceMat
 
             // if the count matches all the labels then we are sure that theres no best swap
             if (match_count_candidate == n_labels) {
-                return {best_match_count, medoids_to_centroids(samples_first, samples_last)};
+                return {best_match_count,
+                        pam::utils::medoids_to_centroids(samples_first, samples_last, n_features_, medoids_)};
             }
         }
     }
     // finally save the best medoids order
     medoids_ = best_medoids_indices;
     // return the best match count with its associated reordered centroids
-    return {best_match_count, medoids_to_centroids(samples_first, samples_last)};
+    return {best_match_count, pam::utils::medoids_to_centroids(samples_first, samples_last, n_features_, medoids_)};
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator, typename LabelsIterator>
-std::size_t KMedoids<T, PrecomputePairwiseDistanceMatrix>::swap_to_best_count_match(
+std::pair<std::size_t, std::vector<std::size_t>>
+KMedoids<T, PrecomputePairwiseDistanceMatrix>::swap_to_best_count_match(
     const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix,
     LabelsIterator                                                          labels_first,
     LabelsIterator                                                          labels_last) {
@@ -491,7 +477,7 @@ std::size_t KMedoids<T, PrecomputePairwiseDistanceMatrix>::swap_to_best_count_ma
 
     // if the first best math count matches all the labels then theres nothing to swap
     if (best_match_count == n_labels) {
-        return best_match_count;
+        return {best_match_count, medoids_};
     }
     // keep a record of the best bedoid order
     auto best_medoids_indices = medoids_;
@@ -513,14 +499,14 @@ std::size_t KMedoids<T, PrecomputePairwiseDistanceMatrix>::swap_to_best_count_ma
 
             // if the count matches all the labels then we are sure that theres no best swap
             if (match_count_candidate == n_labels) {
-                return best_match_count;
+                return {best_match_count, medoids_};
             }
         }
     }
     // finally save the best medoids order
     medoids_ = best_medoids_indices;
     // return the best match count with its associated reordered centroids
-    return best_match_count;
+    return {best_match_count, medoids_};
 }
 
 template <typename T>
@@ -544,12 +530,12 @@ void print(const Container& container) {
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator, typename LabelsIterator>
-std::pair<std::size_t, std::vector<T>> KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(
-    const SamplesIterator& samples_first,
-    const SamplesIterator& samples_last,
-    LabelsIterator         labels_first,
-    LabelsIterator         labels_last,
-    std::size_t            n_classes) {
+std::pair<std::size_t, std::vector<std::size_t>>
+KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(const SamplesIterator& samples_first,
+                                                                             const SamplesIterator& samples_last,
+                                                                             LabelsIterator         labels_first,
+                                                                             LabelsIterator         labels_last,
+                                                                             std::size_t            n_classes) {
     // find the max element in the labels iterator if its not provided. Add one because the max element is an index
     n_classes = n_classes ? n_classes : 1 + *std::max_element(labels_first, labels_last);
 
@@ -600,12 +586,13 @@ std::pair<std::size_t, std::vector<T>> KMedoids<T, PrecomputePairwiseDistanceMat
     medoids_ = common::utils::permutation_from_indices(medoids_orig, medoids_order);
 
     // return the best match count with its associated reordered medoids
-    return {best_match_count, medoids_to_centroids(samples_first, samples_last)};
+    return {best_match_count, medoids_};
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator, typename LabelsIterator>
-std::size_t KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(
+std::pair<std::size_t, std::vector<std::size_t>>
+KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(
     const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix,
     LabelsIterator                                                          labels_first,
     LabelsIterator                                                          labels_last,
@@ -659,7 +646,7 @@ std::size_t KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_lab
     // finally save the best medoids order
     medoids_ = common::utils::permutation_from_indices(medoids_orig, medoids_order);
     // return the best match count
-    return best_match_count;
+    return {best_match_count, medoids_};
 }
 
 }  // namespace cpp_clustering

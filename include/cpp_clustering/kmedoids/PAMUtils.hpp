@@ -41,10 +41,10 @@ template <typename Iterator>
 std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&                 samples_first,
                                                            const Iterator&                 samples_last,
                                                            std::size_t                     n_features,
-                                                           const std::vector<std::size_t>& medoids_indices) {
+                                                           const std::vector<std::size_t>& medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -63,8 +63,8 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
         DataType    first_min_distance = std::numeric_limits<DataType>::max();
         std::size_t first_min_index    = 0;
 
-        for (std::size_t idx = 0; idx < medoids_indices.size(); ++idx) {
-            const auto nearest_candidate = compute_distance(medoids_indices[idx], sample_idx);
+        for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
+            const auto nearest_candidate = compute_distance(medoids[idx], sample_idx);
 
             if (nearest_candidate < first_min_distance) {
                 first_min_distance = nearest_candidate;
@@ -80,10 +80,10 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
 template <typename Iterator>
 std::vector<std::size_t> samples_to_nearest_medoid_indices(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices) {
+    const std::vector<std::size_t>&                                  medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
@@ -95,8 +95,8 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(
         DataType    first_min_distance = std::numeric_limits<DataType>::max();
         std::size_t first_min_index    = 0;
 
-        for (std::size_t idx = 0; idx < medoids_indices.size(); ++idx) {
-            const auto nearest_candidate = pairwise_distance_matrix(medoids_indices[idx], sample_idx);
+        for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
+            const auto nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_idx);
 
             if (nearest_candidate < first_min_distance) {
                 first_min_distance = nearest_candidate;
@@ -113,10 +113,10 @@ template <typename Iterator>
 std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator&                 samples_first,
                                                                   const Iterator&                 samples_last,
                                                                   std::size_t                     n_features,
-                                                                  const std::vector<std::size_t>& medoids_indices) {
+                                                                  const std::vector<std::size_t>& medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -137,8 +137,8 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
         std::size_t first_min_index     = 0;
         std::size_t second_min_index    = 0;
 
-        for (std::size_t idx = 0; idx < medoids_indices.size(); ++idx) {
-            const auto second_nearest_candidate = compute_distance(medoids_indices[idx], sample_idx);
+        for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
+            const auto second_nearest_candidate = compute_distance(medoids[idx], sample_idx);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
@@ -161,10 +161,10 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
 template <typename Iterator>
 std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices) {
+    const std::vector<std::size_t>&                                  medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
@@ -179,8 +179,8 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
         std::size_t first_min_index     = 0;
         std::size_t second_min_index    = 0;
 
-        for (std::size_t idx = 0; idx < medoids_indices.size(); ++idx) {
-            const auto second_nearest_candidate = pairwise_distance_matrix(medoids_indices[idx], sample_idx);
+        for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
+            const auto second_nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_idx);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
@@ -204,10 +204,10 @@ template <typename Iterator>
 std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&                 samples_first,
                                                                  const Iterator&                 samples_last,
                                                                  std::size_t                     n_features,
-                                                                 const std::vector<std::size_t>& medoids_indices) {
+                                                                 const std::vector<std::size_t>& medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -230,8 +230,8 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
         std::size_t second_min_index    = 0;
         std::size_t third_min_index     = 0;
 
-        for (std::size_t idx = 0; idx < medoids_indices.size(); ++idx) {
-            const auto third_nearest_candidate = compute_distance(medoids_indices[idx], sample_idx);
+        for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
+            const auto third_nearest_candidate = compute_distance(medoids[idx], sample_idx);
 
             if (third_nearest_candidate < first_min_distance) {
                 third_min_distance  = second_min_distance;
@@ -262,10 +262,10 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
 template <typename Iterator>
 std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices) {
+    const std::vector<std::size_t>&                                  medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
@@ -282,8 +282,8 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
         std::size_t second_min_index    = 0;
         std::size_t third_min_index     = 0;
 
-        for (std::size_t idx = 0; idx < medoids_indices.size(); ++idx) {
-            const auto third_nearest_candidate = pairwise_distance_matrix(medoids_indices[idx], sample_idx);
+        for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
+            const auto third_nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_idx);
 
             if (third_nearest_candidate < first_min_distance) {
                 third_min_distance  = second_min_distance;
@@ -315,23 +315,23 @@ template <typename Iterator>
 std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(const Iterator&                 samples_first,
                                                                const Iterator&                 samples_last,
                                                                std::size_t                     n_features,
-                                                               const std::vector<std::size_t>& medoids_indices,
+                                                               const std::vector<std::size_t>& medoids,
                                                                std::size_t                     nth_closest = 1) {
-    if (nth_closest == 0 || nth_closest > medoids_indices.size()) {
+    if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
 
     if (nth_closest == 1) {
-        return samples_to_nearest_medoid_indices(samples_first, samples_last, n_features, medoids_indices);
+        return samples_to_nearest_medoid_indices(samples_first, samples_last, n_features, medoids);
 
     } else if (nth_closest == 2) {
-        return samples_to_second_nearest_medoid_indices(samples_first, samples_last, n_features, medoids_indices);
+        return samples_to_second_nearest_medoid_indices(samples_first, samples_last, n_features, medoids);
 
     } else if (nth_closest == 3) {
-        return samples_to_third_nearest_medoid_indices(samples_first, samples_last, n_features, medoids_indices);
+        return samples_to_third_nearest_medoid_indices(samples_first, samples_last, n_features, medoids);
 
     } else {
         throw std::invalid_argument("Invalid nth_closest parameter.");
@@ -341,23 +341,23 @@ std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(const Iterator&  
 template <typename Iterator>
 std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices,
+    const std::vector<std::size_t>&                                  medoids,
     std::size_t                                                      nth_closest = 1) {
-    if (nth_closest == 0 || nth_closest > medoids_indices.size()) {
+    if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
 
     if (nth_closest == 1) {
-        return samples_to_nearest_medoid_indices(pairwise_distance_matrix, medoids_indices);
+        return samples_to_nearest_medoid_indices(pairwise_distance_matrix, medoids);
 
     } else if (nth_closest == 2) {
-        return samples_to_second_nearest_medoid_indices(pairwise_distance_matrix, medoids_indices);
+        return samples_to_second_nearest_medoid_indices(pairwise_distance_matrix, medoids);
 
     } else if (nth_closest == 3) {
-        return samples_to_third_nearest_medoid_indices(pairwise_distance_matrix, medoids_indices);
+        return samples_to_third_nearest_medoid_indices(pairwise_distance_matrix, medoids);
 
     } else {
         throw std::invalid_argument("Invalid nth_closest parameter.");
@@ -369,10 +369,10 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
     const Iterator&                 samples_first,
     const Iterator&                 samples_last,
     std::size_t                     n_features,
-    const std::vector<std::size_t>& medoids_indices) {
+    const std::vector<std::size_t>& medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -390,7 +390,7 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
     for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
         auto first_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
-        for (const auto& medoid : medoids_indices) {
+        for (const auto& medoid : medoids) {
             const auto nearest_candidate = compute_distance(medoid, sample_idx);
 
             if (nearest_candidate < first_min_distance) {
@@ -406,10 +406,10 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices) {
+    const std::vector<std::size_t>&                                  medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
@@ -421,7 +421,7 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
     for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
         auto first_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
-        for (const auto& medoid : medoids_indices) {
+        for (const auto& medoid : medoids) {
             const auto nearest_candidate = pairwise_distance_matrix(medoid, sample_idx);
 
             if (nearest_candidate < first_min_distance) {
@@ -439,10 +439,10 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
     const Iterator&                 samples_first,
     const Iterator&                 samples_last,
     std::size_t                     n_features,
-    const std::vector<std::size_t>& medoids_indices) {
+    const std::vector<std::size_t>& medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -461,7 +461,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
         auto first_min_distance  = std::numeric_limits<DataType>::max();
         auto second_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
-        for (const auto& medoid : medoids_indices) {
+        for (const auto& medoid : medoids) {
             const auto second_nearest_candidate = compute_distance(medoid, sample_idx);
 
             if (second_nearest_candidate < first_min_distance) {
@@ -482,10 +482,10 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_distances(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices) {
+    const std::vector<std::size_t>&                                  medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
@@ -498,7 +498,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
         auto first_min_distance  = std::numeric_limits<DataType>::max();
         auto second_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
-        for (const auto& medoid : medoids_indices) {
+        for (const auto& medoid : medoids) {
             const auto second_nearest_candidate = pairwise_distance_matrix(medoid, sample_idx);
 
             if (second_nearest_candidate < first_min_distance) {
@@ -521,10 +521,10 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
     const Iterator&                 samples_first,
     const Iterator&                 samples_last,
     std::size_t                     n_features,
-    const std::vector<std::size_t>& medoids_indices) {
+    const std::vector<std::size_t>& medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -544,7 +544,7 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
         auto second_min_distance = std::numeric_limits<DataType>::max();
         auto third_min_distance  = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
-        for (const auto& medoid : medoids_indices) {
+        for (const auto& medoid : medoids) {
             const auto third_nearest_candidate = compute_distance(medoid, sample_idx);
 
             if (third_nearest_candidate < first_min_distance) {
@@ -570,10 +570,10 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_distances(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices) {
+    const std::vector<std::size_t>&                                  medoids) {
     using DataType = typename Iterator::value_type;
 
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
@@ -587,7 +587,7 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
         auto second_min_distance = std::numeric_limits<DataType>::max();
         auto third_min_distance  = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
-        for (const auto& medoid : medoids_indices) {
+        for (const auto& medoid : medoids) {
             const auto third_nearest_candidate = pairwise_distance_matrix(medoid, sample_idx);
 
             if (third_nearest_candidate < first_min_distance) {
@@ -615,23 +615,23 @@ std::vector<typename Iterator::value_type> samples_to_nth_nearest_medoid_distanc
     const Iterator&                 samples_first,
     const Iterator&                 samples_last,
     std::size_t                     n_features,
-    const std::vector<std::size_t>& medoids_indices,
+    const std::vector<std::size_t>& medoids,
     std::size_t                     nth_closest = 1) {
-    if (nth_closest == 0 || nth_closest > medoids_indices.size()) {
+    if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
 
     if (nth_closest == 1) {
-        return samples_to_nearest_medoid_distances(samples_first, samples_last, n_features, medoids_indices);
+        return samples_to_nearest_medoid_distances(samples_first, samples_last, n_features, medoids);
 
     } else if (nth_closest == 2) {
-        return samples_to_second_nearest_medoid_distances(samples_first, samples_last, n_features, medoids_indices);
+        return samples_to_second_nearest_medoid_distances(samples_first, samples_last, n_features, medoids);
 
     } else if (nth_closest == 3) {
-        return samples_to_third_nearest_medoid_distances(samples_first, samples_last, n_features, medoids_indices);
+        return samples_to_third_nearest_medoid_distances(samples_first, samples_last, n_features, medoids);
 
     } else {
         throw std::invalid_argument("Invalid nth_closest parameter.");
@@ -641,23 +641,23 @@ std::vector<typename Iterator::value_type> samples_to_nth_nearest_medoid_distanc
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_nth_nearest_medoid_distances(
     const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids_indices,
+    const std::vector<std::size_t>&                                  medoids,
     std::size_t                                                      nth_closest = 1) {
-    if (nth_closest == 0 || nth_closest > medoids_indices.size()) {
+    if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
-    if (medoids_indices.empty()) {
+    if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
 
     if (nth_closest == 1) {
-        return samples_to_nearest_medoid_distances(pairwise_distance_matrix, medoids_indices);
+        return samples_to_nearest_medoid_distances(pairwise_distance_matrix, medoids);
 
     } else if (nth_closest == 2) {
-        return samples_to_second_nearest_medoid_distances(pairwise_distance_matrix, medoids_indices);
+        return samples_to_second_nearest_medoid_distances(pairwise_distance_matrix, medoids);
 
     } else if (nth_closest == 3) {
-        return samples_to_third_nearest_medoid_distances(pairwise_distance_matrix, medoids_indices);
+        return samples_to_third_nearest_medoid_distances(pairwise_distance_matrix, medoids);
 
     } else {
         throw std::invalid_argument("Invalid nth_closest parameter.");
@@ -776,6 +776,24 @@ std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair
         }
     }
     return {total_deviation, selected_medoid};
+}
+
+template <typename Iterator>
+std::vector<typename Iterator::value_type> medoids_to_centroids(const Iterator&                 data_first,
+                                                                const Iterator&                 data_last,
+                                                                std::size_t                     n_features,
+                                                                const std::vector<std::size_t>& medoids) {
+    const auto n_medoids = medoids.size();
+    auto       clusters  = std::vector<typename Iterator::value_type>(n_medoids * n_features);
+
+    for (std::size_t k = 0; k < n_medoids; ++k) {
+        const std::size_t data_index = medoids[k];
+
+        std::copy(data_first + data_index * n_features,
+                  data_first + data_index * n_features + n_features,
+                  clusters.begin() + k * n_features);
+    }
+    return clusters;
 }
 
 }  // namespace pam::utils
