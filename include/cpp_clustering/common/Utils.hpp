@@ -59,9 +59,9 @@ OutputContainer abs_distances(const Iterator& data_first, const Iterator& data_l
     return abs_distances_values;
 }
 
-template <typename TargetType, typename IteratorFloat>
-std::vector<TargetType> to_type(const IteratorFloat& data_first, const IteratorFloat& data_last) {
-    using InputType = typename std::iterator_traits<IteratorFloat>::value_type;
+template <typename TargetType, typename Iterator>
+std::vector<TargetType> to_type(const Iterator& data_first, const Iterator& data_last) {
+    using InputType = typename std::iterator_traits<Iterator>::value_type;
 
     if constexpr (std::is_same_v<InputType, TargetType>) {
         // If InputType is already TargetType, return a copy of the input range
