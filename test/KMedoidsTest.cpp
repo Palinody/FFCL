@@ -131,19 +131,12 @@ class KMedoidsErrorsTest : public ::testing::Test {
 
         // KMedoids::Options().max_iter(n_iterations).n_init(10).early_stopping(true).patience(5).tolerance(0)
         // KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0)
-        kmedoids.set_options(
-            /*KMedoids options=*/KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
+        kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
 
         const auto medoids   = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
-        // const auto [best_match_count, swapped_centroids] =
-        // kmedoids.swap_to_best_count_match(inputs_first, inputs_last, labels_first, labels_last);
-
         const auto predictions = kmedoids.predict(inputs_first, inputs_last);
-
-        // std::cout << "Best match count: " << best_match_count << " / " << std::distance(labels_first, labels_last)
-        //   << std::endl;
 
         return {predictions, centroids};
     }
@@ -180,20 +173,11 @@ class KMedoidsErrorsTest : public ::testing::Test {
 
         const auto medoids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
 
-        // const auto predictions = kmedoids.predict(inputs_first, inputs_last);
+        const auto predictions = kmedoids.predict(inputs_first, inputs_last);
 
-        const auto [best_match_count, swapped_medoids] =
-            kmedoids.remap_centroid_to_label_index(inputs_first, inputs_last, labels_first, labels_last, n_medoids);
+        const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
-        const auto swapped_centroids =
-            pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, swapped_medoids);
-
-        const auto new_predictions = kmedoids.predict(inputs_first, inputs_last);
-
-        std::cout << "Best match count: " << best_match_count << " / " << std::distance(labels_first, labels_last)
-                  << std::endl;
-
-        return {new_predictions, swapped_centroids};
+        return {predictions, centroids};
     }
 
     static constexpr std::size_t n_iterations_global = 10;

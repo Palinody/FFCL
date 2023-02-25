@@ -154,7 +154,7 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    kmedoids.fit<cpp_clustering::FasterMSC>(pairwise_distance_matrix);
+    const auto medoids = kmedoids.fit<cpp_clustering::FasterMSC>(pairwise_distance_matrix);
 
 #if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -162,16 +162,11 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
 
     timer.reset();
 
-    const auto [best_match_count_remap, swapped_medoids] =
-        kmedoids.remap_centroid_to_label_index(pairwise_distance_matrix, labels_first, labels_last, n_medoids);
-
-    const auto swapped_centroids =
-        pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, swapped_medoids);
+    const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
 #if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 #endif
-    std::cout << "Best match count remap: " << best_match_count_remap << "\n";
 }
 
 void distance_matrix_benchmark() {
