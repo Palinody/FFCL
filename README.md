@@ -290,17 +290,4 @@ const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(input_data.begin(
 
 // map each data sample to its medoid
 const std::vector<std::size_t> predictions = kmedoids.predict(input_data.begin(), input_data.end());
-
-// swap the medoids if you want them to match your labels.
-// Complexity (worst case): O(n_centroids!).
-const auto [best_match_count, swapped_centroids] =
-    kmedoids.swap_to_best_count_match(input_data.begin(), input_data.end(), labels.begin(), labels.end());
-
-// another way to swap the medoids but much faster for larger n_centroids
-// Complexity (worst case): O(n_medoids * n_classes).
-const auto [best_match_count, swapped_centroids] = kmedoids.remap_centroid_to_label_index(input_data.begin(),
-                                                                                          input_data.end(),
-                                                                                          labels.begin(),
-                                                                                          labels.end(),
-                                                                                          n_classes);
 ```
