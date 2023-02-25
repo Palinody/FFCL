@@ -249,7 +249,7 @@ template <typename SamplesIterator>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first, const SamplesIterator& data_last) {
     // execute fit function with a default initialization algorithm
     // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
-    return fit(data_first, data_last, common::utils::init_uniform<SamplesIterator>);
+    return fit(data_first, data_last, cpp_clustering::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename T>

@@ -268,8 +268,8 @@ TEST_F(KMeansErrorsTest, MnistSimpleFitTest) {
     std::cout << data.size() << " | " << labels.size() << " | " << n_features << std::endl;
     const auto n_centroids = 10;
 
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, 100);
+    const auto [predictions, centroids] = simple_fit(
+        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));

@@ -59,6 +59,20 @@ OutputContainer abs_distances(const Iterator& data_first, const Iterator& data_l
     return abs_distances_values;
 }
 
+template <typename TargetType, typename IteratorFloat>
+std::vector<TargetType> to_type(const IteratorFloat& data_first, const IteratorFloat& data_last) {
+    using InputType = typename std::iterator_traits<IteratorFloat>::value_type;
+
+    if constexpr (std::is_same_v<InputType, TargetType>) {
+        // If InputType is already TargetType, return a copy of the input range
+        return std::vector<TargetType>(data_first, data_last);
+    }
+    // Input is not of type TargetType, convert to TargetType and return the result
+    auto result = std::vector<TargetType>(std::distance(data_first, data_last));
+    std::transform(data_first, data_last, result.begin(), [](const auto& x) { return static_cast<TargetType>(x); });
+    return result;
+}
+
 template <typename Iterator>
 bool are_containers_equal(Iterator first1, Iterator last1, Iterator first2, typename Iterator::value_type epsilon = 0) {
     while (first1 != last1) {
@@ -281,6 +295,51 @@ std::vector<typename IteratorFloat::value_type> init_uniform(const IteratorFloat
         }
     }
     return centroids;
+}
+
+template <typename T = double, typename IteratorFloat>
+std::vector<T> normalize_min_max(const IteratorFloat& data_first, const IteratorFloat& data_last) {
+    const auto [min, max] = std::minmax_element(data_first, data_last);
+
+    if (*min == *max) {
+        const std::size_t n_elements = std::distance(data_first, data_last);
+        // if all the values are the same distribute the weights equaly
+        return std::vector<T>(n_elements, 1.0 / n_elements);
+    }
+    auto res = std::vector<T>(data_last - data_first);
+    // closest objects get a higher score. Distance zero -> 1
+    std::transform(data_first, data_last, res.begin(), [&min, &max](const auto& dist) {
+        return static_cast<T>(1) - (dist - *min) / (*max - *min);
+    });
+    return res;
+}
+
+template <typename T = double, typename IteratorFloat>
+std::vector<T> normalize(const IteratorFloat& data_first, const IteratorFloat& data_last) {
+    auto normalized_vector = std::vector<T>(std::distance(data_first, data_last));
+
+    // Calculate the sum of all elements in the vector
+    const T sum = std::accumulate(data_first, data_last, static_cast<T>(0));
+    // Divide each element by the sum to normalize the vector
+    std::transform(data_first, data_last, normalized_vector.begin(), [sum](const T& val) { return val / sum; });
+
+    return normalized_vector;
+}
+
+template <typename Iterator>
+std::vector<typename Iterator::value_type> select_random_sample(const Iterator& data_first,
+                                                                const Iterator& data_last,
+                                                                std::size_t     n_features) {
+    using DataType = typename Iterator::value_type;
+
+    const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
+    // selects an index w.r.t. an uniform random distribution [0, n_samples)
+    auto index_select = math::random::uniform_distribution<std::size_t>(0, n_samples - 1);
+    // pick the initial index that represents the first cluster
+    std::size_t random_index = index_select();
+
+    return std::vector<DataType>(data_first + random_index * n_features,
+                                 data_first + random_index * n_features + n_features);
 }
 
 template <typename Iterator>
