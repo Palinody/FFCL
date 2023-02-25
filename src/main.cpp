@@ -1,5 +1,6 @@
 #include "cpp_clustering/common/Timer.hpp"
 #include "cpp_clustering/containers/LowerTriangleMatrix.hpp"
+#include "cpp_clustering/kmeans/KMeans.hpp"
 #include "cpp_clustering/kmedoids/KMedoids.hpp"
 #include "cpp_clustering/math/random/VosesAliasMethod.hpp"
 
@@ -72,6 +73,36 @@ void write_data(const std::vector<T>& data, std::size_t n_features, const fs::pa
 }
 
 template <typename InputsIterator, typename LabelsIterator>
+void fit_once_kmeans(const InputsIterator& inputs_first,
+                     const InputsIterator& inputs_last,
+                     LabelsIterator        labels_first,
+                     LabelsIterator        labels_last,
+                     std::size_t           n_centroids,
+                     std::size_t           n_features) {
+    using KMeans = cpp_clustering::KMeans<dType>;
+
+    auto kmeans = KMeans(n_centroids, n_features);
+
+    kmeans.set_options(
+        /*KMeans options=*/KMeans::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
+
+#if defined(VERBOSE) && VERBOSE == true
+    std::cout << "\nRunning kmeans: \n";
+#endif
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    std::cout << "HERE: "
+              << "\n";
+
+    kmeans.fit(inputs_first, inputs_last);
+
+#if defined(VERBOSE) && VERBOSE == true
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+#endif
+}
+
+template <typename InputsIterator, typename LabelsIterator>
 void fit_once(const InputsIterator& inputs_first,
               const InputsIterator& inputs_last,
               LabelsIterator        labels_first,
@@ -85,6 +116,10 @@ void fit_once(const InputsIterator& inputs_first,
 
     kmedoids.set_options(
         /*KMedoids options=*/KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
+
+#if defined(VERBOSE) && VERBOSE == true
+    std::cout << "\nRunning kmedoids dynamically: \n";
+#endif
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -112,6 +147,10 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
 
     const auto pairwise_distance_matrix =
         cpp_clustering::containers::LowerTriangleMatrix(inputs_first, inputs_last, n_features);
+
+#if defined(VERBOSE) && VERBOSE == true
+    std::cout << "\nRunning kmedoids with precomputed distances matrix: \n";
+#endif
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -157,17 +196,16 @@ void mnist_train_benchmark() {
     const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
 
-    std::cout << data.size() << " | " << labels.size() << " | " << n_features << "\n";
+    std::cout << data.size() << " | " << labels.size() << " | " << n_features << "\n\n";
     const auto n_medoids = 10;
     // const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
+
+    fit_once_kmeans(data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features);
 
     fit_once(data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features);
 
     fit_once_with_pairwise_distance_matrix(
         data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features);
-
-    // write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    // write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
 }
 
 int main() {

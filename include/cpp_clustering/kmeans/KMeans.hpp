@@ -2,9 +2,9 @@
 
 #include "cpp_clustering/common/Utils.hpp"
 #include "cpp_clustering/heuristics/Heuristics.hpp"
-#include "cpp_clustering/math/random/Distributions.hpp"
-
 #include "cpp_clustering/kmeans/KMeansPlusPlus.hpp"
+#include "cpp_clustering/kmeans/Lloyd.hpp"
+#include "cpp_clustering/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -77,12 +77,6 @@ class KMeans {
     KMeans(const KMeans&) = delete;
 
     KMeans<T>& set_options(const Options& options);
-    // loss: sum of samples distances from each centroid
-    template <typename SamplesIterator>
-    std::vector<T> distances_by_centroid(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
-
-    template <typename SamplesIterator>
-    T loss(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
 
     template <typename SamplesIterator, typename Function>
     std::vector<T> fit(const SamplesIterator& data_first,
@@ -115,16 +109,6 @@ class KMeans {
     // assign each sample (S) to its closest centroid (C)
     template <typename SamplesIterator>
     std::vector<std::size_t> assign(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
-
-    template <typename SamplesIterator>
-    std::vector<T> samples_to_nearest_centroid_distances(const SamplesIterator& data_first,
-                                                         const SamplesIterator& data_last) const;
-
-    // update the position of the centroids: C = mean(S(c))
-    template <typename SamplesIterator>
-    void update(const SamplesIterator&          data_first,
-                const SamplesIterator&          data_last,
-                const std::vector<std::size_t>& samples_to_closest_centroid_indices);
 
     void prune_unassigned_centroids();  // NOT IMPLEMENTED
 
@@ -173,48 +157,6 @@ KMeans<T>& KMeans<T>::set_options(const Options& options) {
 
 template <typename T>
 template <typename SamplesIterator>
-std::vector<T> KMeans<T>::distances_by_centroid(const SamplesIterator& data_first,
-                                                const SamplesIterator& data_last) const {
-    const std::size_t n_samples = common::utils::get_n_samples(data_first, data_last, n_features_);
-
-    // the number of samples that have been associated to a centroid
-    auto n_samples_by_centroid = std::vector<std::size_t>(n_centroids_);
-    // sum of squared errors (SSE) for each cluster center (C could vary)
-    auto centroids_sum_of_distances = std::vector<T>(n_centroids_);
-
-    for (std::size_t i = 0; i < n_samples; ++i) {
-        auto        shortest_distance  = common::utils::infinity<T>();
-        std::size_t min_centroid_index = 0;
-
-        for (std::size_t k = 0; k < n_centroids_; ++k) {
-            // sqrt(sum((a_j - b_j)²))
-            const T sample_to_centroid_distance = cpp_clustering::heuristic::heuristic(
-                /*data sample feature begin=*/data_first + i * n_features_,
-                /*data sample feature end=*/data_first + i * n_features_ + n_features_,
-                /*centroid sample feature begin=*/centroids_.begin() + k * n_features_);
-
-            if (sample_to_centroid_distance < shortest_distance) {
-                shortest_distance  = sample_to_centroid_distance;
-                min_centroid_index = k;
-            }
-        }
-        // increment the sample counter for the closest centroid
-        ++n_samples_by_centroid[min_centroid_index];
-        // sum the euclidean distances for the closest centroid
-        centroids_sum_of_distances[min_centroid_index] += shortest_distance;
-    }
-    return centroids_sum_of_distances;
-}
-
-template <typename T>
-template <typename SamplesIterator>
-T KMeans<T>::loss(const SamplesIterator& data_first, const SamplesIterator& data_last) const {
-    const auto distances = samples_to_nearest_centroid_distances(data_first, data_last);
-    return std::accumulate(distances.begin(), distances.end(), 0) / static_cast<T>(distances.size());
-}
-
-template <typename T>
-template <typename SamplesIterator>
 std::vector<std::size_t> KMeans<T>::assign(const SamplesIterator& data_first, const SamplesIterator& data_last) const {
     const std::size_t n_samples = common::utils::get_n_samples(data_first, data_last, n_features_);
 
@@ -241,66 +183,6 @@ std::vector<std::size_t> KMeans<T>::assign(const SamplesIterator& data_first, co
         samples_to_centroids_indices[i] = min_centroid_index;
     }
     return samples_to_centroids_indices;
-}
-
-template <typename T>
-template <typename SamplesIterator>
-std::vector<T> KMeans<T>::samples_to_nearest_centroid_distances(const SamplesIterator& data_first,
-                                                                const SamplesIterator& data_last) const {
-    const std::size_t n_samples = common::utils::get_n_samples(data_first, data_last, n_features_);
-
-    // keep track of the closest centroid to each sample by index
-    auto samples_to_closest_centroid_distance = std::vector<T>(n_samples);
-
-    for (std::size_t i = 0; i < n_samples; ++i) {
-        auto shortest_distance = common::utils::infinity<T>();
-
-        for (std::size_t k = 0; k < n_centroids_; ++k) {
-            const auto sample_to_centroid_distance = cpp_clustering::heuristic::heuristic(
-                /*data sample begin=*/data_first + i * n_features_,
-                /*data sample end=*/data_first + i * n_features_ + n_features_,
-                /*centroid sample feature begin=*/centroids_.begin() + k * n_features_);
-
-            shortest_distance = std::min(sample_to_centroid_distance, shortest_distance);
-        }
-        samples_to_closest_centroid_distance[i] = shortest_distance;
-    }
-    return samples_to_closest_centroid_distance;
-}
-
-template <typename T>
-template <typename SamplesIterator>
-void KMeans<T>::update(const SamplesIterator&          data_first,
-                       const SamplesIterator&          data_last,
-                       const std::vector<std::size_t>& samples_to_closest_centroid_indices) {
-    const std::size_t n_samples = common::utils::get_n_samples(data_first, data_last, n_features_);
-
-    // the number of samples that have been associated to a centroid
-    std::vector<std::size_t> n_assigned_samples_by_centroid(n_centroids_);
-    // make a container to accumulate and update the new cluster positions
-    // if a cluster k has n_assigned_samples_by_centroid[k] == 0
-    // then the previous corresponding centroid position is copied
-    auto new_centroids = std::vector<T>(n_centroids_ * n_features_);
-
-    for (std::size_t i = 0; i < n_samples; ++i) {
-        const auto curr_centroid_idx = samples_to_closest_centroid_indices[i];
-        // increment the sample counter for the closest centroid
-        ++n_assigned_samples_by_centroid[curr_centroid_idx];
-        // select the correct centroid to accumulate sample values
-        std::transform(
-            /*data_first feature of k'th centroid*/ new_centroids.begin() + curr_centroid_idx * n_features_,
-            /*data_last feature of k'th centroid*/ new_centroids.begin() + curr_centroid_idx * n_features_ +
-                n_features_,
-            /*data_first feature of current sample*/ data_first + i * n_features_,
-            /*accumulate*/ new_centroids.begin() + curr_centroid_idx * n_features_,
-            std::plus<>());
-    }
-    // kf: k(th) centroid and f(th) feature (vectorized matrix)
-    for (std::size_t kf = 0; kf < new_centroids.size(); ++kf) {
-        if (n_assigned_samples_by_centroid[kf / n_features_] > 0) {
-            centroids_[kf] = new_centroids[kf] / static_cast<T>(n_assigned_samples_by_centroid[kf / n_features_]);
-        }
-    }
 }
 
 template <typename T>
@@ -334,11 +216,17 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         // assign the centroids attributes to the current centroids
         centroids_ = centroids_candidates[k];
 
+        auto lloyd = cpp_clustering::Lloyd<SamplesIterator>({data_first, data_last, n_features_}, centroids_);
+
         std::size_t patience_iter = 0;
 
         for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
-            const auto samples_to_closest_centroid_indices = assign(data_first, data_last);
-            update(data_first, data_last, samples_to_closest_centroid_indices);
+#if defined(VERBOSE) && VERBOSE == true
+            // loss before step to also get the initial loss
+            std::cout << lloyd.total_deviation() << " ";
+#endif
+
+            centroids_ = lloyd.step();
 
             if (options_.early_stopping_ &&
                 common::utils::are_containers_equal(centroids_, centroids_candidates_prev[k], options_.tolerance_)) {
@@ -351,10 +239,16 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
             }
             centroids_candidates_prev[k] = centroids_;
         }
+#if defined(VERBOSE) && VERBOSE == true
+        // last loss
+        std::cout << lloyd.total_deviation() << " ";
+        std::cout << "\n";
+#endif
+
         // once the training loop is finished, update the centroids candidate
         centroids_candidates[k] = centroids_;
         // save the loss for each candidate
-        candidates_losses[k] = this->loss(data_first, data_last);
+        candidates_losses[k] = lloyd.total_deviation();
     }
     // find the index of the centroids container with the lowest loss
     const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());

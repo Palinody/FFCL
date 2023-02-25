@@ -4,12 +4,15 @@ project(cpp_clustering)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-Ofast -march=native -Wall -Wfatal-errors -fopenmp)
+add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
 
+# add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
 
 set(HEADER_FILES
     include/cpp_clustering/kmeans/KMeans.hpp
+    include/cpp_clustering/kmeans/Lloyd.hpp
+    include/cpp_clustering/kmeans/KMeansUtils.hpp
     include/cpp_clustering/kmeans/KMeansPlusPlus.hpp
 
     include/cpp_clustering/kmedoids/FasterMSC.hpp
@@ -39,7 +42,7 @@ include_directories(
     include
 )
 
-add_definitions(-DTHREADS_ENABLED=true)
+add_definitions(-DTHREADS_ENABLED=false)
 add_definitions(-DVERBOSE=true)
 
 # set(MODE "run-benchmarks")
@@ -126,7 +129,25 @@ elseif(MODE STREQUAL "gtest")
     )
     add_test(
         Name KMedoidsTest
-        COMMAND run_tests
+        COMMAND KMedoidsTest
+    )
+
+    add_executable(
+        KMeansTest
+
+        # ---
+        src/math/random/VosesAliasMethod.cpp
+        test/KMeansTest.cpp
+    )
+    target_link_libraries(
+        KMeansTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        Name KMeansTest
+        COMMAND KMeansTest
     )
 
 # ctest -C Debug

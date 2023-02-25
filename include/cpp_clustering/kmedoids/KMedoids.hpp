@@ -509,25 +509,6 @@ KMedoids<T, PrecomputePairwiseDistanceMatrix>::swap_to_best_count_match(
     return {best_match_count, medoids_};
 }
 
-template <typename T>
-void print_matrix(const std::vector<std::vector<T>>& matrix) {
-    for (const auto& row : matrix) {
-        for (const auto& element : row) {
-            std::cout << element << " ";
-        }
-        std::cout << "\n";
-    }
-    std::cout << "\n";
-}
-
-template <typename Container>
-void print(const Container& container) {
-    for (const auto& c : container) {
-        std::cout << c << " ";
-    }
-    std::cout << "\n";
-}
-
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator, typename LabelsIterator>
 std::pair<std::size_t, std::vector<std::size_t>>
@@ -564,10 +545,6 @@ KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(con
             std::swap(medoids_order[k], medoids_order[c]);
         }
     }
-#if defined(VERBOSE) && VERBOSE == true
-    print_matrix(medoids_to_class_counts);
-#endif
-
     std::size_t best_match_count = 0;
     for (std::size_t k = 0; k < n_medoids_; ++k) {
         const auto class_counts = medoids_to_class_counts[k];
@@ -578,10 +555,6 @@ KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(con
         medoids_order[k] = max_index;
         best_match_count += max_value;
     }
-#if defined(VERBOSE) && VERBOSE == true
-    std::cout << "medoids order after\n";
-    print(medoids_order);
-#endif
     // finally save the best medoids order
     medoids_ = common::utils::permutation_from_indices(medoids_orig, medoids_order);
 
@@ -625,10 +598,6 @@ KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(
             std::swap(medoids_order[k], medoids_order[c]);
         }
     }
-#if defined(VERBOSE) && VERBOSE == true
-    print_matrix(medoids_to_class_counts);
-#endif
-
     std::size_t best_match_count = 0;
     for (std::size_t k = 0; k < n_medoids_; ++k) {
         const auto class_counts = medoids_to_class_counts[k];
@@ -639,10 +608,6 @@ KMedoids<T, PrecomputePairwiseDistanceMatrix>::remap_centroid_to_label_index(
         medoids_order[k] = max_index;
         best_match_count += max_value;
     }
-#if defined(VERBOSE) && VERBOSE == true
-    std::cout << "medoids order after\n";
-    print(medoids_order);
-#endif
     // finally save the best medoids order
     medoids_ = common::utils::permutation_from_indices(medoids_orig, medoids_order);
     // return the best match count

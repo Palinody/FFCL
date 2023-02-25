@@ -49,7 +49,7 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
-    // the vector that will contain the distances from each sample to the nearest medoid
+    // the vector that will contain the indices from each sample to the nearest medoid
     auto nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
@@ -59,12 +59,12 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
             /*current sample begin=*/samples_first + right_idx * n_features);
     };
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         DataType    first_min_distance = std::numeric_limits<DataType>::max();
         std::size_t first_min_index    = 0;
 
         for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
-            const auto nearest_candidate = compute_distance(medoids[idx], sample_idx);
+            const auto nearest_candidate = compute_distance(medoids[idx], sample_index);
 
             if (nearest_candidate < first_min_distance) {
                 first_min_distance = nearest_candidate;
@@ -72,7 +72,7 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        nearest_medoid_indices[sample_idx] = first_min_index;
+        nearest_medoid_indices[sample_index] = first_min_index;
     }
     return nearest_medoid_indices;
 }
@@ -88,15 +88,15 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
 
-    // the vector that will contain the distances from each sample to the nearest medoid
+    // the vector that will contain the indices from each sample to the nearest medoid
     auto nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         DataType    first_min_distance = std::numeric_limits<DataType>::max();
         std::size_t first_min_index    = 0;
 
         for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
-            const auto nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_idx);
+            const auto nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_index);
 
             if (nearest_candidate < first_min_distance) {
                 first_min_distance = nearest_candidate;
@@ -104,7 +104,7 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        nearest_medoid_indices[sample_idx] = first_min_index;
+        nearest_medoid_indices[sample_index] = first_min_index;
     }
     return nearest_medoid_indices;
 }
@@ -121,7 +121,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
-    // the vector that will contain the distances from each sample to the nearest medoid
+    // the vector that will contain the indices from each sample to the second nearest medoid
     auto second_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
@@ -131,14 +131,14 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
             /*current sample begin=*/samples_first + right_idx * n_features);
     };
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         DataType    first_min_distance  = std::numeric_limits<DataType>::max();
         DataType    second_min_distance = std::numeric_limits<DataType>::max();
         std::size_t first_min_index     = 0;
         std::size_t second_min_index    = 0;
 
         for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
-            const auto second_nearest_candidate = compute_distance(medoids[idx], sample_idx);
+            const auto second_nearest_candidate = compute_distance(medoids[idx], sample_index);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
@@ -153,7 +153,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        second_nearest_medoid_indices[sample_idx] = second_min_index;
+        second_nearest_medoid_indices[sample_index] = second_min_index;
     }
     return second_nearest_medoid_indices;
 }
@@ -169,18 +169,18 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
 
-    // the vector that will contain the distances from each sample to the nearest medoid
+    // the vector that will contain the indices from each sample to the second nearest medoid
     auto second_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         DataType    first_min_distance  = std::numeric_limits<DataType>::max();
         DataType    second_min_distance = std::numeric_limits<DataType>::max();
         std::size_t first_min_index     = 0;
         std::size_t second_min_index    = 0;
 
         for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
-            const auto second_nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_idx);
+            const auto second_nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_index);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
@@ -195,7 +195,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        second_nearest_medoid_indices[sample_idx] = second_min_index;
+        second_nearest_medoid_indices[sample_index] = second_min_index;
     }
     return second_nearest_medoid_indices;
 }
@@ -212,7 +212,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
     }
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
-    // the vector that will contain the distances from each sample to the nearest medoid
+    // the vector that will contain the indices from each sample to the third nearest medoid
     auto third_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
@@ -222,7 +222,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
             /*current sample begin=*/samples_first + right_idx * n_features);
     };
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         DataType    first_min_distance  = std::numeric_limits<DataType>::max();
         DataType    second_min_distance = std::numeric_limits<DataType>::max();
         DataType    third_min_distance  = std::numeric_limits<DataType>::max();
@@ -231,7 +231,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
         std::size_t third_min_index     = 0;
 
         for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
-            const auto third_nearest_candidate = compute_distance(medoids[idx], sample_idx);
+            const auto third_nearest_candidate = compute_distance(medoids[idx], sample_index);
 
             if (third_nearest_candidate < first_min_distance) {
                 third_min_distance  = second_min_distance;
@@ -254,7 +254,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        third_nearest_medoid_indices[sample_idx] = third_min_index;
+        third_nearest_medoid_indices[sample_index] = third_min_index;
     }
     return third_nearest_medoid_indices;
 }
@@ -270,11 +270,11 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
     }
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();
 
-    // the vector that will contain the distances from each sample to the nearest medoid
+    // the vector that will contain the indices from each sample to the third nearest medoid
     auto third_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         DataType    first_min_distance  = std::numeric_limits<DataType>::max();
         DataType    second_min_distance = std::numeric_limits<DataType>::max();
         DataType    third_min_distance  = std::numeric_limits<DataType>::max();
@@ -283,7 +283,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
         std::size_t third_min_index     = 0;
 
         for (std::size_t idx = 0; idx < medoids.size(); ++idx) {
-            const auto third_nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_idx);
+            const auto third_nearest_candidate = pairwise_distance_matrix(medoids[idx], sample_index);
 
             if (third_nearest_candidate < first_min_distance) {
                 third_min_distance  = second_min_distance;
@@ -306,7 +306,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        third_nearest_medoid_indices[sample_idx] = third_min_index;
+        third_nearest_medoid_indices[sample_index] = third_min_index;
     }
     return third_nearest_medoid_indices;
 }
@@ -387,18 +387,18 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
             /*current sample begin=*/samples_first + right_idx * n_features);
     };
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto first_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
         for (const auto& medoid : medoids) {
-            const auto nearest_candidate = compute_distance(medoid, sample_idx);
+            const auto nearest_candidate = compute_distance(medoid, sample_index);
 
             if (nearest_candidate < first_min_distance) {
                 first_min_distance = nearest_candidate;
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        nearest_medoid_distances[sample_idx] = first_min_distance;
+        nearest_medoid_distances[sample_index] = first_min_distance;
     }
     return nearest_medoid_distances;
 }
@@ -418,18 +418,18 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
     auto nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto first_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
         for (const auto& medoid : medoids) {
-            const auto nearest_candidate = pairwise_distance_matrix(medoid, sample_idx);
+            const auto nearest_candidate = pairwise_distance_matrix(medoid, sample_index);
 
             if (nearest_candidate < first_min_distance) {
                 first_min_distance = nearest_candidate;
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        nearest_medoid_distances[sample_idx] = first_min_distance;
+        nearest_medoid_distances[sample_index] = first_min_distance;
     }
     return nearest_medoid_distances;
 }
@@ -457,12 +457,12 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
             /*current sample begin=*/samples_first + right_idx * n_features);
     };
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto first_min_distance  = std::numeric_limits<DataType>::max();
         auto second_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
         for (const auto& medoid : medoids) {
-            const auto second_nearest_candidate = compute_distance(medoid, sample_idx);
+            const auto second_nearest_candidate = compute_distance(medoid, sample_index);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
@@ -474,7 +474,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        second_nearest_medoid_distances[sample_idx] = second_min_distance;
+        second_nearest_medoid_distances[sample_index] = second_min_distance;
     }
     return second_nearest_medoid_distances;
 }
@@ -494,12 +494,12 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
     auto second_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto first_min_distance  = std::numeric_limits<DataType>::max();
         auto second_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
         for (const auto& medoid : medoids) {
-            const auto second_nearest_candidate = pairwise_distance_matrix(medoid, sample_idx);
+            const auto second_nearest_candidate = pairwise_distance_matrix(medoid, sample_index);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
@@ -511,7 +511,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        second_nearest_medoid_distances[sample_idx] = second_min_distance;
+        second_nearest_medoid_distances[sample_index] = second_min_distance;
     }
     return second_nearest_medoid_distances;
 }
@@ -539,13 +539,13 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
             /*current sample begin=*/samples_first + right_idx * n_features);
     };
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto first_min_distance  = std::numeric_limits<DataType>::max();
         auto second_min_distance = std::numeric_limits<DataType>::max();
         auto third_min_distance  = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
         for (const auto& medoid : medoids) {
-            const auto third_nearest_candidate = compute_distance(medoid, sample_idx);
+            const auto third_nearest_candidate = compute_distance(medoid, sample_index);
 
             if (third_nearest_candidate < first_min_distance) {
                 third_min_distance  = second_min_distance;
@@ -562,7 +562,7 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        third_nearest_medoid_distances[sample_idx] = third_min_distance;
+        third_nearest_medoid_distances[sample_index] = third_min_distance;
     }
     return third_nearest_medoid_distances;
 }
@@ -582,13 +582,13 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
     auto third_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     // iterate over all the samples
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto first_min_distance  = std::numeric_limits<DataType>::max();
         auto second_min_distance = std::numeric_limits<DataType>::max();
         auto third_min_distance  = std::numeric_limits<DataType>::max();
         // iterate over the medoids indices
         for (const auto& medoid : medoids) {
-            const auto third_nearest_candidate = pairwise_distance_matrix(medoid, sample_idx);
+            const auto third_nearest_candidate = pairwise_distance_matrix(medoid, sample_index);
 
             if (third_nearest_candidate < first_min_distance) {
                 third_min_distance  = second_min_distance;
@@ -605,7 +605,7 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
             }
         }
         // assign the current sample with its nth nearest medoid distance
-        third_nearest_medoid_distances[sample_idx] = third_min_distance;
+        third_nearest_medoid_distances[sample_index] = third_min_distance;
     }
     return third_nearest_medoid_distances;
 }
@@ -675,12 +675,12 @@ std::vector<DataType> compute_losses_with_closest_medoid_removal(
     // The positive loss of removing medoid m_i and assigning all of its members to the next best alternative
     auto delta_td_mi = std::vector<DataType>(n_medoids);
 
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the index of the nearest medoid w.r.t. the current sample
-        const auto nearest_medoid_idx = nearest_medoid_indices[sample_idx];
+        const auto nearest_medoid_idx = nearest_medoid_indices[sample_index];
         // accumulate the variation in total deviation for the correct medoid index
         delta_td_mi[nearest_medoid_idx] +=
-            second_nearest_medoid_distances[sample_idx] - nearest_medoid_distances[sample_idx];
+            second_nearest_medoid_distances[sample_index] - nearest_medoid_distances[sample_index];
     }
     return delta_td_mi;
 }
@@ -698,17 +698,17 @@ std::vector<DataType> compute_losses_with_silhouette_medoid_removal(
     // The positive loss of removing medoid m_i and assigning all of its members to the next best alternative
     auto delta_td_mi = std::vector<DataType>(n_medoids);
 
-    for (std::size_t sample_idx = 0; sample_idx < n_samples; ++sample_idx) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the index of the nearest medoid w.r.t. the current sample
-        const auto index_1 = nearest_medoid_indices[sample_idx];
+        const auto index_1 = nearest_medoid_indices[sample_index];
         // get the index of the second nearest medoid w.r.t. the current sample
-        const auto index_2 = second_nearest_medoid_indices[sample_idx];
+        const auto index_2 = second_nearest_medoid_indices[sample_index];
         // distance from the current sample to its nearest medoid
-        const auto distance_1 = nearest_medoid_distances[sample_idx];
+        const auto distance_1 = nearest_medoid_distances[sample_index];
         // distance from the current sample to its second nearest medoid
-        const auto distance_2 = second_nearest_medoid_distances[sample_idx];
+        const auto distance_2 = second_nearest_medoid_distances[sample_index];
         // distance from the current sample to its third nearest medoid
-        const auto distance_3 = third_nearest_medoid_distances[sample_idx];
+        const auto distance_3 = third_nearest_medoid_distances[sample_index];
         // accumulate the variation in total deviation for the correct medoid index
         delta_td_mi[index_1] += division(distance_1, distance_2) - division(distance_2, distance_3);
         delta_td_mi[index_2] += division(distance_1, distance_2) - division(distance_1, distance_3);
@@ -730,13 +730,13 @@ std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair
     for (std::size_t medoid_candidate_idx = 0; medoid_candidate_idx < n_samples; ++medoid_candidate_idx) {
         // total deviation accumulator w.r.t. current candidate medoid and all the other points
         DataType loss_acc = 0;
-        for (std::size_t other_sample_idx = 0; other_sample_idx < n_samples; ++other_sample_idx) {
-            // the following should be done if other_sample_idx != medoid_candidate_idx
+        for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
+            // the following should be done if other_sample_index != medoid_candidate_idx
             // but the distance would be 0 anyway with dist(other_sample, medoid_candidate)
             loss_acc += cpp_clustering::heuristic::heuristic(
                 /*first sample begin=*/data_first + medoid_candidate_idx * n_features,
                 /*first sample end=*/data_first + medoid_candidate_idx * n_features + n_features,
-                /*other sample begin=*/data_first + other_sample_idx * n_features);
+                /*other sample begin=*/data_first + other_sample_index * n_features);
         }
         // if the candidate total deviation is lower than the current total deviation
         if (loss_acc < total_deviation) {
@@ -762,10 +762,10 @@ std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair
     for (std::size_t medoid_candidate_idx = 0; medoid_candidate_idx < n_samples; ++medoid_candidate_idx) {
         // total deviation accumulator w.r.t. current candidate medoid and all the other points
         DataType loss_acc = 0;
-        for (std::size_t other_sample_idx = 0; other_sample_idx < n_samples; ++other_sample_idx) {
-            // the following should be done if other_sample_idx != medoid_candidate_idx
+        for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
+            // the following should be done if other_sample_index != medoid_candidate_idx
             // but the distance would be 0 anyway with dist(other_sample, medoid_candidate)
-            loss_acc += pairwise_distance_matrix(medoid_candidate_idx, other_sample_idx);
+            loss_acc += pairwise_distance_matrix(medoid_candidate_idx, other_sample_index);
         }
         // if the candidate total deviation is lower than the current total deviation
         if (loss_acc < total_deviation) {

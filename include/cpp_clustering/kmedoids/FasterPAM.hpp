@@ -36,16 +36,16 @@ class FasterPAM {
     using SecondVariantType  = cpp_clustering::containers::LowerTriangleMatrix<Iterator>;
     using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
 
-    FasterPAM(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids_indices);
+    FasterPAM(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids);
 
     FasterPAM(const DatasetDescriptorType&    dataset_descriptor,
-              const std::vector<std::size_t>& medoids_indices,
+              const std::vector<std::size_t>& medoids,
               const DataType&                 loss);
 
-    FasterPAM(const SecondVariantType& pairwise_distance_matrix, const std::vector<std::size_t>& medoids_indices);
+    FasterPAM(const SecondVariantType& pairwise_distance_matrix, const std::vector<std::size_t>& medoids);
 
     FasterPAM(const SecondVariantType&        pairwise_distance_matrix,
-              const std::vector<std::size_t>& medoids_indices,
+              const std::vector<std::size_t>& medoids,
               const DataType&                 loss);
 
     FasterPAM(const FasterPAM&) = delete;
@@ -59,11 +59,11 @@ class FasterPAM {
         Buffers(const Iterator&                 samples_first,
                 const Iterator&                 samples_last,
                 std::size_t                     n_features,
-                const std::vector<std::size_t>& medoids_indices);
+                const std::vector<std::size_t>& medoids);
 
-        Buffers(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids_indices);
+        Buffers(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids);
 
-        Buffers(const SecondVariantType& pairwise_distance_matrix, const std::vector<std::size_t>& medoids_indices);
+        Buffers(const SecondVariantType& pairwise_distance_matrix, const std::vector<std::size_t>& medoids);
 
         Buffers(const Buffers&) = delete;
 
@@ -88,9 +88,8 @@ class FasterPAM {
 };
 
 template <typename Iterator>
-FasterPAM<Iterator>::FasterPAM(const DatasetDescriptorType&    dataset_descriptor,
-                               const std::vector<std::size_t>& medoids_indices)
-  : FasterPAM<Iterator>::FasterPAM(dataset_descriptor, medoids_indices, common::utils::infinity<DataType>()) {
+FasterPAM<Iterator>::FasterPAM(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids)
+  : FasterPAM<Iterator>::FasterPAM(dataset_descriptor, medoids, common::utils::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
@@ -99,18 +98,18 @@ FasterPAM<Iterator>::FasterPAM(const DatasetDescriptorType&    dataset_descripto
 
 template <typename Iterator>
 FasterPAM<Iterator>::FasterPAM(const DatasetDescriptorType&    dataset_descriptor,
-                               const std::vector<std::size_t>& medoids_indices,
+                               const std::vector<std::size_t>& medoids,
                                const DataType&                 loss)
   : storage_variant_{FirstVariantType(dataset_descriptor)}
   , n_samples_{std::get<FirstVariantType>(storage_variant_).n_samples()}
-  , medoids_{medoids_indices}
+  , medoids_{medoids}
   , buffers_ptr_{std::make_unique<Buffers>(dataset_descriptor, medoids_)}
   , loss_{loss} {}
 
 template <typename Iterator>
 FasterPAM<Iterator>::FasterPAM(const SecondVariantType&        pairwise_distance_matrix,
-                               const std::vector<std::size_t>& medoids_indices)
-  : FasterPAM<Iterator>::FasterPAM(pairwise_distance_matrix, medoids_indices, common::utils::infinity<DataType>()) {
+                               const std::vector<std::size_t>& medoids)
+  : FasterPAM<Iterator>::FasterPAM(pairwise_distance_matrix, medoids, common::utils::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
@@ -119,11 +118,11 @@ FasterPAM<Iterator>::FasterPAM(const SecondVariantType&        pairwise_distance
 
 template <typename Iterator>
 FasterPAM<Iterator>::FasterPAM(const SecondVariantType&        pairwise_distance_matrix,
-                               const std::vector<std::size_t>& medoids_indices,
+                               const std::vector<std::size_t>& medoids,
                                const DataType&                 loss)
   : storage_variant_{pairwise_distance_matrix}
   , n_samples_{std::get<SecondVariantType>(storage_variant_).n_samples()}
-  , medoids_{medoids_indices}
+  , medoids_{medoids}
   , buffers_ptr_{std::make_unique<Buffers>(pairwise_distance_matrix, medoids_)}
   , loss_{loss} {}
 
@@ -309,63 +308,63 @@ template <typename Iterator>
 FasterPAM<Iterator>::Buffers::Buffers(const Iterator&                 samples_first,
                                       const Iterator&                 samples_last,
                                       std::size_t                     n_features,
-                                      const std::vector<std::size_t>& medoids_indices)
+                                      const std::vector<std::size_t>& medoids)
   : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
                                                                                          samples_last,
                                                                                          n_features,
-                                                                                         medoids_indices,
+                                                                                         medoids,
                                                                                          /*n_closest=*/1)}
   , samples_to_second_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
                                                                                                 samples_last,
                                                                                                 n_features,
-                                                                                                medoids_indices,
+                                                                                                medoids,
                                                                                                 /*n_closest=*/2)}
   , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
                                                                                              samples_last,
                                                                                              n_features,
-                                                                                             medoids_indices,
+                                                                                             medoids,
                                                                                              /*n_closest=*/1)}
   , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
                                                                                                     samples_last,
                                                                                                     n_features,
-                                                                                                    medoids_indices,
+                                                                                                    medoids,
                                                                                                     /*n_closest=*/2)}
   , losses_with_closest_medoid_removal_{
         pam::utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
                                                                          samples_to_nearest_medoid_distances_,
                                                                          samples_to_second_nearest_medoid_distances_,
-                                                                         medoids_indices.size())} {}
+                                                                         medoids.size())} {}
 
 template <typename Iterator>
 FasterPAM<Iterator>::Buffers::Buffers(const DatasetDescriptorType&    dataset_descriptor,
-                                      const std::vector<std::size_t>& medoids_indices)
+                                      const std::vector<std::size_t>& medoids)
   : FasterPAM<Iterator>::Buffers::Buffers(std::get<0>(dataset_descriptor),
                                           std::get<1>(dataset_descriptor),
                                           std::get<2>(dataset_descriptor),
-                                          medoids_indices) {}
+                                          medoids) {}
 
 template <typename Iterator>
 FasterPAM<Iterator>::Buffers::Buffers(const SecondVariantType&        pairwise_distance_matrix,
-                                      const std::vector<std::size_t>& medoids_indices)
+                                      const std::vector<std::size_t>& medoids)
   : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix,
-                                                                                         medoids_indices,
+                                                                                         medoids,
                                                                                          /*n_closest=*/1)}
   , samples_to_second_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(
         pairwise_distance_matrix,
-        medoids_indices,
+        medoids,
         /*n_closest=*/2)}
   , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(pairwise_distance_matrix,
-                                                                                             medoids_indices,
+                                                                                             medoids,
                                                                                              /*n_closest=*/1)}
   , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(
         pairwise_distance_matrix,
-        medoids_indices,
+        medoids,
         /*n_closest=*/2)}
   , losses_with_closest_medoid_removal_{
         pam::utils::compute_losses_with_closest_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
                                                                          samples_to_nearest_medoid_distances_,
                                                                          samples_to_second_nearest_medoid_distances_,
-                                                                         medoids_indices.size())} {}
+                                                                         medoids.size())} {}
 
 template <typename Iterator>
 void FasterPAM<Iterator>::Buffers::update_losses_with_closest_medoid_removal(std::size_t n_medoids) {

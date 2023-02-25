@@ -35,7 +35,7 @@ std::vector<typename IteratorFloat::value_type> compute_euclidean_distances(Iter
     auto distances = std::vector<FloatType>(n_samples);
 
     for (std::size_t i = 0; i < n_samples; ++i) {
-        distances[i] = cpp_clustering::heuristic::faster_euclidean_distance(
+        distances[i] = cpp_clustering::heuristic::euclidean_distance(
             data_first + i * n_features, data_first + i * n_features + n_features, sample_first);
     }
     return distances;

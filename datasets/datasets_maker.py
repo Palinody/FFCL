@@ -40,7 +40,7 @@ TYPE = np.float32
 n_samples = 1500
 # None to load everything else specify
 n_samples_mnist = None
-n_samples_mnist = 15000
+n_samples_mnist = 1500
 
 np.random.seed(0)
 random_state = 1
@@ -140,6 +140,13 @@ def normalize_dataset(inputs, labels, scale=1, shift=0):
     return inputs, labels
 
 
+def normalize_mnist(inputs, labels):
+    # normalize dataset for easier parameter selection
+    inputs = (inputs / 255).astype(TYPE)
+    labels = labels.reshape(-1, 1).astype(np.int64)
+    return inputs, labels
+
+
 def normalize_dataset_with_imbalances(inputs):
     ratio1 = 0.3333
     ratio2 = 0.0666
@@ -220,9 +227,8 @@ def write_datasets(root_folder):
     X, y = datasets.fetch_openml(
         "mnist_784", return_X_y=True, parser="auto", as_frame=False
     )
-    X, y = normalize_dataset(
-        X[:n_samples_mnist, :], y[:n_samples_mnist], scale=SCALE_MULTIPLIER, shift=SHIFT
-    )
+    X, y = normalize_mnist(X[:n_samples_mnist, :], y[:n_samples_mnist])
+
     save_dataset(
         X,
         y,
