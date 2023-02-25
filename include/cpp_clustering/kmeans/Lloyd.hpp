@@ -96,7 +96,7 @@ typename Lloyd<Iterator>::DataType Lloyd<Iterator>::total_deviation() {
 
 template <typename Iterator>
 std::vector<typename Lloyd<Iterator>::DataType> Lloyd<Iterator>::step() {
-    const auto& nearest_centroid_indices = buffers_ptr_->samples_to_nearest_centroid_indices_;
+    const auto& samples_to_nearest_centroid_indices = buffers_ptr_->samples_to_nearest_centroid_indices_;
 
     const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
     const std::size_t n_centroids                        = centroids_.size() / n_features;
@@ -107,7 +107,7 @@ std::vector<typename Lloyd<Iterator>::DataType> Lloyd<Iterator>::step() {
 
     // accumulate the positions the samples w.r.t. their clusters and count the clusters sizes
     for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
-        const auto centroid_index = nearest_centroid_indices[sample_index];
+        const auto centroid_index = samples_to_nearest_centroid_indices[sample_index];
 
         ++cluster_sizes[centroid_index];
 

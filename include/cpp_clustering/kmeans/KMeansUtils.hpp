@@ -75,31 +75,4 @@ std::vector<typename Iterator::value_type> samples_to_nearest_centroid_distances
     return nearest_centroid_distances;
 }
 
-/*
-template <typename Iterator>
-std::vector<typename Iterator::value_type> samples_to_nearest_centroid_distances(
-    const Iterator&                                   data_first,
-    const Iterator&                                   data_last,
-    std::size_t                                       n_features,
-    const std::vector<typename Iterator::value_type>& centroids) {
-    using DataType = typename Iterator::value_type;
-
-    const auto nearest_centroid_indices =
-        samples_to_nearest_centroid_indices(data_first, data_last, n_features, centroids);
-
-    std::vector<DataType> nearest_centroid_distances(nearest_centroid_indices.size());
-
-    for (std::size_t sample_index = 0; sample_index < nearest_centroid_indices.size(); ++sample_index) {
-        const std::size_t centroid_index = nearest_centroid_indices[sample_index];
-
-        const auto distance = cpp_clustering::heuristic::heuristic(data_first + sample_index * n_features,
-                                                                   data_first + sample_index * n_features + n_features,
-                                                                   centroids.begin() + centroid_index * n_features);
-        nearest_centroid_distances[sample_index] = distance;
-    }
-
-    return nearest_centroid_distances;
-}
-*/
-
 }  // namespace kmeans::utils
