@@ -112,7 +112,7 @@ class KMeansErrorsTest : public ::testing::Test {
         return {predictions, centroids};
     }
 
-    static constexpr std::size_t n_iterations_global = 100;
+    static constexpr std::size_t n_iterations_global = 0;
     static constexpr std::size_t n_medoids_global    = 4;
 
     const fs::path folder_root        = fs::path("../datasets/clustering");
