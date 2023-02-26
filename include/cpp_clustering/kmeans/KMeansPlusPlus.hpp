@@ -66,7 +66,9 @@ std::vector<typename IteratorFloat::value_type> make_centroids(const IteratorFlo
 /**
  * @brief The second version of kmeans++, which weights subsequent centroids based only on the distance to the previous
  * centroid, can be faster since it only requires evaluating the distance to a single previous centroid for each new
- * centroid. However, this approach may be more prone to getting stuck in local minima, since it does not take into
+ * centroid.
+ *
+ * However, this approach may be more prone to getting stuck in local minima, since it does not take into
  * account the overall distribution of centroids.
  *
  * @tparam IteratorFloat
