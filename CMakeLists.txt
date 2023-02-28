@@ -110,8 +110,9 @@ elseif(MODE STREQUAL "gtest")
     # -------------------------------
     enable_testing()
 
-    # add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
-    add_compile_options(-std=c++17 -g)
+    add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
+
+    # add_compile_options(-std=c++17 -g)
     include(CTest)
 
     # include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
