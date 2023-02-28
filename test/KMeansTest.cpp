@@ -103,7 +103,7 @@ class KMeansErrorsTest : public ::testing::Test {
         auto kmeans = KMeans(n_centroids, n_features);
 
         kmeans.set_options(
-            /*KMeans options=*/KMeans::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(10));
+            /*KMeans options=*/KMeans::Options().max_iter(n_iterations).early_stopping(false).patience(0).n_init(1));
 
         const auto centroids = kmeans.fit(inputs_first, inputs_last);
 
@@ -112,7 +112,7 @@ class KMeansErrorsTest : public ::testing::Test {
         return {predictions, centroids};
     }
 
-    static constexpr std::size_t n_iterations_global = 0;
+    static constexpr std::size_t n_iterations_global = 10;
     static constexpr std::size_t n_medoids_global    = 4;
 
     const fs::path folder_root        = fs::path("../datasets/clustering");

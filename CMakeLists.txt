@@ -4,14 +4,14 @@ project(cpp_clustering)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
-
-# add_compile_options(-std=c++17 -g -pg)
+# add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
+add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
 
 set(HEADER_FILES
     include/cpp_clustering/kmeans/KMeans.hpp
     include/cpp_clustering/kmeans/Lloyd.hpp
+    include/cpp_clustering/kmeans/Hamerly.hpp
     include/cpp_clustering/kmeans/KMeansUtils.hpp
     include/cpp_clustering/kmeans/KMeansPlusPlus.hpp
 

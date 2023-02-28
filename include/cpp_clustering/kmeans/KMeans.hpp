@@ -2,6 +2,7 @@
 
 #include "cpp_clustering/common/Utils.hpp"
 #include "cpp_clustering/heuristics/Heuristics.hpp"
+#include "cpp_clustering/kmeans/Hamerly.hpp"
 #include "cpp_clustering/kmeans/KMeansPlusPlus.hpp"
 #include "cpp_clustering/kmeans/Lloyd.hpp"
 #include "cpp_clustering/math/random/Distributions.hpp"

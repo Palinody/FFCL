@@ -444,6 +444,32 @@ std::pair<std::size_t, typename Iterator::value_type> get_max_index_value_pair(c
 }
 
 template <typename Iterator>
+std::pair<std::size_t, typename Iterator::value_type> get_second_max_index_value_pair(const Iterator& data_first,
+                                                                                      const Iterator& data_last) {
+    using Type = typename Iterator::value_type;
+
+    // Get the index of the maximum element
+    auto        max_it  = std::max_element(data_first, data_last);
+    std::size_t max_idx = std::distance(data_first, max_it);
+
+    if (std::distance(data_first, data_last) < 2) {
+        return {max_idx, *max_it};
+    }
+    // Replace the maximum element with the lowest possible value
+    *max_it = std::numeric_limits<Type>::lowest();
+
+    // Get the index of the second maximum element
+    const auto  second_max_it    = std::max_element(data_first, data_last);
+    std::size_t second_max_idx   = std::distance(data_first, second_max_it);
+    const Type  second_max_value = *second_max_it;
+
+    // Restore the original maximum value
+    *max_it = data_first[max_idx];
+
+    return {second_max_idx, second_max_value};
+}
+
+template <typename Iterator>
 std::pair<std::size_t, typename Iterator::value_type> find_nth_smallest_index_and_element(const Iterator& data_first,
                                                                                           const Iterator& data_last,
                                                                                           std::size_t     n) {

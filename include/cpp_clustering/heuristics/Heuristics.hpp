@@ -11,9 +11,9 @@
 namespace cpp_clustering::heuristic {
 
 template <typename IteratorFloat1, typename IteratorFloat2>
-typename IteratorFloat1::value_type euclidean_distance(const IteratorFloat1& feature_first,
-                                                       const IteratorFloat1& feature_last,
-                                                       const IteratorFloat2& other_feature_first) {
+typename IteratorFloat1::value_type squared_euclidean_distance(const IteratorFloat1& feature_first,
+                                                               const IteratorFloat1& feature_last,
+                                                               const IteratorFloat2& other_feature_first) {
     static_assert(std::is_floating_point_v<typename IteratorFloat1::value_type>,
                   "Inputs should be floating point types.");
 
@@ -22,15 +22,22 @@ typename IteratorFloat1::value_type euclidean_distance(const IteratorFloat1& fea
 
     using FloatType = typename IteratorFloat1::value_type;
 
-    return std::sqrt(std::transform_reduce(feature_first,
-                                           feature_last,
-                                           other_feature_first,
-                                           static_cast<FloatType>(0),
-                                           std::plus<>(),
-                                           [](const auto& lhs, const auto& rhs) {
-                                               const auto tmp = lhs - rhs;
-                                               return tmp * tmp;
-                                           }));
+    return std::transform_reduce(feature_first,
+                                 feature_last,
+                                 other_feature_first,
+                                 static_cast<FloatType>(0),
+                                 std::plus<>(),
+                                 [](const auto& lhs, const auto& rhs) {
+                                     const auto tmp = lhs - rhs;
+                                     return tmp * tmp;
+                                 });
+}
+
+template <typename IteratorFloat1, typename IteratorFloat2>
+typename IteratorFloat1::value_type euclidean_distance(const IteratorFloat1& feature_first,
+                                                       const IteratorFloat1& feature_last,
+                                                       const IteratorFloat2& other_feature_first) {
+    return std::sqrt(squared_euclidean_distance(feature_first, feature_last, other_feature_first));
 }
 
 template <typename IteratorFloat1, typename IteratorFloat2>
