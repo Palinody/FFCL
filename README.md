@@ -21,14 +21,13 @@ Fast iterator compatible clustering algorithms written in c++.
 
 - ### KMedoids
 
-  - FasterMSC [paper](https://arxiv.org/pdf/2209.12553.pdf)
-  - FasterPAM [paper](https://arxiv.org/pdf/2008.05171.pdf)
-
-The implementation of the papers was helped by one of the [author's repo](https://github.com/kno10/rust-kmedoids)
+  - FasterMSC [paper](https://arxiv.org/pdf/2209.12553.pdf) [author's repo](https://github.com/kno10/rust-kmedoids)
+  - FasterPAM [paper](https://arxiv.org/pdf/2008.05171.pdf) [author's repo](https://github.com/kno10/rust-kmedoids)
 
 - ### KMeans
 
   - Lloyd
+  - Hamerly [paper](https://epubs.siam.org/doi/pdf/10.1137/1.9781611972801.12) [authors' repo](https://github.com/ghamerly/fast-kmeans)
 
 - ### Distance functions
 
@@ -41,7 +40,7 @@ The implementation of the papers was helped by one of the [author's repo](https:
   - random uniform
   - spatial uniform
   - pam::build
-  - kmeans++
+  - kmeans++ (w.r.t. previous and all centroids)
 
 - ### Selecting the number of clusters
 
