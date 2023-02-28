@@ -92,9 +92,6 @@ void fit_once_kmeans(const InputsIterator& inputs_first,
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::cout << "HERE: "
-              << "\n";
-
     kmeans.fit(inputs_first, inputs_last);
 
 #if defined(VERBOSE) && VERBOSE == true
@@ -115,7 +112,7 @@ void fit_once(const InputsIterator& inputs_first,
     auto kmedoids = KMedoids(n_medoids, n_features);
 
     kmedoids.set_options(
-        /*KMedoids options=*/KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
+        /*KMedoids options=*/KMedoids::Options().max_iter(10).early_stopping(true).patience(0).n_init(1));
 
 #if defined(VERBOSE) && VERBOSE == true
     std::cout << "\nRunning kmedoids dynamically: \n";
@@ -207,7 +204,7 @@ int main() {
 #if defined(VERBOSE) && VERBOSE == true
     std::cout << "Making the pairwise distance matrix: \n";
 #endif
-    distance_matrix_benchmark();
+    // distance_matrix_benchmark();
 
 #if defined(VERBOSE) && VERBOSE == true
     std::cout << "Making the pairwise distance matrix and kmedoids fit: \n";

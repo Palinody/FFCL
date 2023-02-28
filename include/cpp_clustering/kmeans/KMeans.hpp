@@ -204,7 +204,7 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         // assign the centroids attributes to the current centroids
         centroids_ = centroids_candidates[k];
 
-        auto lloyd = cpp_clustering::Lloyd<SamplesIterator>({data_first, data_last, n_features_}, centroids_);
+        auto lloyd = cpp_clustering::Hamerly<SamplesIterator>({data_first, data_last, n_features_}, centroids_);
 
         std::size_t patience_iter = 0;
 

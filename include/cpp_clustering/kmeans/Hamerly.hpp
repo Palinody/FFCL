@@ -107,11 +107,12 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
     auto& centroid_velocities   = buffers_ptr_->centroid_velocities_;
 
     for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
-        auto centroid_index = samples_to_nearest_centroid_indices[sample_index];
+        auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
         // triangular inequality
-        const auto upper_bound_comparison = std::max(static_cast<typename Hamerly<Iterator>::DataType>(0.5) *
-                                                         centroid_to_nearest_centroid_distances[centroid_index],
-                                                     samples_to_second_nearest_centroid_distances[sample_index]);
+        const auto upper_bound_comparison =
+            std::max(static_cast<typename Hamerly<Iterator>::DataType>(0.5) *
+                         centroid_to_nearest_centroid_distances[assigned_centroid_index],
+                     samples_to_second_nearest_centroid_distances[sample_index]);
         // first bound test
         if (samples_to_nearest_centroid_distances[sample_index] > upper_bound_comparison) {
             const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
@@ -119,7 +120,7 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
             auto upper_bound =
                 cpp_clustering::heuristic::heuristic(samples_first + sample_index * n_features,
                                                      samples_first + sample_index * n_features + n_features,
-                                                     centroids_.begin() + centroid_index * n_features);
+                                                     centroids_.begin() + assigned_centroid_index * n_features);
 
             samples_to_nearest_centroid_distances[sample_index] = upper_bound;
 
@@ -130,7 +131,7 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
                 const std::size_t n_centroids = centroids_.size() / n_features;
 
                 for (std::size_t other_centroid_index = 0; other_centroid_index < n_centroids; ++other_centroid_index) {
-                    if (other_centroid_index != centroid_index) {
+                    if (other_centroid_index != assigned_centroid_index) {
                         const auto other_nearest_candidate = cpp_clustering::heuristic::heuristic(
                             samples_first + sample_index * n_features,
                             samples_first + sample_index * n_features + n_features,
@@ -143,7 +144,7 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
                             // adjust the upper bound
                             upper_bound = other_nearest_candidate;
                             // adjust the current assignment
-                            centroid_index = other_centroid_index;
+                            assigned_centroid_index = other_centroid_index;
 
                         } else if (other_nearest_candidate < lower_bound) {
                             // reduce the lower bound to the second nearest centroid
@@ -154,26 +155,27 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
                 samples_to_second_nearest_centroid_distances[sample_index] = lower_bound;
 
                 // if the assignment for sample_index has changed
-                if (samples_to_nearest_centroid_indices[sample_index] != centroid_index) {
+                if (samples_to_nearest_centroid_indices[sample_index] != assigned_centroid_index) {
                     samples_to_nearest_centroid_distances[sample_index] = upper_bound;
 
-                    const auto previous_centroid_index = samples_to_nearest_centroid_indices[sample_index];
+                    const auto previous_assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
 
-                    --cluster_sizes[previous_centroid_index];
-                    ++cluster_sizes[centroid_index];
-                    samples_to_nearest_centroid_indices[sample_index] = centroid_index;
+                    --cluster_sizes[previous_assigned_centroid_index];
+                    ++cluster_sizes[assigned_centroid_index];
+                    samples_to_nearest_centroid_indices[sample_index] = assigned_centroid_index;
 
                     // subtract the current sample to the centroid it was previously assigned to
-                    std::transform(cluster_position_sums.begin() + previous_centroid_index * n_features,
-                                   cluster_position_sums.end() + previous_centroid_index * n_features + n_features,
-                                   samples_first + sample_index * n_features,
-                                   cluster_position_sums.begin() + previous_centroid_index * n_features,
-                                   std::minus<>());
+                    std::transform(
+                        cluster_position_sums.begin() + previous_assigned_centroid_index * n_features,
+                        cluster_position_sums.begin() + previous_assigned_centroid_index * n_features + n_features,
+                        samples_first + sample_index * n_features,
+                        cluster_position_sums.begin() + previous_assigned_centroid_index * n_features,
+                        std::minus<>());
                     // add the current sample to the centroid it is now assigned to
-                    std::transform(cluster_position_sums.begin() + centroid_index * n_features,
-                                   cluster_position_sums.end() + centroid_index * n_features + n_features,
+                    std::transform(cluster_position_sums.begin() + assigned_centroid_index * n_features,
+                                   cluster_position_sums.begin() + assigned_centroid_index * n_features + n_features,
                                    samples_first + sample_index * n_features,
-                                   cluster_position_sums.begin() + centroid_index * n_features,
+                                   cluster_position_sums.begin() + assigned_centroid_index * n_features,
                                    std::plus<>());
                 }
             }
@@ -217,12 +219,7 @@ void Hamerly<Iterator>::update_centroids(
         const auto feature_index_start = centroid_index * n_features;
         const auto feature_index_end   = feature_index_start + n_features;
 
-        if (cluster_sizes[centroid_index] == 0) {
-            // For centroids with only 1 associated sample, the new position is the same as the previous one
-            std::copy(cluster_position_sums.begin() + feature_index_start,
-                      cluster_position_sums.begin() + feature_index_end,
-                      centroids_.begin() + feature_index_start);
-        } else {
+        if (cluster_sizes[centroid_index]) {
             // Compute the new centroid position for the centroid that has more than 1 associated sample
             std::transform(cluster_position_sums.begin() + feature_index_start,
                            cluster_position_sums.begin() + feature_index_end,
@@ -244,10 +241,10 @@ typename Iterator::value_type Hamerly<Iterator>::update_bounds() {
         common::utils::get_second_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
                                                        buffers_ptr_->centroid_velocities_.end());
 
-    auto& samples_to_nearest_centroid_indices          = buffers_ptr_->samples_to_nearest_centroid_indices_;
-    auto& samples_to_nearest_centroid_distances        = buffers_ptr_->samples_to_nearest_centroid_distances_;
+    const auto& samples_to_nearest_centroid_indices    = buffers_ptr_->samples_to_nearest_centroid_indices_;
+    auto&       samples_to_nearest_centroid_distances  = buffers_ptr_->samples_to_nearest_centroid_distances_;
     auto& samples_to_second_nearest_centroid_distances = buffers_ptr_->samples_to_second_nearest_centroid_distances_;
-    auto& centroid_velocities                          = buffers_ptr_->centroid_velocities_;
+    const auto& centroid_velocities                    = buffers_ptr_->centroid_velocities_;
 
     for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
         const auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
@@ -258,12 +255,16 @@ typename Iterator::value_type Hamerly<Iterator>::update_bounds() {
             (assigned_centroid_index == furthest_moving_centroid_index) ? second_furthest_moving_centroid_distance
                                                                         : furthest_moving_centroid_distance;
     }
-
     buffers_ptr_->centroid_to_nearest_centroid_distances_ = kmeans::utils::nearest_neighbor_distances(
         centroids_.begin(), centroids_.end(), std::get<2>(dataset_descriptor_));
 
-    return std::reduce(buffers_ptr_->samples_to_nearest_centroid_distances_.begin(),
-                       buffers_ptr_->samples_to_nearest_centroid_distances_.end(),
+    const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
+
+    const auto samples_to_nearest_centroid_distances_temporary =
+        kmeans::utils::samples_to_nearest_centroid_distances(samples_first, samples_last, n_features, centroids_);
+
+    return std::reduce(samples_to_nearest_centroid_distances_temporary.begin(),
+                       samples_to_nearest_centroid_distances_temporary.end(),
                        static_cast<typename Hamerly<Iterator>::DataType>(0),
                        std::plus<>());
 }
@@ -297,7 +298,7 @@ Hamerly<Iterator>::Buffers::Buffers(const Iterator&                             
                                                                         samples_to_nearest_centroid_indices_.begin(),
                                                                         centroids.size() / n_features,
                                                                         n_features)}
-  , centroid_velocities_{std::vector<typename Hamerly<Iterator>::DataType>(centroids.size())} {}
+  , centroid_velocities_{std::vector<typename Hamerly<Iterator>::DataType>(centroids.size() / n_features)} {}
 
 template <typename Iterator>
 Hamerly<Iterator>::Buffers::Buffers(const DatasetDescriptorType&                             dataset_descriptor,

@@ -144,12 +144,12 @@ std::vector<typename Iterator::value_type> compute_cluster_positions_sum(
     auto cluster_positions_sum = std::vector<typename Iterator::value_type>(n_centroids * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        const auto centroid_index = *(samples_to_nearest_centroid_indices_first + sample_index);
+        const auto assigned_centroid_index = *(samples_to_nearest_centroid_indices_first + sample_index);
 
-        std::transform(cluster_positions_sum.begin() + centroid_index * n_features,
-                       cluster_positions_sum.begin() + centroid_index * n_features + n_features,
+        std::transform(cluster_positions_sum.begin() + assigned_centroid_index * n_features,
+                       cluster_positions_sum.begin() + assigned_centroid_index * n_features + n_features,
                        samples_first + sample_index * n_features,
-                       cluster_positions_sum.begin() + centroid_index * n_features,
+                       cluster_positions_sum.begin() + assigned_centroid_index * n_features,
                        std::plus<>());
     }
     return cluster_positions_sum;

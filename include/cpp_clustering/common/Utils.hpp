@@ -449,11 +449,12 @@ std::pair<std::size_t, typename Iterator::value_type> get_second_max_index_value
     using Type = typename Iterator::value_type;
 
     // Get the index of the maximum element
-    auto        max_it  = std::max_element(data_first, data_last);
-    std::size_t max_idx = std::distance(data_first, max_it);
+    auto        max_it    = std::max_element(data_first, data_last);
+    std::size_t max_idx   = std::distance(data_first, max_it);
+    const Type  max_value = *max_it;
 
     if (std::distance(data_first, data_last) < 2) {
-        return {max_idx, *max_it};
+        return {max_idx, max_value};
     }
     // Replace the maximum element with the lowest possible value
     *max_it = std::numeric_limits<Type>::lowest();
@@ -464,7 +465,7 @@ std::pair<std::size_t, typename Iterator::value_type> get_second_max_index_value
     const Type  second_max_value = *second_max_it;
 
     // Restore the original maximum value
-    *max_it = data_first[max_idx];
+    *max_it = max_value;
 
     return {second_max_idx, second_max_value};
 }
