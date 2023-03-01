@@ -179,10 +179,10 @@ def save_dataset(inputs, labels, root_folder, dataset_name):
     targets_folder = root_folder + "targets/"
 
     if not os.path.exists(inputs_folder):
-        os.mkdir(inputs_folder)
+        os.makedirs(inputs_folder)
 
     if not os.path.exists(targets_folder):
-        os.mkdir(targets_folder)
+        os.makedirs(targets_folder)
 
     np.savetxt(inputs_folder + dataset_name + ".txt", inputs, delimiter=" ")
     np.savetxt(

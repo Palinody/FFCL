@@ -43,7 +43,7 @@ include_directories(
     include
 )
 
-add_definitions(-DTHREADS_ENABLED=false)
+add_definitions(-DTHREADS_ENABLED=true)
 add_definitions(-DVERBOSE=true)
 
 # set(MODE "run-benchmarks")
