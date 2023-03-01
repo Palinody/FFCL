@@ -53,10 +53,11 @@ class Hamerly {
         std::vector<DataType>    centroid_velocities_;
     };
 
-    std::pair<std::vector<std::size_t>, std::vector<DataType>> compute_cluster_sizes_and_positions_sum_pair() const;
+    void swap_bounds();
 
-    void update_centroids(const std::vector<std::size_t>&                          cluster_sizes,
-                          const std::vector<typename Hamerly<Iterator>::DataType>& cluster_position_sums);
+    void update_centroids();
+
+    void update_centroids_velocities(const std::vector<DataType>& previous_centroids);
 
     DataType update_bounds();
 
@@ -96,6 +97,26 @@ typename Hamerly<Iterator>::DataType Hamerly<Iterator>::total_deviation() {
 
 template <typename Iterator>
 std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
+    // iterate over all the samples and swap the lower and upper bounds only if necessary
+    swap_bounds();
+
+    // keep a copy of the current non updated centroids
+    const auto previous_centroids = centroids_;
+
+    // update all the centroids with the new intra-cluster positions sum and cluster sizes
+    update_centroids();
+
+    // upate the centroids velocities based on the previous centroids and the updated centroids
+    update_centroids_velocities(previous_centroids);
+
+    // recompute the loss w.r.t. the updated buffers
+    loss_ = update_bounds();
+
+    return centroids_;
+}
+
+template <typename Iterator>
+void Hamerly<Iterator>::swap_bounds() {
     auto& samples_to_nearest_centroid_indices          = buffers_ptr_->samples_to_nearest_centroid_indices_;
     auto& samples_to_nearest_centroid_distances        = buffers_ptr_->samples_to_nearest_centroid_distances_;
     auto& samples_to_second_nearest_centroid_distances = buffers_ptr_->samples_to_second_nearest_centroid_distances_;
@@ -104,7 +125,6 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
 
     auto& cluster_sizes         = buffers_ptr_->cluster_sizes_;
     auto& cluster_position_sums = buffers_ptr_->cluster_position_sums_;
-    auto& centroid_velocities   = buffers_ptr_->centroid_velocities_;
 
     for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
         auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
@@ -171,6 +191,7 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
                         samples_first + sample_index * n_features,
                         cluster_position_sums.begin() + previous_assigned_centroid_index * n_features,
                         std::minus<>());
+
                     // add the current sample to the centroid it is now assigned to
                     std::transform(cluster_position_sums.begin() + assigned_centroid_index * n_features,
                                    cluster_position_sums.begin() + assigned_centroid_index * n_features + n_features,
@@ -181,38 +202,15 @@ std::vector<typename Hamerly<Iterator>::DataType> Hamerly<Iterator>::step() {
             }
         }
     }
-
-    // keep a copy of the current non updated centroids
-    const auto previous_centroids = centroids_;
-
-    // update all the centroids with the new intra-cluster positions sum and cluster sizes
-    update_centroids(cluster_sizes, cluster_position_sums);
-
-    const std::size_t n_features  = std::get<2>(dataset_descriptor_);
-    const std::size_t n_centroids = centroids_.size() / n_features;
-
-    // compute the distances between the non updated and updated centroids
-    for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
-        centroid_velocities[centroid_index] =
-            cpp_clustering::heuristic::heuristic(previous_centroids.begin() + centroid_index * n_features,
-                                                 previous_centroids.begin() + centroid_index * n_features + n_features,
-                                                 centroids_.begin() + centroid_index * n_features);
-    }
-
-    // recompute the loss w.r.t. the updated buffers
-    loss_ = update_bounds();
-    return centroids_;
 }
 
 template <typename Iterator>
-void Hamerly<Iterator>::update_centroids(
-    const std::vector<std::size_t>&                          cluster_sizes,
-    const std::vector<typename Hamerly<Iterator>::DataType>& cluster_position_sums) {
-    const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
-    const std::size_t n_centroids                        = centroids_.size() / n_features;
+void Hamerly<Iterator>::update_centroids() {
+    const std::size_t n_features  = std::get<2>(dataset_descriptor_);
+    const std::size_t n_centroids = centroids_.size() / n_features;
 
-    // make a copy of the non updated centroids
-    const auto previous_centroids = centroids_;
+    const auto& cluster_sizes         = buffers_ptr_->cluster_sizes_;
+    const auto& cluster_position_sums = buffers_ptr_->cluster_position_sums_;
 
     // Update the centroids using the assigned samples
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
@@ -228,6 +226,23 @@ void Hamerly<Iterator>::update_centroids(
                                return sum / static_cast<typename Hamerly<Iterator>::DataType>(cluster_size);
                            });
         }
+    }
+}
+
+template <typename Iterator>
+void Hamerly<Iterator>::update_centroids_velocities(
+    const std::vector<typename Hamerly<Iterator>::DataType>& previous_centroids) {
+    const std::size_t n_features  = std::get<2>(dataset_descriptor_);
+    const std::size_t n_centroids = centroids_.size() / n_features;
+
+    auto& centroid_velocities = buffers_ptr_->centroid_velocities_;
+
+    // compute the distances between the non updated and updated centroids
+    for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
+        centroid_velocities[centroid_index] =
+            cpp_clustering::heuristic::heuristic(previous_centroids.begin() + centroid_index * n_features,
+                                                 previous_centroids.begin() + centroid_index * n_features + n_features,
+                                                 centroids_.begin() + centroid_index * n_features);
     }
 }
 

@@ -130,8 +130,8 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        Name KMedoidsTest
-        COMMAND KMedoidsTest
+        KMedoidsTest
+        KMedoidsTest
     )
 
     add_executable(
@@ -148,13 +148,15 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        Name KMeansTest
-        COMMAND KMeansTest
+        KMeansTest
+        KMeansTest
     )
 
-# ctest -C Debug
-# ctest -C Debug -V
-# cmake .. -DMODE="run-benchmarks"
+    add_test(
+        NAME AllTests
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "KMedoidsTest|KMeansTest"
+    )
+
 else()
     add_definitions(-DVERBOSE=false)
 
