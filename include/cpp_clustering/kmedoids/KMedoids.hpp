@@ -103,14 +103,6 @@ class KMedoids {
         const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) const;
 
   private:
-    // assign each sample (S) to its closest medoid (M)
-    template <typename SamplesIterator>
-    std::vector<std::size_t> assign(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
-
-    template <typename SamplesIterator>
-    std::vector<std::size_t> assign(
-        const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) const;
-
     // number of medoids that a KMedoids instance should handle (could vary)
     std::size_t n_medoids_;
     // number of features (dimensions) that a KMedoids instance should handle
@@ -157,21 +149,6 @@ KMedoids<T, PrecomputePairwiseDistanceMatrix>& KMedoids<T, PrecomputePairwiseDis
     const Options& options) {
     options_ = options;
     return *this;
-}
-
-template <typename T, bool PrecomputePairwiseDistanceMatrix>
-template <typename SamplesIterator>
-std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::assign(const SamplesIterator& data_first,
-                                                                               const SamplesIterator& data_last) const {
-    return pam::utils::samples_to_nth_nearest_medoid_indices(
-        data_first, data_last, n_features_, medoids_, /*n_closest=*/1);
-}
-
-template <typename T, bool PrecomputePairwiseDistanceMatrix>
-template <typename SamplesIterator>
-std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::assign(
-    const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) const {
-    return pam::utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix, medoids_, /*n_closest=*/1);
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
@@ -354,15 +331,14 @@ template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
 std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::forward(const SamplesIterator& data_first,
                                                                       const SamplesIterator& data_last) const {
-    return pam::utils::samples_to_nth_nearest_medoid_distances(
-        data_first, data_last, n_features_, medoids_, /*n_closest=*/1);
+    return pam::utils::samples_to_nearest_medoid_distances(data_first, data_last, n_features_, medoids_);
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
 std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::forward(
     const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) const {
-    return pam::utils::samples_to_nth_nearest_medoid_distances(pairwise_distance_matrix, medoids_, /*n_closest=*/1);
+    return pam::utils::samples_to_nearest_medoid_distances(pairwise_distance_matrix, medoids_);
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
@@ -370,14 +346,14 @@ template <typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::predict(
     const SamplesIterator& data_first,
     const SamplesIterator& data_last) const {
-    return assign(data_first, data_last);
+    return pam::utils::samples_to_nth_nearest_medoid_indices(data_first, data_last, n_features_, medoids_);
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::predict(
     const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) const {
-    return assign(pairwise_distance_matrix);
+    return pam::utils::samples_to_nearest_medoid_indices(pairwise_distance_matrix, medoids_);
 }
 
 }  // namespace cpp_clustering
