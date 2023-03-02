@@ -102,10 +102,6 @@ class KMeans {
     std::vector<std::size_t> predict(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
 
   private:
-    // assign each sample (S) to its closest centroid (C)
-    template <typename SamplesIterator>
-    std::vector<std::size_t> assign(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
-
     void prune_unassigned_centroids();  // NOT IMPLEMENTED
 
     // number of centroids that a KMeans instance should handle (could vary)
@@ -149,36 +145,6 @@ template <typename T>
 KMeans<T>& KMeans<T>::set_options(const Options& options) {
     options_ = options;
     return *this;
-}
-
-template <typename T>
-template <typename SamplesIterator>
-std::vector<std::size_t> KMeans<T>::assign(const SamplesIterator& data_first, const SamplesIterator& data_last) const {
-    const std::size_t n_samples = common::utils::get_n_samples(data_first, data_last, n_features_);
-
-    // keep track of the closest centroid to each sample by index
-    auto samples_to_centroids_indices = std::vector<std::size_t>(n_samples);
-
-    for (std::size_t i = 0; i < n_samples; ++i) {
-        // distance buffer for a given data sample to each cluster
-        auto        shortest_distance  = common::utils::infinity<T>();
-        std::size_t min_centroid_index = 0;
-
-        for (std::size_t k = 0; k < n_centroids_; ++k) {
-            // sqrt(sum((a_j - b_j)²))
-            const T sample_to_centroid_distance = cpp_clustering::heuristic::heuristic(
-                /*data sample feature begin=*/data_first + i * n_features_,
-                /*data sample feature end=*/data_first + i * n_features_ + n_features_,
-                /*centroid sample feature begin=*/centroids_.begin() + k * n_features_);
-
-            if (sample_to_centroid_distance < shortest_distance) {
-                shortest_distance  = sample_to_centroid_distance;
-                min_centroid_index = k;
-            }
-        }
-        samples_to_centroids_indices[i] = min_centroid_index;
-    }
-    return samples_to_centroids_indices;
 }
 
 template <typename T>
