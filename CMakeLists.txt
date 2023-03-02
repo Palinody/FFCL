@@ -44,7 +44,7 @@ include_directories(
 )
 
 add_definitions(-DTHREADS_ENABLED=true)
-add_definitions(-DVERBOSE=true)
+add_definitions(-DVERBOSE=false)
 
 # set(MODE "run-benchmarks")
 if(MODE STREQUAL "benchmark")

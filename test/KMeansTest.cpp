@@ -1,6 +1,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "cpp_clustering/kmeans/Hamerly.hpp"
+#include "cpp_clustering/kmeans/Lloyd.hpp"
+
 #include "cpp_clustering/kmeans/KMeans.hpp"
 #include "cpp_clustering/math/random/VosesAliasMethod.hpp"
 
@@ -105,7 +108,8 @@ class KMeansErrorsTest : public ::testing::Test {
         kmeans.set_options(
             /*KMeans options=*/KMeans::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
 
-        const auto centroids = kmeans.fit(inputs_first, inputs_last);
+        const auto centroids = kmeans.fit<cpp_clustering::Hamerly>(
+            inputs_first, inputs_last, cpp_clustering::kmeansplusplus::make_centroids<InputsIterator>);
 
         const auto predictions = kmeans.predict(inputs_first, inputs_last);
 

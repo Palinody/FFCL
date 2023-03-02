@@ -161,6 +161,6 @@ if __name__ == "__main__":
                 alpha=0.4,
             )
             ax2.set_title("targets")
-
+        fig.suptitle(dataset_name)
         plt.tight_layout()
         plt.show()

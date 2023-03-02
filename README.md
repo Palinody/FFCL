@@ -40,7 +40,7 @@ Fast iterator compatible clustering algorithms written in c++.
   - random uniform
   - spatial uniform
   - pam::build
-  - kmeans++ (w.r.t. previous and all centroids)
+  - kmeans++
 
 - ### Selecting the number of clusters
 
@@ -213,7 +213,7 @@ for (std::size_t k = k_min; k < k_max; ++k) {
                                                                                          data.end(),
                                                                                          predictions.begin(),
                                                                                          predictions.end(),
-                                                                                         /*n_features=*/n_features);
+                                                                                         n_features);
     // get the average score
     const auto mean_silhouette_coefficient = cpp_clustering::silhouette_method::get_mean_silhouette_coefficient(
         samples_silhouette_values.begin(), samples_silhouette_values.end());

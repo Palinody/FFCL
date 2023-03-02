@@ -79,6 +79,14 @@ class KMeans {
 
     KMeans<T>& set_options(const Options& options);
 
+    template <template <typename> class KMeansAlgorithm, typename SamplesIterator, typename Function>
+    std::vector<T> fit(const SamplesIterator& data_first,
+                       const SamplesIterator& data_last,
+                       Function               centroids_initializer);
+
+    template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
+    std::vector<T> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
+
     template <typename SamplesIterator, typename Function>
     std::vector<T> fit(const SamplesIterator& data_first,
                        const SamplesIterator& data_last,
@@ -174,7 +182,7 @@ std::vector<std::size_t> KMeans<T>::assign(const SamplesIterator& data_first, co
 }
 
 template <typename T>
-template <typename SamplesIterator, typename Function>
+template <template <typename> class KMeansAlgorithm, typename SamplesIterator, typename Function>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
                               const SamplesIterator& data_last,
                               Function               centroids_initializer) {
@@ -204,17 +212,17 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         // assign the centroids attributes to the current centroids
         centroids_ = centroids_candidates[k];
 
-        auto lloyd = cpp_clustering::Hamerly<SamplesIterator>({data_first, data_last, n_features_}, centroids_);
+        auto kmeans_algorithm = KMeansAlgorithm<SamplesIterator>({data_first, data_last, n_features_}, centroids_);
 
         std::size_t patience_iter = 0;
 
         for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
-            std::cout << lloyd.total_deviation() << " ";
+            std::cout << kmeans_algorithm.total_deviation() << " ";
 #endif
 
-            centroids_ = lloyd.step();
+            centroids_ = kmeans_algorithm.step();
 
             if (options_.early_stopping_ &&
                 common::utils::are_containers_equal(centroids_, centroids_candidates_prev[k], options_.tolerance_)) {
@@ -229,14 +237,14 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         }
 #if defined(VERBOSE) && VERBOSE == true
         // last loss
-        std::cout << lloyd.total_deviation() << " ";
+        std::cout << kmeans_algorithm.total_deviation() << " ";
         std::cout << "\n";
 #endif
 
         // once the training loop is finished, update the centroids candidate
         centroids_candidates[k] = centroids_;
         // save the loss for each candidate
-        candidates_losses[k] = lloyd.total_deviation();
+        candidates_losses[k] = kmeans_algorithm.total_deviation();
     }
     // find the index of the centroids container with the lowest loss
     const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
@@ -246,23 +254,42 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
 }
 
 template <typename T>
+template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
+std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first, const SamplesIterator& data_last) {
+    // execute fit function with a default initialization algorithm
+    // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
+    return fit<KMeansAlgorithm>(data_first, data_last, cpp_clustering::kmeansplusplus::make_centroids<SamplesIterator>);
+}
+
+template <typename T>
+template <typename SamplesIterator, typename Function>
+std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
+                              const SamplesIterator& data_last,
+                              Function               centroids_initializer) {
+    // execute fit function with a default initialization algorithm
+    // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
+    return fit<cpp_clustering::Hamerly>(data_first, data_last, centroids_initializer);
+}
+
+template <typename T>
 template <typename SamplesIterator>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first, const SamplesIterator& data_last) {
     // execute fit function with a default initialization algorithm
     // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
-    return fit(data_first, data_last, cpp_clustering::kmeansplusplus::make_centroids<SamplesIterator>);
+    return fit<cpp_clustering::Hamerly>(
+        data_first, data_last, cpp_clustering::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename T>
 template <typename SamplesIterator>
 std::vector<T> KMeans<T>::forward(const SamplesIterator& data_first, const SamplesIterator& data_last) const {
-    return samples_to_nearest_centroid_distances(data_first, data_last);
+    return kmeans::utils::samples_to_nearest_centroid_distances(data_first, data_last, n_features_, centroids_);
 }
 
 template <typename T>
 template <typename SamplesIterator>
 std::vector<std::size_t> KMeans<T>::predict(const SamplesIterator& data_first, const SamplesIterator& data_last) const {
-    return assign(data_first, data_last);
+    return kmeans::utils::samples_to_nearest_centroid_indices(data_first, data_last, n_features_, centroids_);
 }
 
 }  // namespace cpp_clustering
