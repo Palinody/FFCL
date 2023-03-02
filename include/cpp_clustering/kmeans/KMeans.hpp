@@ -82,7 +82,7 @@ class KMeans {
     template <template <typename> class KMeansAlgorithm, typename SamplesIterator, typename Function>
     std::vector<T> fit(const SamplesIterator& data_first,
                        const SamplesIterator& data_last,
-                       Function               centroids_initializer);
+                       const Function&        centroids_initializer);
 
     template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
     std::vector<T> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
@@ -90,7 +90,7 @@ class KMeans {
     template <typename SamplesIterator, typename Function>
     std::vector<T> fit(const SamplesIterator& data_first,
                        const SamplesIterator& data_last,
-                       Function               centroids_initializer);
+                       const Function&        centroids_initializer);
 
     template <typename SamplesIterator>
     std::vector<T> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
@@ -185,7 +185,7 @@ template <typename T>
 template <template <typename> class KMeansAlgorithm, typename SamplesIterator, typename Function>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
                               const SamplesIterator& data_last,
-                              Function               centroids_initializer) {
+                              const Function&        centroids_initializer) {
     // contains the centroids for each tries which number is defined by options_.n_init_ if centroids_ werent already
     // assigned
     auto centroids_candidates = std::vector<std::vector<T>>();
@@ -265,7 +265,7 @@ template <typename T>
 template <typename SamplesIterator, typename Function>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
                               const SamplesIterator& data_last,
-                              Function               centroids_initializer) {
+                              const Function&        centroids_initializer) {
     // execute fit function with a default initialization algorithm
     // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
     return fit<cpp_clustering::Hamerly>(data_first, data_last, centroids_initializer);

@@ -74,13 +74,13 @@ class KMedoids {
 
     KMedoids<T, PrecomputePairwiseDistanceMatrix>& set_options(const Options& options);
 
-    template <template <typename> class PAMClass, typename SamplesIterator>
+    template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
     std::vector<std::size_t> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
 
     template <typename SamplesIterator>
     std::vector<std::size_t> fit(const SamplesIterator& data_first, const SamplesIterator& data_last);
 
-    template <template <typename> class PAMClass, typename SamplesIterator>
+    template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
     std::vector<std::size_t> fit(
         const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix);
 
@@ -175,7 +175,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::assign(
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
-template <template <typename> class PAMClass, typename SamplesIterator>
+template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(const SamplesIterator& data_first,
                                                                             const SamplesIterator& data_last) {
     // contains the medoids indices for each tries which number is defined by options_.n_init_ if medoids_
@@ -208,27 +208,27 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
         // assign the centroids attributes to the current centroids
         medoids_ = medoids_indices_candidates[k];
 
-        // auto pam = PAMClass<SamplesIterator, PrecomputePairwiseDistanceMatrix>(
+        // auto kmedoids_algorithm = KMedoidsAlgorithm<SamplesIterator, PrecomputePairwiseDistanceMatrix>(
         // std::make_tuple(data_first, data_last, n_features_), medoids_);
 
         using DatasetDescriptorType              = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
         DatasetDescriptorType dataset_descriptor = std::make_tuple(data_first, data_last, n_features_);
 
-        auto pam =
+        auto kmedoids_algorithm =
             PrecomputePairwiseDistanceMatrix
-                ? PAMClass<SamplesIterator>(
+                ? KMedoidsAlgorithm<SamplesIterator>(
                       cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>(dataset_descriptor), medoids_)
-                : PAMClass<SamplesIterator>(dataset_descriptor, medoids_);
+                : KMedoidsAlgorithm<SamplesIterator>(dataset_descriptor, medoids_);
 
         std::size_t patience_iter = 0;
 
         for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
-            std::cout << pam.total_deviation() << " ";
+            std::cout << kmedoids_algorithm.total_deviation() << " ";
 #endif
 
-            medoids_ = pam.step();
+            medoids_ = kmedoids_algorithm.step();
 
             if (options_.early_stopping_ && common::utils::are_containers_equal(medoids_, medoids_candidates_prev[k])) {
                 if (patience_iter == options_.patience_) {
@@ -243,14 +243,14 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
         }
 #if defined(VERBOSE) && VERBOSE == true
         // last loss
-        std::cout << pam.total_deviation() << " ";
+        std::cout << kmedoids_algorithm.total_deviation() << " ";
         std::cout << "\n";
 #endif
 
         // once the training loop is finished, update the medoids indices candidate
         medoids_indices_candidates[k] = medoids_;
         // save the loss for each candidate
-        candidates_losses[k] = pam.total_deviation();
+        candidates_losses[k] = kmedoids_algorithm.total_deviation();
     }
     // find the index of the medoids indices container with the lowest loss
     const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
@@ -268,7 +268,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
 }
 
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
-template <template <typename> class PAMClass, typename SamplesIterator>
+template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
     const cpp_clustering::containers::LowerTriangleMatrix<SamplesIterator>& pairwise_distance_matrix) {
     // contains the medoids indices for each tries which number is defined by options_.n_init_ if medoids_
@@ -301,17 +301,17 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
         // assign the centroids attributes to the current centroids
         medoids_ = medoids_indices_candidates[k];
 
-        auto pam = PAMClass<SamplesIterator>(pairwise_distance_matrix, medoids_);
+        auto kmedoids_algorithm = KMedoidsAlgorithm<SamplesIterator>(pairwise_distance_matrix, medoids_);
 
         std::size_t patience_iter = 0;
 
         for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
-            std::cout << pam.total_deviation() << " ";
+            std::cout << kmedoids_algorithm.total_deviation() << " ";
 #endif
 
-            medoids_ = pam.step();
+            medoids_ = kmedoids_algorithm.step();
 
             if (options_.early_stopping_ && common::utils::are_containers_equal(medoids_, medoids_candidates_prev[k])) {
                 if (patience_iter == options_.patience_) {
@@ -326,14 +326,14 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
         }
 #if defined(VERBOSE) && VERBOSE == true
         // last loss
-        std::cout << pam.total_deviation() << " ";
+        std::cout << kmedoids_algorithm.total_deviation() << " ";
         std::cout << "\n";
 #endif
 
         // once the training loop is finished, update the medoids indices candidate
         medoids_indices_candidates[k] = medoids_;
         // save the loss for each candidate
-        candidates_losses[k] = pam.total_deviation();
+        candidates_losses[k] = kmedoids_algorithm.total_deviation();
     }
     // find the index of the medoids indices container with the lowest loss
     const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
