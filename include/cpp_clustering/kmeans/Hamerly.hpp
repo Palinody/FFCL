@@ -27,7 +27,7 @@ class Hamerly {
 
     Hamerly(const Hamerly&) = delete;
 
-    DataType total_deviation();
+    DataType total_deviation() const;
 
     std::vector<DataType> step();
 
@@ -91,7 +91,7 @@ Hamerly<Iterator>::Hamerly(const DatasetDescriptorType& dataset_descriptor,
   , loss_{loss} {}
 
 template <typename Iterator>
-typename Hamerly<Iterator>::DataType Hamerly<Iterator>::total_deviation() {
+typename Hamerly<Iterator>::DataType Hamerly<Iterator>::total_deviation() const {
     return loss_;
 }
 
@@ -141,6 +141,8 @@ void Hamerly<Iterator>::swap_bounds() {
                 cpp_clustering::heuristic::heuristic(samples_first + sample_index * n_features,
                                                      samples_first + sample_index * n_features + n_features,
                                                      centroids_.begin() + assigned_centroid_index * n_features);
+
+            const auto previous_assigned_centroid_distance = samples_to_nearest_centroid_distances[sample_index];
 
             samples_to_nearest_centroid_distances[sample_index] = upper_bound;
 
@@ -198,6 +200,9 @@ void Hamerly<Iterator>::swap_bounds() {
                                    samples_first + sample_index * n_features,
                                    cluster_position_sums.begin() + assigned_centroid_index * n_features,
                                    std::plus<>());
+
+                    loss_ -= previous_assigned_centroid_distance;
+                    loss_ += upper_bound;
                 }
             }
         }
@@ -273,16 +278,7 @@ typename Iterator::value_type Hamerly<Iterator>::update_bounds() {
     buffers_ptr_->centroid_to_nearest_centroid_distances_ = kmeans::utils::nearest_neighbor_distances(
         centroids_.begin(), centroids_.end(), std::get<2>(dataset_descriptor_));
 
-    /*
-    const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
-
-    const auto samples_to_nearest_centroid_distances_temporary =
-        kmeans::utils::samples_to_nearest_centroid_distances(samples_first, samples_last, n_features, centroids_);
-    */
-    return std::reduce(samples_to_nearest_centroid_distances.begin(),
-                       samples_to_nearest_centroid_distances.end(),
-                       static_cast<typename Hamerly<Iterator>::DataType>(0),
-                       std::plus<>());
+    return loss_;
 }
 
 template <typename Iterator>

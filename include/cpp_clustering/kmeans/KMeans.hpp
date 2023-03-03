@@ -185,7 +185,7 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
-            std::cout << kmeans_algorithm.total_deviation() << " ";
+            printf("%.3f\n", kmeans_algorithm.total_deviation());
 #endif
 
             centroids_ = kmeans_algorithm.step();
@@ -203,7 +203,7 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         }
 #if defined(VERBOSE) && VERBOSE == true
         // last loss
-        std::cout << kmeans_algorithm.total_deviation() << " ";
+        printf("%.3f\n", kmeans_algorithm.total_deviation());
         std::cout << "\n";
 #endif
 

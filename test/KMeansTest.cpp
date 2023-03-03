@@ -106,7 +106,12 @@ class KMeansErrorsTest : public ::testing::Test {
         auto kmeans = KMeans(n_centroids, n_features);
 
         kmeans.set_options(
-            /*KMeans options=*/KMeans::Options().max_iter(n_iterations).early_stopping(false).patience(0).n_init(1));
+            /*KMeans options=*/KMeans::Options()
+                .max_iter(n_iterations)
+                .early_stopping(true)
+                .tolerance(0.0)
+                .patience(0)
+                .n_init(1));
 
         const auto centroids = kmeans.fit<cpp_clustering::Hamerly>(
             inputs_first, inputs_last, cpp_clustering::kmeansplusplus::make_centroids<InputsIterator>);
