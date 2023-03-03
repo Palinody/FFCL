@@ -201,6 +201,7 @@ void Hamerly<Iterator>::swap_bounds() {
                                    cluster_position_sums.begin() + assigned_centroid_index * n_features,
                                    std::plus<>());
 
+                    // update the loss by removing its previous contribution and adding the new one
                     loss_ -= previous_assigned_centroid_distance;
                     loss_ += upper_bound;
                 }
