@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cpp_clustering/common/Utils.hpp"
+#include "cpp_clustering/heuristics/Heuristics.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -74,28 +75,28 @@ std::vector<typename IteratorFloat::value_type> cohesion(const IteratorFloat& sa
 
     auto samples_cohesion_values = std::vector<FloatType>(n_samples);
 
-    for (std::size_t i = 0; i < n_samples; ++i) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
-        const std::size_t current_centroid_index = *(sample_to_closest_centroid_index_first + i);
+        const std::size_t centroid_index = *(sample_to_closest_centroid_index_first + sample_index);
         // iterate over all the other data samples by skipping when i == j or C_I != C_J
-        for (std::size_t j = 0; j < n_samples; ++j) {
+        for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // get the centroid associated to the other sample
-            const std::size_t other_centroid_index = *(sample_to_closest_centroid_index_first + j);
+            const std::size_t other_centroid_index = *(sample_to_closest_centroid_index_first + other_sample_index);
             // compute distance only when sample is not itself and belongs to the same cluster
-            if ((current_centroid_index == other_centroid_index) && (i != j)) {
+            if ((centroid_index == other_centroid_index) && (sample_index != other_sample_index)) {
                 // accumulate the squared distances
-                samples_cohesion_values[i] += cpp_clustering::heuristic::heuristic(
-                    /*first sample begin=*/sample_first + i * n_features,
-                    /*first sample end=*/sample_first + i * n_features + n_features,
-                    /*other sample begin=*/sample_first + j * n_features);
+                samples_cohesion_values[sample_index] +=
+                    cpp_clustering::heuristic::heuristic(sample_first + sample_index * n_features,
+                                                         sample_first + sample_index * n_features + n_features,
+                                                         sample_first + other_sample_index * n_features);
             }
         }
         // number of samples in the current centroid
-        const auto cluster_size = cluster_sizes[current_centroid_index];
+        const auto cluster_size = cluster_sizes[centroid_index];
         // normalise the sum of the distances from the current sample to all the other samples in the same centroid
         // divide by one if the cluster contains 0 or 1 sample
         if (cluster_size > 1) {
-            samples_cohesion_values[i] /= static_cast<FloatType>(cluster_size - 1);
+            samples_cohesion_values[sample_index] /= static_cast<FloatType>(cluster_size - 1);
         }
     }
     return samples_cohesion_values;
@@ -139,42 +140,41 @@ std::vector<typename IteratorFloat::value_type> separation(const IteratorFloat& 
 
     auto samples_separation_values = std::vector<FloatType>(n_samples);
 
-    for (std::size_t i = 0; i < n_samples; ++i) {
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
-        const std::size_t current_centroid_index = *(sample_to_closest_centroid_index_first + i);
+        const std::size_t centroid_index = *(sample_to_closest_centroid_index_first + sample_index);
         // the sum of distances from the current sample to other samples from different centroids
         auto sample_to_other_cluster_samples_distance_mean = std::vector<FloatType>(cluster_sizes.size());
         // iterate over all the other data samples (j) that dont belong to the same cluster
-        for (std::size_t j = 0; j < n_samples; ++j) {
+        for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // get the centroid associated to the other sample
-            const std::size_t other_centroid_index = *(sample_to_closest_centroid_index_first + j);
+            const std::size_t other_centroid_index = *(sample_to_closest_centroid_index_first + other_sample_index);
             // compute distance only when sample belongs to a different cluster
-            if (current_centroid_index != other_centroid_index) {
+            if (centroid_index != other_centroid_index) {
                 // accumulate the squared distances for the correct centroid index
                 sample_to_other_cluster_samples_distance_mean[other_centroid_index] +=
-                    cpp_clustering::heuristic::heuristic(
-                        /*first sample begin=*/sample_first + i * n_features,
-                        /*first sample end=*/sample_first + i * n_features + n_features,
-                        /*other sample begin=*/sample_first + j * n_features);
+                    cpp_clustering::heuristic::heuristic(sample_first + sample_index * n_features,
+                                                         sample_first + sample_index * n_features + n_features,
+                                                         sample_first + other_sample_index * n_features);
             }
         }
         // normalize each cluster mean distance sum by each cluster's number of samples
         // destination_i = source_i / n if n != 0 else infinity
-        std::transform(
-            sample_to_other_cluster_samples_distance_mean.begin(),
-            sample_to_other_cluster_samples_distance_mean.end(),
-            cluster_sizes.begin(),
-            sample_to_other_cluster_samples_distance_mean.begin(),
-            [](const auto& dist, const auto& idx_count) {
-                // if cluster size is zero, set distance mean to infinity so that it doesnt
-                // get picked otherwise normalize by dividing normally
-                return (idx_count ? dist / static_cast<FloatType>(idx_count) : std::numeric_limits<FloatType>::max());
-            });
+        std::transform(sample_to_other_cluster_samples_distance_mean.begin(),
+                       sample_to_other_cluster_samples_distance_mean.end(),
+                       cluster_sizes.begin(),
+                       sample_to_other_cluster_samples_distance_mean.begin(),
+                       [](const auto& distance, const auto& cluster_size) {
+                           // if cluster size is zero, set distance mean to infinity so that it doesnt
+                           // get picked otherwise normalize by dividing normally
+                           return (cluster_size ? distance / static_cast<FloatType>(cluster_size)
+                                                : std::numeric_limits<FloatType>::max());
+                       });
         // set the current cluster index distance value to infinity so that it doesnt get chosen
-        sample_to_other_cluster_samples_distance_mean[current_centroid_index] = std::numeric_limits<FloatType>::max();
+        sample_to_other_cluster_samples_distance_mean[centroid_index] = std::numeric_limits<FloatType>::max();
         // normalise the sum of the distances from the current sample to all the other samples in the same cluster
-        samples_separation_values[i] = *std::min_element(sample_to_other_cluster_samples_distance_mean.begin(),
-                                                         sample_to_other_cluster_samples_distance_mean.end());
+        samples_separation_values[sample_index] = *std::min_element(
+            sample_to_other_cluster_samples_distance_mean.begin(), sample_to_other_cluster_samples_distance_mean.end());
     }
     return samples_separation_values;
 }
@@ -235,7 +235,7 @@ std::vector<typename IteratorFloat::value_type> silhouette(const IteratorFloat& 
             silhouette_values[i] = 0;
 
         } else {
-            silhouette_values[i] = sep / coh - 1;
+            silhouette_values[i] = sep / coh - static_cast<FloatType>(1);
         }
     }
     return silhouette_values;

@@ -17,7 +17,7 @@ except:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn"])
     from sklearn import datasets
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 # datasets.fetch_openml needs pandas. Check if it exists and install if it doesnt
 try:
@@ -142,7 +142,7 @@ def normalize_dataset(inputs, labels, scale=1, shift=0):
 
 def normalize_mnist(inputs, labels):
     # normalize dataset for easier parameter selection
-    inputs = (inputs / 255).astype(TYPE)
+    inputs = MinMaxScaler(feature_range=(0, 1)).fit_transform(inputs).astype(TYPE)
     labels = labels.reshape(-1, 1).astype(np.int64)
     return inputs, labels
 

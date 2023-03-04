@@ -1,10 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "cpp_clustering/heuristics/SilhouetteMethod.hpp"
 #include "cpp_clustering/kmeans/Hamerly.hpp"
-#include "cpp_clustering/kmeans/Lloyd.hpp"
-
 #include "cpp_clustering/kmeans/KMeans.hpp"
+#include "cpp_clustering/kmeans/Lloyd.hpp"
 #include "cpp_clustering/math/random/VosesAliasMethod.hpp"
 
 #include <sys/types.h>  // std::ssize_t
@@ -130,6 +130,43 @@ class KMeansErrorsTest : public ::testing::Test {
     const fs::path predictions_folder = folder_root / fs::path("predictions");
     const fs::path centroids_folder   = folder_root / fs::path("centroids");
 };
+
+TEST_F(KMeansErrorsTest, SilhouetteTest) {
+    using KMeans = cpp_clustering::KMeans<dType>;
+
+    fs::path filename = "unbalanced_blobs.txt";
+
+    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::size_t k_min = 2;
+    std::size_t k_max = 10;
+
+    std::vector<dType> scores(k_max - k_min);
+
+    // range n_centroids/n_medoids in [2, 10[
+    for (std::size_t k = k_min; k < k_max; ++k) {
+        // use any clustering algorithm that better suits your use case
+        KMeans kmeans(k, n_features);
+        // fit the centroids (or medoids if it was KMedoids)
+        kmeans.fit(data.begin(), data.end());
+        // map the samples to their closest centroid/medoid
+        const auto predictions = kmeans.predict(data.begin(), data.end());
+        // compute the silhouette scores for each sample
+        const auto samples_silhouette_values = cpp_clustering::silhouette_method::silhouette(
+            data.begin(), data.end(), predictions.begin(), predictions.end(), n_features);
+        // get the average score
+        const auto mean_silhouette_coefficient = cpp_clustering::silhouette_method::get_mean_silhouette_coefficient(
+            samples_silhouette_values.begin(), samples_silhouette_values.end());
+        // accumulate the current scores
+        scores[k - k_min] = mean_silhouette_coefficient;
+    }
+    // find the k corresponding to the number of centroids/medoids k with the best average silhouette score
+    const auto best_k = k_min + common::utils::argmax(scores.begin(), scores.end());
+
+    std::cout << "best k: " << best_k << "\n";
+}
 
 TEST_F(KMeansErrorsTest, NoisyCirclesTest) {
     fs::path filename = "noisy_circles.txt";
