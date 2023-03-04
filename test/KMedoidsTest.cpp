@@ -120,20 +120,16 @@ class KMedoidsErrorsTest : public ::testing::Test {
         using KMedoids = cpp_clustering::KMedoids<dType, true>;
         // using PAM = cpp_clustering::FasterMSC;
 
-        // common::clustering::kmeansplusplus::make_centroids<InputsIterator>
-
-        const auto uniform_random_indices =
-            common::utils::select_from_range(n_medoids, {0, (inputs_last - inputs_first) / n_features});
-        const auto uniform_random_centroids =
-            common::utils::init_uniform(inputs_first, inputs_last, n_medoids, n_features);
+        using DatasetDescriptorType              = std::tuple<InputsIterator, InputsIterator, std::size_t>;
+        DatasetDescriptorType dataset_descriptor = std::make_tuple(inputs_first, inputs_last, n_features);
+        const auto            pairwise_distance_matrix =
+            cpp_clustering::containers::LowerTriangleMatrix<InputsIterator>(dataset_descriptor);
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 
-        // KMedoids::Options().max_iter(n_iterations).n_init(10).early_stopping(true).patience(5).tolerance(0)
-        // KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0)
-        kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
+        kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(false).patience(0).n_init(10));
 
-        const auto medoids   = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+        const auto medoids   = kmedoids.fit<cpp_clustering::FasterMSC>(pairwise_distance_matrix);
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
         const auto predictions = kmedoids.predict(inputs_first, inputs_last);
@@ -152,13 +148,6 @@ class KMedoidsErrorsTest : public ::testing::Test {
         std::size_t           n_iterations = 1) {
         using KMedoids = cpp_clustering::KMedoids<dType>;
         // using PAM = cpp_clustering::FasterMSC;
-
-        // common::clustering::kmeansplusplus::make_centroids<InputsIterator>
-
-        const auto uniform_random_indices =
-            common::utils::select_from_range(n_medoids, {0, (inputs_last - inputs_first) / n_features});
-        const auto uniform_random_centroids =
-            common::utils::init_uniform(inputs_first, inputs_last, n_medoids, n_features);
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 

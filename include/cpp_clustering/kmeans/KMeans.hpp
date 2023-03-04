@@ -168,47 +168,50 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
     // make the losses buffer for each centroids candidates
     auto candidates_losses = std::vector<T>(centroids_candidates.size());
 
-    // creates a n_candidates vector of vectors (of n_centroids size with each elements initialized to infinity if we
-    // wanted to be precise but common::utils::are_containers_equal checks for containers sizes. So we dont need to do
-    // it). We could use only one candidate with a single thread but we make it thread safe this way we dont necessarily
-    // need to initialize with vectors of infinities because
+    // This creates a n_candidates vector of n_centroids vectors. The elements of each vector should be initialized to
+    // infinity, but since common::utils::are_containers_equal checks container sizes, it's not necessary to do so. We
+    // could use only one candidate with a single thread but we make it thread safe this way we dont necessarily need to
+    // initialize with vectors of infinities
     auto centroids_candidates_prev = std::vector<std::vector<T>>(centroids_candidates.size());
 
+#if defined(_OPENMP) && THREADS_ENABLED == true
+#pragma omp parallel for
+#endif
     for (std::size_t k = 0; k < centroids_candidates.size(); ++k) {
-        // assign the centroids attributes to the current centroids
-        centroids_ = centroids_candidates[k];
-
-        auto kmeans_algorithm = KMeansAlgorithm<SamplesIterator>({data_first, data_last, n_features_}, centroids_);
+#if defined(VERBOSE) && VERBOSE == true
+        printf("---\nAttempt(%ld/%ld): ", k + 1, centroids_candidates.size());
+#endif
+        auto kmeans_algorithm =
+            KMeansAlgorithm<SamplesIterator>({data_first, data_last, n_features_}, centroids_candidates[k]);
 
         std::size_t patience_iter = 0;
 
         for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
-            printf("%.3f\n", kmeans_algorithm.total_deviation());
+            printf("%.3f, ", kmeans_algorithm.total_deviation());
 #endif
 
-            centroids_ = kmeans_algorithm.step();
+            centroids_candidates[k] = kmeans_algorithm.step();
 
             if (options_.early_stopping_ &&
-                common::utils::are_containers_equal(centroids_, centroids_candidates_prev[k], options_.tolerance_)) {
+                common::utils::are_containers_equal(
+                    centroids_candidates[k], centroids_candidates_prev[k], options_.tolerance_)) {
                 if (patience_iter == options_.patience_) {
                     break;
                 }
                 ++patience_iter;
+
             } else {
                 patience_iter = 0;
             }
-            centroids_candidates_prev[k] = centroids_;
+            // save the results from the current step
+            centroids_candidates_prev[k] = centroids_candidates[k];
         }
 #if defined(VERBOSE) && VERBOSE == true
-        // last loss
+        // final loss
         printf("%.3f\n", kmeans_algorithm.total_deviation());
-        std::cout << "\n";
 #endif
-
-        // once the training loop is finished, update the centroids candidate
-        centroids_candidates[k] = centroids_;
         // save the loss for each candidate
         candidates_losses[k] = kmeans_algorithm.total_deviation();
     }
@@ -216,6 +219,7 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
     const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
     // return best centroids accordingly to the lowest loss
     centroids_ = centroids_candidates[min_loss_index];
+
     return centroids_;
 }
 
