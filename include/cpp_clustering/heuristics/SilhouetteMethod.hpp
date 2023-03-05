@@ -28,10 +28,11 @@ std::vector<std::size_t> get_cluster_sizes(IteratorInt sample_to_closest_centroi
                                            IteratorInt sample_to_closest_centroid_index_last) {
     static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
 
-    const auto greatest_label_index =
-        *std::max_element(sample_to_closest_centroid_index_first, sample_to_closest_centroid_index_last);
+    // n_centroids = 1 + greatest_centroid_index
+    const auto n_centroids =
+        1 + *std::max_element(sample_to_closest_centroid_index_first, sample_to_closest_centroid_index_last);
     // n_labels = 1 + largest_label_index
-    auto labels_histogram = std::vector<std::size_t>(greatest_label_index + 1);
+    auto labels_histogram = std::vector<std::size_t>(n_centroids);
 
     while (sample_to_closest_centroid_index_first != sample_to_closest_centroid_index_last) {
         ++labels_histogram[*(sample_to_closest_centroid_index_first++)];
