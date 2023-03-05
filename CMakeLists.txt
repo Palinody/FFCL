@@ -158,10 +158,9 @@ elseif(MODE STREQUAL "gtest")
     )
 
 else()
-    add_definitions(-DVERBOSE=false)
-
     add_library(
         ${PROJECT_NAME}
+        SHARED
         ${HEADER_FILES}
         ${SOURCE_FILES}
     )

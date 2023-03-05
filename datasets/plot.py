@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
-import math
 import csv
 import numpy as np
 import random
 import colorsys
 
-from sklearn import cluster, datasets, mixture
+import datasets_maker
 
 from typing import Tuple, List, Any
 
@@ -76,8 +75,6 @@ def num_features_in_file(filename: str) -> int:
         first_line = file.readline()
         return len(first_line.split(" "))
 
-
-import datasets_maker
 
 if __name__ == "__main__":
     DIM_X = 0
