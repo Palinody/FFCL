@@ -5,6 +5,7 @@ datasets/__pycache__/
 Testing/
 
 include/cpp_clustering/containers/KDTree.hpp
+test/KDTreeTest.cpp
 
 # Ignore all files with the extension ".o" in any directory
 *.o

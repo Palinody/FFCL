@@ -111,10 +111,8 @@ elseif(MODE STREQUAL "gtest")
 
     add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
 
-    # add_compile_options(-std=c++17 -g)
     include(CTest)
 
-    # include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
     add_executable(
         KMedoidsTest
 
@@ -149,9 +147,26 @@ elseif(MODE STREQUAL "gtest")
         KMeansTest
     )
 
+    add_executable(
+        KDTreeTest
+
+        # ---
+        test/KDTreeTestTest.cpp
+    )
+    target_link_libraries(
+        KDTreeTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        KDTreeTest
+        KDTreeTest
+    )
+
     add_test(
         NAME AllTests
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "KMedoidsTest|KMeansTest"
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "KMedoidsTest|KMeansTest|KDTreeTest"
     )
 
 else()

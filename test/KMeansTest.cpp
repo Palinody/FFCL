@@ -26,9 +26,13 @@ class KMeansErrorsTest : public ::testing::Test {
         ssize_t       n_features = -1;
         if (file.is_open()) {
             std::string line;
+
             std::getline(file, line);
-            n_features = std::count(line.begin(), line.end(), ' ') + 1;
+            // count the number of values at the first line, delimited by the specified delimiter
+            n_features = std::count(line.begin(), line.end(), delimiter) + 1;
+
             file.close();
+
         } else {
             throw std::ios_base::failure("Unable to open file: " + filepath.string());
         }
@@ -43,8 +47,10 @@ class KMeansErrorsTest : public ::testing::Test {
         if (filestream.is_open()) {
             // temporary string data
             std::string row_str, elem_str;
+
             while (std::getline(filestream, row_str, '\n')) {
                 std::stringstream row_str_stream(row_str);
+
                 while (std::getline(row_str_stream, elem_str, delimiter)) {
                     data.emplace_back(std::stof(elem_str));
                 }
@@ -58,8 +64,10 @@ class KMeansErrorsTest : public ::testing::Test {
         try {
             if (!std::filesystem::exists(directory_path)) {
                 std::filesystem::create_directories(directory_path);
+
 #if defined(VERBOSE) && VERBOSE == true
                 std::cout << "Directory created: " << directory_path << "\n";
+
             } else {
                 std::cout << "Dir. already exists\n";
 #endif
@@ -79,11 +87,15 @@ class KMeansErrorsTest : public ::testing::Test {
 
         if (filestream.is_open()) {
             std::size_t iter{};
+
             for (const auto& elem : data) {
                 filestream << elem;
+
                 ++iter;
+
                 if (iter % n_features == 0 && iter != 0) {
                     filestream << '\n';
+
                 } else {
                     filestream << ' ';
                 }
