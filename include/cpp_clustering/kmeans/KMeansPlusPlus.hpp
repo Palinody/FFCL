@@ -51,8 +51,7 @@ std::vector<typename IteratorFloat::value_type> make_centroids(const IteratorFlo
         auto nearest_centroid_distances =
             kmeans::utils::samples_to_nearest_centroid_distances(data_first, data_last, n_features, centroids);
         // use these distances as weighted probabilities
-        auto alias_method = math::random::VosesAliasMethod(
-            common::utils::to_type<double>(nearest_centroid_distances.begin(), nearest_centroid_distances.end()));
+        auto alias_method = math::random::VosesAliasMethod(nearest_centroid_distances);
 
         const auto random_index = alias_method();
 
@@ -95,8 +94,7 @@ std::vector<typename IteratorFloat::value_type> make_centroids_from_previous_cen
         auto previous_centroid_distances =
             kmeans::utils::samples_to_nearest_centroid_distances(data_first, data_last, n_features, previous_centroid);
         // use these distances as weighted probabilities
-        auto alias_method = math::random::VosesAliasMethod(
-            common::utils::to_type<double>(previous_centroid_distances.begin(), previous_centroid_distances.end()));
+        auto alias_method = math::random::VosesAliasMethod(previous_centroid_distances);
 
         const auto random_index = alias_method();
 

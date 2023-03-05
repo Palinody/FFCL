@@ -127,7 +127,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 
-        kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(false).patience(0).n_init(10));
+        kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(10));
 
         const auto medoids   = kmedoids.fit<cpp_clustering::FasterMSC>(pairwise_distance_matrix);
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);

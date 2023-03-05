@@ -108,7 +108,7 @@ class KMeansErrorsTest : public ::testing::Test {
         kmeans.set_options(
             /*KMeans options=*/KMeans::Options()
                 .max_iter(n_iterations)
-                .early_stopping(false)
+                .early_stopping(true)
                 .tolerance(0.001)
                 .patience(0)
                 .n_init(10));

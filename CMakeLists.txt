@@ -36,7 +36,6 @@ set(HEADER_FILES
 )
 
 set(SOURCE_FILES
-    src/math/random/VosesAliasMethod.cpp
 )
 
 include_directories(
@@ -120,7 +119,6 @@ elseif(MODE STREQUAL "gtest")
         KMedoidsTest
 
         # ---
-        src/math/random/VosesAliasMethod.cpp
         test/KMedoidsTest.cpp
     )
     target_link_libraries(
@@ -138,7 +136,6 @@ elseif(MODE STREQUAL "gtest")
         KMeansTest
 
         # ---
-        src/math/random/VosesAliasMethod.cpp
         test/KMeansTest.cpp
     )
     target_link_libraries(
