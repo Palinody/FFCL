@@ -114,6 +114,23 @@ elseif(MODE STREQUAL "gtest")
     include(CTest)
 
     add_executable(
+        UtilsTest
+
+        # ---
+        test/UtilsTest.cpp
+    )
+    target_link_libraries(
+        UtilsTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        UtilsTest
+        UtilsTest
+    )
+
+    add_executable(
         KMedoidsTest
 
         # ---
@@ -151,7 +168,7 @@ elseif(MODE STREQUAL "gtest")
         KDTreeTest
 
         # ---
-        test/KDTreeTestTest.cpp
+        test/KDTreeTest.cpp
     )
     target_link_libraries(
         KDTreeTest
@@ -166,7 +183,7 @@ elseif(MODE STREQUAL "gtest")
 
     add_test(
         NAME AllTests
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "KMedoidsTest|KMeansTest|KDTreeTest"
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "UtilsTest|KMedoidsTest|KMeansTest|KDTreeTest"
     )
 
 else()

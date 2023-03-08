@@ -20,8 +20,9 @@ class VosesAliasMethod {
 
     VosesAliasMethod(const VosesAliasMethod&) = delete;
 
-    std::int64_t sample();
-    std::int64_t operator()();
+    inline std::int64_t sample();
+
+    inline std::int64_t operator()();
 
   private:
     void init(const std::vector<FloatType>& weights);
@@ -56,7 +57,7 @@ void VosesAliasMethod<FloatType>::init(const std::vector<FloatType>& weights) {
     std::int64_t n_small = 0, n_large = 0;
 
     // normalization factor: n_weights / sum(weights)
-    const FloatType norm_fact = n_weights_ / std::accumulate(weights.begin(), weights.end(), 0.0);
+    const FloatType norm_fact = n_weights_ / std::accumulate(weights.begin(), weights.end(), static_cast<FloatType>(0));
     // renormalization of the weights (sum(fake_probs) != 1, it's normal)
     std::transform(weights.begin(),
                    weights.end(),

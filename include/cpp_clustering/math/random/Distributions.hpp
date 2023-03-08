@@ -40,18 +40,18 @@ template <typename T>
 class uniform_distribution {
   public:
     uniform_distribution(T inf, T sup)
-      : distr_(inf, sup) {}
+      : distribution_(inf, sup) {}
 
     inline T operator()() {
-        return distr_(*seed());
+        return distribution_(*seed());
     }
 
   private:
     template <typename dType>
-    using dist_uniform_t = std::conditional_t<std::is_integral<dType>::value,
-                                              std::uniform_int_distribution<dType>,
-                                              std::uniform_real_distribution<dType> >;
-    dist_uniform_t<T> distr_;
+    using UniformDistributionType = std::conditional_t<std::is_integral<dType>::value,
+                                                       std::uniform_int_distribution<dType>,
+                                                       std::uniform_real_distribution<dType> >;
+    UniformDistributionType<T> distribution_;
 };
 /**
  * @brief
@@ -68,18 +68,18 @@ template <typename T>
 class normal_distribution {
   public:
     normal_distribution(T mean, double sd)
-      : distr_(mean, sd) {}
+      : distribution_(mean, sd) {}
 
     inline T operator()() {
-        return distr_(*seed());
+        return distribution_(*seed());
     }
 
   private:
     template <typename dType>
-    using dist_normal_t = std::conditional_t<std::is_integral<dType>::value,
-                                             std::binomial_distribution<dType>,
-                                             std::normal_distribution<dType> >;
-    dist_normal_t<T> distr_;
+    using NormalDistributionType = std::conditional_t<std::is_integral<dType>::value,
+                                                      std::binomial_distribution<dType>,
+                                                      std::normal_distribution<dType> >;
+    NormalDistributionType<T> distribution_;
 };
 
 }  // namespace math::random
