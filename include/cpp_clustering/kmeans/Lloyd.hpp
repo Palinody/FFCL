@@ -44,10 +44,14 @@ class Lloyd {
 
         std::vector<std::size_t> samples_to_nearest_centroid_indices_;
         std::vector<DataType>    samples_to_nearest_centroid_distances_;
+
+        std::vector<std::size_t> cluster_sizes_;
+        std::vector<DataType>    cluster_position_sums_;
     };
 
-    void update_centroids(const std::vector<std::size_t>&                        cluster_sizes,
-                          const std::vector<typename Lloyd<Iterator>::DataType>& cluster_position_sums);
+    void update_clusters();
+
+    void update_centroids();
 
     DataType update_buffers();
 
@@ -87,34 +91,22 @@ typename Lloyd<Iterator>::DataType Lloyd<Iterator>::total_deviation() {
 
 template <typename Iterator>
 std::vector<typename Lloyd<Iterator>::DataType> Lloyd<Iterator>::step() {
-    const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
-    const std::size_t n_centroids                        = centroids_.size() / n_features;
-
-    // the number of samples associated to each centroids
-    const auto cluster_sizes =
-        kmeans::utils::compute_cluster_sizes(buffers_ptr_->samples_to_nearest_centroid_indices_.begin(),
-                                             buffers_ptr_->samples_to_nearest_centroid_indices_.end(),
-                                             n_centroids);
-
-    const auto cluster_position_sums =
-        kmeans::utils::compute_cluster_positions_sum(samples_first,
-                                                     samples_last,
-                                                     buffers_ptr_->samples_to_nearest_centroid_indices_.begin(),
-                                                     n_centroids,
-                                                     n_features);
-
+    // update the cluster sizes and intra-cluster sum of positions
+    update_clusters();
     // update all the centroids with the new intra-cluster positions sum and cluster sizes
-    update_centroids(cluster_sizes, cluster_position_sums);
+    update_centroids();
     // recompute the loss w.r.t. the updated buffers
     loss_ = update_buffers();
     return centroids_;
 }
 
 template <typename Iterator>
-void Lloyd<Iterator>::update_centroids(const std::vector<std::size_t>&                        cluster_sizes,
-                                       const std::vector<typename Lloyd<Iterator>::DataType>& cluster_position_sums) {
+void Lloyd<Iterator>::update_centroids() {
     const auto        n_features  = std::get<2>(dataset_descriptor_);
     const std::size_t n_centroids = centroids_.size() / n_features;
+
+    auto& cluster_sizes         = buffers_ptr_->cluster_sizes_;
+    auto& cluster_position_sums = buffers_ptr_->cluster_position_sums_;
 
     // Update the centroids using the assigned samples
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
@@ -159,6 +151,23 @@ typename Iterator::value_type Lloyd<Iterator>::update_buffers() {
 }
 
 template <typename Iterator>
+void Lloyd<Iterator>::update_clusters() {
+    const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
+    const std::size_t n_centroids                        = centroids_.size() / n_features;
+
+    buffers_ptr_->cluster_sizes_ =
+        kmeans::utils::compute_cluster_sizes(buffers_ptr_->samples_to_nearest_centroid_indices_.begin(),
+                                             buffers_ptr_->samples_to_nearest_centroid_indices_.end(),
+                                             n_centroids);
+    buffers_ptr_->cluster_position_sums_ =
+        kmeans::utils::compute_cluster_positions_sum(samples_first,
+                                                     samples_last,
+                                                     buffers_ptr_->samples_to_nearest_centroid_indices_.begin(),
+                                                     n_centroids,
+                                                     n_features);
+}
+
+template <typename Iterator>
 Lloyd<Iterator>::Buffers::Buffers(const Iterator&                                        samples_first,
                                   const Iterator&                                        samples_last,
                                   std::size_t                                            n_features,
@@ -167,8 +176,12 @@ Lloyd<Iterator>::Buffers::Buffers(const Iterator&                               
                                                                                             samples_last,
                                                                                             n_features,
                                                                                             centroids)}
-  , samples_to_nearest_centroid_distances_{
-        kmeans::utils::samples_to_nearest_centroid_distances(samples_first, samples_last, n_features, centroids)} {}
+  , samples_to_nearest_centroid_distances_{kmeans::utils::samples_to_nearest_centroid_distances(samples_first,
+                                                                                                samples_last,
+                                                                                                n_features,
+                                                                                                centroids)}
+  , cluster_sizes_{std::vector<std::size_t>(centroids.size() / n_features)}
+  , cluster_position_sums_{std::vector<typename Lloyd<Iterator>::DataType>(centroids.size())} {}
 
 template <typename Iterator>
 Lloyd<Iterator>::Buffers::Buffers(const DatasetDescriptorType&                           dataset_descriptor,

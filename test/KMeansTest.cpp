@@ -120,7 +120,7 @@ class KMeansErrorsTest : public ::testing::Test {
         kmeans.set_options(
             /*KMeans options=*/KMeans::Options()
                 .max_iter(n_iterations)
-                .early_stopping(true)
+                .early_stopping(false)
                 .tolerance(0.001)
                 .patience(0)
                 .n_init(10));
