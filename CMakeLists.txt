@@ -4,7 +4,7 @@ project(cpp_clustering)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
+add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -openmp)
 
 # add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
@@ -109,9 +109,26 @@ elseif(MODE STREQUAL "gtest")
     # -------------------------------
     enable_testing()
 
-    add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
+    add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -openmp)
 
     include(CTest)
+
+    add_executable(
+        DistributionsTest
+
+        # ---
+        test/DistributionsTest.cpp
+    )
+    target_link_libraries(
+        DistributionsTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        DistributionsTest
+        DistributionsTest
+    )
 
     add_executable(
         UtilsTest

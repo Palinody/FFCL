@@ -1,57 +1,62 @@
 #pragma once
 
-#ifdef _OPENMP
+#if defined(_OPENMP) && THREADS_ENABLED == true
 #include <omp.h>
+#elif !defined(_OPENMP) && THREADS_ENABLED == true
+#include <thread>
 #endif
 
-#include <chrono>
 #include <memory>
 #include <random>
-#include <thread>
 
 namespace math::random {
 
-/**
- * @brief seed that should be provided only as rvalue
- *
- * @return std::mt19937*
- */
-static inline std::mt19937* seed() {
-#if defined(_OPENMP) && THREADS_ENABLED == true
-    auto thread_num = omp_get_thread_num();
-#endif
-    static thread_local std::unique_ptr<std::mt19937> instance;
-    if (!instance) {
-        const auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-#if defined(_OPENMP) && THREADS_ENABLED == true
-        instance = std::make_unique<std::mt19937>(seed + thread_num);
-#else
-        instance = std::make_unique<std::mt19937>(seed);
-#endif
-    }
-    return instance.get();
+static inline std::mt19937& thread_local_mersenne_engine() {
+    static thread_local std::random_device rnd_device;
+    // static thread_local std::mt19937 mersienne_engine_thread_instance{rnd_device()};
+    static thread_local std::mt19937 mersienne_engine_thread_instance(rnd_device());
+
+    return mersienne_engine_thread_instance;
 }
+
+static inline std::mt19937& thread_local_mersenne_engine(std::size_t value) {
+#if defined(_OPENMP) && THREADS_ENABLED == true
+    value += omp_get_thread_num();
+    std::cout << "Seed value (openmp): " << value << "\n";
+
+#elif !defined(_OPENMP) && THREADS_ENABLED == true
+    value += std::hash<std::thread::id>{}(std::this_thread::get_id());
+    std::cout << "Seed value (pthread): " << value << "\n";
+#endif
+    static thread_local std::mt19937 mersienne_engine_thread_instance(value);
+
+    return mersienne_engine_thread_instance;
+}
+
 /**
  * @brief Generates random numbers with a normal distribution.
  *
- * @tparam T The type of numbers to generate.
+ * @tparam DataType The type of numbers to generate.
  */
-template <typename T>
+template <typename DataType>
 class uniform_distribution {
   public:
-    uniform_distribution(T inf, T sup)
-      : distribution_(inf, sup) {}
+    uniform_distribution(DataType lower_bound, DataType upper_bound)
+      : distribution_(lower_bound, upper_bound) {}
 
-    inline T operator()() {
-        return distribution_(*seed());
+    inline DataType operator()() {
+        return distribution_(thread_local_mersenne_engine());
+    }
+
+    inline DataType operator()(std::size_t value) {
+        return distribution_(thread_local_mersenne_engine(value));
     }
 
   private:
-    template <typename dType>
-    using UniformDistributionType = std::conditional_t<std::is_integral<dType>::value,
-                                                       std::uniform_int_distribution<dType>,
-                                                       std::uniform_real_distribution<dType>>;
-    UniformDistributionType<T> distribution_;
+    using UniformDistributionType = std::conditional_t<std::is_integral<DataType>::value,
+                                                       std::uniform_int_distribution<DataType>,
+                                                       std::uniform_real_distribution<DataType>>;
+    UniformDistributionType distribution_;
 };
 /**
  * @brief
@@ -62,24 +67,31 @@ class uniform_distribution {
  * std::normal_distribution<> d(mu, sd)
  * mu: mean of the distr.
  * sd: variance of the distr.
- * @tparam T
+ * @tparam DataType
  */
-template <typename T>
+template <typename DataType>
 class normal_distribution {
   public:
-    normal_distribution(T mean, double sd)
+    normal_distribution(DataType mean, DataType sd)
       : distribution_(mean, sd) {}
 
-    inline T operator()() {
-        return distribution_(*seed());
+    normal_distribution(DataType n_trials, double success_rate)
+      : distribution_(n_trials, success_rate) {}
+
+    inline DataType operator()() {
+        return distribution_(thread_local_mersenne_engine());
+    }
+
+    inline DataType operator()(std::size_t value) {
+        return distribution_(thread_local_mersenne_engine(value));
     }
 
   private:
-    template <typename dType>
-    using NormalDistributionType = std::conditional_t<std::is_integral<dType>::value,
-                                                      std::binomial_distribution<dType>,
-                                                      std::normal_distribution<dType>>;
-    NormalDistributionType<T> distribution_;
+    using NormalDistributionType = std::conditional_t<std::is_integral<DataType>::value,
+                                                      std::binomial_distribution<DataType>,
+                                                      std::normal_distribution<DataType>>;
+
+    NormalDistributionType distribution_;
 };
 
 }  // namespace math::random
