@@ -50,7 +50,7 @@ class uniform_distribution {
     template <typename dType>
     using UniformDistributionType = std::conditional_t<std::is_integral<dType>::value,
                                                        std::uniform_int_distribution<dType>,
-                                                       std::uniform_real_distribution<dType> >;
+                                                       std::uniform_real_distribution<dType>>;
     UniformDistributionType<T> distribution_;
 };
 /**
@@ -78,7 +78,7 @@ class normal_distribution {
     template <typename dType>
     using NormalDistributionType = std::conditional_t<std::is_integral<dType>::value,
                                                       std::binomial_distribution<dType>,
-                                                      std::normal_distribution<dType> >;
+                                                      std::normal_distribution<dType>>;
     NormalDistributionType<T> distribution_;
 };
 

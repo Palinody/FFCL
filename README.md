@@ -12,7 +12,6 @@ Fast iterator compatible clustering algorithms written in c++.
 
 - `cpp_clustering::containers::KDTree`
 - Proper unit testing
-- Separate LLoyd's algorithm from KMeans wrapper to make MiniBatchKmeans
 - DBSCAN
 - OPTICS
 - DENCLUE

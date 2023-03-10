@@ -600,12 +600,12 @@ std::size_t partition_around_nth_range(RandomAccessIterator   first,
         if (pivot_index == static_cast<std::size_t>(left_index)) {
             pivot_index = right_index;
             // shift the right index by one so that it doesnt cross-over past the left of the now swapped pivot
-            right_index += 1;
+            ++right_index;
 
         } else if (pivot_index == static_cast<std::size_t>(right_index)) {
             pivot_index = left_index;
             // shift the left index by one so that it doesnt cross-over past the right of the now swapped pivot
-            left_index -= 1;
+            --left_index;
         }
     }
     return pivot_index;
