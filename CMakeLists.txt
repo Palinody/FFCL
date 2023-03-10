@@ -4,7 +4,7 @@ project(cpp_clustering)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -openmp)
+add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
 
 # add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
@@ -109,7 +109,7 @@ elseif(MODE STREQUAL "gtest")
     # -------------------------------
     enable_testing()
 
-    add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -openmp)
+    add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenmp)
 
     include(CTest)
 
@@ -200,7 +200,7 @@ elseif(MODE STREQUAL "gtest")
 
     add_test(
         NAME AllTests
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "UtilsTest|KMedoidsTest|KMeansTest|KDTreeTest"
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "DistributionsTest|UtilsTest|KMedoidsTest|KMeansTest|KDTreeTest"
     )
 
 else()

@@ -4,6 +4,8 @@
 #include "cpp_clustering/common/Utils.hpp"
 #include "cpp_clustering/math/random/Distributions.hpp"
 
+#include <map>
+
 template <typename DataType>
 void print_sequence(std::size_t sequence_length) {
     math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
@@ -48,8 +50,6 @@ void print_thread_sequence(std::size_t thread_id, std::size_t sequence_length, s
     std::cout << "\n";
 }
 
-#include <map>
-
 template <typename DataType>
 void map_hist() {
     math::random::normal_distribution<DataType> uniform_distribution_number_generator(10, 0.1);
@@ -64,8 +64,6 @@ void map_hist() {
     for (auto const& [x, y] : hist)
         std::cout << x << ' ' << std::string(y / 100, '*') << '\n';
 }
-
-#include <thread>
 
 template <typename DataType>
 void thread_func(std::size_t thread_id) {
