@@ -25,7 +25,9 @@ set(HEADER_FILES
     include/cpp_clustering/math/random/Distributions.hpp
     include/cpp_clustering/math/random/VosesAliasMethod.hpp
 
-    # include/cpp_clustering/containers/KDTree.hpp
+    include/cpp_clustering/containers/kdtree/KDTree.hpp
+    include/cpp_clustering/containers/kdtree/KDNode.hpp
+    include/cpp_clustering/containers/kdtree/KDTreeUtils.hpp
     include/cpp_clustering/containers/LowerTriangleMatrix.hpp
 
     include/cpp_clustering/heuristics/Heuristics.hpp
@@ -44,6 +46,9 @@ include_directories(
 
 add_definitions(-DTHREADS_ENABLED=true)
 add_definitions(-DVERBOSE=false)
+
+# disable all assertions
+add_definitions(-DNDEBUG)
 
 # set(MODE "run-benchmarks")
 if(MODE STREQUAL "benchmark")

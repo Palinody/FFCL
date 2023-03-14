@@ -4,6 +4,7 @@
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
