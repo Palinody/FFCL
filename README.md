@@ -96,7 +96,7 @@ This will create a `libcpp_clustering.a` file in the `build/` firectory
 Generate the datasets automatically:
 
 ```sh
-python3 ../datasets/datasets_maker.py
+python3 ../datasets/MakeClusteringDatasets.py
 ```
 
 This will create the following files in `../datasets/clustering/`
@@ -125,7 +125,7 @@ This will create the following files in `../datasets/clustering/`
     └── varied.txt
 ```
 
-The average default number of samples for the datasets is ~2000 samples. This can be changed in the `datasets_maker.py` script. MNIST can have up to 70000 samples and 784 features. Setting `n_samples_mnist=None` results in loading mnist with the maximum number of samples.
+The average default number of samples for the datasets is ~2000 samples. This can be changed in the `MakeClusteringDatasets.py` script. MNIST can have up to 70000 samples and 784 features. Setting `n_samples_mnist=None` results in loading mnist with the maximum number of samples.
 
 Compile (this can also be done before generating the datasets except running the benchmarks)
 

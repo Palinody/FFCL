@@ -513,11 +513,11 @@ void update_except_at(const Iterator&    target_first,
     }
 }
 
-template <typename RandomAccessIterator, typename RangeComparison>
-std::size_t median_index_of_three_ranges(RandomAccessIterator   first,
-                                         RandomAccessIterator   last,
-                                         std::size_t            n_features,
-                                         const RangeComparison& compare_ranges) {
+template <typename RandomAccessIterator, typename RangeComparisonFunction>
+std::size_t median_index_of_three_ranges(RandomAccessIterator           first,
+                                         RandomAccessIterator           last,
+                                         std::size_t                    n_features,
+                                         const RangeComparisonFunction& compare_ranges) {
     const std::size_t n_samples    = common::utils::get_n_samples(first, last, n_features);
     std::size_t       middle_index = n_samples / 2;
 
@@ -539,23 +539,23 @@ std::size_t median_index_of_three_ranges(RandomAccessIterator   first,
     return right_index;
 }
 
-template <typename RandomAccessIterator, typename RangeComparison>
+template <typename RandomAccessIterator, typename RangeComparisonFunction>
 std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_three_ranges(
-    RandomAccessIterator   first,
-    RandomAccessIterator   last,
-    std::size_t            n_features,
-    const RangeComparison& compare_ranges) {
+    RandomAccessIterator           first,
+    RandomAccessIterator           last,
+    std::size_t                    n_features,
+    const RangeComparisonFunction& compare_ranges) {
     const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, compare_ranges);
 
     return {first + median_index * n_features, first + median_index * n_features + n_features};
 }
 
-template <typename RandomAccessIterator, typename RangeComparison>
+template <typename RandomAccessIterator, typename RangeComparisonFunction>
 std::pair<std::size_t, std::pair<RandomAccessIterator, RandomAccessIterator>> median_values_range_of_three_ranges(
-    RandomAccessIterator   first,
-    RandomAccessIterator   last,
-    std::size_t            n_features,
-    const RangeComparison& compare_ranges) {
+    RandomAccessIterator           first,
+    RandomAccessIterator           last,
+    std::size_t                    n_features,
+    const RangeComparisonFunction& compare_ranges) {
     const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, compare_ranges);
 
     return {median_index, {first + median_index * n_features, first + median_index * n_features + n_features}};
@@ -566,12 +566,12 @@ std::pair<std::size_t, std::pair<RandomAccessIterator, RandomAccessIterator>> me
  * This implementation will also swap ranges that are evaluated as equal.
  * However, it will ensure that the indices dont move out of range, without checks.
  */
-template <typename RandomAccessIterator, typename RangeComparison>
-std::size_t partition_around_nth_range(RandomAccessIterator   first,
-                                       RandomAccessIterator   last,
-                                       std::size_t            pivot_index,
-                                       std::size_t            n_features,
-                                       const RangeComparison& compare_ranges) {
+template <typename RandomAccessIterator, typename RangeComparisonFunction>
+std::size_t partition_around_nth_range(RandomAccessIterator           first,
+                                       RandomAccessIterator           last,
+                                       std::size_t                    pivot_index,
+                                       std::size_t                    n_features,
+                                       const RangeComparisonFunction& compare_ranges) {
     // no op if the input contains only one feature vector
     if (std::distance(first, last) <= static_cast<std::ptrdiff_t>(n_features)) {
         return pivot_index;
@@ -615,12 +615,12 @@ std::size_t partition_around_nth_range(RandomAccessIterator   first,
 /**
  * @brief A quickselect implementation https://en.wikipedia.org/wiki/Quickselect
  */
-template <typename RandomAccessIterator, typename RangeComparison>
-std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAccessIterator   first,
-                                                                        RandomAccessIterator   last,
-                                                                        std::size_t            kth_smallest,
-                                                                        std::size_t            n_features,
-                                                                        const RangeComparison& compare_ranges) {
+template <typename RandomAccessIterator, typename RangeComparisonFunction>
+std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAccessIterator           first,
+                                                                        RandomAccessIterator           last,
+                                                                        std::size_t                    kth_smallest,
+                                                                        std::size_t                    n_features,
+                                                                        const RangeComparisonFunction& compare_ranges) {
     std::size_t left_index  = 0;
     std::size_t right_index = common::utils::get_n_samples(first, last, n_features) - 1;
 
@@ -655,12 +655,12 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAc
 /**
  * @brief A quicksort implementation https://en.wikipedia.org/wiki/Quicksort#Algorithm
  */
-template <typename RandomAccessIterator, typename RangeComparison>
-std::size_t quicksort_range(RandomAccessIterator   first,
-                            RandomAccessIterator   last,
-                            std::size_t            initial_pivot_index,
-                            std::size_t            n_features,
-                            const RangeComparison& compare_ranges) {
+template <typename RandomAccessIterator, typename RangeComparisonFunction>
+std::size_t quicksort_range(RandomAccessIterator           first,
+                            RandomAccessIterator           last,
+                            std::size_t                    initial_pivot_index,
+                            std::size_t                    n_features,
+                            const RangeComparisonFunction& compare_ranges) {
     const std::size_t n_samples = common::utils::get_n_samples(first, last, n_features);
 
     // the pivot index is already correct if the number of samples is 0 or 1
