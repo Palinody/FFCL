@@ -153,27 +153,28 @@ template <typename Iterator>
 void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNode<Iterator>>&    kdnode,
                                         rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     writer.StartObject();
+    {
+        writer.String("axis");
+        writer.Int64(kdnode->cut_feature_index_);
 
-    writer.String("axis");
-    writer.Int64(kdnode->cut_feature_index_);
+        writer.String("value");
+        writer.Double(kdnode->samples_.first[kdnode->cut_feature_index_]);
 
-    writer.String("value");
-    writer.Double(kdnode->samples_.first[kdnode->cut_feature_index_]);
+        writer.String("left");
+        if (!kdnode->is_leaf()) {
+            serialize_kdtree(kdnode->left_, writer);
 
-    writer.String("left");
-    if (!kdnode->is_leaf()) {
-        serialize_kdtree(kdnode->left_, writer);
+        } else {
+            kdnode->serialize_kdnode(writer);
+        }
 
-    } else {
-        kdnode->serialize_kdnode(writer);
-    }
+        writer.String("right");
+        if (!kdnode->is_leaf()) {
+            serialize_kdtree(kdnode->right_, writer);
 
-    writer.String("right");
-    if (!kdnode->is_leaf()) {
-        serialize_kdtree(kdnode->right_, writer);
-
-    } else {
-        kdnode->serialize_kdnode(writer);
+        } else {
+            kdnode->serialize_kdnode(writer);
+        }
     }
     writer.EndObject();
 }
@@ -185,28 +186,29 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
     writer.StartObject();
+    {
+        writer.String("n_samples");
+        writer.Int64(
+            common::utils::get_n_samples(std::get<0>(iterator_pair_), std::get<1>(iterator_pair_), n_features_));
 
-    writer.String("n_samples");
-    writer.Int64(common::utils::get_n_samples(std::get<0>(iterator_pair_), std::get<1>(iterator_pair_), n_features_));
+        writer.String("n_features");
+        writer.Int64(n_features_);
 
-    writer.String("n_features");
-    writer.Int64(n_features_);
+        options_.serialize(writer);
 
-    options_.serialize(writer);
-
-    writer.String("bounding_box");
-    writer.StartArray();
-    for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
+        writer.String("bounding_box");
         writer.StartArray();
-        writer.Double(kd_bounding_box_[feature_index].first);
-        writer.Double(kd_bounding_box_[feature_index].second);
+        for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
+            writer.StartArray();
+            writer.Double(kd_bounding_box_[feature_index].first);
+            writer.Double(kd_bounding_box_[feature_index].second);
+            writer.EndArray();
+        }
         writer.EndArray();
+
+        writer.String("tree");
+        serialize_kdtree(root_, writer);
     }
-    writer.EndArray();
-
-    writer.String("tree");
-    serialize_kdtree(root_, writer);
-
     writer.EndObject();
 
     document.Parse(buffer.GetString());
