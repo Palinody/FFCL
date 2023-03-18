@@ -9,6 +9,8 @@
 #include <array>
 #include <memory>
 
+#include "rapidjson/writer.h"
+
 namespace cpp_clustering::containers {
 
 template <typename Iterator>
@@ -40,11 +42,17 @@ struct KDNode {
 
     bool is_empty() const;
 
+    bool is_leaf() const;
+
+    void serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
+
+    // might contain [0, bucket_size] samples if the node is leaf, else only 1
     SamplesRangeType<Iterator> samples_;
     std::size_t                n_features_;
     ssize_t                    cut_feature_index_;
     // bounding box w.r.t. the chosen feature index. No bounding box for leaf nodes
     // BoundingBox1DType                 bounding_box_1d_;
+    // bounding box hyper rectangle (w.r.t. each dimension)
     BoundingBoxKDType<Iterator>       kd_bounding_box_;
     std::shared_ptr<KDNode<Iterator>> left_;
     std::shared_ptr<KDNode<Iterator>> right_;
@@ -74,6 +82,37 @@ KDNode<Iterator>::KDNode(Iterator                           samples_first,
 template <typename Iterator>
 bool KDNode<Iterator>::is_empty() const {
     return samples_.first == samples_.second;
+}
+
+template <typename Iterator>
+bool KDNode<Iterator>::is_leaf() const {
+    return cut_feature_index_ == -1;
+}
+
+template <typename Iterator>
+void KDNode<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+    assert(this->is_leaf());
+
+    if (this->is_empty()) {
+        writer.Null();
+
+    } else {
+        writer.StartArray();
+        // upper-left and lower-right (with sentinel) iterators
+        const auto [range_first, range_last] = this->samples_;
+
+        const std::size_t n_samples = common::utils::get_n_samples(range_first, range_last, this->n_features_);
+
+        for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+            // sample / feature vector array
+            writer.StartArray();
+            for (std::size_t feature_index = 0; feature_index < this->n_features_; ++feature_index) {
+                writer.Double(this->samples_.first[sample_index * this->n_features_ + feature_index]);
+            }
+            writer.EndArray();
+        }
+        writer.EndArray();
+    }
 }
 
 }  // namespace cpp_clustering::containers

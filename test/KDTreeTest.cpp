@@ -98,9 +98,10 @@ class KDTreeErrorsTest : public ::testing::Test {
             }
         }
     }
-    const fs::path folder_root    = fs::path("../datasets/clustering");
-    const fs::path inputs_folder  = folder_root / fs::path("inputs");
-    const fs::path targets_folder = folder_root / fs::path("targets");
+    const fs::path kdtree_folder_root     = fs::path("../datasets/kdtree");
+    const fs::path clustering_folder_root = fs::path("../datasets/clustering");
+    const fs::path inputs_folder          = clustering_folder_root / fs::path("inputs");
+    const fs::path targets_folder         = clustering_folder_root / fs::path("targets");
 };
 
 TEST_F(KDTreeErrorsTest, NoizyCirclesKDTreeTest) {
@@ -167,11 +168,43 @@ TEST_F(KDTreeErrorsTest, KDTreeTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(data.begin(), data.end(), n_features);
+    auto kdtree = cpp_clustering::containers::KDTree<decltype(data.begin())>({data.begin(), data.end()}, n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
     // kdtree.print();
+}
+
+#include <iostream>
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
+TEST_F(KDTreeErrorsTest, WriteKDTreeWithRapidJSONTest) {
+    // fs::path filename = "noisy_circles.txt";
+    fs::path filename = "noisy_circles.txt";
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto kdtree = cpp_clustering::containers::KDTree<decltype(data.begin())>({data.begin(), data.end()}, n_features);
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    make_directories(kdtree_folder_root);
+
+    fs::path kdtree_filename = "noisy_circles.json";
+
+    kdtree.serialize(kdtree_folder_root / kdtree_filename);
 }
 
 int main(int argc, char** argv) {

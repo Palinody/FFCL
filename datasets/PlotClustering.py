@@ -4,7 +4,7 @@ import numpy as np
 import random
 import colorsys
 
-import datasets_maker
+import MakeClusteringDatasets
 
 from typing import Tuple, List, Any
 
@@ -79,9 +79,11 @@ def num_features_in_file(filename: str) -> int:
 if __name__ == "__main__":
     DIM_X = 0
     DIM_Y = 1
-    #  datasets_maker.datasets_names + ["iris"] + ["unbalanced_blobs"] + ["mnist_train"]
+    #  MakeClusteringDatasets.datasets_names + ["iris"] + ["unbalanced_blobs"] + ["mnist_train"]
     # for dataset_name in ["mnist_train"]:
-    for dataset_name in datasets_maker.datasets_names + ["iris"] + ["unbalanced_blobs"]:
+    for dataset_name in (
+        MakeClusteringDatasets.datasets_names + ["iris"] + ["unbalanced_blobs"]
+    ):
         print(dataset_name)
         n_features = num_features_in_file(datapath + "inputs/" + dataset_name + ".txt")
 

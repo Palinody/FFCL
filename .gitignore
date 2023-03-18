@@ -2,6 +2,7 @@
 # include/cpp_clustering/containers/kdtree/
 build/
 datasets/clustering/
+datasets/kdtree/
 datasets/__pycache__/
 Testing/
 

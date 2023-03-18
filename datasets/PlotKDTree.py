@@ -23,14 +23,14 @@ def TestKDTreeBuildTime(points: np.ndarray):
 
     start_time = time.process_time()
     # start_time = timeit.default_timer()
-    tree = KDTree(points, leaf_size=10, splitter=cyclic_splitter)
+    tree = KDTree(points, leaf_size=10)
     end_time = time.process_time()
     # end_time = timeit.default_timer()
     # print the elapsed time
     print("Elapsed time for KDTree construction:", end_time - start_time, "seconds")
 
 
-if __name__ == "__main__":
+def main():
     # where the datasets are placed (if they arent the should be generated from dataset_maker.py)
     root_folder = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "clustering/"
@@ -44,3 +44,7 @@ if __name__ == "__main__":
     print(dataset.shape)
 
     TestKDTreeBuildTime(dataset)
+
+
+if __name__ == "__main__":
+    main()
