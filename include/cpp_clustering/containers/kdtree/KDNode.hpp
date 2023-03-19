@@ -94,8 +94,6 @@ bool KDNode<Iterator>::is_leaf() const {
 
 template <typename Iterator>
 void KDNode<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
-    assert(is_leaf());
-
     writer.StartArray();
     // upper-left and lower-right (with sentinel) iterators
     const auto [range_first, range_last] = samples_iterator_pair_;

@@ -91,6 +91,31 @@ ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType
     return axis;
 }
 
+template <typename Iterator>
+ssize_t select_axis_with_largest_variance(const Iterator& samples_first,
+                                          const Iterator& samples_last,
+                                          std::size_t     n_features,
+                                          double          n_samples_fraction) {
+    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    // compute the variance if n_samples >= min_samples and make at most n_choices random selections. If n_samples
+    // becomes less than n_choices then n_samples choices will be used.
+    const std::size_t n_choices = n_samples_fraction * n_samples;
+    // select the axis based on variance only if the number the number of selected samples will be more than 2
+    if (n_choices > 2) {
+        const auto random_samples =
+            common::utils::select_n_random_samples(samples_first, samples_last, n_features, n_choices);
+
+        const auto variance_per_feature =
+            common::utils::compute_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
+        // return the feature index with the maximum variance
+        return common::utils::argmax(variance_per_feature.begin(), variance_per_feature.end());
+    }
+    // otherwise apply the bounding box method
+    const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
+
+    return select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box);
+}
+
 template <typename RandomAccessIterator>
 std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_median_range(RandomAccessIterator samples_first,
                                                                                RandomAccessIterator samples_last,
