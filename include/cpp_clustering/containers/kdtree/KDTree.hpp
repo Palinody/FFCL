@@ -52,16 +52,13 @@ class KDTree {
             writer.EndObject();
         }
         // the maximum number of samples per leaf node
-        std::size_t bucket_size_ = 10;
+        std::size_t bucket_size_ = 1;
         // number of samples used to compute the variance for the pivot axis selection
         std::size_t n_samples_for_variance_computation_ = 100;
     };
 
   public:
-    // {samples_first_, samples_last_, n_features_}
-    using IteratorPairType = std::tuple<Iterator, Iterator>;
-
-    KDTree(const IteratorPairType& iterator_pair, std::size_t n_features);
+    KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features);
 
     KDTree(const KDTree&) = delete;
 
@@ -70,17 +67,13 @@ class KDTree {
 
     void serialize(const fs::path& filepath) const;
 
-    std::shared_ptr<KDNode<Iterator>> deserialize(const rapidjson::Value& rapidjson_kdnode);
-
-    std::shared_ptr<KDNode<Iterator>> deserialize(const fs::path& filepath);
-
   private:
-    std::shared_ptr<KDNode<Iterator>> cycle_through_depth_build(const IteratorPairType&      iterator_pair,
-                                                                ssize_t                      cut_feature_index,
-                                                                std::size_t                  depth,
-                                                                BoundingBoxKDType<Iterator>& kd_bounding_box);
+    std::shared_ptr<KDNode<Iterator>> cycle_through_depth_build(const IteratorPairType<Iterator>& iterator_pair,
+                                                                ssize_t                           cut_feature_index,
+                                                                std::size_t                       depth,
+                                                                BoundingBoxKDType<Iterator>&      kd_bounding_box);
 
-    IteratorPairType iterator_pair_;
+    IteratorPairType<Iterator> iterator_pair_;
 
     std::size_t n_features_;
     // bounding box hyper rectangle (w.r.t. each dimension)
@@ -92,7 +85,7 @@ class KDTree {
 };
 
 template <typename Iterator>
-KDTree<Iterator>::KDTree(const IteratorPairType& iterator_pair, std::size_t n_features)
+KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
   : iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(iterator_pair_),
@@ -102,10 +95,10 @@ KDTree<Iterator>::KDTree(const IteratorPairType& iterator_pair, std::size_t n_fe
 
 template <typename Iterator>
 std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_depth_build(
-    const IteratorPairType&      iterator_pair,
-    ssize_t                      cut_feature_index,
-    std::size_t                  depth,
-    BoundingBoxKDType<Iterator>& kd_bounding_box) {
+    const IteratorPairType<Iterator>& iterator_pair,
+    ssize_t                           cut_feature_index,
+    std::size_t                       depth,
+    BoundingBoxKDType<Iterator>&      kd_bounding_box) {
     const auto& [samples_first, samples_last] = iterator_pair;
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
@@ -157,23 +150,16 @@ void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNode<Iterator>>&
         writer.String("axis");
         writer.Int64(kdnode->cut_feature_index_);
 
-        writer.String("value");
-        writer.Double(kdnode->samples_.first[kdnode->cut_feature_index_]);
+        writer.String("points");
+        kdnode->serialize_kdnode(writer);
 
-        writer.String("left");
+        // continue the recursion if the current node is not leaf
         if (!kdnode->is_leaf()) {
+            writer.String("left");
             serialize_kdtree(kdnode->left_, writer);
 
-        } else {
-            kdnode->serialize_kdnode(writer);
-        }
-
-        writer.String("right");
-        if (!kdnode->is_leaf()) {
+            writer.String("right");
             serialize_kdtree(kdnode->right_, writer);
-
-        } else {
-            kdnode->serialize_kdnode(writer);
         }
     }
     writer.EndObject();
@@ -206,7 +192,7 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
         }
         writer.EndArray();
 
-        writer.String("tree");
+        writer.String("root");
         serialize_kdtree(root_, writer);
     }
     writer.EndObject();
@@ -218,29 +204,6 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
     rapidjson::Writer<rapidjson::OStreamWrapper> filewriter(output_stream_wrapper);
     document.Accept(filewriter);
     output_file.close();
-}
-
-template <typename Iterator>
-std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::deserialize(const rapidjson::Value& rapidjson_kdnode) {
-    const std::size_t axis = rapidjson_kdnode.GetInt64();
-    // if the node is leaf
-    if (axis == -1) {
-        //
-
-    } else {
-        //
-    }
-    return nullptr;
-}
-
-template <typename Iterator>
-std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::deserialize(const fs::path& filepath) {
-    std::ifstream             input_file(filepath);
-    rapidjson::IStreamWrapper input_stream_wrapper(input_file);
-    rapidjson::Document       document;
-    document.ParseStream(input_stream_wrapper);
-    input_file.close();
-    return deserialize(document);
 }
 
 }  // namespace cpp_clustering::containers

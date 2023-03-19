@@ -71,7 +71,7 @@ BoundingBoxKDType<Iterator> make_kd_bounding_box(const Iterator& samples_first,
 }
 
 template <typename Iterator>
-ssize_t select_axis_with_largest_difference(const BoundingBoxKDType<Iterator>& kd_bounding_box) {
+ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<Iterator>& kd_bounding_box) {
     using DataType = DataType<Iterator>;
 
     const std::size_t n_features = kd_bounding_box.size();

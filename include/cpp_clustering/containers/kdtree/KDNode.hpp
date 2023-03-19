@@ -14,7 +14,7 @@
 namespace cpp_clustering::containers {
 
 template <typename Iterator>
-using SamplesRangeType = std::pair<Iterator, Iterator>;
+using IteratorPairType = std::pair<Iterator, Iterator>;
 
 template <typename Iterator>
 using DataType = typename Iterator::value_type;
@@ -47,7 +47,7 @@ struct KDNode {
     void serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     // might contain [0, bucket_size] samples if the node is leaf, else only 1
-    SamplesRangeType<Iterator> samples_;
+    IteratorPairType<Iterator> samples_iterator_pair_;
     std::size_t                n_features_;
     ssize_t                    cut_feature_index_;
     // bounding box w.r.t. the chosen feature index. No bounding box for leaf nodes
@@ -63,7 +63,7 @@ KDNode<Iterator>::KDNode(Iterator                           samples_first,
                          Iterator                           samples_last,
                          std::size_t                        n_features,
                          const BoundingBoxKDType<Iterator>& kd_bounding_box)
-  : samples_{std::make_pair(samples_first, samples_last)}
+  : samples_iterator_pair_{std::make_pair(samples_first, samples_last)}
   , n_features_{n_features}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
@@ -74,14 +74,17 @@ KDNode<Iterator>::KDNode(Iterator                           samples_first,
                          std::size_t                        n_features,
                          ssize_t                            cut_feature_index,
                          const BoundingBoxKDType<Iterator>& kd_bounding_box)
-  : samples_{kdtree::utils::quickselect_median_range(samples_first, samples_last, n_features, cut_feature_index)}
+  : samples_iterator_pair_{kdtree::utils::quickselect_median_range(samples_first,
+                                                                   samples_last,
+                                                                   n_features,
+                                                                   cut_feature_index)}
   , n_features_{n_features}
   , cut_feature_index_{cut_feature_index}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename Iterator>
 bool KDNode<Iterator>::is_empty() const {
-    return samples_.first == samples_.second;
+    return std::distance(samples_iterator_pair_.first, samples_iterator_pair_.second) == static_cast<std::ptrdiff_t>(0);
 }
 
 template <typename Iterator>
@@ -91,28 +94,23 @@ bool KDNode<Iterator>::is_leaf() const {
 
 template <typename Iterator>
 void KDNode<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
-    assert(this->is_leaf());
+    assert(is_leaf());
 
-    if (this->is_empty()) {
-        writer.Null();
+    writer.StartArray();
+    // upper-left and lower-right (with sentinel) iterators
+    const auto [range_first, range_last] = samples_iterator_pair_;
 
-    } else {
+    const std::size_t n_samples = common::utils::get_n_samples(range_first, range_last, n_features_);
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        // sample (feature vector) array
         writer.StartArray();
-        // upper-left and lower-right (with sentinel) iterators
-        const auto [range_first, range_last] = this->samples_;
-
-        const std::size_t n_samples = common::utils::get_n_samples(range_first, range_last, this->n_features_);
-
-        for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-            // sample / feature vector array
-            writer.StartArray();
-            for (std::size_t feature_index = 0; feature_index < this->n_features_; ++feature_index) {
-                writer.Double(this->samples_.first[sample_index * this->n_features_ + feature_index]);
-            }
-            writer.EndArray();
+        for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
+            writer.Double(samples_iterator_pair_.first[sample_index * n_features_ + feature_index]);
         }
         writer.EndArray();
     }
+    writer.EndArray();
 }
 
 }  // namespace cpp_clustering::containers
