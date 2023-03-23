@@ -121,7 +121,7 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
                                                          n_features_)}
   , root_{cycle_through_axes_build(iterator_pair_, 0, 0, kd_bounding_box_)} {}
 */
-// /*
+/*
 template <typename Iterator>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
   : iterator_pair_{iterator_pair}
@@ -138,8 +138,9 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
                                  0,
                                  kd_bounding_box_)} {}
 
-// */
-/*
+*/
+// /*
+
 template <typename Iterator>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
   : iterator_pair_{iterator_pair}
@@ -152,7 +153,7 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
         kdtree::utils::select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box_),
         0,
         kd_bounding_box_)} {}
-*/
+// */
 
 template <typename Iterator>
 std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(

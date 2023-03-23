@@ -169,11 +169,9 @@ TEST_F(KDTreeErrorsTest, KDTreeTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree<decltype(data.begin())>({data.begin(), data.end()}, n_features);
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
-
-    // kdtree.print();
 }
 
 #include <iostream>
@@ -182,8 +180,8 @@ TEST_F(KDTreeErrorsTest, KDTreeTest) {
 #include "rapidjson/writer.h"
 
 TEST_F(KDTreeErrorsTest, WriteKDTreeWithRapidJSONTest) {
-    fs::path filename = "noisy_circles.txt";
-    // fs::path filename = "mnist.txt";
+    // fs::path filename = "noisy_circles.txt";
+    fs::path filename = "mnist.txt";
 
     auto              data       = load_data<dType>(inputs_folder / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
@@ -197,7 +195,7 @@ TEST_F(KDTreeErrorsTest, WriteKDTreeWithRapidJSONTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree<decltype(data.begin())>({data.begin(), data.end()}, n_features);
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 

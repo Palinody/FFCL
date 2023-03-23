@@ -47,7 +47,7 @@ def TestPyclusteringKDTreeBuildTime(points: np.ndarray):
     np.random.shuffle(points)
 
     start_time = time.process_time()
-    tree = kdtree.kdtree_balanced(points)
+    tree = kdtree.kdtree(points)
     end_time = time.process_time()
     # print the elapsed time
     print(
@@ -61,7 +61,7 @@ def TestSklearnKDTreeBuildTime(points: np.ndarray):
     np.random.shuffle(points)
 
     start_time = time.process_time()
-    tree = KDTree(points, leaf_size=1)
+    tree = KDTree(points, leaf_size=10)
     end_time = time.process_time()
     # print the elapsed time
     print(
@@ -88,17 +88,18 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     params = flann.build_index(
         points,
         algorithm="kdtree",
-        split_method="pca",
+        split_method="median",
         copy_data=False,
         cores=1,
         trees=1,
-        leaf_max_size=1,
+        leaf_max_size=10,
         sample_fraction=0.1,
         checks=-1,
+        build_weight=0.01,
     )
     end_time = time.process_time()
     print(
-        "Elapsed time for KDTree construction (flann):",
+        "Elapsed time for KDTree construction (pyflann):",
         end_time - start_time,
         "seconds",
     )
@@ -112,8 +113,8 @@ def main():
     root_folder = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "clustering/"
     )
-    filename: str = "noisy_circles.txt"
-    # filename: str = "mnist.txt"
+    # filename: str = "noisy_circles.txt"
+    filename: str = "mnist.txt"
 
     input_path = root_folder + "inputs/" + filename
 
@@ -121,14 +122,14 @@ def main():
 
     print(dataset.shape)
 
-    TestPyclusteringKDTreeBuildTime(dataset)
+    # TestPyclusteringKDTreeBuildTime(dataset)
 
-    TestSklearnKDTreeBuildTime(dataset)
+    # TestSklearnKDTreeBuildTime(dataset)
 
     try:
         TestFlannKDTreeBuildTime(dataset)
     except:
-        pass
+        print(dir(pyflann))
 
 
 if __name__ == "__main__":
