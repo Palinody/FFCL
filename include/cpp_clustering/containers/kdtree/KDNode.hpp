@@ -9,7 +9,7 @@
 #include <array>
 #include <memory>
 
-#include "rapidjson/writer.h"
+#include <rapidjson/writer.h>
 
 namespace cpp_clustering::containers {
 

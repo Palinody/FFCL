@@ -9,6 +9,12 @@ add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenm
 # add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
 
+find_package(RapidJSON QUIET)
+
+if(NOT RapidJSON_FOUND)
+    include(RapidJSON.cmake)
+endif()
+
 set(HEADER_FILES
     include/cpp_clustering/kmeans/KMeans.hpp
     include/cpp_clustering/kmeans/Lloyd.hpp
@@ -42,6 +48,7 @@ set(SOURCE_FILES
 
 include_directories(
     include
+    ${RapidJSON_INCLUDE_DIRS}
 )
 
 add_definitions(-DTHREADS_ENABLED=true)
@@ -60,6 +67,7 @@ if(MODE STREQUAL "benchmark")
     )
     target_link_libraries(
         ${PROJECT_NAME}
+        ${RapidJSON_LIBRARIES}
         OpenMP::OpenMP_CXX
     )
 elseif(MODE STREQUAL "gtest")
@@ -196,6 +204,7 @@ elseif(MODE STREQUAL "gtest")
         KDTreeTest
         GTest::gtest_main
         GTest::gmock_main
+        ${RapidJSON_LIBRARIES}
         OpenMP::OpenMP_CXX
     )
     add_test(
