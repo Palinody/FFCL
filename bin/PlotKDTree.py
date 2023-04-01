@@ -1,16 +1,15 @@
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from matplotlib.patches import Rectangle
 
-import numpy as np
 import json
 import os
 import copy
 
-
 from typing import List, Tuple, Dict, Any
 
 KDBoundingBoxType = List[List[Any]]
+FeatureVectorType = List[Any]
+DatasetType = List[FeatureVectorType]
 
 
 def load_json(input_path):
@@ -34,16 +33,15 @@ class KDNode:
     def is_leaf(self) -> bool:
         return self.cut_feature_index == -1
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        pass
-
 
 class KDTree:
     def __init__(self, input_path: str, keep_sequence: bool = False) -> None:
-        self.keep_sequence = keep_sequence
-        self.points_sequence: List[Any] = []
+        # whether we should keep a sequence version of the data (n_samples x n_features list of lists)
+        self.keep_sequence: bool = keep_sequence
+        # the sequence of samples itself
+        self.points_sequence: DatasetType = []
 
-        self.kd_bounding_box: KDBoundingBoxType = None
+        self.kd_bounding_box: KDBoundingBoxType
 
         self.root = self.deserialize_kdtree(input_path)
 
@@ -87,11 +85,6 @@ class KDTree:
                 kdnode.left = self.deserialize_kdnode(
                     kdnode_json["left"], kd_bounding_box_left_copy
                 )
-                # restore the original bounding box
-                kd_bounding_box_left_copy[cut_axis][1] = kdnode.kd_bounding_box[
-                    cut_axis
-                ][1]
-
             if "right" in kdnode_json.keys():
                 kd_bounding_box_right_copy = copy.deepcopy(kd_bounding_box)
 
@@ -101,11 +94,6 @@ class KDTree:
                 kdnode.right = self.deserialize_kdnode(
                     kdnode_json["right"], kd_bounding_box_right_copy
                 )
-                # restore the original bounding box
-                kd_bounding_box_right_copy[cut_axis][0] = kdnode.kd_bounding_box[
-                    cut_axis
-                ][0]
-
         return kdnode
 
     def get_sequence(self):
@@ -119,10 +107,12 @@ def plot_2dtree(kdnode: KDNode, ax: Axes) -> None:
     is_leaf: bool = kdnode.is_leaf()
 
     x, y = zip(*kdnode.points)
+    # set the leaf points to green and the pivot ones to blue
     points_color = "green" if is_leaf else "blue"
-    ax.scatter(x, y, color=points_color)
+    # put the pivot points in the foreground so that they can be seen
+    zorder = -1 if is_leaf else 0
+    ax.scatter(x, y, color=points_color, zorder=zorder)
 
-    # plot_bbox(kdnode.kd_bounding_box, ax)
     if not is_leaf:
         draw_orthogonal_line(
             kdnode.points[0], kdnode.cut_feature_index, kdnode.kd_bounding_box, ax
@@ -175,17 +165,19 @@ def main():
 
         input_path = root_folder + filename
 
-        kdtree = KDTree(input_path, True)
+        kdtree = KDTree(input_path, keep_sequence=False)
 
         fig, ax = plt.subplots()
 
-        plot_bbox(kdtree.root.kd_bounding_box, ax, color="blue")
+        plot_bbox(kdtree.root.kd_bounding_box, ax, color="black")
 
         plot_2dtree(kdtree.root, ax=ax)
 
         stem = os.path.splitext(filename)[0]
         plt.title(stem)
-        plt.grid()
+        plt.grid(False)
+        plt.legend()
+        plt.tight_layout()
         plt.show()
 
 
