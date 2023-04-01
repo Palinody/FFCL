@@ -68,7 +68,7 @@ class KDTree {
             writer.EndObject();
         }
         // the maximum number of samples per leaf node
-        std::size_t bucket_size_ = 10;
+        std::size_t bucket_size_ = 1;
         // the maximum recursion depth. Defaults to infinity
         ssize_t max_depth_ = common::utils::infinity<ssize_t>();
         // number of samples used to compute the variance for the pivot axis selection

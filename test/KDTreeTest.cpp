@@ -180,8 +180,8 @@ TEST_F(KDTreeErrorsTest, KDTreeTest) {
 #include "rapidjson/writer.h"
 
 TEST_F(KDTreeErrorsTest, WriteKDTreeWithRapidJSONTest) {
-    // fs::path filename = "noisy_circles.txt";
-    fs::path filename = "mnist.txt";
+    fs::path filename = "noisy_circles.txt";
+    // fs::path filename = "mnist.txt";
 
     auto              data       = load_data<dType>(inputs_folder / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
