@@ -96,10 +96,10 @@ This will create a `libcpp_clustering.a` file in the `build/` firectory
 Generate the datasets automatically:
 
 ```sh
-python3 ../datasets/MakeClusteringDatasets.py
+python3 ../bin/MakeClusteringDatasets.py
 ```
 
-This will create the following files in `../datasets/clustering/`
+This will create the following files in `../bin/clustering/`
 
 ```sh
 .
@@ -140,7 +140,7 @@ This will create a `ffcl` executable in the `build` folder. To run the benchmark
 ./ffcl
 ```
 
-The results will be written in `../datasets/clustering/` and the folder structure might now look like this:
+The results will be written in `../bin/clustering/` and the folder structure might now look like this:
 
 ```sh
 ├── centroids
@@ -164,7 +164,7 @@ The results will be written in `../datasets/clustering/` and the folder structur
 The clusters can be visualised:
 
 ```sh
-python3 ../datasets/plot.py
+python3 ../bin/plot.py
 ```
 
 ### 3) To run the unit tests

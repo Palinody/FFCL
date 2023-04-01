@@ -1,8 +1,8 @@
 # Ignore everything in the following folders
 build/
-datasets/clustering/
-datasets/kdtree/
-datasets/__pycache__/
+bin/clustering/
+bin/kdtree/
+bin/__pycache__/
 Testing/
 
 # Ignore all files with the extension ".o" in any directory

@@ -136,7 +136,7 @@ class KMeansErrorsTest : public ::testing::Test {
     static constexpr std::size_t n_iterations_global = 100;
     static constexpr std::size_t n_centroids_global  = 4;
 
-    const fs::path folder_root        = fs::path("../datasets/clustering");
+    const fs::path folder_root        = fs::path("../bin/clustering");
     const fs::path inputs_folder      = folder_root / fs::path("inputs");
     const fs::path targets_folder     = folder_root / fs::path("targets");
     const fs::path predictions_folder = folder_root / fs::path("predictions");

@@ -98,8 +98,8 @@ class KDTreeErrorsTest : public ::testing::Test {
             }
         }
     }
-    const fs::path kdtree_folder_root     = fs::path("../datasets/kdtree");
-    const fs::path clustering_folder_root = fs::path("../datasets/clustering");
+    const fs::path kdtree_folder_root     = fs::path("../bin/kdtree");
+    const fs::path clustering_folder_root = fs::path("../bin/clustering");
     const fs::path inputs_folder          = clustering_folder_root / fs::path("inputs");
     const fs::path targets_folder         = clustering_folder_root / fs::path("targets");
 };
