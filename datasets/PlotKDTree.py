@@ -112,7 +112,7 @@ class KDTree:
         return self.points_sequence
 
 
-def scatter_plot_2d(kdnode: KDNode, ax: Axes) -> None:
+def plot_2dtree(kdnode: KDNode, ax: Axes) -> None:
     if kdnode is None:
         return
 
@@ -129,10 +129,10 @@ def scatter_plot_2d(kdnode: KDNode, ax: Axes) -> None:
         )
 
     if kdnode.left is not None:
-        scatter_plot_2d(kdnode.left, ax)
+        plot_2dtree(kdnode.left, ax)
 
     if kdnode.right is not None:
-        scatter_plot_2d(kdnode.right, ax)
+        plot_2dtree(kdnode.right, ax)
 
 
 def plot_bbox(bbox, ax, color="red", linestyle="-", alpha=1) -> None:
@@ -181,7 +181,7 @@ def main():
 
         plot_bbox(kdtree.root.kd_bounding_box, ax, color="blue")
 
-        scatter_plot_2d(kdtree.root, ax=ax)
+        plot_2dtree(kdtree.root, ax=ax)
 
         stem = os.path.splitext(filename)[0]
         plt.title(stem)
