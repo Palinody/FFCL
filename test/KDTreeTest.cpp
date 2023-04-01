@@ -155,7 +155,6 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
 
 TEST_F(KDTreeErrorsTest, KDTreeTest) {
     fs::path filename = "noisy_circles.txt";
-    // fs::path filename = "mnist.txt";
 
     auto              data       = load_data<dType>(inputs_folder / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
@@ -179,9 +178,164 @@ TEST_F(KDTreeErrorsTest, KDTreeTest) {
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-TEST_F(KDTreeErrorsTest, WriteKDTreeWithRapidJSONTest) {
+TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
     fs::path filename = "noisy_circles.txt";
-    // fs::path filename = "mnist.txt";
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    make_directories(kdtree_folder_root);
+
+    fs::path kdtree_filename = filename.stem().string() + ".json";
+
+    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+}
+
+TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
+    fs::path filename = "noisy_moons.txt";
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    make_directories(kdtree_folder_root);
+
+    fs::path kdtree_filename = filename.stem().string() + ".json";
+
+    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+}
+
+TEST_F(KDTreeErrorsTest, VariedTest) {
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    make_directories(kdtree_folder_root);
+
+    fs::path kdtree_filename = filename.stem().string() + ".json";
+
+    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+}
+
+TEST_F(KDTreeErrorsTest, AnisoTest) {
+    fs::path filename = "aniso.txt";
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    make_directories(kdtree_folder_root);
+
+    fs::path kdtree_filename = filename.stem().string() + ".json";
+
+    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+}
+
+TEST_F(KDTreeErrorsTest, BlobsTest) {
+    fs::path filename = "blobs.txt";
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    make_directories(kdtree_folder_root);
+
+    fs::path kdtree_filename = filename.stem().string() + ".json";
+
+    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+}
+
+TEST_F(KDTreeErrorsTest, NoStructureTest) {
+    fs::path filename = "no_structure.txt";
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    make_directories(kdtree_folder_root);
+
+    fs::path kdtree_filename = filename.stem().string() + ".json";
+
+    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+}
+
+TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
+    fs::path filename = "unbalanced_blobs.txt";
 
     auto              data       = load_data<dType>(inputs_folder / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');

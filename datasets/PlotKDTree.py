@@ -71,8 +71,6 @@ class KDTree:
         kdnode.cut_feature_index = kdnode_json["axis"]
         kdnode.kd_bounding_box = kd_bounding_box
 
-        print(kd_bounding_box)
-
         if self.keep_sequence:
             self.points_sequence += kdnode_json["points"]
 
@@ -113,59 +111,82 @@ class KDTree:
     def get_sequence(self):
         return self.points_sequence
 
-    def scatter_plot_2d(self, kdnode: KDNode, ax: Axes) -> None:
-        if kdnode is None:
-            return
 
-        x, y = zip(*kdnode.points)
-        color = "green" if kdnode.is_leaf else "blue"
-        ax.scatter(x, y, color=color)
+def scatter_plot_2d(kdnode: KDNode, ax: Axes) -> None:
+    if kdnode is None:
+        return
 
-        plot_bbox(kdnode.kd_bounding_box, ax)
+    is_leaf: bool = kdnode.is_leaf()
 
-        if kdnode.left is not None:
-            self.scatter_plot_2d(kdnode.left, ax)
+    x, y = zip(*kdnode.points)
+    points_color = "green" if is_leaf else "blue"
+    ax.scatter(x, y, color=points_color)
 
-        if kdnode.right is not None:
-            self.scatter_plot_2d(kdnode.right, ax)
+    # plot_bbox(kdnode.kd_bounding_box, ax)
+    if not is_leaf:
+        draw_orthogonal_line(
+            kdnode.points[0], kdnode.cut_feature_index, kdnode.kd_bounding_box, ax
+        )
+
+    if kdnode.left is not None:
+        scatter_plot_2d(kdnode.left, ax)
+
+    if kdnode.right is not None:
+        scatter_plot_2d(kdnode.right, ax)
 
 
-def plot_bbox(bbox, ax):
+def plot_bbox(bbox, ax, color="red", linestyle="-", alpha=1) -> None:
     point1, point2 = zip(*bbox)
     x = [point1[0], point2[0], point2[0], point1[0], point1[0]]
     y = [point1[1], point1[1], point2[1], point2[1], point1[1]]
-    ax.plot(x, y, color="red", linestyle="-")
+    ax.plot(x, y, color=color, linestyle=linestyle, alpha=alpha)
+
+
+def draw_orthogonal_line(
+    pivot_point, cut_index, bounding_box, ax, color="red", linestyle="--", alpha=1
+):
+    # bound the segment with the min max values of the non pivot axis dimension
+    other_axis_min, other_axis = bounding_box[1 - cut_index]
+    pivot_value = pivot_point[cut_index]
+    if cut_index == 0:
+        ax.plot(
+            [pivot_value, pivot_value],
+            [other_axis_min, other_axis],
+            color=color,
+            linestyle=linestyle,
+            alpha=alpha,
+        )
+    elif cut_index == 1:
+        ax.plot(
+            [other_axis_min, other_axis],
+            [pivot_value, pivot_value],
+            color=color,
+            linestyle=linestyle,
+        )
 
 
 def main():
+    """noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""
     root_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "kdtree/")
 
-    filename: str = "noisy_circles.json"
+    file_names = os.listdir(root_folder)
 
-    input_path = root_folder + filename
+    for filename in file_names:
 
-    # deserialize_kdtree(input_path)
+        input_path = root_folder + filename
 
-    kdtree = KDTree(input_path, True)
+        kdtree = KDTree(input_path, True)
 
-    """
-    points_sequence = kdtree.get_sequence()
-    x = [row[0] for row in points_sequence]
-    y = [row[1] for row in points_sequence]
+        fig, ax = plt.subplots()
 
-    plt.scatter(x, y, color="blue")
-    plt.show()"""
-    fig, ax = plt.subplots()
+        plot_bbox(kdtree.root.kd_bounding_box, ax, color="blue")
 
-    kdtree.scatter_plot_2d(kdtree.root, ax=ax)
+        scatter_plot_2d(kdtree.root, ax=ax)
 
-    plot_bbox(
-        kdtree.kd_bounding_box,
-        ax,
-    )
-
-    plt.grid()
-    plt.show()
+        stem = os.path.splitext(filename)[0]
+        plt.title(stem)
+        plt.grid()
+        plt.show()
 
 
 if __name__ == "__main__":
