@@ -1,8 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "cpp_clustering/kmedoids/KMedoids.hpp"
-#include "cpp_clustering/math/random/VosesAliasMethod.hpp"
+#include "ffcl/kmedoids/KMedoids.hpp"
+#include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -108,15 +108,15 @@ class KMedoidsErrorsTest : public ::testing::Test {
                     std::size_t           n_medoids,
                     std::size_t           n_features,
                     std::size_t           n_iterations = 1) {
-        using KMedoids = cpp_clustering::KMedoids<dType, true>;
-        // using PAM = cpp_clustering::FasterMSC;
+        using KMedoids = ffcl::KMedoids<dType, true>;
+        // using PAM = ffcl::FasterMSC;
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 
         kmedoids.set_options(
             /*KMedoids options=*/KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
 
-        const auto medoids   = kmedoids.fit<cpp_clustering::FasterPAM>(inputs_first, inputs_last);
+        const auto medoids   = kmedoids.fit<ffcl::FasterPAM>(inputs_first, inputs_last);
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
     }
 
@@ -129,19 +129,18 @@ class KMedoidsErrorsTest : public ::testing::Test {
         std::size_t           n_medoids,
         std::size_t           n_features,
         std::size_t           n_iterations = 1) {
-        using KMedoids = cpp_clustering::KMedoids<dType, true>;
-        // using PAM = cpp_clustering::FasterMSC;
+        using KMedoids = ffcl::KMedoids<dType, true>;
+        // using PAM = ffcl::FasterMSC;
 
         using DatasetDescriptorType              = std::tuple<InputsIterator, InputsIterator, std::size_t>;
         DatasetDescriptorType dataset_descriptor = std::make_tuple(inputs_first, inputs_last, n_features);
-        const auto            pairwise_distance_matrix =
-            cpp_clustering::containers::LowerTriangleMatrix<InputsIterator>(dataset_descriptor);
+        const auto pairwise_distance_matrix = ffcl::containers::LowerTriangleMatrix<InputsIterator>(dataset_descriptor);
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 
         kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(10));
 
-        const auto medoids   = kmedoids.fit<cpp_clustering::FasterMSC>(pairwise_distance_matrix);
+        const auto medoids   = kmedoids.fit<ffcl::FasterMSC>(pairwise_distance_matrix);
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
         const auto predictions = kmedoids.predict(inputs_first, inputs_last);
@@ -158,8 +157,8 @@ class KMedoidsErrorsTest : public ::testing::Test {
         std::size_t           n_medoids,
         std::size_t           n_features,
         std::size_t           n_iterations = 1) {
-        using KMedoids = cpp_clustering::KMedoids<dType>;
-        // using PAM = cpp_clustering::FasterMSC;
+        using KMedoids = ffcl::KMedoids<dType>;
+        // using PAM = ffcl::FasterMSC;
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 
@@ -172,7 +171,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
                 .patience(0)
                 .n_init(10));
 
-        const auto medoids = kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+        const auto medoids = kmedoids.fit<ffcl::FasterMSC>(inputs_first, inputs_last);
 
         const auto predictions = kmedoids.predict(inputs_first, inputs_last);
 
@@ -334,7 +333,7 @@ TEST_F(KMedoidsErrorsTest, PairwiseDistanceMatrixTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
 
     auto pairwise_distance_matrix =
-        cpp_clustering::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
+        ffcl::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
 }
 
 /*

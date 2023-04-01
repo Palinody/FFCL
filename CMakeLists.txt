@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 
-project(cpp_clustering)
+project(ffcl)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -10,31 +10,31 @@ add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wfatal-errors -fopenm
 find_package(OpenMP REQUIRED)
 
 set(HEADER_FILES
-    include/cpp_clustering/kmeans/KMeans.hpp
-    include/cpp_clustering/kmeans/Lloyd.hpp
-    include/cpp_clustering/kmeans/Hamerly.hpp
-    include/cpp_clustering/kmeans/KMeansUtils.hpp
-    include/cpp_clustering/kmeans/KMeansPlusPlus.hpp
+    include/ffcl/kmeans/KMeans.hpp
+    include/ffcl/kmeans/Lloyd.hpp
+    include/ffcl/kmeans/Hamerly.hpp
+    include/ffcl/kmeans/KMeansUtils.hpp
+    include/ffcl/kmeans/KMeansPlusPlus.hpp
 
-    include/cpp_clustering/kmedoids/FasterMSC.hpp
-    include/cpp_clustering/kmedoids/FasterPAM.hpp
-    include/cpp_clustering/kmedoids/KMedoids.hpp
-    include/cpp_clustering/kmedoids/PAMUtils.hpp
-    include/cpp_clustering/kmedoids/PAMBuild.hpp
+    include/ffcl/kmedoids/FasterMSC.hpp
+    include/ffcl/kmedoids/FasterPAM.hpp
+    include/ffcl/kmedoids/KMedoids.hpp
+    include/ffcl/kmedoids/PAMUtils.hpp
+    include/ffcl/kmedoids/PAMBuild.hpp
 
-    include/cpp_clustering/math/random/Distributions.hpp
-    include/cpp_clustering/math/random/VosesAliasMethod.hpp
+    include/ffcl/math/random/Distributions.hpp
+    include/ffcl/math/random/VosesAliasMethod.hpp
 
-    include/cpp_clustering/containers/kdtree/KDTree.hpp
-    include/cpp_clustering/containers/kdtree/KDNode.hpp
-    include/cpp_clustering/containers/kdtree/KDTreeUtils.hpp
-    include/cpp_clustering/containers/LowerTriangleMatrix.hpp
+    include/ffcl/containers/kdtree/KDTree.hpp
+    include/ffcl/containers/kdtree/KDNode.hpp
+    include/ffcl/containers/kdtree/KDTreeUtils.hpp
+    include/ffcl/containers/LowerTriangleMatrix.hpp
 
-    include/cpp_clustering/heuristics/Heuristics.hpp
-    include/cpp_clustering/heuristics/SilhouetteMethod.hpp
+    include/ffcl/heuristics/Heuristics.hpp
+    include/ffcl/heuristics/SilhouetteMethod.hpp
 
-    include/cpp_clustering/common/Utils.hpp
-    include/cpp_clustering/common/Timer.hpp
+    include/ffcl/common/Utils.hpp
+    include/ffcl/common/Timer.hpp
 )
 
 set(SOURCE_FILES

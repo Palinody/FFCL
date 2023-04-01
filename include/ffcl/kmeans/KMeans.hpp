@@ -1,11 +1,11 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
-#include "cpp_clustering/kmeans/Hamerly.hpp"
-#include "cpp_clustering/kmeans/KMeansPlusPlus.hpp"
-#include "cpp_clustering/kmeans/Lloyd.hpp"
-#include "cpp_clustering/math/random/Distributions.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/kmeans/Hamerly.hpp"
+#include "ffcl/kmeans/KMeansPlusPlus.hpp"
+#include "ffcl/kmeans/Lloyd.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -17,7 +17,7 @@
 #include <numeric>
 #include <vector>
 
-namespace cpp_clustering {
+namespace ffcl {
 
 template <typename T>
 class KMeans {
@@ -227,8 +227,8 @@ template <typename T>
 template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first, const SamplesIterator& data_last) {
     // execute fit function with a default initialization algorithm
-    // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
-    return fit<KMeansAlgorithm>(data_first, data_last, cpp_clustering::kmeansplusplus::make_centroids<SamplesIterator>);
+    // ffcl::kmeansplusplus::make_centroids || common::utils::init_uniform
+    return fit<KMeansAlgorithm>(data_first, data_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename T>
@@ -237,17 +237,16 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
                               const SamplesIterator& data_last,
                               const Function&        centroids_initializer) {
     // execute fit function with a default initialization algorithm
-    // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
-    return fit<cpp_clustering::Hamerly>(data_first, data_last, centroids_initializer);
+    // ffcl::kmeansplusplus::make_centroids || common::utils::init_uniform
+    return fit<ffcl::Hamerly>(data_first, data_last, centroids_initializer);
 }
 
 template <typename T>
 template <typename SamplesIterator>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first, const SamplesIterator& data_last) {
     // execute fit function with a default initialization algorithm
-    // cpp_clustering::kmeansplusplus::make_centroids || common::utils::init_uniform
-    return fit<cpp_clustering::Hamerly>(
-        data_first, data_last, cpp_clustering::kmeansplusplus::make_centroids<SamplesIterator>);
+    // ffcl::kmeansplusplus::make_centroids || common::utils::init_uniform
+    return fit<ffcl::Hamerly>(data_first, data_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename T>
@@ -262,4 +261,4 @@ std::vector<std::size_t> KMeans<T>::predict(const SamplesIterator& data_first, c
     return kmeans::utils::samples_to_nearest_centroid_indices(data_first, data_last, n_features_, centroids_);
 }
 
-}  // namespace cpp_clustering
+}  // namespace ffcl

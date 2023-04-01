@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cpp_clustering/math/random/Distributions.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <cstdint>

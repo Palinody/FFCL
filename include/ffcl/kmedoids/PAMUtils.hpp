@@ -1,9 +1,9 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/containers/LowerTriangleMatrix.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
-#include "cpp_clustering/math/random/Distributions.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/LowerTriangleMatrix.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -53,7 +53,7 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
     auto nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -79,8 +79,8 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_nearest_medoid_indices(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
@@ -125,7 +125,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
     auto second_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -160,8 +160,8 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
@@ -216,7 +216,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
     auto third_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -261,8 +261,8 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
@@ -340,9 +340,9 @@ std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(const Iterator&  
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids,
-    std::size_t                                                      nth_closest = 1) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids,
+    std::size_t                                            nth_closest = 1) {
     if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
@@ -381,7 +381,7 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
     auto nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -405,8 +405,8 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
@@ -451,7 +451,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
     auto second_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -481,8 +481,8 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_distances(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
@@ -533,7 +533,7 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
     auto third_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -569,8 +569,8 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_distances(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
@@ -640,9 +640,9 @@ std::vector<typename Iterator::value_type> samples_to_nth_nearest_medoid_distanc
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_nth_nearest_medoid_distances(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                                  medoids,
-    std::size_t                                                      nth_closest = 1) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                        medoids,
+    std::size_t                                            nth_closest = 1) {
     if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
@@ -733,7 +733,7 @@ std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // the following should be done if other_sample_index != medoid_candidate_idx
             // but the distance would be 0 anyway with dist(other_sample, medoid_candidate)
-            loss_acc += cpp_clustering::heuristic::heuristic(
+            loss_acc += ffcl::heuristic::heuristic(
                 /*first sample begin=*/data_first + medoid_candidate_idx * n_features,
                 /*first sample end=*/data_first + medoid_candidate_idx * n_features + n_features,
                 /*other sample begin=*/data_first + other_sample_index * n_features);
@@ -751,7 +751,7 @@ std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair
 
 template <typename Iterator>
 std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix) {
     using DataType = typename Iterator::value_type;
 
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();

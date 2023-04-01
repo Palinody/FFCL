@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "cpp_clustering/containers/kdtree/KDTree.hpp"
+#include "ffcl/containers/kdtree/KDTree.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -151,7 +151,7 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
     std::cout << axis << "\n";
 }
 
-#include "cpp_clustering/common/Timer.hpp"
+#include "ffcl/common/Timer.hpp"
 
 TEST_F(KDTreeErrorsTest, KDTreeTest) {
     fs::path filename = "noisy_circles.txt";
@@ -168,7 +168,7 @@ TEST_F(KDTreeErrorsTest, KDTreeTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
@@ -193,7 +193,7 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -219,7 +219,7 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -245,7 +245,7 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -271,7 +271,7 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -297,7 +297,7 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -323,7 +323,7 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -349,7 +349,7 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = cpp_clustering::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 

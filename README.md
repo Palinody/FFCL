@@ -1,6 +1,6 @@
-# cpp_clustering
+# FFCL
 
-Fast iterator compatible clustering algorithms written in c++.
+**FFCL**: **F**lexible and (probably not the) **f**ast(est) c++ **c**lustering **l**ibrary. 
 
 - [Current features](#current-features)
 - [Performance](#performance)
@@ -10,7 +10,7 @@ Fast iterator compatible clustering algorithms written in c++.
 
 ## TODO (in order)
 
-- `cpp_clustering::containers::KDTree`
+- `ffcl::containers::KDTree` (ongoing)
 - Proper unit testing
 - DBSCAN
 - OPTICS
@@ -134,10 +134,10 @@ cmake .. -DMODE="benchmark"
 make
 ```
 
-This will create a `cpp_clustering` executable in the `build` folder. To run the benchmarks, simply:
+This will create a `ffcl` executable in the `build` folder. To run the benchmarks, simply:
 
 ```sh
-./cpp_clustering
+./ffcl
 ```
 
 The results will be written in `../datasets/clustering/` and the folder structure might now look like this:
@@ -208,13 +208,13 @@ for (std::size_t k = k_min; k < k_max; ++k) {
     // map the samples to their closest centroid/medoid
     const auto predictions = kmeans.predict(data.begin(), data.end());
     // compute the silhouette scores for each sample
-    const auto samples_silhouette_values = cpp_clustering::silhouette_method::silhouette(data.begin(),
+    const auto samples_silhouette_values = ffcl::silhouette_method::silhouette(data.begin(),
                                                                                          data.end(),
                                                                                          predictions.begin(),
                                                                                          predictions.end(),
                                                                                          n_features);
     // get the average score
-    const auto mean_silhouette_coefficient = cpp_clustering::silhouette_method::get_mean_silhouette_coefficient(
+    const auto mean_silhouette_coefficient = ffcl::silhouette_method::get_mean_silhouette_coefficient(
         samples_silhouette_values.begin(), samples_silhouette_values.end());
     // accumulate the current scores
     scores[k - k_min] = mean_silhouette_coefficient;
@@ -228,7 +228,7 @@ const auto best_k = k_min + common::utils::argmax(scores.begin(), scores.end())
 #### Example with kmeans++ initialization
 
 ```c
-using KMeans = cpp_clustering::KMeans<float>;
+using KMeans = ffcl::KMeans<float>;
 
 const std::size_t n_features = 3;
 // input_data.size() / n_features -> n_samples (4 in this case)
@@ -236,7 +236,7 @@ std::vector<float> input_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 // must be less than n_samples
 const std::size_t n_centroids = 2;
 
-const auto centroids_init = cpp_clustering::kmeansplusplus::make_centroids(input_data.begin(), input_data.end(), n_centroids, n_features))
+const auto centroids_init = ffcl::kmeansplusplus::make_centroids(input_data.begin(), input_data.end(), n_centroids, n_features))
 // initializing the centroids manually is optional
 auto kmeans = KMeans(n_centroids, n_features, centroids_init);
 
@@ -248,7 +248,7 @@ const auto centroids = kmeans.fit(input_data.begin(), input_data.end());
 #### Simple example
 
 ```c
-using KMedoids = cpp_clustering::KMedoids<float>;
+using KMedoids = ffcl::KMedoids<float>;
 
 const std::size_t n_features = 3;
 // input_data.size() / n_features -> n_samples (4 in this case)
@@ -264,10 +264,10 @@ const auto centroids = kmedoids.fit(input_data.begin(), input_data.end());
 #### Complete example
 
 ```c
-#include "cpp_clustering/kmedoids/KMedoids.hpp"
+#include "ffcl/kmedoids/KMedoids.hpp"
 // dType: type of the training samples
 // true: PrecomputePairwiseDistanceMatrix (set to true by default)
-using KMedoids = cpp_clustering::KMedoids<SomeDataType, true>;
+using KMedoids = ffcl::KMedoids<SomeDataType, true>;
 
 const std::size_t n_features = 3;
 // input_data.size() / n_features -> n_samples (4 in this case)
@@ -283,8 +283,8 @@ auto kmedoids = KMedoids(n_medoids, n_features);
 // set the options. The ones presented in this example are the same as the ones by default and provide no change
 kmedoids.set_options(KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
 
-// Fit the data (inputs_first, inputs_last) with a PAM algorithm. Default: cpp_clustering::FasterPAM
-const auto centroids = kmedoids.fit<cpp_clustering::FasterMSC>(input_data.begin(), input_data.end());
+// Fit the data (inputs_first, inputs_last) with a PAM algorithm. Default: ffcl::FasterPAM
+const auto centroids = kmedoids.fit<ffcl::FasterMSC>(input_data.begin(), input_data.end());
 
 // map each data sample to its medoid
 const std::vector<std::size_t> predictions = kmedoids.predict(input_data.begin(), input_data.end());

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
-#include "cpp_clustering/kmeans/KMeansUtils.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/kmeans/KMeansUtils.hpp"
 
 #include <tuple>
 #include <vector>
 
-namespace cpp_clustering {
+namespace ffcl {
 
 template <typename Iterator>
 class Lloyd {
@@ -191,4 +191,4 @@ Lloyd<Iterator>::Buffers::Buffers(const DatasetDescriptorType&                  
                                       std::get<2>(dataset_descriptor),
                                       centroids) {}
 
-}  // namespace cpp_clustering
+}  // namespace ffcl

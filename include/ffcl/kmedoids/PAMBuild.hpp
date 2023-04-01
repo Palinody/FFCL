@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/containers/LowerTriangleMatrix.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/LowerTriangleMatrix.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -26,7 +26,7 @@ build(const Iterator& samples_first, const Iterator& samples_last, std::size_t n
         samples_first, samples_last, n_features, medoids_indices, /*nth_closest*/ 1);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -78,8 +78,8 @@ build(const Iterator& samples_first, const Iterator& samples_last, std::size_t n
 
 template <typename Iterator>
 std::tuple<typename Iterator::value_type, std::vector<std::size_t>, std::vector<typename Iterator::value_type>> build(
-    const cpp_clustering::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    std::size_t                                                      n_medoids) {
+    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
+    std::size_t                                            n_medoids) {
     using DataType = typename Iterator::value_type;
 
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();

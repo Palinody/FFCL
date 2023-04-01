@@ -1,10 +1,10 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/containers/LowerTriangleMatrix.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
-#include "cpp_clustering/kmedoids/PAMUtils.hpp"
-#include "cpp_clustering/math/random/Distributions.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/LowerTriangleMatrix.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/kmedoids/PAMUtils.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -18,7 +18,7 @@
 #include <variant>
 #include <vector>
 
-namespace cpp_clustering {
+namespace ffcl {
 
 template <typename Iterator>
 class FasterPAM {
@@ -32,8 +32,8 @@ class FasterPAM {
     // {samples_first_, samples_last_, n_features_}
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    using FirstVariantType   = cpp_clustering::containers::LowerTriangleMatrixDynamic<Iterator>;
-    using SecondVariantType  = cpp_clustering::containers::LowerTriangleMatrix<Iterator>;
+    using FirstVariantType   = ffcl::containers::LowerTriangleMatrixDynamic<Iterator>;
+    using SecondVariantType  = ffcl::containers::LowerTriangleMatrix<Iterator>;
     using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
 
     FasterPAM(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids);
@@ -375,4 +375,4 @@ void FasterPAM<Iterator>::Buffers::update_losses_with_closest_medoid_removal(std
                                                                          n_medoids);
 }
 
-}  // namespace cpp_clustering
+}  // namespace ffcl

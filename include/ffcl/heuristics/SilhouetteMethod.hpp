@@ -1,7 +1,7 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -9,7 +9,7 @@
 #include <limits>
 #include <vector>
 
-namespace cpp_clustering::silhouette_method {
+namespace ffcl::silhouette_method {
 
 /**
  * @brief counts the number of samples associated to a centroid
@@ -87,9 +87,9 @@ std::vector<typename IteratorFloat::value_type> cohesion(const IteratorFloat& sa
             if ((centroid_index == other_centroid_index) && (sample_index != other_sample_index)) {
                 // accumulate the squared distances
                 samples_cohesion_values[sample_index] +=
-                    cpp_clustering::heuristic::heuristic(sample_first + sample_index * n_features,
-                                                         sample_first + sample_index * n_features + n_features,
-                                                         sample_first + other_sample_index * n_features);
+                    ffcl::heuristic::heuristic(sample_first + sample_index * n_features,
+                                               sample_first + sample_index * n_features + n_features,
+                                               sample_first + other_sample_index * n_features);
             }
         }
         // number of samples in the current centroid
@@ -154,9 +154,9 @@ std::vector<typename IteratorFloat::value_type> separation(const IteratorFloat& 
             if (centroid_index != other_centroid_index) {
                 // accumulate the squared distances for the correct centroid index
                 sample_to_other_cluster_samples_distance_mean[other_centroid_index] +=
-                    cpp_clustering::heuristic::heuristic(sample_first + sample_index * n_features,
-                                                         sample_first + sample_index * n_features + n_features,
-                                                         sample_first + other_sample_index * n_features);
+                    ffcl::heuristic::heuristic(sample_first + sample_index * n_features,
+                                               sample_first + sample_index * n_features + n_features,
+                                               sample_first + other_sample_index * n_features);
             }
         }
         // normalize each cluster mean distance sum by each cluster's number of samples
@@ -252,4 +252,4 @@ typename IteratorFloat::value_type get_mean_silhouette_coefficient(const Iterato
     return std::accumulate(samples_silhouette_first, samples_silhouette_last, static_cast<FloatType>(0)) / n_elements;
 }
 
-}  // namespace cpp_clustering::silhouette_method
+}  // namespace ffcl::silhouette_method

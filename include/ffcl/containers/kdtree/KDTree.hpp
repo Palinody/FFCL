@@ -1,9 +1,9 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/containers/kdtree/KDNode.hpp"
-#include "cpp_clustering/containers/kdtree/KDTreeUtils.hpp"
-#include "cpp_clustering/math/random/Distributions.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/kdtree/KDNode.hpp"
+#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
@@ -20,7 +20,7 @@
 #include <filesystem>
 #include <fstream>
 
-namespace cpp_clustering::containers {
+namespace ffcl::containers {
 
 namespace fs = std::filesystem;
 
@@ -121,7 +121,7 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
                                                          n_features_)}
   , root_{cycle_through_axes_build(iterator_pair_, 0, 0, kd_bounding_box_)} {}
 */
-// /*
+/*
 template <typename Iterator>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
   : iterator_pair_{iterator_pair}
@@ -138,8 +138,8 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
                                  0,
                                  kd_bounding_box_)} {}
 
-// */
-/*
+*/
+// /*
 
 template <typename Iterator>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
@@ -153,7 +153,7 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
         kdtree::utils::select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box_),
         0,
         kd_bounding_box_)} {}
-*/
+// */
 
 template <typename Iterator>
 std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
@@ -397,4 +397,4 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
     output_file.close();
 }
 
-}  // namespace cpp_clustering::containers
+}  // namespace ffcl::containers

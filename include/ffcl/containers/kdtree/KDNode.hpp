@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/containers/kdtree/KDTreeUtils.hpp"
-#include "cpp_clustering/math/random/Distributions.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
@@ -11,7 +11,7 @@
 
 #include "rapidjson/writer.h"
 
-namespace cpp_clustering::containers {
+namespace ffcl::containers {
 
 template <typename Iterator>
 using IteratorPairType = std::pair<Iterator, Iterator>;
@@ -50,8 +50,6 @@ struct KDNode {
     IteratorPairType<Iterator> samples_iterator_pair_;
     std::size_t                n_features_;
     ssize_t                    cut_feature_index_;
-    // bounding box w.r.t. the chosen feature index. No bounding box for leaf nodes
-    // BoundingBox1DType                 bounding_box_1d_;
     // bounding box hyper rectangle (w.r.t. each dimension)
     BoundingBoxKDType<Iterator>       kd_bounding_box_;
     std::shared_ptr<KDNode<Iterator>> left_;
@@ -111,4 +109,4 @@ void KDNode<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffe
     writer.EndArray();
 }
 
-}  // namespace cpp_clustering::containers
+}  // namespace ffcl::containers

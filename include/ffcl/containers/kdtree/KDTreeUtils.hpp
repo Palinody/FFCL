@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
+#include "ffcl/common/Utils.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <cmath>

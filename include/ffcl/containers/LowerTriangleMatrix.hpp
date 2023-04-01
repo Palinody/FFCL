@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cpp_clustering/heuristics/Heuristics.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -10,7 +10,7 @@
 #include <omp.h>
 #endif
 
-namespace cpp_clustering::containers {
+namespace ffcl::containers {
 
 template <typename Iterator>
 std::vector<std::vector<typename Iterator::value_type>> make_pairwise_low_triangle_distance_matrix(
@@ -32,7 +32,7 @@ std::vector<std::vector<typename Iterator::value_type>> make_pairwise_low_triang
         std::vector<ValueType> temp_row(i + 1);
 
         for (std::size_t j = 0; j < i; ++j) {
-            temp_row[j] = cpp_clustering::heuristic::heuristic(
+            temp_row[j] = ffcl::heuristic::heuristic(
                 /*first sample begin=*/samples_first + i * n_features,
                 /*first sample end=*/samples_first + i * n_features + n_features,
                 /*second sample begin=*/samples_first + j * n_features);
@@ -146,12 +146,12 @@ typename LowerTriangleMatrixDynamic<Iterator>::ValueType LowerTriangleMatrixDyna
     std::size_t feature_index) const {
     // swap the indices if an upper triangle (diagonal excluded) quiery is made
     if (feature_index > sample_index) {
-        return cpp_clustering::heuristic::heuristic(
+        return ffcl::heuristic::heuristic(
             /*first sample begin=*/samples_first_ + feature_index * n_features_,
             /*first sample end=*/samples_first_ + feature_index * n_features_ + n_features_,
             /*other sample begin=*/samples_first_ + sample_index * n_features_);
     }
-    return cpp_clustering::heuristic::heuristic(
+    return ffcl::heuristic::heuristic(
         /*first sample begin=*/samples_first_ + sample_index * n_features_,
         /*first sample end=*/samples_first_ + sample_index * n_features_ + n_features_,
         /*other sample begin=*/samples_first_ + feature_index * n_features_);
@@ -162,4 +162,4 @@ std::size_t LowerTriangleMatrixDynamic<Iterator>::n_samples() const {
     return common::utils::get_n_samples(samples_first_, samples_last_, n_features_);
 }
 
-}  // namespace cpp_clustering::containers
+}  // namespace ffcl::containers

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
-#include "cpp_clustering/kmeans/KMeansUtils.hpp"
-#include "cpp_clustering/math/random/Distributions.hpp"
-#include "cpp_clustering/math/random/VosesAliasMethod.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/kmeans/KMeansUtils.hpp"
+#include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-namespace cpp_clustering::kmeansplusplus {
+namespace ffcl::kmeansplusplus {
 
 /**
  * @brief Initializes the first centroid randomly and then weights subsequent centroids based on the distance to all
@@ -107,4 +107,4 @@ std::vector<typename IteratorFloat::value_type> make_centroids_from_previous_cen
     return centroids;
 }
 
-}  // namespace cpp_clustering::kmeansplusplus
+}  // namespace ffcl::kmeansplusplus

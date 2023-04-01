@@ -1,11 +1,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "cpp_clustering/heuristics/SilhouetteMethod.hpp"
-#include "cpp_clustering/kmeans/Hamerly.hpp"
-#include "cpp_clustering/kmeans/KMeans.hpp"
-#include "cpp_clustering/kmeans/Lloyd.hpp"
-#include "cpp_clustering/math/random/VosesAliasMethod.hpp"
+#include "ffcl/heuristics/SilhouetteMethod.hpp"
+#include "ffcl/kmeans/Hamerly.hpp"
+#include "ffcl/kmeans/KMeans.hpp"
+#include "ffcl/kmeans/Lloyd.hpp"
+#include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -112,8 +112,8 @@ class KMeansErrorsTest : public ::testing::Test {
         std::size_t           n_centroids,
         std::size_t           n_features,
         std::size_t           n_iterations = 1) {
-        using KMeans = cpp_clustering::KMeans<dType>;
-        // using PAM = cpp_clustering::FasterMSC;
+        using KMeans = ffcl::KMeans<dType>;
+        // using PAM = ffcl::FasterMSC;
 
         auto kmeans = KMeans(n_centroids, n_features);
 
@@ -125,8 +125,8 @@ class KMeansErrorsTest : public ::testing::Test {
                 .patience(0)
                 .n_init(10));
 
-        const auto centroids = kmeans.fit<cpp_clustering::Hamerly>(
-            inputs_first, inputs_last, cpp_clustering::kmeansplusplus::make_centroids<InputsIterator>);
+        const auto centroids =
+            kmeans.fit<ffcl::Hamerly>(inputs_first, inputs_last, ffcl::kmeansplusplus::make_centroids<InputsIterator>);
 
         const auto predictions = kmeans.predict(inputs_first, inputs_last);
 
@@ -144,7 +144,7 @@ class KMeansErrorsTest : public ::testing::Test {
 };
 
 TEST_F(KMeansErrorsTest, SilhouetteTest) {
-    using KMeans = cpp_clustering::KMeans<dType>;
+    using KMeans = ffcl::KMeans<dType>;
 
     fs::path filename = "unbalanced_blobs.txt";
 
@@ -166,10 +166,10 @@ TEST_F(KMeansErrorsTest, SilhouetteTest) {
         // map the samples to their closest centroid/medoid
         const auto predictions = kmeans.predict(data.begin(), data.end());
         // compute the silhouette scores for each sample
-        const auto samples_silhouette_values = cpp_clustering::silhouette_method::silhouette(
+        const auto samples_silhouette_values = ffcl::silhouette_method::silhouette(
             data.begin(), data.end(), predictions.begin(), predictions.end(), n_features);
         // get the average score
-        const auto mean_silhouette_coefficient = cpp_clustering::silhouette_method::get_mean_silhouette_coefficient(
+        const auto mean_silhouette_coefficient = ffcl::silhouette_method::get_mean_silhouette_coefficient(
             samples_silhouette_values.begin(), samples_silhouette_values.end());
         // accumulate the current scores
         scores[k - k_min] = mean_silhouette_coefficient;

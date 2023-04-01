@@ -1,8 +1,8 @@
-#include "cpp_clustering/common/Timer.hpp"
-#include "cpp_clustering/containers/LowerTriangleMatrix.hpp"
-#include "cpp_clustering/kmeans/KMeans.hpp"
-#include "cpp_clustering/kmedoids/KMedoids.hpp"
-#include "cpp_clustering/math/random/VosesAliasMethod.hpp"
+#include "ffcl/common/Timer.hpp"
+#include "ffcl/containers/LowerTriangleMatrix.hpp"
+#include "ffcl/kmeans/KMeans.hpp"
+#include "ffcl/kmedoids/KMedoids.hpp"
+#include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -79,7 +79,7 @@ void fit_once_kmeans(const InputsIterator& inputs_first,
                      LabelsIterator        labels_last,
                      std::size_t           n_centroids,
                      std::size_t           n_features) {
-    using KMeans = cpp_clustering::KMeans<dType>;
+    using KMeans = ffcl::KMeans<dType>;
 
     auto kmeans = KMeans(n_centroids, n_features);
 
@@ -106,8 +106,8 @@ void fit_once(const InputsIterator& inputs_first,
               LabelsIterator        labels_last,
               std::size_t           n_medoids,
               std::size_t           n_features) {
-    using KMedoids = cpp_clustering::KMedoids<dType, true>;
-    // using PAM = cpp_clustering::FasterMSC;
+    using KMedoids = ffcl::KMedoids<dType, true>;
+    // using PAM = ffcl::FasterMSC;
 
     auto kmedoids = KMedoids(n_medoids, n_features);
 
@@ -120,7 +120,7 @@ void fit_once(const InputsIterator& inputs_first,
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    kmedoids.fit<cpp_clustering::FasterMSC>(inputs_first, inputs_last);
+    kmedoids.fit<ffcl::FasterMSC>(inputs_first, inputs_last);
 
 #if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -134,16 +134,15 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
                                             LabelsIterator        labels_last,
                                             std::size_t           n_medoids,
                                             std::size_t           n_features) {
-    using KMedoids = cpp_clustering::KMedoids<dType, true>;
-    // using PAM = cpp_clustering::FasterMSC;
+    using KMedoids = ffcl::KMedoids<dType, true>;
+    // using PAM = ffcl::FasterMSC;
 
     auto kmedoids = KMedoids(n_medoids, n_features);
 
     kmedoids.set_options(
         /*KMedoids options=*/KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
 
-    const auto pairwise_distance_matrix =
-        cpp_clustering::containers::LowerTriangleMatrix(inputs_first, inputs_last, n_features);
+    const auto pairwise_distance_matrix = ffcl::containers::LowerTriangleMatrix(inputs_first, inputs_last, n_features);
 
 #if defined(VERBOSE) && VERBOSE == true
     std::cout << "\nRunning kmedoids with precomputed distances matrix: \n";
@@ -151,7 +150,7 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    const auto medoids = kmedoids.fit<cpp_clustering::FasterMSC>(pairwise_distance_matrix);
+    const auto medoids = kmedoids.fit<ffcl::FasterMSC>(pairwise_distance_matrix);
 
 #if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -174,7 +173,7 @@ void distance_matrix_benchmark() {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    cpp_clustering::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
+    ffcl::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
 
 #if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
-#include "cpp_clustering/heuristics/Heuristics.hpp"
-#include "cpp_clustering/kmeans/KMeansUtils.hpp"
+#include "ffcl/common/Utils.hpp"
+#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/kmeans/KMeansUtils.hpp"
 
 #include <tuple>
 #include <vector>
 
-namespace cpp_clustering {
+namespace ffcl {
 
 template <typename Iterator>
 class Hamerly {
@@ -137,10 +137,9 @@ void Hamerly<Iterator>::swap_bounds() {
         if (samples_to_nearest_centroid_distances[sample_index] > upper_bound_comparison) {
             const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
             // tighten upper bound
-            auto upper_bound =
-                cpp_clustering::heuristic::heuristic(samples_first + sample_index * n_features,
-                                                     samples_first + sample_index * n_features + n_features,
-                                                     centroids_.begin() + assigned_centroid_index * n_features);
+            auto upper_bound = ffcl::heuristic::heuristic(samples_first + sample_index * n_features,
+                                                          samples_first + sample_index * n_features + n_features,
+                                                          centroids_.begin() + assigned_centroid_index * n_features);
 
             const auto previous_assigned_centroid_distance = samples_to_nearest_centroid_distances[sample_index];
 
@@ -154,10 +153,10 @@ void Hamerly<Iterator>::swap_bounds() {
 
                 for (std::size_t other_centroid_index = 0; other_centroid_index < n_centroids; ++other_centroid_index) {
                     if (other_centroid_index != assigned_centroid_index) {
-                        const auto other_nearest_candidate = cpp_clustering::heuristic::heuristic(
-                            samples_first + sample_index * n_features,
-                            samples_first + sample_index * n_features + n_features,
-                            centroids_.begin() + other_centroid_index * n_features);
+                        const auto other_nearest_candidate =
+                            ffcl::heuristic::heuristic(samples_first + sample_index * n_features,
+                                                       samples_first + sample_index * n_features + n_features,
+                                                       centroids_.begin() + other_centroid_index * n_features);
 
                         // if another center is closer than the current assignment
                         if (other_nearest_candidate < upper_bound) {
@@ -246,9 +245,9 @@ void Hamerly<Iterator>::update_centroids_velocities(
     // compute the distances between the non updated and updated centroids
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
         centroid_velocities[centroid_index] =
-            cpp_clustering::heuristic::heuristic(previous_centroids.begin() + centroid_index * n_features,
-                                                 previous_centroids.begin() + centroid_index * n_features + n_features,
-                                                 centroids_.begin() + centroid_index * n_features);
+            ffcl::heuristic::heuristic(previous_centroids.begin() + centroid_index * n_features,
+                                       previous_centroids.begin() + centroid_index * n_features + n_features,
+                                       centroids_.begin() + centroid_index * n_features);
     }
 }
 
@@ -321,4 +320,4 @@ Hamerly<Iterator>::Buffers::Buffers(const DatasetDescriptorType&                
                                         std::get<2>(dataset_descriptor),
                                         centroids) {}
 
-}  // namespace cpp_clustering
+}  // namespace ffcl

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cpp_clustering/common/Utils.hpp"
+#include "ffcl/common/Utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace cpp_clustering::heuristic {
+namespace ffcl::heuristic {
 
 template <typename IteratorFloat1, typename IteratorFloat2>
 typename IteratorFloat1::value_type squared_euclidean_distance(const IteratorFloat1& feature_first,
@@ -122,4 +122,4 @@ auto heuristic(const Iterator1& feature_first, const Iterator1& feature_last, co
     return euclidean_distance(feature_first, feature_last, other_feature_first);
 }
 
-}  // namespace cpp_clustering::heuristic
+}  // namespace ffcl::heuristic
