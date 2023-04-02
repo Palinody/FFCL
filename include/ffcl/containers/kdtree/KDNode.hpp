@@ -92,6 +92,11 @@ bool KDNode<Iterator>::is_leaf() const {
 
 template <typename Iterator>
 void KDNode<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+    using DataType = DataType<Iterator>;
+
+    static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
+                  "Unsupported type during kdnode serialization");
+
     writer.StartArray();
     // upper-left and lower-right (with sentinel) iterators
     const auto [range_first, range_last] = samples_iterator_pair_;
@@ -102,7 +107,12 @@ void KDNode<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffe
         // sample (feature vector) array
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
-            writer.Double(samples_iterator_pair_.first[sample_index * n_features_ + feature_index]);
+            if constexpr (std::is_integral_v<DataType>) {
+                writer.Int64(samples_iterator_pair_.first[sample_index * n_features_ + feature_index]);
+
+            } else if constexpr (std::is_floating_point_v<DataType>) {
+                writer.Double(samples_iterator_pair_.first[sample_index * n_features_ + feature_index]);
+            }
         }
         writer.EndArray();
     }

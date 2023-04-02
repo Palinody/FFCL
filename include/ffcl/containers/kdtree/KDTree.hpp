@@ -173,7 +173,7 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
         // select the cut_feature_index according to the one with the most variance
-        cut_feature_index = (depth++) % n_features_;
+        cut_feature_index = depth % n_features_;
 
         node = std::make_shared<KDNode<Iterator>>(
             samples_first, samples_last, n_features_, cut_feature_index, kd_bounding_box);
@@ -187,7 +187,8 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
         // set the right bound of the left child to the cut value
         kd_bounding_box[cut_feature_index].second = median_value;
 
-        node->left_ = cycle_through_axes_build(left_samples_iterator_pair, cut_feature_index, depth, kd_bounding_box);
+        node->left_ =
+            cycle_through_axes_build(left_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
 
         // reset the right bound of the bounding box to the current node right bound
         kd_bounding_box[cut_feature_index].second = node->kd_bounding_box_[cut_feature_index].second;
@@ -201,7 +202,7 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
             kd_bounding_box[cut_feature_index].first = median_value;
 
             node->right_ =
-                cycle_through_axes_build(right_samples_iterator_pair, cut_feature_index, depth, kd_bounding_box);
+                cycle_through_axes_build(right_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
 
             // reset the left bound of the bounding box to the current node left bound
             kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
@@ -357,6 +358,11 @@ void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNode<Iterator>>&
 
 template <typename Iterator>
 void KDTree<Iterator>::serialize(const fs::path& filepath) const {
+    using DataType = DataType<Iterator>;
+
+    static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
+                  "Unsupported type during kdtree serialization");
+
     rapidjson::Document                        document;
     rapidjson::StringBuffer                    buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -376,8 +382,15 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             writer.StartArray();
-            writer.Double(kd_bounding_box_[feature_index].first);
-            writer.Double(kd_bounding_box_[feature_index].second);
+            if constexpr (std::is_integral_v<DataType>) {
+                writer.Int64(kd_bounding_box_[feature_index].first);
+                writer.Int64(kd_bounding_box_[feature_index].second);
+
+            } else if constexpr (std::is_floating_point_v<DataType>) {
+                writer.Double(kd_bounding_box_[feature_index].first);
+                writer.Double(kd_bounding_box_[feature_index].second);
+            }
+
             writer.EndArray();
         }
         writer.EndArray();
