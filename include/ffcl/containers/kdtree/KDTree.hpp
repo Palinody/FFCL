@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDNode.hpp"
+#include "ffcl/containers/kdtree/KDNodeView.hpp"
 #include "ffcl/containers/kdtree/KDTreeUtils.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
@@ -80,26 +80,26 @@ class KDTree {
 
     KDTree(const KDTree&) = delete;
 
-    void serialize_kdtree(const std::shared_ptr<KDNode<Iterator>>&    kdnode,
-                          rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
+    void serialize_kdtree(const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
+                          rapidjson::Writer<rapidjson::StringBuffer>&  writer) const;
 
     void serialize(const fs::path& filepath) const;
 
   private:
-    std::shared_ptr<KDNode<Iterator>> cycle_through_axes_build(const IteratorPairType<Iterator>& iterator_pair,
+    std::shared_ptr<KDNodeView<Iterator>> cycle_through_axes_build(const IteratorPairType<Iterator>& iterator_pair,
+                                                                   ssize_t                           cut_feature_index,
+                                                                   ssize_t                           depth,
+                                                                   BoundingBoxKDType<Iterator>&      kd_bounding_box);
+
+    std::shared_ptr<KDNodeView<Iterator>> highest_variance_build(const IteratorPairType<Iterator>& iterator_pair,
+                                                                 ssize_t                           cut_feature_index,
+                                                                 ssize_t                           depth,
+                                                                 BoundingBoxKDType<Iterator>&      kd_bounding_box);
+
+    std::shared_ptr<KDNodeView<Iterator>> maximum_spread_build(const IteratorPairType<Iterator>& iterator_pair,
                                                                ssize_t                           cut_feature_index,
                                                                ssize_t                           depth,
                                                                BoundingBoxKDType<Iterator>&      kd_bounding_box);
-
-    std::shared_ptr<KDNode<Iterator>> highest_variance_build(const IteratorPairType<Iterator>& iterator_pair,
-                                                             ssize_t                           cut_feature_index,
-                                                             ssize_t                           depth,
-                                                             BoundingBoxKDType<Iterator>&      kd_bounding_box);
-
-    std::shared_ptr<KDNode<Iterator>> maximum_spread_build(const IteratorPairType<Iterator>& iterator_pair,
-                                                           ssize_t                           cut_feature_index,
-                                                           ssize_t                           depth,
-                                                           BoundingBoxKDType<Iterator>&      kd_bounding_box);
 
     IteratorPairType<Iterator> iterator_pair_;
 
@@ -109,7 +109,7 @@ class KDTree {
 
     Options options_;
 
-    std::shared_ptr<KDNode<Iterator>> root_;
+    std::shared_ptr<KDNodeView<Iterator>> root_;
 };
 /*
 template <typename Iterator>
@@ -121,7 +121,7 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
                                                          n_features_)}
   , root_{cycle_through_axes_build(iterator_pair_, 0, 0, kd_bounding_box_)} {}
 */
-// /*
+/*
 template <typename Iterator>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
   : iterator_pair_{iterator_pair}
@@ -138,8 +138,8 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
                                  0,
                                  kd_bounding_box_)} {}
 
-// */
-/*
+*/
+// /*
 template <typename Iterator>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
   : iterator_pair_{iterator_pair}
@@ -152,10 +152,10 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::s
         kdtree::utils::select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box_),
         0,
         kd_bounding_box_)} {}
-*/
+// */
 
 template <typename Iterator>
-std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
+std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
     const IteratorPairType<Iterator>& iterator_pair,
     ssize_t                           cut_feature_index,
     ssize_t                           depth,
@@ -167,7 +167,7 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
     if (n_samples == 0) {
         return nullptr;
     }
-    std::shared_ptr<KDNode<Iterator>> node;
+    std::shared_ptr<KDNodeView<Iterator>> node;
 
     // the current node is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
@@ -175,7 +175,7 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
         // select the cut_feature_index according to the one with the most variance
         cut_feature_index = depth % n_features_;
 
-        node = std::make_shared<KDNode<Iterator>>(
+        node = std::make_shared<KDNodeView<Iterator>>(
             samples_first, samples_last, n_features_, cut_feature_index, kd_bounding_box);
 
         const std::size_t        median_index = n_samples / 2;
@@ -208,13 +208,13 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
             kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
         }
     } else {
-        node = std::make_shared<KDNode<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
+        node = std::make_shared<KDNodeView<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
     }
     return node;
 }
 
 template <typename Iterator>
-std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::highest_variance_build(
+std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::highest_variance_build(
     const IteratorPairType<Iterator>& iterator_pair,
     ssize_t                           cut_feature_index,
     ssize_t                           depth,
@@ -226,7 +226,7 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::highest_variance_build(
     if (n_samples == 0) {
         return nullptr;
     }
-    std::shared_ptr<KDNode<Iterator>> node;
+    std::shared_ptr<KDNodeView<Iterator>> node;
 
     // the current node is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
@@ -234,7 +234,7 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::highest_variance_build(
         cut_feature_index = kdtree::utils::select_axis_with_largest_variance<Iterator>(
             samples_first, samples_last, n_features_, options_.n_samples_fraction_for_variance_computation_);
 
-        node = std::make_shared<KDNode<Iterator>>(
+        node = std::make_shared<KDNodeView<Iterator>>(
             samples_first, samples_last, n_features_, cut_feature_index, kd_bounding_box);
 
         const std::size_t        median_index = n_samples / 2;
@@ -266,13 +266,13 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::highest_variance_build(
             kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
         }
     } else {
-        node = std::make_shared<KDNode<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
+        node = std::make_shared<KDNodeView<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
     }
     return node;
 }
 
 template <typename Iterator>
-std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::maximum_spread_build(
+std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::maximum_spread_build(
     const IteratorPairType<Iterator>& iterator_pair,
     ssize_t                           cut_feature_index,
     ssize_t                           depth,
@@ -284,14 +284,14 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::maximum_spread_build(
     if (n_samples == 0) {
         return nullptr;
     }
-    std::shared_ptr<KDNode<Iterator>> node;
+    std::shared_ptr<KDNodeView<Iterator>> node;
 
     // the current node is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index = kdtree::utils::select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box_);
 
-        node = std::make_shared<KDNode<Iterator>>(
+        node = std::make_shared<KDNodeView<Iterator>>(
             samples_first, samples_last, n_features_, cut_feature_index, kd_bounding_box);
 
         const std::size_t        median_index = n_samples / 2;
@@ -323,14 +323,14 @@ std::shared_ptr<KDNode<Iterator>> KDTree<Iterator>::maximum_spread_build(
             kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
         }
     } else {
-        node = std::make_shared<KDNode<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
+        node = std::make_shared<KDNodeView<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
     }
     return node;
 }
 
 template <typename Iterator>
-void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNode<Iterator>>&    kdnode,
-                                        rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
+                                        rapidjson::Writer<rapidjson::StringBuffer>&  writer) const {
     writer.StartObject();
     {
         writer.String("axis");
@@ -382,6 +382,7 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             writer.StartArray();
+
             if constexpr (std::is_integral_v<DataType>) {
                 writer.Int64(kd_bounding_box_[feature_index].first);
                 writer.Int64(kd_bounding_box_[feature_index].second);
@@ -390,7 +391,6 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
                 writer.Double(kd_bounding_box_[feature_index].first);
                 writer.Double(kd_bounding_box_[feature_index].second);
             }
-
             writer.EndArray();
         }
         writer.EndArray();

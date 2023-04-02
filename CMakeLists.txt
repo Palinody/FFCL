@@ -26,7 +26,7 @@ set(HEADER_FILES
     include/ffcl/math/random/VosesAliasMethod.hpp
 
     include/ffcl/containers/kdtree/KDTree.hpp
-    include/ffcl/containers/kdtree/KDNode.hpp
+    include/ffcl/containers/kdtree/KDNodeView.hpp
     include/ffcl/containers/kdtree/KDTreeUtils.hpp
     include/ffcl/containers/LowerTriangleMatrix.hpp
 

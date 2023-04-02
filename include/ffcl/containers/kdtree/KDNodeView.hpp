@@ -26,19 +26,19 @@ template <typename Iterator>
 using BoundingBoxKDType = std::vector<BoundingBox1DType<Iterator>>;
 
 template <typename Iterator>
-struct KDNode {
-    KDNode(Iterator                           samples_first,
-           Iterator                           samples_last,
-           std::size_t                        n_features,
-           const BoundingBoxKDType<Iterator>& kd_bounding_box);
+struct KDNodeView {
+    KDNodeView(Iterator                           samples_first,
+               Iterator                           samples_last,
+               std::size_t                        n_features,
+               const BoundingBoxKDType<Iterator>& kd_bounding_box);
 
-    KDNode(Iterator                           samples_first,
-           Iterator                           samples_last,
-           std::size_t                        n_features,
-           ssize_t                            cut_feature_index,
-           const BoundingBoxKDType<Iterator>& kd_bounding_box);
+    KDNodeView(Iterator                           samples_first,
+               Iterator                           samples_last,
+               std::size_t                        n_features,
+               ssize_t                            cut_feature_index,
+               const BoundingBoxKDType<Iterator>& kd_bounding_box);
 
-    KDNode(const KDNode&) = delete;
+    KDNodeView(const KDNodeView&) = delete;
 
     bool is_empty() const;
 
@@ -51,27 +51,27 @@ struct KDNode {
     std::size_t                n_features_;
     ssize_t                    cut_feature_index_;
     // bounding box hyper rectangle (w.r.t. each dimension)
-    BoundingBoxKDType<Iterator>       kd_bounding_box_;
-    std::shared_ptr<KDNode<Iterator>> left_;
-    std::shared_ptr<KDNode<Iterator>> right_;
+    BoundingBoxKDType<Iterator>           kd_bounding_box_;
+    std::shared_ptr<KDNodeView<Iterator>> left_;
+    std::shared_ptr<KDNodeView<Iterator>> right_;
 };
 
 template <typename Iterator>
-KDNode<Iterator>::KDNode(Iterator                           samples_first,
-                         Iterator                           samples_last,
-                         std::size_t                        n_features,
-                         const BoundingBoxKDType<Iterator>& kd_bounding_box)
+KDNodeView<Iterator>::KDNodeView(Iterator                           samples_first,
+                                 Iterator                           samples_last,
+                                 std::size_t                        n_features,
+                                 const BoundingBoxKDType<Iterator>& kd_bounding_box)
   : samples_iterator_pair_{std::make_pair(samples_first, samples_last)}
   , n_features_{n_features}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename Iterator>
-KDNode<Iterator>::KDNode(Iterator                           samples_first,
-                         Iterator                           samples_last,
-                         std::size_t                        n_features,
-                         ssize_t                            cut_feature_index,
-                         const BoundingBoxKDType<Iterator>& kd_bounding_box)
+KDNodeView<Iterator>::KDNodeView(Iterator                           samples_first,
+                                 Iterator                           samples_last,
+                                 std::size_t                        n_features,
+                                 ssize_t                            cut_feature_index,
+                                 const BoundingBoxKDType<Iterator>& kd_bounding_box)
   : samples_iterator_pair_{kdtree::utils::quickselect_median_range(samples_first,
                                                                    samples_last,
                                                                    n_features,
@@ -81,17 +81,17 @@ KDNode<Iterator>::KDNode(Iterator                           samples_first,
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename Iterator>
-bool KDNode<Iterator>::is_empty() const {
+bool KDNodeView<Iterator>::is_empty() const {
     return std::distance(samples_iterator_pair_.first, samples_iterator_pair_.second) == static_cast<std::ptrdiff_t>(0);
 }
 
 template <typename Iterator>
-bool KDNode<Iterator>::is_leaf() const {
+bool KDNodeView<Iterator>::is_leaf() const {
     return cut_feature_index_ == -1;
 }
 
 template <typename Iterator>
-void KDNode<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+void KDNodeView<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     using DataType = DataType<Iterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,

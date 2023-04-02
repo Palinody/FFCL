@@ -16,28 +16,6 @@ static constexpr T infinity() {
     return std::numeric_limits<T>::max();
 }
 
-inline void xor_swap(std::size_t* lhs, std::size_t* rhs) {
-    // no swap if both variables share same memory
-    if (lhs != rhs) {
-        *lhs ^= *rhs;
-        *rhs ^= *lhs;
-        *lhs ^= *rhs;
-    } else {
-        throw std::invalid_argument("Cannot swap 2 variables that share memory.\n");
-    }
-}
-
-template <typename IntType>
-IntType factorial(const IntType& n) {
-    static_assert(std::is_integral_v<IntType>, "The input type should be integral.");
-
-    IntType result = 1;
-    for (IntType i = 2; i <= n; ++i) {
-        result *= i;
-    }
-    return result;
-}
-
 template <typename T>
 T abs(const T& x) {
     if constexpr (std::is_integral_v<T>) {
@@ -292,8 +270,8 @@ std::vector<typename Iterator::value_type> compute_mean_per_feature(Iterator    
             data_first, data_first + n_features, mean_per_feature.begin(), mean_per_feature.begin(), std::plus<>());
     }
     std::transform(
-        mean_per_feature.begin(), mean_per_feature.end(), mean_per_feature.begin(), [n_samples](const auto& x) {
-            return x / n_samples;
+        mean_per_feature.begin(), mean_per_feature.end(), mean_per_feature.begin(), [n_samples](const auto& feature) {
+            return feature / n_samples;
         });
     return mean_per_feature;
 }
@@ -333,7 +311,7 @@ std::vector<typename Iterator::value_type> compute_variance_per_feature(Iterator
     std::transform(variance_per_feature.begin(),
                    variance_per_feature.end(),
                    variance_per_feature.begin(),
-                   [n_samples](const auto& x) { return x / (n_samples - 1); });
+                   [n_samples](const auto& feature) { return feature / (n_samples - 1); });
 
     return variance_per_feature;
 }
