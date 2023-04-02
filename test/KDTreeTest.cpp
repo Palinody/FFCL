@@ -153,8 +153,8 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
 
 #include "ffcl/common/Timer.hpp"
 
-TEST_F(KDTreeErrorsTest, KDTreeTest) {
-    fs::path filename = "noisy_circles.txt";
+TEST_F(KDTreeErrorsTest, MNISTTest) {
+    fs::path filename = "mnist.txt";
 
     auto              data       = load_data<dType>(inputs_folder / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
@@ -168,6 +168,7 @@ TEST_F(KDTreeErrorsTest, KDTreeTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
+    // <kdtree::utils::maximum_spread_build, kdtree::utils::quickselect_median_range_struct>
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);

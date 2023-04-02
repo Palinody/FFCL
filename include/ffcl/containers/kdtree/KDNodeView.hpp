@@ -14,26 +14,12 @@
 namespace ffcl::containers {
 
 template <typename Iterator>
-using IteratorPairType = std::pair<Iterator, Iterator>;
-
-template <typename Iterator>
-using DataType = typename Iterator::value_type;
-
-template <typename Iterator>
-using BoundingBox1DType = std::pair<DataType<Iterator>, DataType<Iterator>>;
-
-template <typename Iterator>
-using BoundingBoxKDType = std::vector<BoundingBox1DType<Iterator>>;
-
-template <typename Iterator>
 struct KDNodeView {
-    KDNodeView(Iterator                           samples_first,
-               Iterator                           samples_last,
+    KDNodeView(IteratorPairType<Iterator>         iterator_pair,
                std::size_t                        n_features,
                const BoundingBoxKDType<Iterator>& kd_bounding_box);
 
-    KDNodeView(Iterator                           samples_first,
-               Iterator                           samples_last,
+    KDNodeView(IteratorPairType<Iterator>         iterator_pair,
                std::size_t                        n_features,
                ssize_t                            cut_feature_index,
                const BoundingBoxKDType<Iterator>& kd_bounding_box);
@@ -57,25 +43,20 @@ struct KDNodeView {
 };
 
 template <typename Iterator>
-KDNodeView<Iterator>::KDNodeView(Iterator                           samples_first,
-                                 Iterator                           samples_last,
+KDNodeView<Iterator>::KDNodeView(IteratorPairType<Iterator>         iterator_pair,
                                  std::size_t                        n_features,
                                  const BoundingBoxKDType<Iterator>& kd_bounding_box)
-  : samples_iterator_pair_{std::make_pair(samples_first, samples_last)}
+  : samples_iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename Iterator>
-KDNodeView<Iterator>::KDNodeView(Iterator                           samples_first,
-                                 Iterator                           samples_last,
+KDNodeView<Iterator>::KDNodeView(IteratorPairType<Iterator>         iterator_pair,
                                  std::size_t                        n_features,
                                  ssize_t                            cut_feature_index,
                                  const BoundingBoxKDType<Iterator>& kd_bounding_box)
-  : samples_iterator_pair_{kdtree::utils::quickselect_median_range(samples_first,
-                                                                   samples_last,
-                                                                   n_features,
-                                                                   cut_feature_index)}
+  : samples_iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , cut_feature_index_{cut_feature_index}
   , kd_bounding_box_{kd_bounding_box} {}

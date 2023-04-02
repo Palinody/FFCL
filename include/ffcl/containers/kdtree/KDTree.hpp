@@ -38,16 +38,9 @@ class KDTree {
             return *this;
         }
 
-        Options& n_samples_fraction_for_variance_computation(
-            const std::pair<std::size_t, std::size_t>& n_samples_fraction_for_variance_computation) {
-            n_samples_fraction_for_variance_computation_ = n_samples_fraction_for_variance_computation;
-            return *this;
-        }
-
         Options& operator=(const Options& options) {
-            bucket_size_                                 = options.bucket_size_;
-            max_depth_                                   = options.max_depth_;
-            n_samples_fraction_for_variance_computation_ = options.n_samples_fraction_for_variance_computation_;
+            bucket_size_ = options.bucket_size_;
+            max_depth_   = options.max_depth_;
             return *this;
         }
 
@@ -62,20 +55,17 @@ class KDTree {
             writer.String("max_depth");
             writer.Int64(max_depth_);
 
-            writer.String("n_samples_fraction_for_variance_computation");
-            writer.Double(n_samples_fraction_for_variance_computation_);
-
             writer.EndObject();
         }
         // the maximum number of samples per leaf node
         std::size_t bucket_size_ = 40;
         // the maximum recursion depth. Defaults to infinity
         ssize_t max_depth_ = common::utils::infinity<ssize_t>();
-        // number of samples used to compute the variance for the pivot axis selection
-        double n_samples_fraction_for_variance_computation_ = 0.1;
     };
 
   public:
+    template <template <typename> class AxisSelectionPolicy = kdtree::utils::maximum_spread_build,
+              template <typename> class SplittingRulePolicy = kdtree::utils::quickselect_median_range_struct>
     KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features);
 
     KDTree(const KDTree&) = delete;
@@ -86,20 +76,11 @@ class KDTree {
     void serialize(const fs::path& filepath) const;
 
   private:
-    std::shared_ptr<KDNodeView<Iterator>> cycle_through_axes_build(const IteratorPairType<Iterator>& iterator_pair,
-                                                                   ssize_t                           cut_feature_index,
-                                                                   ssize_t                           depth,
-                                                                   BoundingBoxKDType<Iterator>&      kd_bounding_box);
-
-    std::shared_ptr<KDNodeView<Iterator>> highest_variance_build(const IteratorPairType<Iterator>& iterator_pair,
-                                                                 ssize_t                           cut_feature_index,
-                                                                 ssize_t                           depth,
-                                                                 BoundingBoxKDType<Iterator>&      kd_bounding_box);
-
-    std::shared_ptr<KDNodeView<Iterator>> maximum_spread_build(const IteratorPairType<Iterator>& iterator_pair,
-                                                               ssize_t                           cut_feature_index,
-                                                               ssize_t                           depth,
-                                                               BoundingBoxKDType<Iterator>&      kd_bounding_box);
+    template <template <typename> class AxisSelectionPolicy, template <typename> class SplittingRulePolicy>
+    std::shared_ptr<KDNodeView<Iterator>> build(const IteratorPairType<Iterator>& iterator_pair,
+                                                ssize_t                           cut_feature_index,
+                                                ssize_t                           depth,
+                                                BoundingBoxKDType<Iterator>&      kd_bounding_box);
 
     IteratorPairType<Iterator> iterator_pair_;
 
@@ -111,175 +92,28 @@ class KDTree {
 
     std::shared_ptr<KDNodeView<Iterator>> root_;
 };
-/*
-template <typename Iterator>
-KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
-  : iterator_pair_{iterator_pair}
-  , n_features_{n_features}
-  , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(iterator_pair_),
-                                                         std::get<1>(iterator_pair_),
-                                                         n_features_)}
-  , root_{cycle_through_axes_build(iterator_pair_, 0, 0, kd_bounding_box_)} {}
-*/
-/*
-template <typename Iterator>
-KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
-  : iterator_pair_{iterator_pair}
-  , n_features_{n_features}
-  , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(iterator_pair_),
-                                                         std::get<1>(iterator_pair_),
-                                                         n_features_)}
-  , root_{highest_variance_build(iterator_pair_,
-                                 kdtree::utils::select_axis_with_largest_variance<Iterator>(
-                                     std::get<0>(iterator_pair_),
-                                     std::get<1>(iterator_pair_),
-                                     n_features_,
-                                     options_.n_samples_fraction_for_variance_computation_),
-                                 0,
-                                 kd_bounding_box_)} {}
 
-*/
-// /*
 template <typename Iterator>
+template <template <typename> class AxisSelectionPolicy, template <typename> class SplittingRulePolicy>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
   : iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(iterator_pair_),
                                                          std::get<1>(iterator_pair_),
                                                          n_features_)}
-  , root_{maximum_spread_build(
+  , root_{build<AxisSelectionPolicy, SplittingRulePolicy>(
         iterator_pair_,
-        kdtree::utils::select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box_),
+        AxisSelectionPolicy<Iterator>()(iterator_pair_, n_features_, 0, kd_bounding_box_),
         0,
         kd_bounding_box_)} {}
-// */
 
 template <typename Iterator>
-std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::cycle_through_axes_build(
-    const IteratorPairType<Iterator>& iterator_pair,
-    ssize_t                           cut_feature_index,
-    ssize_t                           depth,
-    BoundingBoxKDType<Iterator>&      kd_bounding_box) {
-    const auto& [samples_first, samples_last] = iterator_pair;
-
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
-
-    if (n_samples == 0) {
-        return nullptr;
-    }
-    std::shared_ptr<KDNodeView<Iterator>> node;
-
-    // the current node is not leaf
-    if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
-        // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
-        // select the cut_feature_index according to the one with the most variance
-        cut_feature_index = depth % n_features_;
-
-        node = std::make_shared<KDNodeView<Iterator>>(
-            samples_first, samples_last, n_features_, cut_feature_index, kd_bounding_box);
-
-        const std::size_t        median_index = n_samples / 2;
-        const DataType<Iterator> median_value = *(samples_first + median_index * n_features_ + cut_feature_index);
-
-        // all the points at the left of the pivot point
-        auto left_samples_iterator_pair = std::make_pair(samples_first, samples_first + median_index * n_features_);
-
-        // set the right bound of the left child to the cut value
-        kd_bounding_box[cut_feature_index].second = median_value;
-
-        node->left_ =
-            cycle_through_axes_build(left_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
-
-        // reset the right bound of the bounding box to the current node right bound
-        kd_bounding_box[cut_feature_index].second = node->kd_bounding_box_[cut_feature_index].second;
-
-        if (n_samples > 2) {
-            // all the points at the right of the pivot point
-            auto right_samples_iterator_pair =
-                std::make_pair(samples_first + median_index * n_features_ + n_features_, samples_last);
-
-            // set the left bound of the right child to the cut value
-            kd_bounding_box[cut_feature_index].first = median_value;
-
-            node->right_ =
-                cycle_through_axes_build(right_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
-
-            // reset the left bound of the bounding box to the current node left bound
-            kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
-        }
-    } else {
-        node = std::make_shared<KDNodeView<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
-    }
-    return node;
-}
-
-template <typename Iterator>
-std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::highest_variance_build(
-    const IteratorPairType<Iterator>& iterator_pair,
-    ssize_t                           cut_feature_index,
-    ssize_t                           depth,
-    BoundingBoxKDType<Iterator>&      kd_bounding_box) {
-    const auto& [samples_first, samples_last] = iterator_pair;
-
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
-
-    if (n_samples == 0) {
-        return nullptr;
-    }
-    std::shared_ptr<KDNodeView<Iterator>> node;
-
-    // the current node is not leaf
-    if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
-        // select the cut_feature_index according to the one with the most variance
-        cut_feature_index = kdtree::utils::select_axis_with_largest_variance<Iterator>(
-            samples_first, samples_last, n_features_, options_.n_samples_fraction_for_variance_computation_);
-
-        node = std::make_shared<KDNodeView<Iterator>>(
-            samples_first, samples_last, n_features_, cut_feature_index, kd_bounding_box);
-
-        const std::size_t        median_index = n_samples / 2;
-        const DataType<Iterator> median_value = *(samples_first + median_index * n_features_ + cut_feature_index);
-
-        // all the points at the left of the pivot point
-        auto left_samples_iterator_pair = std::make_pair(samples_first, samples_first + median_index * n_features_);
-
-        // set the right bound of the left child to the cut value
-        kd_bounding_box[cut_feature_index].second = median_value;
-
-        node->left_ = highest_variance_build(left_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
-
-        // reset the right bound of the bounding box to the current node right bound
-        kd_bounding_box[cut_feature_index].second = node->kd_bounding_box_[cut_feature_index].second;
-
-        if (n_samples > 2) {
-            // all the points at the right of the pivot point
-            auto right_samples_iterator_pair =
-                std::make_pair(samples_first + median_index * n_features_ + n_features_, samples_last);
-
-            // set the left bound of the right child to the cut value
-            kd_bounding_box[cut_feature_index].first = median_value;
-
-            node->right_ =
-                highest_variance_build(right_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
-
-            // reset the left bound of the bounding box to the current node left bound
-            kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
-        }
-    } else {
-        node = std::make_shared<KDNodeView<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
-    }
-    return node;
-}
-
-template <typename Iterator>
-std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::maximum_spread_build(
-    const IteratorPairType<Iterator>& iterator_pair,
-    ssize_t                           cut_feature_index,
-    ssize_t                           depth,
-    BoundingBoxKDType<Iterator>&      kd_bounding_box) {
-    const auto& [samples_first, samples_last] = iterator_pair;
-
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
+template <template <typename> class AxisSelectionPolicy, template <typename> class SplittingRulePolicy>
+std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::build(const IteratorPairType<Iterator>& iterator_pair,
+                                                              ssize_t                           cut_feature_index,
+                                                              ssize_t                           depth,
+                                                              BoundingBoxKDType<Iterator>&      kd_bounding_box) {
+    const std::size_t n_samples = common::utils::get_n_samples(iterator_pair.first, iterator_pair.second, n_features_);
 
     if (n_samples == 0) {
         return nullptr;
@@ -289,41 +123,36 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::maximum_spread_build(
     // the current node is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
-        cut_feature_index = kdtree::utils::select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box_);
+        cut_feature_index = AxisSelectionPolicy<Iterator>()(iterator_pair, n_features_, depth, kd_bounding_box);
 
-        node = std::make_shared<KDNodeView<Iterator>>(
-            samples_first, samples_last, n_features_, cut_feature_index, kd_bounding_box);
+        auto [cut_index, left_range, cut_range, right_range] =
+            SplittingRulePolicy<Iterator>()(iterator_pair, n_features_, cut_feature_index);
 
-        const std::size_t        median_index = n_samples / 2;
-        const DataType<Iterator> median_value = *(samples_first + median_index * n_features_ + cut_feature_index);
+        node = std::make_shared<KDNodeView<Iterator>>(cut_range, n_features_, cut_feature_index, kd_bounding_box);
 
-        // all the points at the left of the pivot point
-        auto left_samples_iterator_pair = std::make_pair(samples_first, samples_first + median_index * n_features_);
+        const auto cut_value = *(cut_range.first + cut_feature_index);
 
         // set the right bound of the left child to the cut value
-        kd_bounding_box[cut_feature_index].second = median_value;
+        kd_bounding_box[cut_feature_index].second = cut_value;
 
-        node->left_ = maximum_spread_build(left_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
+        node->left_ =
+            build<AxisSelectionPolicy, SplittingRulePolicy>(left_range, cut_feature_index, depth + 1, kd_bounding_box);
 
         // reset the right bound of the bounding box to the current node right bound
         kd_bounding_box[cut_feature_index].second = node->kd_bounding_box_[cut_feature_index].second;
 
         if (n_samples > 2) {
-            // all the points at the right of the pivot point
-            auto right_samples_iterator_pair =
-                std::make_pair(samples_first + median_index * n_features_ + n_features_, samples_last);
-
             // set the left bound of the right child to the cut value
-            kd_bounding_box[cut_feature_index].first = median_value;
+            kd_bounding_box[cut_feature_index].first = cut_value;
 
-            node->right_ =
-                maximum_spread_build(right_samples_iterator_pair, cut_feature_index, depth + 1, kd_bounding_box);
+            node->right_ = build<AxisSelectionPolicy, SplittingRulePolicy>(
+                right_range, cut_feature_index, depth + 1, kd_bounding_box);
 
             // reset the left bound of the bounding box to the current node left bound
             kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
         }
     } else {
-        node = std::make_shared<KDNodeView<Iterator>>(samples_first, samples_last, n_features_, kd_bounding_box);
+        node = std::make_shared<KDNodeView<Iterator>>(iterator_pair, n_features_, kd_bounding_box);
     }
     return node;
 }
@@ -344,9 +173,9 @@ void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNodeView<Iterato
             writer.String("left");
             serialize_kdtree(kdnode->left_, writer);
 
-            // The right pointer might be nullptr when a node had 2 samples. The median computation chooses the second
-            // sample as the pivot because the median of 2 samples will output index 1. The other index will be 0 and
-            // thus the left child
+            // The right pointer might be nullptr when a node had 2 samples. The median computation chooses the
+            // second sample as the pivot because the median of 2 samples will output index 1. The other index will
+            // be 0 and thus the left child
             if (kdnode->right_) {
                 writer.String("right");
                 serialize_kdtree(kdnode->right_, writer);

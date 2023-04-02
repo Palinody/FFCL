@@ -7,7 +7,8 @@
 #include <limits>
 #include <vector>
 
-namespace kdtree::utils {
+template <typename Iterator>
+using IteratorPairType = std::pair<Iterator, Iterator>;
 
 template <typename Iterator>
 using DataType = typename Iterator::value_type;
@@ -17,6 +18,8 @@ using BoundingBox1DType = std::pair<DataType<Iterator>, DataType<Iterator>>;
 
 template <typename Iterator>
 using BoundingBoxKDType = std::vector<BoundingBox1DType<Iterator>>;
+
+namespace kdtree::utils {
 
 template <typename Iterator>
 BoundingBoxKDType<Iterator> make_1d_bounding_box(const Iterator& samples_first,
@@ -117,15 +120,20 @@ ssize_t select_axis_with_largest_variance(const Iterator& samples_first,
 }
 
 template <typename RandomAccessIterator>
-std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_median_range(RandomAccessIterator samples_first,
-                                                                               RandomAccessIterator samples_last,
-                                                                               std::size_t          n_features,
-                                                                               std::size_t comparison_feature_index) {
+std::tuple<std::size_t,
+           IteratorPairType<RandomAccessIterator>,
+           IteratorPairType<RandomAccessIterator>,
+           IteratorPairType<RandomAccessIterator>>
+quickselect_median_range(IteratorPairType<RandomAccessIterator> iterator_pair,
+                         std::size_t                            n_features,
+                         std::size_t                            comparison_feature_index) {
     assert(comparison_feature_index < n_features);
+
+    const auto [samples_first, samples_last] = iterator_pair;
 
     const auto median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
 
-    return common::utils::quickselect_range(
+    const auto median_range = common::utils::quickselect_range(
         samples_first,
         samples_last,
         median_index,
@@ -136,6 +144,69 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_median_range(R
             //   * comparison_feature_index in range [0, n_features)
             return *(range1_first + comparison_feature_index) < *(range2_first + comparison_feature_index);
         });
+    // all the points at the left of the pivot point
+    const auto left_range = std::make_pair(samples_first, samples_first + median_index * n_features);
+
+    // all the points at the right of the pivot point
+    const auto right_range = std::make_pair(samples_first + median_index * n_features + n_features, samples_last);
+
+    return {median_index, left_range, median_range, right_range};
 }
+
+template <typename RandomAccessIterator>
+struct SplittingRulePolicy {};
+
+template <typename RandomAccessIterator>
+struct quickselect_median_range_struct : public SplittingRulePolicy<RandomAccessIterator> {
+    std::tuple<std::size_t,
+               IteratorPairType<RandomAccessIterator>,
+               IteratorPairType<RandomAccessIterator>,
+               IteratorPairType<RandomAccessIterator>>
+    operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
+               std::size_t                            n_features,
+               std::size_t                            comparison_feature_index) {
+        return quickselect_median_range(iterator_pair, n_features, comparison_feature_index);
+    }
+};
+
+template <typename RandomAccessIterator>
+struct AxisSelectionPolicy {};
+
+template <typename RandomAccessIterator>
+struct cycle_through_axes_build : public AxisSelectionPolicy<RandomAccessIterator> {
+    std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
+                           std::size_t                                   n_features,
+                           ssize_t                                       depth,
+                           BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) {
+        // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
+        // select the cut_feature_index according to the one with the most variance
+        return depth % n_features;
+    }
+};
+
+template <typename RandomAccessIterator>
+struct highest_variance_build : public AxisSelectionPolicy<RandomAccessIterator> {
+    std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
+                           std::size_t                                   n_features,
+                           ssize_t                                       depth,
+                           BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) {
+        // select the cut_feature_index according to the one with the most variance
+        return kdtree::utils::select_axis_with_largest_variance<RandomAccessIterator>(
+            iterator_pair.first, iterator_pair.second, n_features, sampling_proportion_);
+    }
+
+    static constexpr double sampling_proportion_ = 0.1;
+};
+
+template <typename RandomAccessIterator>
+struct maximum_spread_build : public AxisSelectionPolicy<RandomAccessIterator> {
+    std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
+                           std::size_t                                   n_features,
+                           ssize_t                                       depth,
+                           BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) {
+        // select the cut_feature_index according to the one with the most spread (min-max values)
+        return kdtree::utils::select_axis_with_largest_bounding_box_difference<RandomAccessIterator>(kd_bounding_box);
+    }
+};
 
 }  // namespace kdtree::utils
