@@ -205,31 +205,33 @@ std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_
         const auto& distance_3 = samples_to_third_nearest_medoid_distances[other_sample_index];
 
         if (distance_oc < distance_1) /* new closest */ {
-            delta_td_xc += pam::utils::division(distance_1, distance_2) - pam::utils::division(distance_oc, distance_1);
+            delta_td_xc +=
+                common::utils::division(distance_1, distance_2) - common::utils::division(distance_oc, distance_1);
 
-            delta_td_mi[index_1] += pam::utils::division(distance_oc, distance_1) +
-                                    pam::utils::division(distance_2, distance_3) -
-                                    pam::utils::division((distance_1 + distance_oc), distance_2);
+            delta_td_mi[index_1] += common::utils::division(distance_oc, distance_1) +
+                                    common::utils::division(distance_2, distance_3) -
+                                    common::utils::division((distance_1 + distance_oc), distance_2);
 
             delta_td_mi[index_2] +=
-                pam::utils::division(distance_1, distance_3) - pam::utils::division(distance_1, distance_2);
+                common::utils::division(distance_1, distance_3) - common::utils::division(distance_1, distance_2);
 
         } else if (distance_oc < distance_2) /* new first/second closest */ {
-            delta_td_xc += pam::utils::division(distance_1, distance_2) - pam::utils::division(distance_1, distance_oc);
+            delta_td_xc +=
+                common::utils::division(distance_1, distance_2) - common::utils::division(distance_1, distance_oc);
 
-            delta_td_mi[index_1] += pam::utils::division(distance_1, distance_oc) +
-                                    pam::utils::division(distance_2, distance_3) -
-                                    pam::utils::division((distance_1 + distance_oc), distance_2);
+            delta_td_mi[index_1] += common::utils::division(distance_1, distance_oc) +
+                                    common::utils::division(distance_2, distance_3) -
+                                    common::utils::division((distance_1 + distance_oc), distance_2);
 
             delta_td_mi[index_2] +=
-                pam::utils::division(distance_1, distance_3) - pam::utils::division(distance_1, distance_2);
+                common::utils::division(distance_1, distance_3) - common::utils::division(distance_1, distance_2);
 
         } else if (distance_oc < distance_3) /* new second/third closest */ {
             delta_td_mi[index_1] +=
-                pam::utils::division(distance_2, distance_3) - pam::utils::division(distance_2, distance_oc);
+                common::utils::division(distance_2, distance_3) - common::utils::division(distance_2, distance_oc);
 
             delta_td_mi[index_2] +=
-                pam::utils::division(distance_1, distance_3) - pam::utils::division(distance_1, distance_oc);
+                common::utils::division(distance_1, distance_3) - common::utils::division(distance_1, distance_oc);
         }
     }
     // i ← argmin(∆TD_i), with i: index of medoids elements
@@ -265,11 +267,11 @@ std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_
         const auto& distance_2 = samples_to_second_nearest_medoid_distances[other_sample_index];
 
         // We do not use the assignment here, because we stored d0/d1 by medoid position, not closeness
-        delta_td_mi[0] += (distance_oc < distance_2) ? pam::utils::division(distance_oc, distance_2)
-                                                     : pam::utils::division(distance_2, distance_oc);
+        delta_td_mi[0] += (distance_oc < distance_2) ? common::utils::division(distance_oc, distance_2)
+                                                     : common::utils::division(distance_2, distance_oc);
 
-        delta_td_mi[1] += (distance_oc < distance_1) ? pam::utils::division(distance_oc, distance_1)
-                                                     : pam::utils::division(distance_1, distance_oc);
+        delta_td_mi[1] += (distance_oc < distance_1) ? common::utils::division(distance_oc, distance_1)
+                                                     : common::utils::division(distance_1, distance_oc);
     }
     // i ← argmin(∆TD_i), with i: index of medoids elements
     const auto [best_swap_index, best_swap_distance] =
@@ -440,7 +442,7 @@ typename Iterator::value_type FasterMSC<Iterator>::swap_buffers(std::size_t medo
                 // END: update third nearest medoid
             }
         }
-        loss += pam::utils::division(distance_1, distance_2);
+        loss += common::utils::division(distance_1, distance_2);
     }
     return loss;
 }
@@ -477,21 +479,21 @@ typename Iterator::value_type FasterMSC<Iterator>::swap_buffers_k2(std::size_t m
 
         if (best_swap_index == 0) {
             distance_1 = distance_oc;
-            if (distance_oc < distance_2 || (distance_oc == distance_2 && index_1 == 0)) {
+            if (distance_oc < distance_2 || (common::utils::equality(distance_oc, distance_2) && index_1 == 0)) {
                 index_1 = 0;
-                loss += pam::utils::division(distance_oc, distance_2);
+                loss += common::utils::division(distance_oc, distance_2);
             } else {
                 index_1 = 1;
-                loss += pam::utils::division(distance_2, distance_oc);
+                loss += common::utils::division(distance_2, distance_oc);
             }
         } else {
             distance_2 = distance_oc;
-            if (distance_oc < distance_1 || (distance_oc == distance_1 && index_1 == 1)) {
+            if (distance_oc < distance_1 || (common::utils::equality(distance_oc, distance_1) && index_1 == 1)) {
                 index_1 = 1;
-                loss += pam::utils::division(distance_oc, distance_1);
+                loss += common::utils::division(distance_oc, distance_1);
             } else {
                 index_1 = 0;
-                loss += pam::utils::division(distance_1, distance_oc);
+                loss += common::utils::division(distance_1, distance_oc);
             }
         }
     }

@@ -17,7 +17,7 @@ static constexpr T infinity() {
 }
 
 template <typename T>
-T abs(const T& x) {
+constexpr T abs(const T& x) {
     if constexpr (std::is_integral_v<T>) {
         return x < static_cast<T>(0) ? -x : x;
     } else if constexpr (std::is_floating_point_v<T>) {
@@ -26,6 +26,34 @@ T abs(const T& x) {
         throw std::invalid_argument("Data type not handled by any heuristic.");
     }
 }
+
+template <typename T, typename U>
+constexpr bool equality(const T& a, const U& b) noexcept {
+    if constexpr (std::is_integral_v<T> && std::is_integral_v<U>) {
+        return a == b;
+    } else if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<U>) {
+        return std::abs(b - a) < std::numeric_limits<decltype(b - a)>::epsilon();
+    } else {
+        static_assert(std::is_same_v<T, U>, "equality comparison only supported for comparable types");
+        return a == b;
+    }
+}
+
+template <typename T, typename U>
+constexpr bool inequality(const T& a, const U& b) noexcept {
+    return !equality(a, b);
+}
+
+template <typename T, typename U>
+constexpr auto division(const T& a, const U& b) -> std::common_type_t<T, U> {
+    if (equality(b, static_cast<U>(0))) {
+#if defined(VERBOSE) && VERBOSE == true
+        printf("[WARN] attempted division by zero: returning zero.\n");
+#endif
+        return 0;
+    }
+    return a / b;
+};
 
 template <typename OutputContainer, typename Iterator>
 OutputContainer abs_distances(const Iterator& data_first, const Iterator& data_last, const Iterator& other_first) {
@@ -54,10 +82,24 @@ std::vector<TargetType> to_type(const Iterator& data_first, const Iterator& data
 }
 
 template <typename Iterator>
-bool are_containers_equal(Iterator first1, Iterator last1, Iterator first2, typename Iterator::value_type epsilon = 0) {
+bool are_containers_equal(
+    Iterator                      first1,
+    Iterator                      last1,
+    Iterator                      first2,
+    typename Iterator::value_type tolerance = std::numeric_limits<typename Iterator::value_type>::epsilon()) {
+    using InputType = typename Iterator::value_type;
     while (first1 != last1) {
-        if (*first1 != *first2 && abs(*first1 - *first2) > epsilon) {
-            return false;
+        if constexpr (std::is_integral_v<InputType>) {
+            if (*first1 != *first2) {
+                return false;
+            }
+        } else if constexpr (std::is_floating_point_v<InputType>) {
+            if (std::abs(*first1 - *first2) > tolerance) {
+                return false;
+            }
+        } else {
+            // Unsupported type
+            static_assert(std::is_integral_v<InputType> || std::is_floating_point_v<InputType>, "Unsupported type");
         }
         ++first1;
         ++first2;
@@ -66,13 +108,14 @@ bool are_containers_equal(Iterator first1, Iterator last1, Iterator first2, type
 }
 
 template <typename Container>
-bool are_containers_equal(const Container&                      first,
-                          const Container&                      second,
-                          const typename Container::value_type& epsilon = 0) {
+bool are_containers_equal(
+    const Container&                      first,
+    const Container&                      second,
+    const typename Container::value_type& tolerance = std::numeric_limits<typename Container::value_type>::epsilon()) {
     if (first.size() != second.size()) {
         return false;
     }
-    return are_containers_equal(first.begin(), first.end(), second.begin(), epsilon);
+    return are_containers_equal(first.begin(), first.end(), second.begin(), tolerance);
 }
 
 template <typename Iterator1, typename Iterator2>

@@ -100,11 +100,9 @@ class KMedoidsErrorsTest : public ::testing::Test {
         }
     }
 
-    template <typename InputsIterator, typename LabelsIterator>
+    template <typename InputsIterator>
     void simple_fit(const InputsIterator& inputs_first,
                     const InputsIterator& inputs_last,
-                    LabelsIterator        labels_first,
-                    LabelsIterator        labels_last,
                     std::size_t           n_medoids,
                     std::size_t           n_features,
                     std::size_t           n_iterations = 1) {
@@ -120,12 +118,10 @@ class KMedoidsErrorsTest : public ::testing::Test {
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
     }
 
-    template <typename InputsIterator, typename LabelsIterator>
-    std::pair<std::vector<std::size_t>, std::vector<typename InputsIterator::value_type>> fit_predict_orig(
+    template <typename InputsIterator>
+    std::pair<std::vector<std::size_t>, std::vector<typename InputsIterator::value_type>> fit_predict(
         const InputsIterator& inputs_first,
         const InputsIterator& inputs_last,
-        LabelsIterator        labels_first,
-        LabelsIterator        labels_last,
         std::size_t           n_medoids,
         std::size_t           n_features,
         std::size_t           n_iterations = 1) {
@@ -140,42 +136,11 @@ class KMedoidsErrorsTest : public ::testing::Test {
 
         kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(10));
 
-        const auto medoids   = kmedoids.fit<ffcl::FasterMSC>(pairwise_distance_matrix);
+        const auto medoids = kmedoids.fit<ffcl::FasterMSC>(pairwise_distance_matrix);
+
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
         const auto predictions = kmedoids.predict(inputs_first, inputs_last);
-
-        return {predictions, centroids};
-    }
-
-    template <typename InputsIterator, typename LabelsIterator>
-    std::pair<std::vector<std::size_t>, std::vector<typename InputsIterator::value_type>> fit_predict(
-        const InputsIterator& inputs_first,
-        const InputsIterator& inputs_last,
-        LabelsIterator        labels_first,
-        LabelsIterator        labels_last,
-        std::size_t           n_medoids,
-        std::size_t           n_features,
-        std::size_t           n_iterations = 1) {
-        using KMedoids = ffcl::KMedoids<dType>;
-        // using PAM = ffcl::FasterMSC;
-
-        auto kmedoids = KMedoids(n_medoids, n_features);
-
-        // KMedoids::Options().max_iter(n_iterations).n_init(10).early_stopping(true).patience(5).tolerance(0)
-        // KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0)
-        kmedoids.set_options(
-            /*KMedoids options=*/KMedoids::Options()
-                .max_iter(n_iterations)
-                .early_stopping(true)
-                .patience(0)
-                .n_init(10));
-
-        const auto medoids = kmedoids.fit<ffcl::FasterMSC>(inputs_first, inputs_last);
-
-        const auto predictions = kmedoids.predict(inputs_first, inputs_last);
-
-        const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
         return {predictions, centroids};
     }
@@ -200,8 +165,8 @@ TEST_F(KMedoidsErrorsTest, NoisyCirclesTest) {
     // const auto n_medoids = 2;  // 2
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -217,8 +182,8 @@ TEST_F(KMedoidsErrorsTest, NoisyMoonsTest) {
     // const auto n_medoids = 2;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -234,8 +199,8 @@ TEST_F(KMedoidsErrorsTest, VariedTest) {
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -251,8 +216,8 @@ TEST_F(KMedoidsErrorsTest, AnisoTest) {
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -268,8 +233,8 @@ TEST_F(KMedoidsErrorsTest, BlobsTest) {
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -285,8 +250,8 @@ TEST_F(KMedoidsErrorsTest, NoStructureTest) {
     const auto n_medoids = 4;
     // const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -302,8 +267,8 @@ TEST_F(KMedoidsErrorsTest, IrisTest) {
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -319,8 +284,8 @@ TEST_F(KMedoidsErrorsTest, UnbalancedBlobsTest) {
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -336,26 +301,6 @@ TEST_F(KMedoidsErrorsTest, PairwiseDistanceMatrixTest) {
         ffcl::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
 }
 
-/*
-TEST_F(KMedoidsErrorsTest, MnistTrainTest) {
-    fs::path filename = "mnist_train.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
-
-    std::cout << data.size() << " | " << labels.size() << " | " << n_features << std::endl;
-    // const auto n_medoids = 10;
-    const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
-
-    const auto [predictions, centroids] = fit_predict_orig(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
-}
-*/
-
 TEST_F(KMedoidsErrorsTest, MnistSimpleFitTest) {
     fs::path filename = "mnist.txt";
 
@@ -366,7 +311,7 @@ TEST_F(KMedoidsErrorsTest, MnistSimpleFitTest) {
     std::cout << data.size() << " | " << labels.size() << " | " << n_features << std::endl;
     const auto n_medoids = 10;
 
-    simple_fit(data.begin(), data.end(), labels.begin(), labels.end(), n_medoids, n_features, 100);
+    simple_fit(data.begin(), data.end(), n_medoids, n_features, 100);
 }
 
 TEST_F(KMedoidsErrorsTest, ClusterInitializationTest) {

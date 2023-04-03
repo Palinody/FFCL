@@ -43,6 +43,7 @@ void print_thread_sequence(std::size_t thread_id, std::size_t sequence_length, s
     math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
 
     // std::cout << thread_id << ": ";
+    static_cast<void>(thread_id);
 
     for (std::size_t i = 0; i < sequence_length; ++i) {
         std::cout << uniform_distribution_number_generator(seed) << " ";

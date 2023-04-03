@@ -232,11 +232,11 @@ std::vector<typename IteratorFloat::value_type> silhouette(const IteratorFloat& 
         if (coh < sep) {
             silhouette_values[i] = static_cast<FloatType>(1) - coh / sep;
 
-        } else if (coh == sep) {
-            silhouette_values[i] = 0;
+        } else if (coh > sep) {
+            silhouette_values[i] = sep / coh - static_cast<FloatType>(1);
 
         } else {
-            silhouette_values[i] = sep / coh - static_cast<FloatType>(1);
+            silhouette_values[i] = 0;
         }
     }
     return silhouette_values;

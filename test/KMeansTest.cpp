@@ -103,12 +103,10 @@ class KMeansErrorsTest : public ::testing::Test {
         }
     }
 
-    template <typename InputsIterator, typename LabelsIterator>
+    template <typename InputsIterator>
     std::pair<std::vector<std::size_t>, std::vector<typename InputsIterator::value_type>> simple_fit(
         const InputsIterator& inputs_first,
         const InputsIterator& inputs_last,
-        LabelsIterator        labels_first,
-        LabelsIterator        labels_last,
         std::size_t           n_centroids,
         std::size_t           n_features,
         std::size_t           n_iterations = 1) {
@@ -190,8 +188,8 @@ TEST_F(KMeansErrorsTest, NoisyCirclesTest) {
     // const auto n_centroids = 2;  // 2
     const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -207,8 +205,8 @@ TEST_F(KMeansErrorsTest, NoisyMoonsTest) {
     // const auto n_centroids = 2;
     const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -224,8 +222,8 @@ TEST_F(KMeansErrorsTest, VariedTest) {
     // const auto n_centroids = 3;
     const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -241,8 +239,8 @@ TEST_F(KMeansErrorsTest, AnisoTest) {
     // const auto n_centroids = 3;
     const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -258,8 +256,8 @@ TEST_F(KMeansErrorsTest, BlobsTest) {
     // const auto n_centroids = 3;
     const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -275,8 +273,8 @@ TEST_F(KMeansErrorsTest, NoStructureTest) {
     const auto n_centroids = 4;
     // const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -292,8 +290,8 @@ TEST_F(KMeansErrorsTest, IrisTest) {
     // const auto n_centroids = 3;
     const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -309,8 +307,8 @@ TEST_F(KMeansErrorsTest, UnbalancedBlobsTest) {
     // const auto n_centroids = 3;
     const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
@@ -326,8 +324,8 @@ TEST_F(KMeansErrorsTest, MnistSimpleFitTest) {
     std::cout << data.size() << " | " << labels.size() << " | " << n_features << std::endl;
     const auto n_centroids = 10;
 
-    const auto [predictions, centroids] = simple_fit(
-        data.begin(), data.end(), labels.begin(), labels.end(), n_centroids, n_features, n_iterations_global);
+    const auto [predictions, centroids] =
+        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
 
     write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
     write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));

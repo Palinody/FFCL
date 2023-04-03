@@ -31,6 +31,10 @@ template <typename Iterator>
 class KDTree {
   public:
     struct Options {
+        Options() = default;
+
+        Options(const Options&) = default;
+
         Options& bucket_size(std::size_t bucket_size) {
             bucket_size_ = bucket_size;
             return *this;

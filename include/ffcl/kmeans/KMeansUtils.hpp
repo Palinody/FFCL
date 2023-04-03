@@ -102,7 +102,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_centroid_di
                 first_min_distance  = second_nearest_candidate;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       second_nearest_candidate != first_min_distance) {
+                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
             }
         }
@@ -122,7 +122,7 @@ std::vector<std::size_t> compute_cluster_sizes(const IteratorInt& samples_to_nea
     auto cluster_sizes = std::vector<std::size_t>(n_centroids);
 
     for (auto centroid_index_iter = samples_to_nearest_centroid_indices_first;
-         centroid_index_iter != samples_to_nearest_centroid_indices_last;
+         common::utils::inequality(centroid_index_iter, samples_to_nearest_centroid_indices_last);
          ++centroid_index_iter) {
         ++cluster_sizes[*centroid_index_iter];
     }

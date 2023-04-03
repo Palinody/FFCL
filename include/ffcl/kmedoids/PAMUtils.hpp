@@ -18,25 +18,6 @@
 
 namespace pam::utils {
 
-/**
- * @brief division specific to PAM. Returns zero if the input denominator in an int and is zero
- *
- * @tparam T: the type of the numerator
- * @tparam U: the type of the denominator
- * @param a: numerator value
- * @param b: denominator value
- * @return auto: -> decltype(a / b)
- */
-template <typename T, typename U>
-auto division(const T& a, const U& b) {
-    if constexpr (std::is_integral_v<U>) {
-        if (!b) {
-            return 0;
-        }
-    }
-    return a / b;
-};
-
 template <typename Iterator>
 std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&                 samples_first,
                                                            const Iterator&                 samples_last,
@@ -147,7 +128,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
                 first_min_index     = idx;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       second_nearest_candidate != first_min_distance) {
+                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
                 second_min_index    = idx;
             }
@@ -189,7 +170,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
                 first_min_index     = idx;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       second_nearest_candidate != first_min_distance) {
+                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
                 second_min_index    = idx;
             }
@@ -241,14 +222,16 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
                 first_min_distance  = third_nearest_candidate;
                 first_min_index     = idx;
 
-            } else if (third_nearest_candidate < second_min_distance && third_nearest_candidate != first_min_distance) {
+            } else if (third_nearest_candidate < second_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 third_min_index     = second_min_index;
                 second_min_distance = third_nearest_candidate;
                 second_min_index    = idx;
 
-            } else if (third_nearest_candidate < third_min_distance && third_nearest_candidate != first_min_distance &&
-                       third_nearest_candidate != second_min_distance) {
+            } else if (third_nearest_candidate < third_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
                 third_min_index    = idx;
             }
@@ -293,14 +276,16 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
                 first_min_distance  = third_nearest_candidate;
                 first_min_index     = idx;
 
-            } else if (third_nearest_candidate < second_min_distance && third_nearest_candidate != first_min_distance) {
+            } else if (third_nearest_candidate < second_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 third_min_index     = second_min_index;
                 second_min_distance = third_nearest_candidate;
                 second_min_index    = idx;
 
-            } else if (third_nearest_candidate < third_min_distance && third_nearest_candidate != first_min_distance &&
-                       third_nearest_candidate != second_min_distance) {
+            } else if (third_nearest_candidate < third_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
                 third_min_index    = idx;
             }
@@ -469,7 +454,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
                 first_min_distance  = second_nearest_candidate;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       second_nearest_candidate != first_min_distance) {
+                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
             }
         }
@@ -506,7 +491,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
                 first_min_distance  = second_nearest_candidate;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       second_nearest_candidate != first_min_distance) {
+                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
             }
         }
@@ -552,12 +537,14 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
                 second_min_distance = first_min_distance;
                 first_min_distance  = third_nearest_candidate;
 
-            } else if (third_nearest_candidate < second_min_distance && third_nearest_candidate != first_min_distance) {
+            } else if (third_nearest_candidate < second_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 second_min_distance = third_nearest_candidate;
 
-            } else if (third_nearest_candidate < third_min_distance && third_nearest_candidate != first_min_distance &&
-                       third_nearest_candidate != second_min_distance) {
+            } else if (third_nearest_candidate < third_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
             }
         }
@@ -595,12 +582,14 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
                 second_min_distance = first_min_distance;
                 first_min_distance  = third_nearest_candidate;
 
-            } else if (third_nearest_candidate < second_min_distance && third_nearest_candidate != first_min_distance) {
+            } else if (third_nearest_candidate < second_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 second_min_distance = third_nearest_candidate;
 
-            } else if (third_nearest_candidate < third_min_distance && third_nearest_candidate != first_min_distance &&
-                       third_nearest_candidate != second_min_distance) {
+            } else if (third_nearest_candidate < third_min_distance &&
+                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
             }
         }
@@ -710,8 +699,10 @@ std::vector<DataType> compute_losses_with_silhouette_medoid_removal(
         // distance from the current sample to its third nearest medoid
         const auto distance_3 = third_nearest_medoid_distances[sample_index];
         // accumulate the variation in total deviation for the correct medoid index
-        delta_td_mi[index_1] += division(distance_1, distance_2) - division(distance_2, distance_3);
-        delta_td_mi[index_2] += division(distance_1, distance_2) - division(distance_1, distance_3);
+        delta_td_mi[index_1] +=
+            common::utils::division(distance_1, distance_2) - common::utils::division(distance_2, distance_3);
+        delta_td_mi[index_2] +=
+            common::utils::division(distance_1, distance_2) - common::utils::division(distance_1, distance_3);
     }
     return delta_td_mi;
 }
@@ -783,6 +774,8 @@ std::vector<typename Iterator::value_type> medoids_to_centroids(const Iterator& 
                                                                 const Iterator&                 data_last,
                                                                 std::size_t                     n_features,
                                                                 const std::vector<std::size_t>& medoids) {
+    static_cast<void>(data_last);
+
     const auto n_medoids = medoids.size();
     auto       clusters  = std::vector<typename Iterator::value_type>(n_medoids * n_features);
 

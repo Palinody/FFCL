@@ -2,10 +2,14 @@
 
 #include "ffcl/containers/kdtree/KDTreeUtils.hpp"
 
+#include "ffcl/containers/kdtree/policy/Utils.hpp"
+
 namespace kdtree::policy {
 
 template <typename RandomAccessIterator>
 struct SplittingRulePolicy {
+    SplittingRulePolicy() = default;
+
     virtual std::tuple<std::size_t,
                        IteratorPairType<RandomAccessIterator>,
                        IteratorPairType<RandomAccessIterator>,
@@ -13,6 +17,11 @@ struct SplittingRulePolicy {
     operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
                std::size_t                            n_features,
                std::size_t                            comparison_feature_index) const = 0;
+
+  private:
+    SplittingRulePolicy(const SplittingRulePolicy&) = delete;
+
+    SplittingRulePolicy& operator=(const SplittingRulePolicy&) = delete;
 };
 
 template <typename RandomAccessIterator>
