@@ -14,7 +14,8 @@ add_compile_options(
     -Wfloat-equal
     -Wshadow
     -Wfatal-errors
-    -fopenmp)
+    -fopenmp
+)
 
 # add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
