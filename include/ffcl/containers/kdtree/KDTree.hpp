@@ -221,7 +221,7 @@ void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNodeView<Iterato
         writer.Int64(kdnode->cut_feature_index_);
 
         writer.String("points");
-        kdnode->serialize_kdnode(writer);
+        kdnode->serialize(writer);
 
         // continue the recursion if the current node is not leaf
         if (!kdnode->is_leaf()) {
