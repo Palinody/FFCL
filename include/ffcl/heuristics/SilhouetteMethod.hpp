@@ -226,8 +226,8 @@ std::vector<typename IteratorFloat::value_type> silhouette(const IteratorFloat& 
     auto silhouette_values = std::vector<FloatType>(n_samples);
 
     for (std::size_t i = 0; i < n_samples; ++i) {
-        const FloatType coh = cohesion_values[i];
-        const FloatType sep = separation_values[i];
+        const auto coh = cohesion_values[i];
+        const auto sep = separation_values[i];
 
         if (coh < sep) {
             silhouette_values[i] = static_cast<FloatType>(1) - coh / sep;

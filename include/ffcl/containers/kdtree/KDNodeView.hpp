@@ -30,7 +30,7 @@ struct KDNodeView {
 
     bool is_leaf() const;
 
-    void serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
+    void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     // might contain [0, bucket_size] samples if the node is leaf, else only 1
     IteratorPairType<Iterator> samples_iterator_pair_;
@@ -72,7 +72,7 @@ bool KDNodeView<Iterator>::is_leaf() const {
 }
 
 template <typename Iterator>
-void KDNodeView<Iterator>::serialize_kdnode(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+void KDNodeView<Iterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     using DataType = DataType<Iterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
