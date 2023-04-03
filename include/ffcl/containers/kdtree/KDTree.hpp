@@ -71,14 +71,16 @@ class KDTree {
     KDTree(const IteratorPairType<Iterator>&  iterator_pair,
            std::size_t                        n_features,
            const AxisSelectionPolicyFunction& axis_selection_policy,
-           const SplittingRulePolicyFunction& splitting_rule_policy);
+           const SplittingRulePolicyFunction& splitting_rule_policy,
+           const Options&                     options = Options());
 
     template <typename AxisSelectionPolicyFunction>
     KDTree(const IteratorPairType<Iterator>&  iterator_pair,
            std::size_t                        n_features,
-           const AxisSelectionPolicyFunction& axis_selection_policy);
+           const AxisSelectionPolicyFunction& axis_selection_policy,
+           const Options&                     options = Options());
 
-    KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features);
+    KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features, const Options& options = Options());
 
     KDTree(const KDTree&) = delete;
 
@@ -112,12 +114,14 @@ template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunc
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>&  iterator_pair,
                          std::size_t                        n_features,
                          const AxisSelectionPolicyFunction& axis_selection_policy,
-                         const SplittingRulePolicyFunction& splitting_rule_policy)
+                         const SplittingRulePolicyFunction& splitting_rule_policy,
+                         const Options&                     options)
   : iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(iterator_pair_),
                                                          std::get<1>(iterator_pair_),
                                                          n_features_)}
+  , options_{options}
   , root_{build(iterator_pair_,
                 axis_selection_policy(iterator_pair_, n_features_, 0, kd_bounding_box_),
                 0,
@@ -129,18 +133,23 @@ template <typename Iterator>
 template <typename AxisSelectionPolicyFunction>
 KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>&  iterator_pair,
                          std::size_t                        n_features,
-                         const AxisSelectionPolicyFunction& axis_selection_policy)
+                         const AxisSelectionPolicyFunction& axis_selection_policy,
+                         const Options&                     options)
   : KDTree<Iterator>::KDTree(iterator_pair,
                              n_features,
                              axis_selection_policy,
-                             kdtree::policy::QuickselectMedianRange<Iterator>()) {}
+                             kdtree::policy::QuickselectMedianRange<Iterator>(),
+                             options) {}
 
 template <typename Iterator>
-KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
+KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair,
+                         std::size_t                       n_features,
+                         const Options&                    options)
   : KDTree<Iterator>::KDTree(iterator_pair,
                              n_features,
                              kdtree::policy::MaximumSpreadBuild<Iterator>(),
-                             kdtree::policy::QuickselectMedianRange<Iterator>()) {}
+                             kdtree::policy::QuickselectMedianRange<Iterator>(),
+                             options) {}
 
 template <typename Iterator>
 template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunction>

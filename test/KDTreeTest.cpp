@@ -183,7 +183,10 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree =
+        ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                 n_features,
+                                 ffcl::containers::KDTree<decltype(data)::iterator>::Options().bucket_size(1));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
