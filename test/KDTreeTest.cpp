@@ -108,18 +108,6 @@ class KDTreeErrorsTest : public ::testing::Test {
     const fs::path targets_folder         = clustering_folder_root / fs::path("targets");
 };
 
-TEST_F(KDTreeErrorsTest, NoizyCirclesKDTreeTest) {
-    fs::path filename = "noisy_circles.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
-
-    std::cout << "n_elements: " << data.size() << "\n";
-    std::cout << "n_samples: " << labels.size() << "\n";
-    std::cout << "n_features: " << n_features << "\n";
-}
-
 template <typename DataType>
 void print_kd_bounding_box(const std::vector<std::pair<DataType, DataType>>& kd_bounding_box, std::size_t n_features) {
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -172,7 +160,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    using IteratorType = decltype(data.begin());
+    using IteratorType = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTree<IteratorType>(
         std::make_pair(data.begin(), data.end()), n_features, kdtree::policy::MaximumSpreadBuild<IteratorType>());
