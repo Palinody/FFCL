@@ -102,10 +102,10 @@ class KDTreeErrorsTest : public ::testing::Test {
             }
         }
     }
-    const fs::path kdtree_folder_root     = fs::path("../bin/kdtree");
-    const fs::path clustering_folder_root = fs::path("../bin/clustering");
-    const fs::path inputs_folder          = clustering_folder_root / fs::path("inputs");
-    const fs::path targets_folder         = clustering_folder_root / fs::path("targets");
+    const fs::path kdtree_folder_root_     = fs::path("../bin/kdtree");
+    const fs::path clustering_folder_root_ = fs::path("../bin/clustering");
+    const fs::path inputs_folder_          = clustering_folder_root_ / fs::path("inputs");
+    const fs::path targets_folder_         = clustering_folder_root_ / fs::path("targets");
 };
 
 template <typename DataType>
@@ -148,9 +148,9 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
 TEST_F(KDTreeErrorsTest, MNISTTest) {
     fs::path filename = "mnist.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -171,9 +171,9 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
 TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
     fs::path filename = "noisy_circles.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -190,19 +190,19 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
-    make_directories(kdtree_folder_root);
+    make_directories(kdtree_folder_root_);
 
     fs::path kdtree_filename = filename.stem().string() + ".json";
 
-    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+    kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
 
 TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
     fs::path filename = "noisy_moons.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -216,19 +216,19 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
-    make_directories(kdtree_folder_root);
+    make_directories(kdtree_folder_root_);
 
     fs::path kdtree_filename = filename.stem().string() + ".json";
 
-    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+    kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
 
 TEST_F(KDTreeErrorsTest, VariedTest) {
     fs::path filename = "varied.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -242,19 +242,19 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
-    make_directories(kdtree_folder_root);
+    make_directories(kdtree_folder_root_);
 
     fs::path kdtree_filename = filename.stem().string() + ".json";
 
-    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+    kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
 
 TEST_F(KDTreeErrorsTest, AnisoTest) {
     fs::path filename = "aniso.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -268,19 +268,19 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
-    make_directories(kdtree_folder_root);
+    make_directories(kdtree_folder_root_);
 
     fs::path kdtree_filename = filename.stem().string() + ".json";
 
-    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+    kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
 
 TEST_F(KDTreeErrorsTest, BlobsTest) {
     fs::path filename = "blobs.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -294,19 +294,19 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
-    make_directories(kdtree_folder_root);
+    make_directories(kdtree_folder_root_);
 
     fs::path kdtree_filename = filename.stem().string() + ".json";
 
-    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+    kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
 
 TEST_F(KDTreeErrorsTest, NoStructureTest) {
     fs::path filename = "no_structure.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -320,19 +320,19 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
-    make_directories(kdtree_folder_root);
+    make_directories(kdtree_folder_root_);
 
     fs::path kdtree_filename = filename.stem().string() + ".json";
 
-    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+    kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
 
 TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
     fs::path filename = "unbalanced_blobs.txt";
 
-    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << labels.size() << "\n";
@@ -346,11 +346,11 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
-    make_directories(kdtree_folder_root);
+    make_directories(kdtree_folder_root_);
 
     fs::path kdtree_filename = filename.stem().string() + ".json";
 
-    kdtree.serialize(kdtree_folder_root / kdtree_filename);
+    kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
 
 int main(int argc, char** argv) {

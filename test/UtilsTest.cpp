@@ -40,33 +40,33 @@ class UtilsErrorsTest : public ::testing::Test {
         return result;
     }
 
-    static constexpr std::size_t n_samples  = 5;
-    static constexpr std::size_t n_features = 1;
+    static constexpr std::size_t n_samples_  = 5;
+    static constexpr std::size_t n_features_ = 1;
 };
 
 TEST_F(UtilsErrorsTest, NTHElementTest) {
-    auto data = generate_flattened_matrix<DataType>(n_samples, n_features, -10, 10);
+    auto data = generate_flattened_matrix<DataType>(n_samples_, n_features_, -10, 10);
     // keep a save of the original since data will be modified inplace
     const auto original_data = data;
 
-    print_flattened_matrix<DataType>(data, n_features);
+    print_flattened_matrix<DataType>(data, n_features_);
 
-    for (std::size_t pivot_index = 0; pivot_index < n_samples; ++pivot_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+    for (std::size_t pivot_index = 0; pivot_index < n_samples_; ++pivot_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             const auto new_pivot_index = common::utils::partition_around_nth_range(
                 data.begin(),
                 data.end(),
                 pivot_index,
-                n_features,
+                n_features_,
                 [feature_index](const auto& range1_first, const auto& range2_first) {
                     // assumes that:
-                    //   * both ranges have length: n_features
-                    //   * feature_index in range [0, n_features)
+                    //   * both ranges have length: n_features_
+                    //   * feature_index in range [0, n_features_)
                     return *(range1_first + feature_index) < *(range2_first + feature_index);
                 });
             std::cout << "Partial sort w.r.t. feature index: " << feature_index << "\n";
             std::cout << "pivot index remapped: " << pivot_index << " -> " << new_pivot_index << "\n";
-            print_flattened_matrix<DataType>(data, n_features);
+            print_flattened_matrix<DataType>(data, n_features_);
             std::cout << "---\n";
 
             data = original_data;
@@ -75,28 +75,28 @@ TEST_F(UtilsErrorsTest, NTHElementTest) {
 }
 
 TEST_F(UtilsErrorsTest, RandomDatasetPivotTest) {
-    auto data = generate_flattened_matrix<DataType>(n_samples, n_features, -10, 10);
+    auto data = generate_flattened_matrix<DataType>(n_samples_, n_features_, -10, 10);
     // keep a save of the original since data will be modified inplace
     const auto original_data = data;
 
-    print_flattened_matrix<DataType>(data, n_features);
+    print_flattened_matrix<DataType>(data, n_features_);
 
-    for (std::size_t pivot_index = 0; pivot_index < n_samples; ++pivot_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+    for (std::size_t pivot_index = 0; pivot_index < n_samples_; ++pivot_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             const auto new_pivot_index = common::utils::quicksort_range(
                 data.begin(),
                 data.end(),
                 pivot_index,
-                n_features,
+                n_features_,
                 [feature_index](const auto& range1_first, const auto& range2_first) {
                     // assumes that:
-                    //   * both ranges have length: n_features
-                    //   * feature_index in range [0, n_features)
+                    //   * both ranges have length: n_features_
+                    //   * feature_index in range [0, n_features_)
                     return *(range1_first + feature_index) < *(range2_first + feature_index);
                 });
             std::cout << "Sorted w.r.t. feature index: " << feature_index << "\n";
             std::cout << "pivot index remapped: " << pivot_index << " -> " << new_pivot_index << "\n";
-            print_flattened_matrix<DataType>(data, n_features);
+            print_flattened_matrix<DataType>(data, n_features_);
             std::cout << "---\n";
 
             data = original_data;
@@ -105,32 +105,32 @@ TEST_F(UtilsErrorsTest, RandomDatasetPivotTest) {
 }
 
 TEST_F(UtilsErrorsTest, QuickselectTest) {
-    auto data = generate_flattened_matrix<DataType>(n_samples, n_features, -10, 10);
+    auto data = generate_flattened_matrix<DataType>(n_samples_, n_features_, -10, 10);
     // keep a save of the original since data will be modified inplace
     const auto original_data = data;
 
-    print_flattened_matrix<DataType>(data, n_features);
+    print_flattened_matrix<DataType>(data, n_features_);
 
-    for (std::size_t kth_smallest_index = 0; kth_smallest_index < n_samples; ++kth_smallest_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+    for (std::size_t kth_smallest_index = 0; kth_smallest_index < n_samples_; ++kth_smallest_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             const auto [kth_smallest_begin, kth_smallest_end] = common::utils::quickselect_range(
                 data.begin(),
                 data.end(),
                 kth_smallest_index,
-                n_features,
+                n_features_,
                 [feature_index](const auto& range1_first, const auto& range2_first) {
                     // assumes that:
-                    //   * both ranges have length: n_features
-                    //   * feature_index in range [0, n_features)
+                    //   * both ranges have length: n_features_
+                    //   * feature_index in range [0, n_features_)
                     return *(range1_first + feature_index) < *(range2_first + feature_index);
                 });
 
             std::cout << "Partially sorted w.r.t. feature index: " << feature_index << "\n";
-            print_flattened_matrix<DataType>(data, n_features);
+            print_flattened_matrix<DataType>(data, n_features_);
 
             printf("Kth smallest index quiery: %ld\n", kth_smallest_index);
             printf("Pivot range: ");
-            print_flattened_matrix<DataType>(std::vector<DataType>(kth_smallest_begin, kth_smallest_end), n_features);
+            print_flattened_matrix<DataType>(std::vector<DataType>(kth_smallest_begin, kth_smallest_end), n_features_);
             printf("\n");
 
             data = original_data;

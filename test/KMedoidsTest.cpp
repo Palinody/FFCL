@@ -148,19 +148,19 @@ class KMedoidsErrorsTest : public ::testing::Test {
     static constexpr std::size_t n_iterations_global = 100;
     static constexpr std::size_t n_medoids_global    = 4;
 
-    const fs::path folder_root        = fs::path("../bin/clustering");
-    const fs::path inputs_folder      = folder_root / fs::path("inputs");
-    const fs::path targets_folder     = folder_root / fs::path("targets");
-    const fs::path predictions_folder = folder_root / fs::path("predictions");
-    const fs::path centroids_folder   = folder_root / fs::path("centroids");
+    const fs::path folder_root_        = fs::path("../bin/clustering");
+    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
+    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
+    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
+    const fs::path centroids_folder_   = folder_root_ / fs::path("centroids");
 };
 
 TEST_F(KMedoidsErrorsTest, NoisyCirclesTest) {
     fs::path filename = "noisy_circles.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     // const auto n_medoids = 2;  // 2
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
@@ -168,16 +168,16 @@ TEST_F(KMedoidsErrorsTest, NoisyCirclesTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, NoisyMoonsTest) {
     fs::path filename = "noisy_moons.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     // const auto n_medoids = 2;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
@@ -185,16 +185,16 @@ TEST_F(KMedoidsErrorsTest, NoisyMoonsTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, VariedTest) {
     fs::path filename = "varied.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
@@ -202,16 +202,16 @@ TEST_F(KMedoidsErrorsTest, VariedTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, AnisoTest) {
     fs::path filename = "aniso.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
@@ -219,16 +219,16 @@ TEST_F(KMedoidsErrorsTest, AnisoTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, BlobsTest) {
     fs::path filename = "blobs.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
@@ -236,16 +236,16 @@ TEST_F(KMedoidsErrorsTest, BlobsTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, NoStructureTest) {
     fs::path filename = "no_structure.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     const auto n_medoids = 4;
     // const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
@@ -253,16 +253,16 @@ TEST_F(KMedoidsErrorsTest, NoStructureTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, IrisTest) {
     fs::path filename = "iris.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
@@ -270,16 +270,16 @@ TEST_F(KMedoidsErrorsTest, IrisTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, UnbalancedBlobsTest) {
     fs::path filename = "unbalanced_blobs.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     // const auto n_medoids = 3;
     const std::size_t n_medoids = 1 + *std::max_element(labels.begin(), labels.end());
@@ -287,15 +287,15 @@ TEST_F(KMedoidsErrorsTest, UnbalancedBlobsTest) {
     const auto [predictions, centroids] =
         fit_predict(data.begin(), data.end(), n_medoids, n_features, n_iterations_global);
 
-    write_data<std::size_t>(predictions, 1, predictions_folder / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 TEST_F(KMedoidsErrorsTest, PairwiseDistanceMatrixTest) {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     auto pairwise_distance_matrix =
         ffcl::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
@@ -304,9 +304,9 @@ TEST_F(KMedoidsErrorsTest, PairwiseDistanceMatrixTest) {
 TEST_F(KMedoidsErrorsTest, MnistSimpleFitTest) {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     std::cout << data.size() << " | " << labels.size() << " | " << n_features << std::endl;
     const auto n_medoids = 10;
