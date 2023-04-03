@@ -4,7 +4,7 @@ project(ffcl)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wextra -Wfloat-equal -Wfatal-errors -fopenmp)
+add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wextra -Werror -Wfloat-equal -Wfatal-errors -fopenmp)
 
 # add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
@@ -114,7 +114,7 @@ elseif(MODE STREQUAL "gtest")
     # -------------------------------
     enable_testing()
 
-    add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wextra -Wfloat-equal -Wfatal-errors -fopenmp)
+    add_compile_options(-std=c++17 -Ofast -march=native -Wall -Wextra -Werror -Wfloat-equal -Wfatal-errors -fopenmp)
 
     include(CTest)
 
