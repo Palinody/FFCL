@@ -10,6 +10,10 @@
 #include <iterator>
 #include <vector>
 
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
+
 namespace fs = std::filesystem;
 
 class KDTreeErrorsTest : public ::testing::Test {
@@ -168,16 +172,13 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    // <kdtree::utils::maximum_spread_build, kdtree::utils::quickselect_median_range_struct>
+    // using AxisSelectionPolicy = kdtree::policy::MaximumSpreadBuild<>;
+    // using SplittingRulePolicy = kdtree::policy::QuickselectMedianRange<>;
+
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
-
-#include <iostream>
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
 
 TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
     fs::path filename = "noisy_circles.txt";
