@@ -27,7 +27,7 @@ struct HighestVarianceBuild : public AxisSelectionPolicy<RandomAccessIterator> {
                            ssize_t                                       depth,
                            BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const override;
 
-    static constexpr double sampling_proportion_ = 0.1;
+    double sampling_proportion_ = 0.1;
 };
 
 template <typename RandomAccessIterator>

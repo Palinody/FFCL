@@ -27,9 +27,7 @@ namespace ffcl::containers {
 
 namespace fs = std::filesystem;
 
-template <typename Iterator,
-          template <typename> class AxisSelectionPolicy = kdtree::policy::MaximumSpreadBuild,
-          template <typename> class SplittingRulePolicy = kdtree::policy::QuickselectMedianRange>
+template <typename Iterator>
 class KDTree {
   public:
     struct Options {
@@ -69,6 +67,17 @@ class KDTree {
     };
 
   public:
+    template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunction>
+    KDTree(const IteratorPairType<Iterator>&  iterator_pair,
+           std::size_t                        n_features,
+           const AxisSelectionPolicyFunction& axis_selection_policy,
+           const SplittingRulePolicyFunction& splitting_rule_policy);
+
+    template <typename AxisSelectionPolicyFunction>
+    KDTree(const IteratorPairType<Iterator>&  iterator_pair,
+           std::size_t                        n_features,
+           const AxisSelectionPolicyFunction& axis_selection_policy);
+
     KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features);
 
     KDTree(const KDTree&) = delete;
@@ -79,10 +88,13 @@ class KDTree {
     void serialize(const fs::path& filepath) const;
 
   private:
-    std::shared_ptr<KDNodeView<Iterator>> build(const IteratorPairType<Iterator>& iterator_pair,
-                                                ssize_t                           cut_feature_index,
-                                                ssize_t                           depth,
-                                                BoundingBoxKDType<Iterator>&      kd_bounding_box);
+    template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunction>
+    std::shared_ptr<KDNodeView<Iterator>> build(const IteratorPairType<Iterator>&  iterator_pair,
+                                                ssize_t                            cut_feature_index,
+                                                ssize_t                            depth,
+                                                BoundingBoxKDType<Iterator>&       kd_bounding_box,
+                                                const AxisSelectionPolicyFunction& axis_selection_policy,
+                                                const SplittingRulePolicyFunction& splitting_rule_policy);
 
     IteratorPairType<Iterator> iterator_pair_;
 
@@ -95,33 +107,50 @@ class KDTree {
     std::shared_ptr<KDNodeView<Iterator>> root_;
 };
 
-template <typename Iterator,
-          template <typename>
-          class AxisSelectionPolicy,
-          template <typename>
-          class SplittingRulePolicy>
-KDTree<Iterator, AxisSelectionPolicy, SplittingRulePolicy>::KDTree(const IteratorPairType<Iterator>& iterator_pair,
-                                                                   std::size_t                       n_features)
+template <typename Iterator>
+template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunction>
+KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>&  iterator_pair,
+                         std::size_t                        n_features,
+                         const AxisSelectionPolicyFunction& axis_selection_policy,
+                         const SplittingRulePolicyFunction& splitting_rule_policy)
   : iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(iterator_pair_),
                                                          std::get<1>(iterator_pair_),
                                                          n_features_)}
   , root_{build(iterator_pair_,
-                AxisSelectionPolicy<Iterator>()(iterator_pair_, n_features_, 0, kd_bounding_box_),
+                axis_selection_policy(iterator_pair_, n_features_, 0, kd_bounding_box_),
                 0,
-                kd_bounding_box_)} {}
+                kd_bounding_box_,
+                axis_selection_policy,
+                splitting_rule_policy)} {}
 
-template <typename Iterator,
-          template <typename>
-          class AxisSelectionPolicy,
-          template <typename>
-          class SplittingRulePolicy>
-std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator, AxisSelectionPolicy, SplittingRulePolicy>::build(
-    const IteratorPairType<Iterator>& iterator_pair,
-    ssize_t                           cut_feature_index,
-    ssize_t                           depth,
-    BoundingBoxKDType<Iterator>&      kd_bounding_box) {
+template <typename Iterator>
+template <typename AxisSelectionPolicyFunction>
+KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>&  iterator_pair,
+                         std::size_t                        n_features,
+                         const AxisSelectionPolicyFunction& axis_selection_policy)
+  : KDTree<Iterator>::KDTree(iterator_pair,
+                             n_features,
+                             axis_selection_policy,
+                             kdtree::policy::QuickselectMedianRange<Iterator>()) {}
+
+template <typename Iterator>
+KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features)
+  : KDTree<Iterator>::KDTree(iterator_pair,
+                             n_features,
+                             kdtree::policy::MaximumSpreadBuild<Iterator>(),
+                             kdtree::policy::QuickselectMedianRange<Iterator>()) {}
+
+template <typename Iterator>
+template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunction>
+std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::build(
+    const IteratorPairType<Iterator>&  iterator_pair,
+    ssize_t                            cut_feature_index,
+    ssize_t                            depth,
+    BoundingBoxKDType<Iterator>&       kd_bounding_box,
+    const AxisSelectionPolicyFunction& axis_selection_policy,
+    const SplittingRulePolicyFunction& splitting_rule_policy) {
     const std::size_t n_samples = common::utils::get_n_samples(iterator_pair.first, iterator_pair.second, n_features_);
 
     if (n_samples == 0) {
@@ -132,10 +161,10 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator, AxisSelectionPolicy, Spli
     // the current node is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
-        cut_feature_index = AxisSelectionPolicy<Iterator>()(iterator_pair, n_features_, depth, kd_bounding_box);
+        cut_feature_index = axis_selection_policy(iterator_pair, n_features_, depth, kd_bounding_box);
 
         auto [cut_index, left_range, cut_range, right_range] =
-            SplittingRulePolicy<Iterator>()(iterator_pair, n_features_, cut_feature_index);
+            splitting_rule_policy(iterator_pair, n_features_, cut_feature_index);
 
         node = std::make_shared<KDNodeView<Iterator>>(cut_range, n_features_, cut_feature_index, kd_bounding_box);
 
@@ -144,7 +173,8 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator, AxisSelectionPolicy, Spli
         // set the right bound of the left child to the cut value
         kd_bounding_box[cut_feature_index].second = cut_value;
 
-        node->left_ = build(left_range, cut_feature_index, depth + 1, kd_bounding_box);
+        node->left_ = build(
+            left_range, cut_feature_index, depth + 1, kd_bounding_box, axis_selection_policy, splitting_rule_policy);
 
         // reset the right bound of the bounding box to the current node right bound
         kd_bounding_box[cut_feature_index].second = node->kd_bounding_box_[cut_feature_index].second;
@@ -153,7 +183,12 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator, AxisSelectionPolicy, Spli
             // set the left bound of the right child to the cut value
             kd_bounding_box[cut_feature_index].first = cut_value;
 
-            node->right_ = build(right_range, cut_feature_index, depth + 1, kd_bounding_box);
+            node->right_ = build(right_range,
+                                 cut_feature_index,
+                                 depth + 1,
+                                 kd_bounding_box,
+                                 axis_selection_policy,
+                                 splitting_rule_policy);
 
             // reset the left bound of the bounding box to the current node left bound
             kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
@@ -164,14 +199,9 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator, AxisSelectionPolicy, Spli
     return node;
 }
 
-template <typename Iterator,
-          template <typename>
-          class AxisSelectionPolicy,
-          template <typename>
-          class SplittingRulePolicy>
-void KDTree<Iterator, AxisSelectionPolicy, SplittingRulePolicy>::serialize_kdtree(
-    const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
-    rapidjson::Writer<rapidjson::StringBuffer>&  writer) const {
+template <typename Iterator>
+void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
+                                        rapidjson::Writer<rapidjson::StringBuffer>&  writer) const {
     writer.StartObject();
     {
         writer.String("axis");
@@ -197,12 +227,8 @@ void KDTree<Iterator, AxisSelectionPolicy, SplittingRulePolicy>::serialize_kdtre
     writer.EndObject();
 }
 
-template <typename Iterator,
-          template <typename>
-          class AxisSelectionPolicy,
-          template <typename>
-          class SplittingRulePolicy>
-void KDTree<Iterator, AxisSelectionPolicy, SplittingRulePolicy>::serialize(const fs::path& filepath) const {
+template <typename Iterator>
+void KDTree<Iterator>::serialize(const fs::path& filepath) const {
     using DataType = DataType<Iterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,

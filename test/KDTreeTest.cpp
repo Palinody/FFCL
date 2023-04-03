@@ -172,10 +172,10 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    // using AxisSelectionPolicy = kdtree::policy::MaximumSpreadBuild<>;
-    // using SplittingRulePolicy = kdtree::policy::QuickselectMedianRange<>;
+    using IteratorType = decltype(data.begin());
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    auto kdtree = ffcl::containers::KDTree<IteratorType>(
+        std::make_pair(data.begin(), data.end()), n_features, kdtree::policy::MaximumSpreadBuild<IteratorType>());
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
