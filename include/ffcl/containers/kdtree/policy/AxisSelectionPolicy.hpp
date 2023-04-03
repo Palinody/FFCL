@@ -31,6 +31,11 @@ struct CycleThroughAxesBuild : public AxisSelectionPolicy<RandomAccessIterator> 
 
 template <typename RandomAccessIterator>
 struct HighestVarianceBuild : public AxisSelectionPolicy<RandomAccessIterator> {
+    HighestVarianceBuild& sampling_proportion(double sampling_proportion) {
+        sampling_proportion_ = sampling_proportion;
+        return *this;
+    }
+
     std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
                            std::size_t                                   n_features,
                            ssize_t                                       depth,
