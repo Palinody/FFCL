@@ -88,8 +88,8 @@ class KDTree {
 
     KDTree(const KDTree&) = delete;
 
-    void serialize_kdtree(const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
-                          rapidjson::Writer<rapidjson::StringBuffer>&  writer) const;
+    void serialize(const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
+                   rapidjson::Writer<rapidjson::StringBuffer>&  writer) const;
 
     void serialize(const fs::path& filepath) const;
 
@@ -213,8 +213,8 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::build(
 }
 
 template <typename Iterator>
-void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
-                                        rapidjson::Writer<rapidjson::StringBuffer>&  writer) const {
+void KDTree<Iterator>::serialize(const std::shared_ptr<KDNodeView<Iterator>>& kdnode,
+                                 rapidjson::Writer<rapidjson::StringBuffer>&  writer) const {
     writer.StartObject();
     {
         writer.String("axis");
@@ -226,14 +226,14 @@ void KDTree<Iterator>::serialize_kdtree(const std::shared_ptr<KDNodeView<Iterato
         // continue the recursion if the current node is not leaf
         if (!kdnode->is_leaf()) {
             writer.String("left");
-            serialize_kdtree(kdnode->left_, writer);
+            serialize(kdnode->left_, writer);
 
             // The right pointer might be nullptr when a node had 2 samples. The median computation chooses the
             // second sample as the pivot because the median of 2 samples will output index 1. The other index will
             // be 0 and thus the left child
             if (kdnode->right_) {
                 writer.String("right");
-                serialize_kdtree(kdnode->right_, writer);
+                serialize(kdnode->right_, writer);
             }
         }
     }
@@ -280,7 +280,7 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
         writer.EndArray();
 
         writer.String("root");
-        serialize_kdtree(root_, writer);
+        serialize(root_, writer);
     }
     writer.EndObject();
 
