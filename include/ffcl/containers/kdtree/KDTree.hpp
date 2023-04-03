@@ -169,9 +169,9 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::build(
     if (n_samples == 0) {
         return nullptr;
     }
-    std::shared_ptr<KDNodeView<Iterator>> node;
+    std::shared_ptr<KDNodeView<Iterator>> kdnode;
 
-    // the current node is not leaf
+    // the current kdnode is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index = axis_selection_policy(iterator_pair, n_features_, depth, kd_bounding_box);
@@ -179,37 +179,37 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::build(
         auto [cut_index, left_range, cut_range, right_range] =
             splitting_rule_policy(iterator_pair, n_features_, cut_feature_index);
 
-        node = std::make_shared<KDNodeView<Iterator>>(cut_range, n_features_, cut_feature_index, kd_bounding_box);
+        kdnode = std::make_shared<KDNodeView<Iterator>>(cut_range, n_features_, cut_feature_index, kd_bounding_box);
 
         const auto cut_value = *(cut_range.first + cut_feature_index);
 
         // set the right bound of the left child to the cut value
         kd_bounding_box[cut_feature_index].second = cut_value;
 
-        node->left_ = build(
+        kdnode->left_ = build(
             left_range, cut_feature_index, depth + 1, kd_bounding_box, axis_selection_policy, splitting_rule_policy);
 
-        // reset the right bound of the bounding box to the current node right bound
-        kd_bounding_box[cut_feature_index].second = node->kd_bounding_box_[cut_feature_index].second;
+        // reset the right bound of the bounding box to the current kdnode right bound
+        kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_[cut_feature_index].second;
 
         if (n_samples > 2) {
             // set the left bound of the right child to the cut value
             kd_bounding_box[cut_feature_index].first = cut_value;
 
-            node->right_ = build(right_range,
-                                 cut_feature_index,
-                                 depth + 1,
-                                 kd_bounding_box,
-                                 axis_selection_policy,
-                                 splitting_rule_policy);
+            kdnode->right_ = build(right_range,
+                                   cut_feature_index,
+                                   depth + 1,
+                                   kd_bounding_box,
+                                   axis_selection_policy,
+                                   splitting_rule_policy);
 
-            // reset the left bound of the bounding box to the current node left bound
-            kd_bounding_box[cut_feature_index].first = node->kd_bounding_box_[cut_feature_index].first;
+            // reset the left bound of the bounding box to the current kdnode left bound
+            kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_[cut_feature_index].first;
         }
     } else {
-        node = std::make_shared<KDNodeView<Iterator>>(iterator_pair, n_features_, kd_bounding_box);
+        kdnode = std::make_shared<KDNodeView<Iterator>>(iterator_pair, n_features_, kd_bounding_box);
     }
-    return node;
+    return kdnode;
 }
 
 template <typename Iterator>
