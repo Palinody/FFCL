@@ -5,8 +5,8 @@
 namespace kdtree::policy {
 
 template <typename RandomAccessIterator>
-struct SplittingRulePolicy {
-    SplittingRulePolicy() = default;
+struct IndexedSplittingRulePolicy {
+    IndexedSplittingRulePolicy() = default;
 
     virtual std::tuple<std::size_t,
                        IteratorPairType<RandomAccessIterator>,
@@ -17,13 +17,13 @@ struct SplittingRulePolicy {
                std::size_t                            comparison_feature_index) const = 0;
 
   private:
-    SplittingRulePolicy(const SplittingRulePolicy&) = delete;
+    IndexedSplittingRulePolicy(const IndexedSplittingRulePolicy&) = delete;
 
-    SplittingRulePolicy& operator=(const SplittingRulePolicy&) = delete;
+    IndexedSplittingRulePolicy& operator=(const IndexedSplittingRulePolicy&) = delete;
 };
 
 template <typename RandomAccessIterator>
-struct QuickselectMedianRange : public SplittingRulePolicy<RandomAccessIterator> {
+struct QuickselectMedianRange : public IndexedSplittingRulePolicy<RandomAccessIterator> {
     std::tuple<std::size_t,
                IteratorPairType<RandomAccessIterator>,
                IteratorPairType<RandomAccessIterator>,

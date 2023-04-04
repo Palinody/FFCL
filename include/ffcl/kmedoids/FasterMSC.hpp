@@ -29,7 +29,7 @@ class FasterMSC {
   public:
     using DataType = typename Iterator::value_type;
 
-    // {samples_first_, samples_last_, n_features_}
+    // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
     using FirstVariantType   = ffcl::containers::LowerTriangleMatrixDynamic<Iterator>;
