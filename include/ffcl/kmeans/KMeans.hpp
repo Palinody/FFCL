@@ -1,10 +1,10 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/heuristics/Heuristics.hpp"
 #include "ffcl/kmeans/Hamerly.hpp"
 #include "ffcl/kmeans/KMeansPlusPlus.hpp"
 #include "ffcl/kmeans/Lloyd.hpp"
+#include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 #include "ffcl/math/random/Sampling.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"

@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace ffcl::heuristic {
+namespace math::heuristics {
 
 template <typename IteratorFloat1, typename IteratorFloat2>
 typename IteratorFloat1::value_type squared_euclidean_distance(const IteratorFloat1& feature_first,
@@ -104,7 +104,9 @@ typename IteratorFloat1::value_type cosine_similarity(const IteratorFloat1& feat
 }
 
 template <typename Iterator1, typename Iterator2>
-auto heuristic(const Iterator1& feature_first, const Iterator1& feature_last, const Iterator2& other_feature_first) {
+auto auto_distance(const Iterator1& feature_first,
+                   const Iterator1& feature_last,
+                   const Iterator2& other_feature_first) {
     using ValueType = typename Iterator1::value_type;
 
     if constexpr (std::is_floating_point_v<ValueType>) {
@@ -117,9 +119,9 @@ auto heuristic(const Iterator1& feature_first, const Iterator1& feature_last, co
         return unsigned_manhattan_distance(feature_first, feature_last, other_feature_first);
     }
 #if defined(VERBOSE) && VERBOSE == true
-    std::cout << "[WARN] requested type for heuristic not handled. Using default: euclidean.\n";
+    std::cout << "[WARN] requested type for auto_distance not handled. Using default: euclidean.\n";
 #endif
     return euclidean_distance(feature_first, feature_last, other_feature_first);
 }
 
-}  // namespace ffcl::heuristic
+}  // namespace math::heuristics

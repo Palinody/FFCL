@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/heuristics/Heuristics.hpp"
 #include "ffcl/kmeans/KMeansUtils.hpp"
+#include "ffcl/math/heuristics/Distances.hpp"
 
 #include <tuple>
 #include <vector>

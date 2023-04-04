@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/LowerTriangleMatrix.hpp"
-#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
 #include <algorithm>
@@ -34,7 +34,7 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
     auto nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -106,7 +106,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
     auto second_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -197,7 +197,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
     auto third_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -366,7 +366,7 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
     auto nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -436,7 +436,7 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
     auto second_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -518,7 +518,7 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
     auto third_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);
@@ -724,7 +724,7 @@ std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // the following should be done if other_sample_index != medoid_candidate_idx
             // but the distance would be 0 anyway with dist(other_sample, medoid_candidate)
-            loss_acc += ffcl::heuristic::heuristic(
+            loss_acc += math::heuristics::auto_distance(
                 /*first sample begin=*/data_first + medoid_candidate_idx * n_features,
                 /*first sample end=*/data_first + medoid_candidate_idx * n_features + n_features,
                 /*other sample begin=*/data_first + other_sample_index * n_features);

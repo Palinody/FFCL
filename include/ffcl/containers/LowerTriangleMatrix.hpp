@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/math/heuristics/Distances.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -32,7 +32,7 @@ std::vector<std::vector<typename Iterator::value_type>> make_pairwise_low_triang
         std::vector<ValueType> temp_row(i + 1);
 
         for (std::size_t j = 0; j < i; ++j) {
-            temp_row[j] = ffcl::heuristic::heuristic(
+            temp_row[j] = math::heuristics::auto_distance(
                 /*first sample begin=*/samples_first + i * n_features,
                 /*first sample end=*/samples_first + i * n_features + n_features,
                 /*second sample begin=*/samples_first + j * n_features);
@@ -146,12 +146,12 @@ typename LowerTriangleMatrixDynamic<Iterator>::ValueType LowerTriangleMatrixDyna
     std::size_t feature_index) const {
     // swap the indices if an upper triangle (diagonal excluded) quiery is made
     if (feature_index > sample_index) {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first sample begin=*/samples_first_ + feature_index * n_features_,
             /*first sample end=*/samples_first_ + feature_index * n_features_ + n_features_,
             /*other sample begin=*/samples_first_ + sample_index * n_features_);
     }
-    return ffcl::heuristic::heuristic(
+    return math::heuristics::auto_distance(
         /*first sample begin=*/samples_first_ + sample_index * n_features_,
         /*first sample end=*/samples_first_ + sample_index * n_features_ + n_features_,
         /*other sample begin=*/samples_first_ + feature_index * n_features_);

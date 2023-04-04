@@ -1,10 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ffcl/heuristics/SilhouetteMethod.hpp"
 #include "ffcl/kmeans/Hamerly.hpp"
 #include "ffcl/kmeans/KMeans.hpp"
 #include "ffcl/kmeans/Lloyd.hpp"
+#include "ffcl/math/heuristics/SilhouetteMethod.hpp"
 #include "ffcl/math/random/VosesAliasMethod.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
 
@@ -165,10 +165,10 @@ TEST_F(KMeansErrorsTest, SilhouetteTest) {
         // map the samples to their closest centroid/medoid
         const auto predictions = kmeans.predict(data.begin(), data.end());
         // compute the silhouette scores for each sample
-        const auto samples_silhouette_values = ffcl::silhouette_method::silhouette(
-            data.begin(), data.end(), predictions.begin(), predictions.end(), n_features);
+        const auto samples_silhouette_values =
+            math::heuristics::silhouette(data.begin(), data.end(), predictions.begin(), predictions.end(), n_features);
         // get the average score
-        const auto mean_silhouette_coefficient = ffcl::silhouette_method::get_mean_silhouette_coefficient(
+        const auto mean_silhouette_coefficient = math::heuristics::get_mean_silhouette_coefficient(
             samples_silhouette_values.begin(), samples_silhouette_values.end());
         // accumulate the current scores
         scores[k - k_min] = mean_silhouette_coefficient;

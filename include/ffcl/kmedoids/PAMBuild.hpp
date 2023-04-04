@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/LowerTriangleMatrix.hpp"
-#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/math/heuristics/Distances.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -26,7 +26,7 @@ build(const Iterator& samples_first, const Iterator& samples_last, std::size_t n
         samples_first, samples_last, n_features, medoids_indices, /*nth_closest*/ 1);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return ffcl::heuristic::heuristic(
+        return math::heuristics::auto_distance(
             /*first medoid begin=*/samples_first + left_idx * n_features,
             /*first medoid end=*/samples_first + left_idx * n_features + n_features,
             /*current sample begin=*/samples_first + right_idx * n_features);

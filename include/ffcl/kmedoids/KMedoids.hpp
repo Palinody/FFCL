@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/LowerTriangleMatrix.hpp"
-#include "ffcl/heuristics/Heuristics.hpp"
+#include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 #include "ffcl/math/random/Sampling.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
