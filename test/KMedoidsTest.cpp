@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "ffcl/kmedoids/KMedoids.hpp"
+#include "ffcl/math/random/Sampling.hpp"
 #include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <sys/types.h>  // std::ssize_t
@@ -330,7 +331,7 @@ TEST_F(KMedoidsErrorsTest, ClusterInitializationTest) {
         }
         std::cout << std::endl;
     }
-    const auto centroids = common::utils::init_uniform(data.begin(), data.end(), n_centroids, n_features);
+    const auto centroids = math::random::init_uniform(data.begin(), data.end(), n_centroids, n_features);
 
     std::cout << "centroids:" << std::endl;
 

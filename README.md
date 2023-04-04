@@ -220,7 +220,7 @@ for (std::size_t k = k_min; k < k_max; ++k) {
     scores[k - k_min] = mean_silhouette_coefficient;
 }
 // find the k corresponding to the number of centroids/medoids k with the best average silhouette score
-const auto best_k = k_min + common::utils::argmax(scores.begin(), scores.end())
+const auto best_k = k_min + math::statistics::argmax(scores.begin(), scores.end())
 ```
 
 ### KMeans

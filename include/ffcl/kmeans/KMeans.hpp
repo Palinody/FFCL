@@ -6,6 +6,8 @@
 #include "ffcl/kmeans/KMeansPlusPlus.hpp"
 #include "ffcl/kmeans/Lloyd.hpp"
 #include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/math/random/Sampling.hpp"
+#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -216,7 +218,7 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         candidates_losses[k] = kmeans_algorithm.total_deviation();
     }
     // find the index of the centroids container with the lowest loss
-    const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
+    const std::size_t min_loss_index = math::statistics::argmin(candidates_losses.begin(), candidates_losses.end());
     // return best centroids accordingly to the lowest loss
     centroids_ = centroids_candidates[min_loss_index];
 
@@ -227,7 +229,7 @@ template <typename T>
 template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first, const SamplesIterator& data_last) {
     // execute fit function with a default initialization algorithm
-    // ffcl::kmeansplusplus::make_centroids || common::utils::init_uniform
+    // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
     return fit<KMeansAlgorithm>(data_first, data_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
@@ -237,7 +239,7 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
                               const SamplesIterator& data_last,
                               const Function&        centroids_initializer) {
     // execute fit function with a default initialization algorithm
-    // ffcl::kmeansplusplus::make_centroids || common::utils::init_uniform
+    // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
     return fit<ffcl::Hamerly>(data_first, data_last, centroids_initializer);
 }
 
@@ -245,7 +247,7 @@ template <typename T>
 template <typename SamplesIterator>
 std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first, const SamplesIterator& data_last) {
     // execute fit function with a default initialization algorithm
-    // ffcl::kmeansplusplus::make_centroids || common::utils::init_uniform
+    // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
     return fit<ffcl::Hamerly>(data_first, data_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 

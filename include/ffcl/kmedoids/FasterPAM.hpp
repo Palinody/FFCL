@@ -5,6 +5,7 @@
 #include "ffcl/heuristics/Heuristics.hpp"
 #include "ffcl/kmedoids/PAMUtils.hpp"
 #include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -193,7 +194,7 @@ std::pair<typename Iterator::value_type, std::size_t> FasterPAM<Iterator>::find_
     }
     // i ← argmin(∆TD_i), with i: index of medoids elements
     const auto [best_swap_index, best_swap_distance] =
-        common::utils::get_min_index_value_pair(delta_td_mi.begin(), delta_td_mi.end());
+        math::statistics::get_min_index_value_pair(delta_td_mi.begin(), delta_td_mi.end());
 
     return {delta_td_xc + best_swap_distance, best_swap_index};
 }

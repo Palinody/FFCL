@@ -4,6 +4,7 @@
 #include "ffcl/heuristics/Heuristics.hpp"
 #include "ffcl/kmeans/KMeansUtils.hpp"
 #include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/math/random/Sampling.hpp"
 #include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <algorithm>
@@ -44,7 +45,7 @@ std::vector<typename IteratorFloat::value_type> make_centroids(const IteratorFlo
     static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
                   "Data should be a floating point type.");
 
-    auto centroids = common::utils::select_random_sample(data_first, data_last, n_features);
+    auto centroids = math::random::select_random_sample(data_first, data_last, n_features);
 
     for (std::size_t centroid_index = 1; centroid_index < n_centroids; ++centroid_index) {
         // recompute the distances from each sample to its closest centroid
@@ -85,7 +86,7 @@ std::vector<typename IteratorFloat::value_type> make_centroids_from_previous_cen
     static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
                   "Data should be a floating point type.");
 
-    auto previous_centroid = common::utils::select_random_sample(data_first, data_last, n_features);
+    auto previous_centroid = math::random::select_random_sample(data_first, data_last, n_features);
 
     auto centroids = previous_centroid;
 

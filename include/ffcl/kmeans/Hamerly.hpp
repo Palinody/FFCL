@@ -3,6 +3,7 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/heuristics/Heuristics.hpp"
 #include "ffcl/kmeans/KMeansUtils.hpp"
+#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <tuple>
 #include <vector>
@@ -254,12 +255,12 @@ void Hamerly<Iterator>::update_centroids_velocities(
 template <typename Iterator>
 typename Iterator::value_type Hamerly<Iterator>::update_bounds() {
     const auto [furthest_moving_centroid_index, furthest_moving_centroid_distance] =
-        common::utils::get_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
-                                                buffers_ptr_->centroid_velocities_.end());
+        math::statistics::get_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
+                                                   buffers_ptr_->centroid_velocities_.end());
 
     const auto [second_furthest_moving_centroid_index, second_furthest_moving_centroid_distance] =
-        common::utils::get_second_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
-                                                       buffers_ptr_->centroid_velocities_.end());
+        math::statistics::get_second_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
+                                                          buffers_ptr_->centroid_velocities_.end());
 
     const auto& samples_to_nearest_centroid_indices    = buffers_ptr_->samples_to_nearest_centroid_indices_;
     auto&       samples_to_nearest_centroid_distances  = buffers_ptr_->samples_to_nearest_centroid_distances_;

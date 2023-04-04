@@ -6,6 +6,7 @@
 #include "ffcl/kmeans/KMeans.hpp"
 #include "ffcl/kmeans/Lloyd.hpp"
 #include "ffcl/math/random/VosesAliasMethod.hpp"
+#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -173,7 +174,7 @@ TEST_F(KMeansErrorsTest, SilhouetteTest) {
         scores[k - k_min] = mean_silhouette_coefficient;
     }
     // find the k corresponding to the number of centroids/medoids k with the best average silhouette score
-    const auto best_k = k_min + common::utils::argmax(scores.begin(), scores.end());
+    const auto best_k = k_min + math::statistics::argmax(scores.begin(), scores.end());
 
     std::cout << "best k: " << best_k << "\n";
 }

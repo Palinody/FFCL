@@ -4,6 +4,8 @@
 #include "ffcl/containers/LowerTriangleMatrix.hpp"
 #include "ffcl/heuristics/Heuristics.hpp"
 #include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/math/random/Sampling.hpp"
+#include "ffcl/math/statistics/Statistics.hpp"
 
 #include "ffcl/kmedoids/FasterMSC.hpp"
 #include "ffcl/kmedoids/FasterPAM.hpp"
@@ -166,7 +168,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
     if (medoids_.empty()) {
         for (std::size_t k = 0; k < options_.n_init_; ++k) {
             const auto random_medoids =
-                common::utils::select_from_range(n_medoids_, {0, std::distance(data_first, data_last) / n_features_});
+                math::random::select_from_range(n_medoids_, {0, std::distance(data_first, data_last) / n_features_});
 
             // default initialization of the medoids indices if not initialized
             medoids_candidates.emplace_back(random_medoids);
@@ -233,7 +235,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
         candidates_losses[k] = kmedoids_algorithm.total_deviation();
     }
     // find the index of the medoids indices container with the lowest loss
-    const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
+    const std::size_t min_loss_index = math::statistics::argmin(candidates_losses.begin(), candidates_losses.end());
     // return best centroids accordingly to the lowest loss
     medoids_ = medoids_candidates[min_loss_index];
 
@@ -260,7 +262,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
     if (medoids_.empty()) {
         for (std::size_t k = 0; k < options_.n_init_; ++k) {
             const auto random_medoids =
-                common::utils::select_from_range(n_medoids_, {0, pairwise_distance_matrix.n_samples()});
+                math::random::select_from_range(n_medoids_, {0, pairwise_distance_matrix.n_samples()});
 
             // default initialization of the medoids indices if not initialized
             medoids_candidates.emplace_back(random_medoids);
@@ -317,7 +319,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
         candidates_losses[k] = kmedoids_algorithm.total_deviation();
     }
     // find the index of the medoids indices container with the lowest loss
-    const std::size_t min_loss_index = common::utils::argmin(candidates_losses.begin(), candidates_losses.end());
+    const std::size_t min_loss_index = math::statistics::argmin(candidates_losses.begin(), candidates_losses.end());
     // update the medoids accordingly to the lowest loss
     medoids_ = medoids_candidates[min_loss_index];
 

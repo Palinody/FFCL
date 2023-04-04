@@ -1,6 +1,9 @@
 #pragma once
 
+#include "ffcl/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/math/random/Sampling.hpp"
+#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <cmath>
@@ -106,12 +109,12 @@ ssize_t select_axis_with_largest_variance(const Iterator& samples_first,
     // select the axis based on variance only if the number the number of selected samples will be more than 2
     if (n_choices > 2) {
         const auto random_samples =
-            common::utils::select_n_random_samples(samples_first, samples_last, n_features, n_choices);
+            math::random::select_n_random_samples(samples_first, samples_last, n_features, n_choices);
 
         const auto variance_per_feature =
-            common::utils::compute_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
+            math::statistics::compute_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
         // return the feature index with the maximum variance
-        return common::utils::argmax(variance_per_feature.begin(), variance_per_feature.end());
+        return math::statistics::argmax(variance_per_feature.begin(), variance_per_feature.end());
     }
     // otherwise apply the bounding box method
     const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
@@ -133,7 +136,7 @@ quickselect_median_range(IteratorPairType<RandomAccessIterator> iterator_pair,
 
     const auto median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
 
-    const auto median_range = common::utils::quickselect_range(
+    const auto median_range = ffcl::algorithms::quickselect_range(
         samples_first,
         samples_last,
         median_index,
