@@ -162,7 +162,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree<IteratorType>(
+    auto kdtree = ffcl::containers::KDTree(
         std::make_pair(data.begin(), data.end()), n_features, kdtree::policy::MaximumSpreadBuild<IteratorType>());
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -186,6 +186,8 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
     auto kdtree =
         ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                  n_features,
+                                 kdtree::policy::MaximumSpreadBuild<decltype(data)::iterator>(),
+                                 kdtree::policy::QuickselectMedianRange<decltype(data)::iterator>(),
                                  ffcl::containers::KDTree<decltype(data)::iterator>::Options().bucket_size(1));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);

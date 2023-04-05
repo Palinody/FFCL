@@ -107,6 +107,7 @@ bool are_containers_equal(
         ++first1;
         ++first2;
     }
+    ignore_parameters(tolerance);
     return true;
 }
 
@@ -116,6 +117,7 @@ bool are_containers_equal(
     const Container&                      second,
     const typename Container::value_type& tolerance = std::numeric_limits<typename Container::value_type>::epsilon()) {
     if (first.size() != second.size()) {
+        ignore_parameters(tolerance);
         return false;
     }
     return are_containers_equal(first.begin(), first.end(), second.begin(), tolerance);
