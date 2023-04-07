@@ -141,6 +141,22 @@ elseif(MODE STREQUAL "gtest")
     include(CTest)
 
     add_executable(
+        SortingTest
+
+        # ---
+        test/algorithms/SortingTest.cpp
+    )
+    target_link_libraries(
+        SortingTest
+        GTest::gtest_main
+        GTest::gmock_main
+    )
+    add_test(
+        SortingTest
+        SortingTest
+    )
+
+    add_executable(
         DistributionsTest
 
         # ---
@@ -225,9 +241,16 @@ elseif(MODE STREQUAL "gtest")
         KDTreeTest
     )
 
-    add_test(
-        NAME AllTests
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R "DistributionsTest|UtilsTest|KMedoidsTest|KMeansTest|KDTreeTest"
+    set_tests_properties(SortingTest DistributionsTest PROPERTIES
+        LABELS "DistributionTests"
+    )
+
+    set_tests_properties(UtilsTest PROPERTIES
+        LABELS "UtilityTests"
+    )
+
+    set_tests_properties(KMedoidsTest KMeansTest KDTreeTest PROPERTIES
+        LABELS "AlgorithmTests"
     )
 
 else()

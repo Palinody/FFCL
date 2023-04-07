@@ -91,11 +91,11 @@ std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_thr
 }
 
 template <typename RandomAccessIterator, typename RangeComparisonFunction>
-std::pair<std::size_t, std::pair<RandomAccessIterator, RandomAccessIterator>> median_values_range_of_three_ranges(
-    RandomAccessIterator           first,
-    RandomAccessIterator           last,
-    std::size_t                    n_features,
-    const RangeComparisonFunction& compare_ranges) {
+std::pair<std::size_t, std::pair<RandomAccessIterator, RandomAccessIterator>>
+median_index_and_values_range_of_three_ranges(RandomAccessIterator           first,
+                                              RandomAccessIterator           last,
+                                              std::size_t                    n_features,
+                                              const RangeComparisonFunction& compare_ranges) {
     const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, compare_ranges);
 
     return {median_index, {first + median_index * n_features, first + median_index * n_features + n_features}};

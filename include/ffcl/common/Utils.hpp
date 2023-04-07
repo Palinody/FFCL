@@ -4,6 +4,7 @@
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
+#include <cassert>
 #include <limits>
 #include <stdexcept>
 #include <unordered_set>
@@ -23,8 +24,10 @@ template <typename T>
 constexpr T abs(const T& x) {
     if constexpr (std::is_integral_v<T>) {
         return x < static_cast<T>(0) ? -x : x;
+
     } else if constexpr (std::is_floating_point_v<T>) {
         return std::abs(x);
+
     } else {
         throw std::invalid_argument("Data type not handled by any heuristic.");
     }
@@ -34,8 +37,10 @@ template <typename T, typename U>
 constexpr bool equality(const T& a, const U& b) noexcept {
     if constexpr (std::is_integral_v<T> && std::is_integral_v<U>) {
         return a == b;
+
     } else if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<U>) {
         return std::abs(b - a) < std::numeric_limits<decltype(b - a)>::epsilon();
+
     } else {
         static_assert(std::is_same_v<T, U>, "equality comparison only supported for comparable types");
         return a == b;

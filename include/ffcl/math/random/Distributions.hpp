@@ -22,11 +22,9 @@ static inline std::mt19937& thread_local_mersenne_engine() {
 static inline std::mt19937& thread_local_mersenne_engine(std::size_t value) {
 #if defined(_OPENMP) && THREADS_ENABLED == true
     value += omp_get_thread_num();
-    std::cout << "Seed value (openmp): " << value << "\n";
 
 #elif !defined(_OPENMP) && THREADS_ENABLED == true
     value += std::hash<std::thread::id>{}(std::this_thread::get_id());
-    std::cout << "Seed value (pthread): " << value << "\n";
 #endif
     static thread_local std::mt19937 mersienne_engine_thread_instance(value);
 
