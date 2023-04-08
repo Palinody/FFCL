@@ -304,6 +304,302 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeRangesFloatTest) {
     }
 }
 
+TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesIntegerTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = int;
+
+    constexpr DataType lower_bound = -10;
+    constexpr DataType upper_bound = 10;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+                const auto data_indices = generate_sorted_indices(samples);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
+                        // assumes that:
+                        //   * both ranges have length: n_features
+                        //   * feature_index in range [0, n_features)
+                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
+                    };
+
+                    const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_indexed_ranges(
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+
+                    const auto [first_row_candidate_first, first_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, 0);
+
+                    const auto [median_row_candidate_first, median_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+
+                    const auto [last_row_candidate_first, last_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+
+                    ASSERT_TRUE(
+                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesFloatTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = float;
+
+    constexpr DataType lower_bound = -1;
+    constexpr DataType upper_bound = 1;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+                const auto data_indices = generate_sorted_indices(samples);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
+                        // assumes that:
+                        //   * both ranges have length: n_features
+                        //   * feature_index in range [0, n_features)
+                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
+                    };
+
+                    const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_indexed_ranges(
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+
+                    const auto [first_row_candidate_first, first_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, 0);
+
+                    const auto [median_row_candidate_first, median_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+
+                    const auto [last_row_candidate_first, last_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+
+                    ASSERT_TRUE(
+                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreRangesIntegerTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = int;
+
+    constexpr DataType lower_bound = -10;
+    constexpr DataType upper_bound = 10;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
+                        // assumes that:
+                        //   * both ranges have length: n_features
+                        //   * feature_index in range [0, n_features)
+                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
+                    };
+
+                    const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_ranges(
+                        data.begin(), data.end(), features, comparator);
+
+                    const auto [row_first, row_last] = range;
+
+                    const auto [first_row_candidate_first, first_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, 0);
+
+                    const auto [median_row_candidate_first, median_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+
+                    const auto [last_row_candidate_first, last_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+
+                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
+
+                    ASSERT_TRUE(
+                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreRangesFloatTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = float;
+
+    constexpr DataType lower_bound = -1;
+    constexpr DataType upper_bound = 1;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
+                        // assumes that:
+                        //   * both ranges have length: n_features
+                        //   * feature_index in range [0, n_features)
+                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
+                    };
+
+                    const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_ranges(
+                        data.begin(), data.end(), features, comparator);
+
+                    const auto [row_first, row_last] = range;
+
+                    const auto [first_row_candidate_first, first_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, 0);
+
+                    const auto [median_row_candidate_first, median_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+
+                    const auto [last_row_candidate_first, last_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+
+                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
+
+                    ASSERT_TRUE(
+                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesIntegerTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = int;
+
+    constexpr DataType lower_bound = -10;
+    constexpr DataType upper_bound = 10;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+                const auto data_indices = generate_sorted_indices(samples);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
+                        // assumes that:
+                        //   * both ranges have length: n_features
+                        //   * feature_index in range [0, n_features)
+                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
+                    };
+
+                    const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_indexed_ranges(
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+
+                    const auto [row_first, row_last] = range;
+
+                    const auto [first_row_candidate_first, first_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, 0);
+
+                    const auto [median_row_candidate_first, median_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+
+                    const auto [last_row_candidate_first, last_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+
+                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
+
+                    ASSERT_TRUE(
+                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesFloatTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = float;
+
+    constexpr DataType lower_bound = -1;
+    constexpr DataType upper_bound = 1;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+                const auto data_indices = generate_sorted_indices(samples);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
+                        // assumes that:
+                        //   * both ranges have length: n_features
+                        //   * feature_index in range [0, n_features)
+                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
+                    };
+
+                    const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_indexed_ranges(
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+
+                    const auto [row_first, row_last] = range;
+
+                    const auto [first_row_candidate_first, first_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, 0);
+
+                    const auto [median_row_candidate_first, median_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+
+                    const auto [last_row_candidate_first, last_row_candidate_last] =
+                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+
+                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
+
+                    ASSERT_TRUE(
+                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                }
+            }
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

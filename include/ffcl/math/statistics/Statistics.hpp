@@ -178,6 +178,9 @@ std::pair<std::size_t, typename Iterator::value_type> find_nth_smallest_index_an
     if (n > static_cast<std::size_t>(data_last - data_first)) {
         throw std::invalid_argument("N-th smallest requested element shouldn't be greater that the container's size.");
     }
+    assert(0 < n && n <= static_cast<std::ptrdiff_t>(std::distance(data_first, data_last)) &&
+           "N-th smallest requested element shouldn't be greater than the container's size.");
+
     std::vector<Type> data_sorted(data_last - data_first);
     std::copy(data_first, data_last, data_sorted.begin());
     std::sort(data_sorted.begin(), data_sorted.end());
