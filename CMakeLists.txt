@@ -140,11 +140,13 @@ elseif(MODE STREQUAL "gtest")
 
     include(CTest)
 
+    include_directories(test/include/base_fixtures)
+
     add_executable(
         SortingTest
 
         # ---
-        test/algorithms/SortingTest.cpp
+        test/src/algorithms/SortingTest.cpp
     )
     target_link_libraries(
         SortingTest
@@ -160,7 +162,7 @@ elseif(MODE STREQUAL "gtest")
         DistributionsTest
 
         # ---
-        test/DistributionsTest.cpp
+        test/src/DistributionsTest.cpp
     )
     target_link_libraries(
         DistributionsTest
@@ -177,7 +179,7 @@ elseif(MODE STREQUAL "gtest")
         UtilsTest
 
         # ---
-        test/UtilsTest.cpp
+        test/src/UtilsTest.cpp
     )
     target_link_libraries(
         UtilsTest
@@ -194,7 +196,7 @@ elseif(MODE STREQUAL "gtest")
         KMedoidsTest
 
         # ---
-        test/KMedoidsTest.cpp
+        test/src/KMedoidsTest.cpp
     )
     target_link_libraries(
         KMedoidsTest
@@ -211,7 +213,7 @@ elseif(MODE STREQUAL "gtest")
         KMeansTest
 
         # ---
-        test/KMeansTest.cpp
+        test/src/KMeansTest.cpp
     )
     target_link_libraries(
         KMeansTest
@@ -228,7 +230,7 @@ elseif(MODE STREQUAL "gtest")
         KDTreeTest
 
         # ---
-        test/KDTreeTest.cpp
+        test/src/KDTreeTest.cpp
     )
     target_link_libraries(
         KDTreeTest
