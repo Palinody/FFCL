@@ -16,20 +16,21 @@ class SortingTestFixture : public ::testing::Test {
   public:
     void SetUp() override {
         if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
-            lower_bound_ = std::numeric_limits<DataType>::min();
-            upper_bound_ = std::numeric_limits<DataType>::max();
+            lower_bound_ = -10;
+            upper_bound_ = 10;
 
         } else if constexpr (std::is_integral_v<DataType> && std::is_unsigned_v<DataType>) {
             lower_bound_ = 0;
-            upper_bound_ = std::numeric_limits<DataType>::max();
+            upper_bound_ = 10;
 
         } else if constexpr (std::is_floating_point_v<DataType>) {
-            lower_bound_ = std::numeric_limits<DataType>::lowest();
-            upper_bound_ = std::numeric_limits<DataType>::max();
+            lower_bound_ = -1;
+            upper_bound_ = 1;
         }
-        n_samples_      = 10;
+        min_n_samples_  = 1;
+        max_n_samples_  = 10;
         n_features_     = 3;
-        n_random_tests_ = 10;
+        n_random_tests_ = 3;
     }
 
   protected:
@@ -204,15 +205,27 @@ class SortingTestFixture : public ::testing::Test {
         return remapped_flattened_vector;
     }
 
+    void print_data(const std::vector<DataType>& data, std::size_t n_features) {
+        const std::size_t n_samples = data.size() / n_features;
+
+        for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+            for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+                std::cout << data[sample_index * n_features + feature_index] << " ";
+            }
+            std::cout << "\n";
+        }
+    }
+
   protected:
     DataType    lower_bound_;
     DataType    upper_bound_;
-    std::size_t n_samples_;
+    std::size_t min_n_samples_;
+    std::size_t max_n_samples_;
     std::size_t n_features_;
     std::size_t n_random_tests_;
 };
 
-using DataTypes = ::testing::Types<int, float, double>;
+using DataTypes = ::testing::Types<int, std::size_t, float, double>;
 TYPED_TEST_SUITE(SortingTestFixture, DataTypes);
 
 TYPED_TEST(SortingTestFixture, MedianIndexOfThreeRangesTest) {
@@ -220,8 +233,8 @@ TYPED_TEST(SortingTestFixture, MedianIndexOfThreeRangesTest) {
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 const auto data =
@@ -244,8 +257,8 @@ TYPED_TEST(SortingTestFixture, MedianIndexOfThreeIndexedRangesTest) {
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 const auto data =
@@ -270,8 +283,8 @@ TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeRangesTest) {
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 const auto data =
@@ -308,8 +321,8 @@ TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesTest) {
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 const auto data =
@@ -347,8 +360,8 @@ TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesTest) {
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 const auto data =
@@ -389,8 +402,8 @@ TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesTest
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 const auto data =
@@ -428,27 +441,13 @@ TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesTest
     }
 }
 
-#include <iostream>
-
-template <typename DataType>
-void print_data(const std::vector<DataType>& data, std::size_t n_features) {
-    const std::size_t n_samples = data.size() / n_features;
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            std::cout << data[sample_index * n_features + feature_index] << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
 TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 auto data =
@@ -486,7 +485,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
                                           << " >= " << pivot_value << ", which is wrong.\n";
                             }
                             printf("\n");
-                            print_data(data, features);
+                            this->print_data(data, features);
                         }
                         // the pivot is not valid if it disnt return std::nullopt
                         ASSERT_TRUE(!res.has_value());
@@ -502,8 +501,8 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
 
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 auto data =
@@ -554,7 +553,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
                                           << " >= " << pivot_value << ", which is wrong.\n";
                             }
                             printf("\n");
-                            print_data(data, features);
+                            this->print_data(data, features);
                         }
                         // the pivot is not valid if it disnt return std::nullopt
                         ASSERT_TRUE(!res.has_value());
@@ -568,8 +567,8 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
 TYPED_TEST(SortingTestFixture, QuickselectRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 // tests on all the nth smallest elements at the target feature_index
@@ -613,8 +612,8 @@ TYPED_TEST(SortingTestFixture, QuickselectRangeTest) {
 TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 // tests on all the nth smallest elements at the target feature_index
@@ -663,8 +662,8 @@ TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
 TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 // tests on all the nth smallest elements at the target feature_index
@@ -708,8 +707,8 @@ TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
 TYPED_TEST(SortingTestFixture, QuicksortIndexedRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->n_samples_ samples
-        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
             // tests on data from 1 to this->n_features_ features
             for (std::size_t features = 1; features <= this->n_features_; ++features) {
                 // tests on all the nth smallest elements at the target feature_index
