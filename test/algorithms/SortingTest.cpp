@@ -77,6 +77,7 @@ class SortingTestFixture : public ::testing::Test {
                                                                                             std::size_t  pivot_index,
                                                                                             std::size_t feature_index) {
         const std::size_t n_samples = common::utils::get_n_samples(element_first, element_last, n_features);
+
         if (pivot_index == 0 && n_samples == 1) {
             return std::nullopt;
         }
@@ -95,6 +96,41 @@ class SortingTestFixture : public ::testing::Test {
             // the values after the pivot at feature_index should be greater than or equal to the pivot
             if (after_pivot_value < pivot_value) {
                 return std::make_optional(std::make_pair(after_pivot_index, after_pivot_value));
+            }
+        }
+        return std::nullopt;
+    }
+
+    template <typename IteratorIntType, typename IteratorType>
+    std::optional<std::pair<std::size_t, typename IteratorType::value_type>> is_pivot_valid(IteratorIntType index_first,
+                                                                                            IteratorIntType index_last,
+                                                                                            IteratorType element_first,
+                                                                                            IteratorType element_last,
+                                                                                            std::size_t  n_features,
+                                                                                            std::size_t  pivot_index,
+                                                                                            std::size_t feature_index) {
+        common::utils::ignore_parameters(element_last);
+
+        const std::size_t n_samples = std::distance(index_first, index_last);
+
+        if (pivot_index == 0 && n_samples == 1) {
+            return std::nullopt;
+        }
+        const auto pivot_value = element_first[index_first[pivot_index] * n_features + feature_index];
+        // iterate over the elements before the pivot
+        for (std::size_t before_pivot_index = 0; before_pivot_index < pivot_index; ++before_pivot_index) {
+            const auto before_pivot_value = element_first[index_first[before_pivot_index] * n_features + feature_index];
+            // the values before the pivot at target_feature_index should be strictly less than the pivot
+            if (before_pivot_value >= pivot_value) {
+                return std::make_optional(std::make_pair(index_first[before_pivot_index], before_pivot_value));
+            }
+        }
+        // iterate over the elements after the pivot
+        for (std::size_t after_pivot_index = pivot_index + 1; after_pivot_index < n_samples; ++after_pivot_index) {
+            const auto after_pivot_value = element_first[index_first[after_pivot_index] * n_features + feature_index];
+            // the values after the pivot at feature_index should be greater than or equal to the pivot
+            if (after_pivot_value < pivot_value) {
+                return std::make_optional(std::make_pair(index_first[after_pivot_index], after_pivot_value));
             }
         }
         return std::nullopt;
@@ -646,6 +682,146 @@ TEST_F(SortingTestFixture, PartitionAroundNTHRangeFloatTest) {
                         // equal
                         const auto res =
                             is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
+
+                        // print only if is_pivot_valid returned values (meaning that its not valid)
+                        if (res.has_value()) {
+                            printf("n_samples: %ld, n_features: %ld\n", samples, features);
+                            printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
+
+                            const auto pivot_value = data[new_pivot_index * features + feature_index];
+
+                            const auto [not_pivot_index, not_pivot_value] = res.value();
+                            if (not_pivot_index < new_pivot_index) {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < "
+                                          << pivot_value << ", which is wrong.\n";
+
+                            } else {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value
+                                          << " >= " << pivot_value << ", which is wrong.\n";
+                            }
+                            printf("\n");
+                            print_data(data, features);
+                        }
+                        // the pivot is not valid if it disnt return std::nullopt
+                        ASSERT_TRUE(!res.has_value());
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeIntegerTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = int;
+
+    constexpr DataType lower_bound = -1;
+    constexpr DataType upper_bound = 1;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+                auto data_indices = generate_sorted_indices(samples);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    // check on all the possible pivot indices
+                    for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
+                        const auto new_pivot_index =
+                            ffcl::algorithms::partition_around_nth_indexed_range(data_indices.begin(),
+                                                                                 data_indices.end(),
+                                                                                 data.begin(),
+                                                                                 data.end(),
+                                                                                 features,
+                                                                                 pivot_index,
+                                                                                 feature_index);
+
+                        // the values before the pivot according to the feature_index dimension should be less
+                        // the values after the pivot according to the feature_index dimension should be greater or
+                        // equal
+                        const auto res = is_pivot_valid(data_indices.begin(),
+                                                        data_indices.end(),
+                                                        data.begin(),
+                                                        data.end(),
+                                                        features,
+                                                        new_pivot_index,
+                                                        feature_index);
+
+                        // print only if is_pivot_valid returned values (meaning that its not valid)
+                        if (res.has_value()) {
+                            printf("n_samples: %ld, n_features: %ld\n", samples, features);
+                            printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
+
+                            const auto pivot_value = data[new_pivot_index * features + feature_index];
+
+                            const auto [not_pivot_index, not_pivot_value] = res.value();
+                            if (not_pivot_index < new_pivot_index) {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < "
+                                          << pivot_value << ", which is wrong.\n";
+
+                            } else {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value
+                                          << " >= " << pivot_value << ", which is wrong.\n";
+                            }
+                            printf("\n");
+                            print_data(data, features);
+                        }
+                        // the pivot is not valid if it disnt return std::nullopt
+                        ASSERT_TRUE(!res.has_value());
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeFloatTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = float;
+
+    constexpr DataType lower_bound = -1;
+    constexpr DataType upper_bound = 1;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+                auto data_indices = generate_sorted_indices(samples);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    // check on all the possible pivot indices
+                    for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
+                        const auto new_pivot_index =
+                            ffcl::algorithms::partition_around_nth_indexed_range(data_indices.begin(),
+                                                                                 data_indices.end(),
+                                                                                 data.begin(),
+                                                                                 data.end(),
+                                                                                 features,
+                                                                                 pivot_index,
+                                                                                 feature_index);
+
+                        // the values before the pivot according to the feature_index dimension should be less
+                        // the values after the pivot according to the feature_index dimension should be greater or
+                        // equal
+                        const auto res = is_pivot_valid(data_indices.begin(),
+                                                        data_indices.end(),
+                                                        data.begin(),
+                                                        data.end(),
+                                                        features,
+                                                        new_pivot_index,
+                                                        feature_index);
 
                         // print only if is_pivot_valid returned values (meaning that its not valid)
                         if (res.has_value()) {
