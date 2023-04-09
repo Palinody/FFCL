@@ -129,15 +129,15 @@ std::tuple<std::size_t,
            IteratorPairType<RandomAccessIterator>>
 quickselect_median_range(IteratorPairType<RandomAccessIterator> iterator_pair,
                          std::size_t                            n_features,
-                         std::size_t                            comparison_feature_index) {
-    assert(comparison_feature_index < n_features);
+                         std::size_t                            feature_index) {
+    assert(feature_index < n_features);
 
     const auto [samples_first, samples_last] = iterator_pair;
 
     const auto median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
 
-    const auto median_range = ffcl::algorithms::quickselect_range(
-        samples_first, samples_last, n_features, median_index, comparison_feature_index);
+    const auto median_range =
+        ffcl::algorithms::quickselect_range(samples_first, samples_last, n_features, median_index, feature_index);
     // all the points at the left of the pivot point
     const auto left_range = std::make_pair(samples_first, samples_first + median_index * n_features);
 

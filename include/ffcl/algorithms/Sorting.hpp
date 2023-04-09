@@ -12,7 +12,7 @@ template <typename RandomAccessIterator>
 std::size_t median_index_of_three_ranges(RandomAccessIterator first,
                                          RandomAccessIterator last,
                                          std::size_t          n_features,
-                                         std::size_t          comparison_feature_index) {
+                                         std::size_t          feature_index) {
     const std::size_t n_samples    = common::utils::get_n_samples(first, last, n_features);
     std::size_t       middle_index = n_samples / 2;
 
@@ -22,16 +22,13 @@ std::size_t median_index_of_three_ranges(RandomAccessIterator first,
     std::size_t left_index  = 0;
     std::size_t right_index = n_samples - 1;
 
-    if (first[middle_index * n_features + comparison_feature_index] <
-        first[left_index * n_features + comparison_feature_index]) {
+    if (first[middle_index * n_features + feature_index] < first[left_index * n_features + feature_index]) {
         std::swap(middle_index, left_index);
     }
-    if (first[right_index * n_features + comparison_feature_index] <
-        first[left_index * n_features + comparison_feature_index]) {
+    if (first[right_index * n_features + feature_index] < first[left_index * n_features + feature_index]) {
         std::swap(right_index, left_index);
     }
-    if (first[middle_index * n_features + comparison_feature_index] <
-        first[right_index * n_features + comparison_feature_index]) {
+    if (first[middle_index * n_features + feature_index] < first[right_index * n_features + feature_index]) {
         std::swap(middle_index, right_index);
     }
     return right_index;
@@ -43,7 +40,7 @@ std::size_t median_index_of_three_indexed_ranges(RandomAccessIntIterator index_f
                                                  RandomAccessIterator    first,
                                                  RandomAccessIterator    last,
                                                  std::size_t             n_features,
-                                                 std::size_t             comparison_feature_index) {
+                                                 std::size_t             feature_index) {
     common::utils::ignore_parameters(last);
 
     const std::size_t n_samples    = std::distance(index_first, index_last);
@@ -55,28 +52,27 @@ std::size_t median_index_of_three_indexed_ranges(RandomAccessIntIterator index_f
     std::size_t left_index  = 0;
     std::size_t right_index = n_samples - 1;
 
-    if (first[index_first[middle_index] * n_features + comparison_feature_index] <
-        first[index_first[left_index] * n_features + comparison_feature_index]) {
+    if (first[index_first[middle_index] * n_features + feature_index] <
+        first[index_first[left_index] * n_features + feature_index]) {
         std::swap(middle_index, left_index);
     }
-    if (first[index_first[right_index] * n_features + comparison_feature_index] <
-        first[index_first[left_index] * n_features + comparison_feature_index]) {
+    if (first[index_first[right_index] * n_features + feature_index] <
+        first[index_first[left_index] * n_features + feature_index]) {
         std::swap(right_index, left_index);
     }
-    if (first[index_first[middle_index] * n_features + comparison_feature_index] <
-        first[index_first[right_index] * n_features + comparison_feature_index]) {
+    if (first[index_first[middle_index] * n_features + feature_index] <
+        first[index_first[right_index] * n_features + feature_index]) {
         std::swap(middle_index, right_index);
     }
     return right_index;
 }
 
 template <typename RandomAccessIterator>
-std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_three_ranges(
-    RandomAccessIterator first,
-    RandomAccessIterator last,
-    std::size_t          n_features,
-    std::size_t          comparison_feature_index) {
-    const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, comparison_feature_index);
+std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_three_ranges(RandomAccessIterator first,
+                                                                                          RandomAccessIterator last,
+                                                                                          std::size_t n_features,
+                                                                                          std::size_t feature_index) {
+    const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, feature_index);
 
     return {first + median_index * n_features, first + median_index * n_features + n_features};
 }
@@ -88,9 +84,9 @@ std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_thr
     RandomAccessIterator    first,
     RandomAccessIterator    last,
     std::size_t             n_features,
-    std::size_t             comparison_feature_index) {
-    const std::size_t median_index = median_index_of_three_indexed_ranges(
-        index_first, index_last, first, last, n_features, comparison_feature_index);
+    std::size_t             feature_index) {
+    const std::size_t median_index =
+        median_index_of_three_indexed_ranges(index_first, index_last, first, last, n_features, feature_index);
 
     return {first + index_first[median_index] * n_features,
             first + index_first[median_index] * n_features + n_features};
@@ -101,8 +97,8 @@ std::pair<std::size_t, std::pair<RandomAccessIterator, RandomAccessIterator>>
 median_index_and_values_range_of_three_ranges(RandomAccessIterator first,
                                               RandomAccessIterator last,
                                               std::size_t          n_features,
-                                              std::size_t          comparison_feature_index) {
-    const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, comparison_feature_index);
+                                              std::size_t          feature_index) {
+    const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, feature_index);
 
     return {median_index, {first + median_index * n_features, first + median_index * n_features + n_features}};
 }
@@ -114,9 +110,9 @@ median_index_and_values_range_of_three_indexed_ranges(RandomAccessIntIterator in
                                                       RandomAccessIterator    first,
                                                       RandomAccessIterator    last,
                                                       std::size_t             n_features,
-                                                      std::size_t             comparison_feature_index) {
-    const std::size_t median_index = median_index_of_three_indexed_ranges(
-        index_first, index_last, first, last, n_features, comparison_feature_index);
+                                                      std::size_t             feature_index) {
+    const std::size_t median_index =
+        median_index_of_three_indexed_ranges(index_first, index_last, first, last, n_features, feature_index);
 
     return {
         median_index,
@@ -133,7 +129,7 @@ std::size_t partition_around_nth_range(RandomAccessIterator first,
                                        RandomAccessIterator last,
                                        std::size_t          n_features,
                                        std::size_t          pivot_index,
-                                       std::size_t          comparison_feature_index) {
+                                       std::size_t          feature_index) {
     // no op if the input contains only one feature vector
     if (std::distance(first, last) == static_cast<std::ptrdiff_t>(n_features)) {
         return pivot_index;
@@ -146,13 +142,11 @@ std::size_t partition_around_nth_range(RandomAccessIterator first,
     while (true) {
         do {
             ++left_index;
-        } while (first[left_index * n_features + comparison_feature_index] <
-                 first[pivot_index * n_features + comparison_feature_index]);
+        } while (first[left_index * n_features + feature_index] < first[pivot_index * n_features + feature_index]);
 
         do {
             --right_index;
-        } while (first[pivot_index * n_features + comparison_feature_index] <
-                 first[right_index * n_features + comparison_feature_index]);
+        } while (first[pivot_index * n_features + feature_index] < first[right_index * n_features + feature_index]);
 
         // the partitioning is done if the left and right indices cross
         if (left_index >= right_index) {
@@ -184,7 +178,7 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
                                                RandomAccessIterator    last,
                                                std::size_t             n_features,
                                                std::size_t             pivot_index,
-                                               std::size_t             comparison_feature_index) {
+                                               std::size_t             feature_index) {
     static_assert(std::is_integral_v<typename RandomAccessIntIterator::value_type>, "Index input should be integral.");
 
     common::utils::ignore_parameters(last);
@@ -201,13 +195,13 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
     while (true) {
         do {
             ++left_index;
-        } while (first[index_first[left_index] * n_features + comparison_feature_index] <
-                 first[index_first[pivot_index] * n_features + comparison_feature_index]);
+        } while (first[index_first[left_index] * n_features + feature_index] <
+                 first[index_first[pivot_index] * n_features + feature_index]);
 
         do {
             --right_index;
-        } while (first[index_first[pivot_index] * n_features + comparison_feature_index] <
-                 first[index_first[right_index] * n_features + comparison_feature_index]);
+        } while (first[index_first[pivot_index] * n_features + feature_index] <
+                 first[index_first[right_index] * n_features + feature_index]);
 
         // the partitioning is done if the left and right indices cross
         if (left_index >= right_index) {
@@ -238,7 +232,7 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAc
                                                                         RandomAccessIterator last,
                                                                         std::size_t          n_features,
                                                                         std::size_t          kth_smallest,
-                                                                        std::size_t          comparison_feature_index) {
+                                                                        std::size_t          feature_index) {
     std::size_t left_index  = 0;
     std::size_t right_index = common::utils::get_n_samples(first, last, n_features) - 1;
 
@@ -246,10 +240,8 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAc
         if (left_index == right_index) {
             return {first + left_index * n_features, first + right_index * n_features + n_features};
         }
-        std::size_t pivot_index = median_index_of_three_ranges(first + left_index * n_features,
-                                                               first + right_index * n_features + n_features,
-                                                               n_features,
-                                                               comparison_feature_index);
+        std::size_t pivot_index = median_index_of_three_ranges(
+            first + left_index * n_features, first + right_index * n_features + n_features, n_features, feature_index);
 
         // partition the range around the pivot, which has moved to its sorted index. The pivot index is relative to the
         // left_index, so to get its absolute index, we need to shift it by the same amount
@@ -257,7 +249,7 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAc
                                                               first + right_index * n_features + n_features,
                                                               n_features,
                                                               pivot_index,
-                                                              comparison_feature_index);
+                                                              feature_index);
 
         if (kth_smallest == pivot_index) {
             return {first + pivot_index * n_features, first + pivot_index * n_features + n_features};
@@ -278,7 +270,7 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_indexed_range(
                                                                                 RandomAccessIterator    last,
                                                                                 std::size_t             n_features,
                                                                                 std::size_t             kth_smallest,
-                                                                                std::size_t comparison_feature_index) {
+                                                                                std::size_t             feature_index) {
     std::size_t left_index  = 0;
     std::size_t right_index = std::distance(index_first, index_last) - 1;
 
@@ -288,7 +280,7 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_indexed_range(
                     first + index_first[right_index] * n_features + n_features};
         }
         std::size_t pivot_index = median_index_of_three_indexed_ranges(
-            index_first + left_index, index_first + right_index + 1, first, last, n_features, comparison_feature_index);
+            index_first + left_index, index_first + right_index + 1, first, last, n_features, feature_index);
 
         // partition the range around the pivot, which has moved to its sorted index. The pivot index is relative to the
         // left_index, so to get its absolute index, we need to shift it by the same amount
@@ -298,7 +290,7 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_indexed_range(
                                                                       last,
                                                                       n_features,
                                                                       pivot_index,
-                                                                      comparison_feature_index);
+                                                                      feature_index);
 
         if (kth_smallest == pivot_index) {
             return {first + index_first[pivot_index] * n_features,
@@ -321,7 +313,7 @@ std::size_t quicksort_range(RandomAccessIterator first,
                             RandomAccessIterator last,
                             std::size_t          n_features,
                             std::size_t          initial_pivot_index,
-                            std::size_t          comparison_feature_index) {
+                            std::size_t          feature_index) {
     const std::size_t n_samples = common::utils::get_n_samples(first, last, n_features);
 
     // the pivot index is already correct if the number of samples is 0 or 1
@@ -330,15 +322,15 @@ std::size_t quicksort_range(RandomAccessIterator first,
     }
     // partial sort ranges around new pivot index
     const std::size_t new_pivot_index =
-        partition_around_nth_range(first, last, n_features, initial_pivot_index, comparison_feature_index);
+        partition_around_nth_range(first, last, n_features, initial_pivot_index, feature_index);
 
     // compute the median of the subranges
 
     std::size_t pivot_index_subrange_left =
-        median_index_of_three_ranges(first, first + new_pivot_index * n_features, n_features, comparison_feature_index);
+        median_index_of_three_ranges(first, first + new_pivot_index * n_features, n_features, feature_index);
 
     std::size_t pivot_index_subrange_right = median_index_of_three_ranges(
-        first + new_pivot_index * n_features + n_features, last, n_features, comparison_feature_index);
+        first + new_pivot_index * n_features + n_features, last, n_features, feature_index);
 
     // the pivot range is included in the left subrange
 
@@ -346,13 +338,13 @@ std::size_t quicksort_range(RandomAccessIterator first,
                     /*last iterator, left subrange*/ first + new_pivot_index * n_features,
                     n_features,
                     pivot_index_subrange_left,
-                    comparison_feature_index);
+                    feature_index);
 
     quicksort_range(/*first iterator, right subrange*/ first + new_pivot_index * n_features + n_features,
                     /*last iterator, right subrange*/ last,
                     n_features,
                     pivot_index_subrange_right,
-                    comparison_feature_index);
+                    feature_index);
 
     return new_pivot_index;
 }
@@ -364,7 +356,7 @@ std::size_t quicksort_indexed_range(RandomAccessIntIterator index_first,
                                     RandomAccessIterator    last,
                                     std::size_t             n_features,
                                     std::size_t             initial_pivot_index,
-                                    std::size_t             comparison_feature_index) {
+                                    std::size_t             feature_index) {
     const std::size_t n_samples = std::distance(index_first, index_last);
 
     // the pivot index is already correct if the number of samples is 0 or 1
@@ -373,15 +365,15 @@ std::size_t quicksort_indexed_range(RandomAccessIntIterator index_first,
     }
     // partial sort ranges around new pivot index
     const std::size_t new_pivot_index = partition_around_nth_indexed_range(
-        index_first, index_last, first, last, n_features, initial_pivot_index, comparison_feature_index);
+        index_first, index_last, first, last, n_features, initial_pivot_index, feature_index);
 
     // compute the median of the subranges
 
     std::size_t pivot_index_subrange_left = median_index_of_three_indexed_ranges(
-        index_first, index_first + new_pivot_index, first, last, n_features, comparison_feature_index);
+        index_first, index_first + new_pivot_index, first, last, n_features, feature_index);
 
     std::size_t pivot_index_subrange_right = median_index_of_three_indexed_ranges(
-        index_first + new_pivot_index + 1, index_last, first, last, n_features, comparison_feature_index);
+        index_first + new_pivot_index + 1, index_last, first, last, n_features, feature_index);
 
     // the pivot range is included in the left subrange
 
@@ -391,7 +383,7 @@ std::size_t quicksort_indexed_range(RandomAccessIntIterator index_first,
                             /*last iterator, left subrange*/ last,
                             n_features,
                             pivot_index_subrange_left,
-                            comparison_feature_index);
+                            feature_index);
 
     quicksort_indexed_range(index_first + new_pivot_index + 1,
                             index_last,
@@ -399,7 +391,7 @@ std::size_t quicksort_indexed_range(RandomAccessIntIterator index_first,
                             /*last iterator, right subrange*/ last,
                             n_features,
                             pivot_index_subrange_right,
-                            comparison_feature_index);
+                            feature_index);
 
     return new_pivot_index;
 }

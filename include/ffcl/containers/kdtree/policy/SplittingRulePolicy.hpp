@@ -14,7 +14,7 @@ struct SplittingRulePolicy {
                        IteratorPairType<RandomAccessIterator>>
     operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
                std::size_t                            n_features,
-               std::size_t                            comparison_feature_index) const = 0;
+               std::size_t                            feature_index) const = 0;
 
   private:
     SplittingRulePolicy(const SplittingRulePolicy&) = delete;
@@ -30,7 +30,7 @@ struct QuickselectMedianRange : public SplittingRulePolicy<RandomAccessIterator>
                IteratorPairType<RandomAccessIterator>>
     operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
                std::size_t                            n_features,
-               std::size_t                            comparison_feature_index) const override;
+               std::size_t                            feature_index) const override;
 };
 
 }  // namespace kdtree::policy
@@ -44,8 +44,8 @@ std::tuple<std::size_t,
            IteratorPairType<RandomAccessIterator>>
 QuickselectMedianRange<RandomAccessIterator>::operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
                                                          std::size_t                            n_features,
-                                                         std::size_t comparison_feature_index) const {
-    return kdtree::utils::quickselect_median_range(iterator_pair, n_features, comparison_feature_index);
+                                                         std::size_t                            feature_index) const {
+    return kdtree::utils::quickselect_median_range(iterator_pair, n_features, feature_index);
 }
 
 }  // namespace kdtree::policy

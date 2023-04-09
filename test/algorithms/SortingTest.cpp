@@ -4,15 +4,35 @@
 #include "gtest/gtest.h"
 
 #include <algorithm>
+#include <limits>
 #include <optional>
 #include <vector>
 
 #include <iostream>
 #include <random>
 
+template <typename DataType>
 class SortingTestFixture : public ::testing::Test {
+  public:
+    void SetUp() override {
+        if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
+            lower_bound_ = std::numeric_limits<DataType>::min();
+            upper_bound_ = std::numeric_limits<DataType>::max();
+
+        } else if constexpr (std::is_integral_v<DataType> && std::is_unsigned_v<DataType>) {
+            lower_bound_ = 0;
+            upper_bound_ = std::numeric_limits<DataType>::max();
+
+        } else if constexpr (std::is_floating_point_v<DataType>) {
+            lower_bound_ = std::numeric_limits<DataType>::lowest();
+            upper_bound_ = std::numeric_limits<DataType>::max();
+        }
+        n_samples_      = 10;
+        n_features_     = 3;
+        n_random_tests_ = 10;
+    }
+
   protected:
-    template <typename DataType>
     std::vector<DataType> generate_random_uniform_vector(std::size_t n_rows,
                                                          std::size_t n_cols,
                                                          DataType    lower_bound,
@@ -31,14 +51,18 @@ class SortingTestFixture : public ::testing::Test {
         return result;
     }
 
-    template <typename DataType = std::size_t>
+    std::vector<std::size_t> generate_indices(std::size_t n_samples) {
+        std::vector<std::size_t> elements(n_samples);
+        std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
+        return elements;
+    }
+
     std::vector<DataType> generate_ascending_elements_array(std::size_t n_samples) {
         std::vector<DataType> elements(n_samples);
         std::iota(elements.begin(), elements.end(), static_cast<DataType>(0));
         return elements;
     }
 
-    template <typename DataType = std::size_t>
     std::vector<DataType> generate_descending_elements_array(std::size_t n_samples) {
         std::vector<DataType> elements(n_samples);
         std::iota(elements.rbegin(), elements.rend(), static_cast<DataType>(0));
@@ -144,25 +168,64 @@ class SortingTestFixture : public ::testing::Test {
         return std::nullopt;
     }
 
-    static constexpr std::size_t n_samples_      = 10;
-    static constexpr std::size_t n_features_     = 3;
-    static constexpr std::size_t n_random_tests_ = 10;
+    template <typename IteratorType>
+    std::vector<typename IteratorType::value_type> shuffle_by_row(IteratorType element_first,
+                                                                  IteratorType element_last,
+                                                                  std::size_t  n_features) {
+        const std::size_t n_samples = common::utils::get_n_samples(element_first, element_last, n_features);
+
+        std::vector<std::size_t> indices(n_samples);
+        std::iota(indices.begin(), indices.end(), static_cast<DataType>(0));
+
+        std::shuffle(indices.begin(), indices.end(), std::mt19937{std::random_device{}()});
+
+        return this->remap_dataset(indices.begin(), indices.end(), element_first, element_last, n_features);
+    }
+
+    template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+    std::vector<typename RandomAccessIterator::value_type> remap_dataset(RandomAccessIntIterator index_first,
+                                                                         RandomAccessIntIterator index_last,
+                                                                         RandomAccessIterator    first,
+                                                                         RandomAccessIterator    last,
+                                                                         std::size_t             n_features) {
+        const auto n_samples = common::utils::get_n_samples(first, last, n_features);
+
+        assert(static_cast<std::ptrdiff_t>(n_samples) == std::distance(index_first, index_last));
+
+        common::utils::ignore_parameters(index_last);
+
+        auto remapped_flattened_vector = std::vector<typename RandomAccessIterator::value_type>(n_samples * n_features);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            std::copy(first + index_first[index] * n_features,
+                      first + index_first[index] * n_features + n_features,
+                      remapped_flattened_vector.begin() + index * n_features);
+        }
+        return remapped_flattened_vector;
+    }
+
+  protected:
+    DataType    lower_bound_;
+    DataType    upper_bound_;
+    std::size_t n_samples_;
+    std::size_t n_features_;
+    std::size_t n_random_tests_;
 };
 
-TEST_F(SortingTestFixture, MedianIndexOfThreeRangesIntegerTest) {
-    // index has to be either 0, median or last index
-    using DataType = int;
+using DataTypes = ::testing::Types<int, float, double>;
+TYPED_TEST_SUITE(SortingTestFixture, DataTypes);
 
-    constexpr DataType lower_bound = -10;
-    constexpr DataType upper_bound = 10;
+TYPED_TEST(SortingTestFixture, MedianIndexOfThreeRangesTest) {
+    // index has to be either 0, median or last index
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -176,53 +239,24 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeRangesIntegerTest) {
     }
 }
 
-TEST_F(SortingTestFixture, MedianIndexOfThreeRangesFloatTest) {
+TYPED_TEST(SortingTestFixture, MedianIndexOfThreeIndexedRangesTest) {
     // index has to be either 0, median or last index
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto index = ffcl::algorithms::median_index_of_three_ranges(
-                        data.begin(), data.end(), features, feature_index);
+                const auto data_indices = this->generate_indices(samples);
 
-                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
-                }
-            }
-        }
-    }
-}
-
-TEST_F(SortingTestFixture, MedianIndexOfThreeIndexedRangesIntegerTest) {
-    // index has to be either 0, median or last index
-    using DataType = int;
-
-    constexpr DataType lower_bound = -10;
-    constexpr DataType upper_bound = 10;
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto indices = generate_ascending_elements_array(samples);
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-
-                // test on all the possible feature indices
+                // test on all the possible feature data_indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
                     const auto index = ffcl::algorithms::median_index_of_three_indexed_ranges(
-                        indices.begin(), indices.end(), data.begin(), data.end(), features, feature_index);
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
                 }
@@ -231,48 +265,17 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeIndexedRangesIntegerTest) {
     }
 }
 
-TEST_F(SortingTestFixture, MedianIndexOfThreeIndexedRangesFloatTest) {
-    // index has to be either 0, median or last index
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto indices = generate_ascending_elements_array(samples);
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto index = ffcl::algorithms::median_index_of_three_indexed_ranges(
-                        indices.begin(), indices.end(), data.begin(), data.end(), features, feature_index);
-
-                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
-                }
-            }
-        }
-    }
-}
-
-TEST_F(SortingTestFixture, MedianValuesRangeOfThreeRangesIntegerTest) {
+TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeRangesTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = int;
-
-    constexpr DataType lower_bound = -10;
-    constexpr DataType upper_bound = 10;
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -280,78 +283,38 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeRangesIntegerTest) {
                         data.begin(), data.end(), features, feature_index);
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
+                        this->get_range_at_row(data.begin(), data.end(), features, 0);
 
                     const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples / 2);
 
                     const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples - 1);
 
                     ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                        this->ranges_equality(
+                            row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        this->ranges_equality(
+                            row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        this->ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
                 }
             }
         }
     }
 }
 
-TEST_F(SortingTestFixture, MedianValuesRangeOfThreeRangesFloatTest) {
+TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_ranges(
-                        data.begin(), data.end(), features, feature_index);
-
-                    const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
-
-                    const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
-
-                    const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
-
-                    ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
-                }
-            }
-        }
-    }
-}
-
-TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesIntegerTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = int;
-
-    constexpr DataType lower_bound = -10;
-    constexpr DataType upper_bound = 10;
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_ascending_elements_array(samples);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
+                const auto data_indices = this->generate_indices(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -359,78 +322,37 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesIntegerTest) {
                         data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
+                        this->get_range_at_row(data.begin(), data.end(), features, 0);
 
                     const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples / 2);
 
                     const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples - 1);
 
                     ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                        this->ranges_equality(
+                            row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        this->ranges_equality(
+                            row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        this->ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
                 }
             }
         }
     }
 }
 
-TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesFloatTest) {
+TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_ascending_elements_array(samples);
-
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_indexed_ranges(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
-
-                    const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
-
-                    const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
-
-                    const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
-
-                    ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
-                }
-            }
-        }
-    }
-}
-
-TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesIntegerTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = int;
-
-    constexpr DataType lower_bound = -10;
-    constexpr DataType upper_bound = 10;
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -440,84 +362,41 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesIntegerTest) {
                     const auto [row_first, row_last] = range;
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
+                        this->get_range_at_row(data.begin(), data.end(), features, 0);
 
                     const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples / 2);
 
                     const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples - 1);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
 
                     ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                        this->ranges_equality(
+                            row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        this->ranges_equality(
+                            row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        this->ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
                 }
             }
         }
     }
 }
 
-TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesFloatTest) {
+TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_ranges(
-                        data.begin(), data.end(), features, feature_index);
-
-                    const auto [row_first, row_last] = range;
-
-                    const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
-
-                    const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
-
-                    const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
-
-                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
-
-                    ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
-                }
-            }
-        }
-    }
-}
-
-TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesIntegerTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = int;
-
-    constexpr DataType lower_bound = -10;
-    constexpr DataType upper_bound = 10;
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_ascending_elements_array(samples);
+                const auto data_indices = this->generate_indices(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -527,64 +406,22 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesIntegerT
                     const auto [row_first, row_last] = range;
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
+                        this->get_range_at_row(data.begin(), data.end(), features, 0);
 
                     const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples / 2);
 
                     const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
+                        this->get_range_at_row(data.begin(), data.end(), features, samples - 1);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
 
                     ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
-                }
-            }
-        }
-    }
-}
-
-TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesFloatTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_ascending_elements_array(samples);
-
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_indexed_ranges(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
-
-                    const auto [row_first, row_last] = range;
-
-                    const auto [first_row_candidate_first, first_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, 0);
-
-                    const auto [median_row_candidate_first, median_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples / 2);
-
-                    const auto [last_row_candidate_first, last_row_candidate_last] =
-                        get_range_at_row(data.begin(), data.end(), features, samples - 1);
-
-                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
-
-                    ASSERT_TRUE(
-                        ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                        this->ranges_equality(
+                            row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
+                        this->ranges_equality(
+                            row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
+                        this->ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
                 }
             }
         }
@@ -605,20 +442,17 @@ void print_data(const std::vector<DataType>& data, std::size_t n_features) {
     }
 }
 
-TEST_F(SortingTestFixture, PartitionAroundNTHRangeIntegerTest) {
+TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = int;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -631,9 +465,9 @@ TEST_F(SortingTestFixture, PartitionAroundNTHRangeIntegerTest) {
                         // the values after the pivot according to the feature_index dimension should be greater or
                         // equal
                         const auto res =
-                            is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
+                            this->is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
 
-                        // print only if is_pivot_valid returned values (meaning that its not valid)
+                        // print only if this->is_pivot_valid returned values (meaning that its not valid)
                         if (res.has_value()) {
                             printf("n_samples: %ld, n_features: %ld\n", samples, features);
                             printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
@@ -663,79 +497,19 @@ TEST_F(SortingTestFixture, PartitionAroundNTHRangeIntegerTest) {
     }
 }
 
-TEST_F(SortingTestFixture, PartitionAroundNTHRangeFloatTest) {
+TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
 
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    // check on all the possible pivot indices
-                    for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
-                        const auto new_pivot_index = ffcl::algorithms::partition_around_nth_range(
-                            data.begin(), data.end(), features, pivot_index, feature_index);
-
-                        // the values before the pivot according to the feature_index dimension should be less
-                        // the values after the pivot according to the feature_index dimension should be greater or
-                        // equal
-                        const auto res =
-                            is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
-
-                        // print only if is_pivot_valid returned values (meaning that its not valid)
-                        if (res.has_value()) {
-                            printf("n_samples: %ld, n_features: %ld\n", samples, features);
-                            printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
-
-                            const auto pivot_value = data[new_pivot_index * features + feature_index];
-
-                            const auto [not_pivot_index, not_pivot_value] = res.value();
-                            if (not_pivot_index < new_pivot_index) {
-                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
-                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < "
-                                          << pivot_value << ", which is wrong.\n";
-
-                            } else {
-                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
-                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value
-                                          << " >= " << pivot_value << ", which is wrong.\n";
-                            }
-                            printf("\n");
-                            print_data(data, features);
-                        }
-                        // the pivot is not valid if it disnt return std::nullopt
-                        ASSERT_TRUE(!res.has_value());
-                    }
-                }
-            }
-        }
-    }
-}
-
-TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeIntegerTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = int;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                auto data_indices = generate_ascending_elements_array(samples);
+                auto data_indices = this->generate_indices(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -753,15 +527,15 @@ TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeIntegerTest) {
                         // the values before the pivot according to the feature_index dimension should be less
                         // the values after the pivot according to the feature_index dimension should be greater or
                         // equal
-                        const auto res = is_pivot_valid(data_indices.begin(),
-                                                        data_indices.end(),
-                                                        data.begin(),
-                                                        data.end(),
-                                                        features,
-                                                        new_pivot_index,
-                                                        feature_index);
+                        const auto res = this->is_pivot_valid(data_indices.begin(),
+                                                              data_indices.end(),
+                                                              data.begin(),
+                                                              data.end(),
+                                                              features,
+                                                              new_pivot_index,
+                                                              feature_index);
 
-                        // print only if is_pivot_valid returned values (meaning that its not valid)
+                        // print only if this->is_pivot_valid returned values (meaning that its not valid)
                         if (res.has_value()) {
                             printf("n_samples: %ld, n_features: %ld\n", samples, features);
                             printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
@@ -791,69 +565,197 @@ TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeIntegerTest) {
     }
 }
 
-TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeFloatTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-    using DataType = float;
-
-    constexpr DataType lower_bound = -1;
-    constexpr DataType upper_bound = 1;
-
+TYPED_TEST(SortingTestFixture, QuickselectRangeTest) {
     // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
-        // tests on data from 1 to n_samples_ samples
-        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
-            // tests on data from 1 to n_features_ features
-            for (std::size_t features = 1; features <= n_features_; ++features) {
-                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                auto data_indices = generate_ascending_elements_array(samples);
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                // tests on all the nth smallest elements at the target feature_index
+                for (std::size_t kth_smallest_index = 0; kth_smallest_index < samples; ++kth_smallest_index) {
+                    // test on all the possible feature indices
+                    for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                        auto ascending_elements_array = this->generate_ascending_elements_array(samples * features);
 
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    // check on all the possible pivot indices
-                    for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
+                        auto shuffled_ascending_elements_array = this->shuffle_by_row(
+                            ascending_elements_array.begin(), ascending_elements_array.end(), features);
+
+                        const auto [kth_smallest_begin, kth_smallest_end] =
+                            ffcl::algorithms::quickselect_range(shuffled_ascending_elements_array.begin(),
+                                                                shuffled_ascending_elements_array.end(),
+                                                                features,
+                                                                kth_smallest_index,
+                                                                feature_index);
+
+                        // the range returned from quickselect should be the same as in the sorted dataset at index
+                        // kth_smallest_index
+                        ASSERT_TRUE(this->ranges_equality(
+                            kth_smallest_begin,
+                            kth_smallest_end,
+                            ascending_elements_array.begin() + kth_smallest_index * features,
+                            ascending_elements_array.begin() + kth_smallest_index * features + features));
+
+                        // also check that the range at kth_smallest_index in shuffled_ascending_elements_array is
+                        // correct since the implementation is inplace
+                        ASSERT_TRUE(this->ranges_equality(
+                            shuffled_ascending_elements_array.begin() + kth_smallest_index * features,
+                            shuffled_ascending_elements_array.begin() + kth_smallest_index * features + features,
+                            ascending_elements_array.begin() + kth_smallest_index * features,
+                            ascending_elements_array.begin() + kth_smallest_index * features + features));
+                    }
+                }
+            }
+        }
+    }
+}
+
+TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                // tests on all the nth smallest elements at the target feature_index
+                for (std::size_t kth_smallest_index = 0; kth_smallest_index < samples; ++kth_smallest_index) {
+                    // test on all the possible feature indices
+                    for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                        auto ascending_elements_array = this->generate_ascending_elements_array(samples * features);
+
+                        auto data_indices = this->generate_indices(samples);
+
+                        auto shuffled_ascending_elements_array = this->shuffle_by_row(
+                            ascending_elements_array.begin(), ascending_elements_array.end(), features);
+
+                        const auto [kth_smallest_begin, kth_smallest_end] =
+                            ffcl::algorithms::quickselect_indexed_range(data_indices.begin(),
+                                                                        data_indices.end(),
+                                                                        shuffled_ascending_elements_array.begin(),
+                                                                        shuffled_ascending_elements_array.end(),
+                                                                        features,
+                                                                        kth_smallest_index,
+                                                                        feature_index);
+
+                        // the range returned from quickselect should be the same as in the sorted dataset at index
+                        // kth_smallest_index
+                        ASSERT_TRUE(this->ranges_equality(
+                            kth_smallest_begin,
+                            kth_smallest_end,
+                            ascending_elements_array.begin() + kth_smallest_index * features,
+                            ascending_elements_array.begin() + kth_smallest_index * features + features));
+
+                        // also check that the indices at kth_smallest_index are mapping to the correct range in the
+                        // original dataset
+                        ASSERT_TRUE(this->ranges_equality(
+                            shuffled_ascending_elements_array.begin() + data_indices[kth_smallest_index] * features,
+                            shuffled_ascending_elements_array.begin() + data_indices[kth_smallest_index] * features +
+                                features,
+                            ascending_elements_array.begin() + kth_smallest_index * features,
+                            ascending_elements_array.begin() + kth_smallest_index * features + features));
+                    }
+                }
+            }
+        }
+    }
+}
+
+TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                // tests on all the nth smallest elements at the target feature_index
+                for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
+                    // test on all the possible feature indices
+                    for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                        auto ascending_elements_array = this->generate_ascending_elements_array(samples * features);
+
+                        auto shuffled_ascending_elements_array = this->shuffle_by_row(
+                            ascending_elements_array.begin(), ascending_elements_array.end(), features);
+
+                        // new_pivot_index indicates where the original pivot has moved after quicksort
                         const auto new_pivot_index =
-                            ffcl::algorithms::partition_around_nth_indexed_range(data_indices.begin(),
-                                                                                 data_indices.end(),
-                                                                                 data.begin(),
-                                                                                 data.end(),
-                                                                                 features,
-                                                                                 pivot_index,
-                                                                                 feature_index);
+                            ffcl::algorithms::quicksort_range(shuffled_ascending_elements_array.begin(),
+                                                              shuffled_ascending_elements_array.end(),
+                                                              features,
+                                                              pivot_index,
+                                                              feature_index);
 
-                        // the values before the pivot according to the feature_index dimension should be less
-                        // the values after the pivot according to the feature_index dimension should be greater or
-                        // equal
-                        const auto res = is_pivot_valid(data_indices.begin(),
-                                                        data_indices.end(),
-                                                        data.begin(),
-                                                        data.end(),
-                                                        features,
-                                                        new_pivot_index,
-                                                        feature_index);
+                        // the data sorted by quickselect should now be the same as the original dataset
+                        // shuffled_ascending_elements_array has been sorted inplace by quicksort
+                        ASSERT_TRUE(this->ranges_equality(shuffled_ascending_elements_array.begin(),
+                                                          shuffled_ascending_elements_array.end(),
+                                                          ascending_elements_array.begin(),
+                                                          ascending_elements_array.end()));
 
-                        // print only if is_pivot_valid returned values (meaning that its not valid)
-                        if (res.has_value()) {
-                            printf("n_samples: %ld, n_features: %ld\n", samples, features);
-                            printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
+                        // the data at new_pivot_index in the shuffled dataset sorted by quickselect should be equal to
+                        // the original dataset
+                        ASSERT_TRUE(this->ranges_equality(
+                            shuffled_ascending_elements_array.begin() + new_pivot_index * features,
+                            shuffled_ascending_elements_array.begin() + new_pivot_index * features + features,
+                            ascending_elements_array.begin() + new_pivot_index * features,
+                            ascending_elements_array.begin() + new_pivot_index * features + features));
+                    }
+                }
+            }
+        }
+    }
+}
 
-                            const auto pivot_value = data[new_pivot_index * features + feature_index];
+TYPED_TEST(SortingTestFixture, QuicksortIndexedRangeTest) {
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->n_samples_ samples
+        for (std::size_t samples = 1; samples <= this->n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                // tests on all the nth smallest elements at the target feature_index
+                for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
+                    // test on all the possible feature indices
+                    for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                        auto ascending_elements_array = this->generate_ascending_elements_array(samples * features);
 
-                            const auto [not_pivot_index, not_pivot_value] = res.value();
-                            if (not_pivot_index < new_pivot_index) {
-                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
-                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < "
-                                          << pivot_value << ", which is wrong.\n";
+                        auto data_indices = this->generate_indices(samples);
 
-                            } else {
-                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
-                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value
-                                          << " >= " << pivot_value << ", which is wrong.\n";
-                            }
-                            printf("\n");
-                            print_data(data, features);
-                        }
-                        // the pivot is not valid if it disnt return std::nullopt
-                        ASSERT_TRUE(!res.has_value());
+                        auto shuffled_ascending_elements_array = this->shuffle_by_row(
+                            ascending_elements_array.begin(), ascending_elements_array.end(), features);
+
+                        // new_pivot_index indicates where the original pivot has moved after quicksort
+                        const auto new_pivot_index =
+                            ffcl::algorithms::quicksort_indexed_range(data_indices.begin(),
+                                                                      data_indices.end(),
+                                                                      shuffled_ascending_elements_array.begin(),
+                                                                      shuffled_ascending_elements_array.end(),
+                                                                      features,
+                                                                      pivot_index,
+                                                                      feature_index);
+
+                        // sort the shuffled_ascending_elements_array with the index vector remapped inplace by
+                        // quicksort_indexed_range
+                        shuffled_ascending_elements_array =
+                            this->remap_dataset(data_indices.begin(),
+                                                data_indices.end(),
+                                                shuffled_ascending_elements_array.begin(),
+                                                shuffled_ascending_elements_array.end(),
+                                                features);
+
+                        // the data sorted by quickselect should now be the same as the original dataset
+                        // shuffled_ascending_elements_array has been sorted inplace by quicksort
+                        ASSERT_TRUE(this->ranges_equality(shuffled_ascending_elements_array.begin(),
+                                                          shuffled_ascending_elements_array.end(),
+                                                          ascending_elements_array.begin(),
+                                                          ascending_elements_array.end()));
+
+                        // the data at new_pivot_index in the shuffled dataset sorted by quickselect should be equal to
+                        // the original dataset
+                        ASSERT_TRUE(this->ranges_equality(
+                            shuffled_ascending_elements_array.begin() + new_pivot_index * features,
+                            shuffled_ascending_elements_array.begin() + new_pivot_index * features + features,
+                            ascending_elements_array.begin() + new_pivot_index * features,
+                            ascending_elements_array.begin() + new_pivot_index * features + features));
                     }
                 }
             }
