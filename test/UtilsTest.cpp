@@ -77,16 +77,8 @@ TEST_F(UtilsErrorsTest, NTHElementTest) {
     for (std::size_t pivot_index = 0; pivot_index < n_samples_; ++pivot_index) {
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             const auto new_pivot_index = ffcl::algorithms::partition_around_nth_range(
-                data.begin(),
-                data.end(),
-                pivot_index,
-                n_features_,
-                [feature_index](const auto& range1_first, const auto& range2_first) {
-                    // assumes that:
-                    //   * both ranges have length: n_features_
-                    //   * feature_index in range [0, n_features_)
-                    return *(range1_first + feature_index) < *(range2_first + feature_index);
-                });
+                data.begin(), data.end(), n_features_, pivot_index, feature_index);
+
             std::cout << "Partial sort w.r.t. feature index: " << feature_index << "\n";
             std::cout << "pivot index remapped: " << pivot_index << " -> " << new_pivot_index << "\n";
             print_flattened_matrix<DataType>(data, n_features_);
@@ -106,17 +98,9 @@ TEST_F(UtilsErrorsTest, RandomDatasetPivotTest) {
 
     for (std::size_t pivot_index = 0; pivot_index < n_samples_; ++pivot_index) {
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
-            const auto new_pivot_index = ffcl::algorithms::quicksort_range(
-                data.begin(),
-                data.end(),
-                pivot_index,
-                n_features_,
-                [feature_index](const auto& range1_first, const auto& range2_first) {
-                    // assumes that:
-                    //   * both ranges have length: n_features_
-                    //   * feature_index in range [0, n_features_)
-                    return *(range1_first + feature_index) < *(range2_first + feature_index);
-                });
+            const auto new_pivot_index =
+                ffcl::algorithms::quicksort_range(data.begin(), data.end(), n_features_, pivot_index, feature_index);
+
             std::cout << "Sorted w.r.t. feature index: " << feature_index << "\n";
             std::cout << "pivot index remapped: " << pivot_index << " -> " << new_pivot_index << "\n";
             print_flattened_matrix<DataType>(data, n_features_);
@@ -137,16 +121,7 @@ TEST_F(UtilsErrorsTest, QuickselectTest) {
     for (std::size_t kth_smallest_index = 0; kth_smallest_index < n_samples_; ++kth_smallest_index) {
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             const auto [kth_smallest_begin, kth_smallest_end] = ffcl::algorithms::quickselect_range(
-                data.begin(),
-                data.end(),
-                kth_smallest_index,
-                n_features_,
-                [feature_index](const auto& range1_first, const auto& range2_first) {
-                    // assumes that:
-                    //   * both ranges have length: n_features_
-                    //   * feature_index in range [0, n_features_)
-                    return *(range1_first + feature_index) < *(range2_first + feature_index);
-                });
+                data.begin(), data.end(), n_features_, kth_smallest_index, feature_index);
 
             std::cout << "Partially sorted w.r.t. feature index: " << feature_index << "\n";
             print_flattened_matrix<DataType>(data, n_features_);
@@ -176,18 +151,7 @@ TEST_F(UtilsErrorsTest, PartitionAroundNTHIndexedRangeTest) {
     print_flattened_matrix<DataType>(data, n_features_);
 
     const auto new_pivot_index = ffcl::algorithms::partition_around_nth_indexed_range(
-        indices.begin(),
-        indices.end(),
-        data.begin(),
-        data.end(),
-        pivot_index,
-        n_features_,
-        [feature_index](const auto& range1_first, const auto& range2_first) {
-            // assumes that:
-            //   * both ranges have length: n_features_
-            //   * feature_index in range [0, n_features_)
-            return range1_first[feature_index] < range2_first[feature_index];
-        });
+        indices.begin(), indices.end(), data.begin(), data.end(), n_features_, pivot_index, feature_index);
 
     const auto remapped_flattened_vector =
         remap_dataset(indices.begin(), indices.end(), data.begin(), data.end(), n_features_);
@@ -212,19 +176,14 @@ TEST_F(UtilsErrorsTest, QuickselectIndexedRangeTest) {
 
     for (std::size_t kth_smallest_index = 0; kth_smallest_index < n_samples_; ++kth_smallest_index) {
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
-            const auto [kth_smallest_begin, kth_smallest_end] = ffcl::algorithms::quickselect_indexed_range(
-                indices.begin(),
-                indices.end(),
-                data.begin(),
-                data.end(),
-                kth_smallest_index,
-                n_features_,
-                [feature_index](const auto& range1_first, const auto& range2_first) {
-                    // assumes that:
-                    //   * both ranges have length: n_features_
-                    //   * feature_index in range [0, n_features_)
-                    return *(range1_first + feature_index) < *(range2_first + feature_index);
-                });
+            const auto [kth_smallest_begin, kth_smallest_end] =
+                ffcl::algorithms::quickselect_indexed_range(indices.begin(),
+                                                            indices.end(),
+                                                            data.begin(),
+                                                            data.end(),
+                                                            n_features_,
+                                                            kth_smallest_index,
+                                                            feature_index);
 
             std::cout << "Partially sorted w.r.t. feature index: " << feature_index << "\n";
             print_flattened_matrix<DataType>(data, n_features_);
@@ -253,19 +212,8 @@ TEST_F(UtilsErrorsTest, QuicksortIndexedRangeTest) {
     print_flattened_matrix(indices, 1);
     print_flattened_matrix<DataType>(data, n_features_);
 
-    const auto new_pivot_index =
-        ffcl::algorithms::quicksort_indexed_range(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  pivot_index,
-                                                  n_features_,
-                                                  [feature_index](const auto& range1_first, const auto& range2_first) {
-                                                      // assumes that:
-                                                      //   * both ranges have length: n_features_
-                                                      //   * feature_index in range [0, n_features_)
-                                                      return range1_first[feature_index] < range2_first[feature_index];
-                                                  });
+    const auto new_pivot_index = ffcl::algorithms::quicksort_indexed_range(
+        indices.begin(), indices.end(), data.begin(), data.end(), n_features_, pivot_index, feature_index);
 
     print_flattened_matrix(indices, 1);
     const auto remapped_flattened_vector =

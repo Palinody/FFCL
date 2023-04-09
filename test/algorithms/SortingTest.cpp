@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 
 #include <algorithm>
+#include <optional>
 #include <vector>
 
 #include <iostream>
@@ -18,7 +19,7 @@ class SortingTestFixture : public ::testing::Test {
                                                          DataType    upper_bound) {
         using UniformDistributionType = std::conditional_t<std::is_integral_v<DataType>,
                                                            std::uniform_int_distribution<DataType>,
-                                                           std::uniform_real_distribution<DataType> >;
+                                                           std::uniform_real_distribution<DataType>>;
 
         std::random_device rnd_device;
         std::mt19937       mersenne_engine{rnd_device()};
@@ -69,7 +70,37 @@ class SortingTestFixture : public ::testing::Test {
         return (it1 == element_last && it2 == other_element_last);
     }
 
-    static constexpr std::size_t n_samples_      = 5;
+    template <typename IteratorType>
+    std::optional<std::pair<std::size_t, typename IteratorType::value_type>> is_pivot_valid(IteratorType element_first,
+                                                                                            IteratorType element_last,
+                                                                                            std::size_t  n_features,
+                                                                                            std::size_t  pivot_index,
+                                                                                            std::size_t feature_index) {
+        const std::size_t n_samples = common::utils::get_n_samples(element_first, element_last, n_features);
+        if (pivot_index == 0 && n_samples == 1) {
+            return std::nullopt;
+        }
+        const auto pivot_value = element_first[pivot_index * n_features + feature_index];
+        // iterate over the elements before the pivot
+        for (std::size_t before_pivot_index = 0; before_pivot_index < pivot_index; ++before_pivot_index) {
+            const auto before_pivot_value = element_first[before_pivot_index * n_features + feature_index];
+            // the values before the pivot at target_feature_index should be strictly less than the pivot
+            if (before_pivot_value >= pivot_value) {
+                return std::make_optional(std::make_pair(before_pivot_index, before_pivot_value));
+            }
+        }
+        // iterate over the elements after the pivot
+        for (std::size_t after_pivot_index = pivot_index + 1; after_pivot_index < n_samples; ++after_pivot_index) {
+            const auto after_pivot_value = element_first[after_pivot_index * n_features + feature_index];
+            // the values after the pivot at feature_index should be greater than or equal to the pivot
+            if (after_pivot_value < pivot_value) {
+                return std::make_optional(std::make_pair(after_pivot_index, after_pivot_value));
+            }
+        }
+        return std::nullopt;
+    }
+
+    static constexpr std::size_t n_samples_      = 10;
     static constexpr std::size_t n_features_     = 3;
     static constexpr std::size_t n_random_tests_ = 10;
 };
@@ -91,15 +122,8 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeRangesIntegerTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
-                    const auto index =
-                        ffcl::algorithms::median_index_of_three_ranges(data.begin(), data.end(), features, comparator);
+                    const auto index = ffcl::algorithms::median_index_of_three_ranges(
+                        data.begin(), data.end(), features, feature_index);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
                 }
@@ -125,15 +149,8 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeRangesFloatTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
-                    const auto index =
-                        ffcl::algorithms::median_index_of_three_ranges(data.begin(), data.end(), features, comparator);
+                    const auto index = ffcl::algorithms::median_index_of_three_ranges(
+                        data.begin(), data.end(), features, feature_index);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
                 }
@@ -160,15 +177,8 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeIndexedRangesIntegerTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto index = ffcl::algorithms::median_index_of_three_indexed_ranges(
-                        indices.begin(), indices.end(), data.begin(), data.end(), features, comparator);
+                        indices.begin(), indices.end(), data.begin(), data.end(), features, feature_index);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
                 }
@@ -195,15 +205,8 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeIndexedRangesFloatTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto index = ffcl::algorithms::median_index_of_three_indexed_ranges(
-                        indices.begin(), indices.end(), data.begin(), data.end(), features, comparator);
+                        indices.begin(), indices.end(), data.begin(), data.end(), features, feature_index);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
                 }
@@ -229,15 +232,8 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeRangesIntegerTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_ranges(
-                        data.begin(), data.end(), features, comparator);
+                        data.begin(), data.end(), features, feature_index);
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
                         get_range_at_row(data.begin(), data.end(), features, 0);
@@ -275,15 +271,8 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeRangesFloatTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_ranges(
-                        data.begin(), data.end(), features, comparator);
+                        data.begin(), data.end(), features, feature_index);
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
                         get_range_at_row(data.begin(), data.end(), features, 0);
@@ -322,15 +311,8 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesIntegerTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_indexed_ranges(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
                         get_range_at_row(data.begin(), data.end(), features, 0);
@@ -369,15 +351,8 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesFloatTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three_indexed_ranges(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
                         get_range_at_row(data.begin(), data.end(), features, 0);
@@ -398,7 +373,7 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesFloatTest) {
     }
 }
 
-TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreRangesIntegerTest) {
+TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesIntegerTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
     using DataType = int;
 
@@ -415,15 +390,8 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreRangesIntegerTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_ranges(
-                        data.begin(), data.end(), features, comparator);
+                        data.begin(), data.end(), features, feature_index);
 
                     const auto [row_first, row_last] = range;
 
@@ -448,7 +416,7 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreRangesIntegerTest) {
     }
 }
 
-TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreRangesFloatTest) {
+TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesFloatTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
     using DataType = float;
 
@@ -465,15 +433,8 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreRangesFloatTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_ranges(
-                        data.begin(), data.end(), features, comparator);
+                        data.begin(), data.end(), features, feature_index);
 
                     const auto [row_first, row_last] = range;
 
@@ -516,15 +477,8 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesIntegerT
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_indexed_ranges(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [row_first, row_last] = range;
 
@@ -567,15 +521,8 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesFloatTes
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto comparator = [feature_index](const auto& left_range_first, const auto& right_range_first) {
-                        // assumes that:
-                        //   * both ranges have length: n_features
-                        //   * feature_index in range [0, n_features)
-                        return *(left_range_first + feature_index) < *(right_range_first + feature_index);
-                    };
-
                     const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three_indexed_ranges(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, comparator);
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [row_first, row_last] = range;
 
@@ -594,6 +541,134 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesFloatTes
                         ranges_equality(row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
                         ranges_equality(row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
                         ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                }
+            }
+        }
+    }
+}
+
+#include <iostream>
+
+template <typename DataType>
+void print_data(const std::vector<DataType>& data, std::size_t n_features) {
+    const std::size_t n_samples = data.size() / n_features;
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            std::cout << data[sample_index * n_features + feature_index] << " ";
+        }
+        std::cout << "\n";
+    }
+}
+
+TEST_F(SortingTestFixture, PartitionAroundNTHRangeIntegerTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = int;
+
+    constexpr DataType lower_bound = -1;
+    constexpr DataType upper_bound = 1;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    // check on all the possible pivot indices
+                    for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
+                        const auto new_pivot_index = ffcl::algorithms::partition_around_nth_range(
+                            data.begin(), data.end(), features, pivot_index, feature_index);
+
+                        // the values before the pivot according to the feature_index dimension should be less
+                        // the values after the pivot according to the feature_index dimension should be greater or
+                        // equal
+                        const auto res =
+                            is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
+
+                        if (res.has_value()) {
+                            printf("n_samples: %ld, n_features: %ld\n", samples, features);
+                            printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
+
+                            const auto pivot_value = data[new_pivot_index * features + feature_index];
+
+                            const auto [not_pivot_index, not_pivot_value] = res.value();
+                            if (not_pivot_index < new_pivot_index) {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < "
+                                          << pivot_value << ", which is wrong.\n";
+
+                            } else {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value
+                                          << " >= " << pivot_value << ", which is wrong.\n";
+                            }
+                            printf("\n");
+                            print_data(data, features);
+                        }
+                        // the pivot is not valid if it disnt return std::nullopt
+                        ASSERT_TRUE(!res.has_value());
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST_F(SortingTestFixture, PartitionAroundNTHRangeFloatTest) {
+    // range values should be equal to one of the ranges at row 0, median or last row
+    using DataType = float;
+
+    constexpr DataType lower_bound = -1;
+    constexpr DataType upper_bound = 1;
+
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index <= n_random_tests_; ++test_index) {
+        // tests on data from 1 to n_samples_ samples
+        for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
+            // tests on data from 1 to n_features_ features
+            for (std::size_t features = 1; features <= n_features_; ++features) {
+                auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    // check on all the possible pivot indices
+                    for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
+                        const auto new_pivot_index = ffcl::algorithms::partition_around_nth_range(
+                            data.begin(), data.end(), features, pivot_index, feature_index);
+
+                        // the values before the pivot according to the feature_index dimension should be less
+                        // the values after the pivot according to the feature_index dimension should be greater or
+                        // equal
+                        const auto res =
+                            is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
+
+                        if (res.has_value()) {
+                            printf("n_samples: %ld, n_features: %ld\n", samples, features);
+                            printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
+
+                            const auto pivot_value = data[new_pivot_index * features + feature_index];
+
+                            const auto [not_pivot_index, not_pivot_value] = res.value();
+                            if (not_pivot_index < new_pivot_index) {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < "
+                                          << pivot_value << ", which is wrong.\n";
+
+                            } else {
+                                std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
+                                          << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value
+                                          << " >= " << pivot_value << ", which is wrong.\n";
+                            }
+                            printf("\n");
+                            print_data(data, features);
+                        }
+                        // the pivot is not valid if it disnt return std::nullopt
+                        ASSERT_TRUE(!res.has_value());
+                    }
                 }
             }
         }

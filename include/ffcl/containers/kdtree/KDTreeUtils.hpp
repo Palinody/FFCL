@@ -137,16 +137,7 @@ quickselect_median_range(IteratorPairType<RandomAccessIterator> iterator_pair,
     const auto median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
 
     const auto median_range = ffcl::algorithms::quickselect_range(
-        samples_first,
-        samples_last,
-        median_index,
-        n_features,
-        [comparison_feature_index](const auto& range1_first, const auto& range2_first) {
-            // assumes that:
-            //   * both ranges have length: n_features
-            //   * comparison_feature_index in range [0, n_features)
-            return *(range1_first + comparison_feature_index) < *(range2_first + comparison_feature_index);
-        });
+        samples_first, samples_last, n_features, median_index, comparison_feature_index);
     // all the points at the left of the pivot point
     const auto left_range = std::make_pair(samples_first, samples_first + median_index * n_features);
 
