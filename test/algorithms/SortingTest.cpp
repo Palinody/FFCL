@@ -589,6 +589,7 @@ TEST_F(SortingTestFixture, PartitionAroundNTHRangeIntegerTest) {
                         const auto res =
                             is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
 
+                        // print only if is_pivot_valid returned values (meaning that its not valid)
                         if (res.has_value()) {
                             printf("n_samples: %ld, n_features: %ld\n", samples, features);
                             printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
@@ -646,6 +647,7 @@ TEST_F(SortingTestFixture, PartitionAroundNTHRangeFloatTest) {
                         const auto res =
                             is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
 
+                        // print only if is_pivot_valid returned values (meaning that its not valid)
                         if (res.has_value()) {
                             printf("n_samples: %ld, n_features: %ld\n", samples, features);
                             printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
