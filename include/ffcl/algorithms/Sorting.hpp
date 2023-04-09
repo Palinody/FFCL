@@ -171,7 +171,7 @@ std::size_t partition_around_nth_range(RandomAccessIterator first,
         } else if (pivot_index == static_cast<std::size_t>(right_index)) {
             pivot_index = left_index;
         }
-        // always shift the left_index since the value at right_index might be the same as the one at the pivot
+        // always shift the left_index back since the value at right_index might be the same as the one at the pivot
         --left_index;
     }
     return pivot_index;
@@ -189,11 +189,12 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
 
     common::utils::ignore_parameters(last);
 
-    // no op if the input contains only one feature vector or none
+    // no op if the input contains only one feature vector
     if (std::distance(index_first, index_last) == static_cast<std::ptrdiff_t>(1)) {
         return pivot_index;
     }
-    // start out of bound so that the indices never go out of bounds when (in/de)cremented
+    // Initialize the left and right indices to be out of bounds, so that they never go out of bounds when incremented
+    // or decremented in the loops
     ssize_t left_index  = -1;
     ssize_t right_index = std::distance(index_first, index_last);
 
@@ -208,22 +209,22 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
         } while (first[index_first[pivot_index] * n_features + comparison_feature_index] <
                  first[index_first[right_index] * n_features + comparison_feature_index]);
 
+        // the partitioning is done if the left and right indices cross
         if (left_index >= right_index) {
             break;
         }
         std::iter_swap(index_first + left_index, index_first + right_index);
 
-        // if the pivot has been swapped (because it was equal to one of the swapped ranges),
-        // assign the pivot_index to the (left/right)_index its been swapped with
+        // if the pivot index was swapped, update it to the index it was swapped with
         if (pivot_index == static_cast<std::size_t>(left_index)) {
             pivot_index = right_index;
-            // shift the right index by one so that it doesnt cross-over past the left of the now swapped pivot
+            // shift the right index by one to avoid crossing over the left of the new pivot
             ++right_index;
 
         } else if (pivot_index == static_cast<std::size_t>(right_index)) {
             pivot_index = left_index;
         }
-        // always shift the left_index since the value at right_index might be the same as the one at the pivot
+        // always shift the left_index back since the value at right_index might be the same as the one at the pivot
         --left_index;
     }
     return pivot_index;
@@ -250,8 +251,8 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAc
                                                                n_features,
                                                                comparison_feature_index);
 
-        // partition the range around the pivot, which has moved to its sorted index
-        // the pivot index starts from the left_index, so we need to shift it by the same amount
+        // partition the range around the pivot, which has moved to its sorted index. The pivot index is relative to the
+        // left_index, so to get its absolute index, we need to shift it by the same amount
         pivot_index = left_index + partition_around_nth_range(first + left_index * n_features,
                                                               first + right_index * n_features + n_features,
                                                               n_features,
@@ -289,8 +290,8 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_indexed_range(
         std::size_t pivot_index = median_index_of_three_indexed_ranges(
             index_first + left_index, index_first + right_index + 1, first, last, n_features, comparison_feature_index);
 
-        // partition the range around the pivot, which has moved to its sorted index
-        // the pivot index starts from the left_index, so we need to shift it by the same amount
+        // partition the range around the pivot, which has moved to its sorted index. The pivot index is relative to the
+        // left_index, so to get its absolute index, we need to shift it by the same amount
         pivot_index = left_index + partition_around_nth_indexed_range(index_first + left_index,
                                                                       index_first + right_index + 1,
                                                                       first,

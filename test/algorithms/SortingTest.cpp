@@ -31,10 +31,18 @@ class SortingTestFixture : public ::testing::Test {
         return result;
     }
 
-    std::vector<std::size_t> generate_sorted_indices(std::size_t n_samples) {
-        std::vector<std::size_t> indices(n_samples);
-        std::iota(indices.begin(), indices.end(), 0);
-        return indices;
+    template <typename DataType = std::size_t>
+    std::vector<DataType> generate_ascending_elements_array(std::size_t n_samples) {
+        std::vector<DataType> elements(n_samples);
+        std::iota(elements.begin(), elements.end(), static_cast<DataType>(0));
+        return elements;
+    }
+
+    template <typename DataType = std::size_t>
+    std::vector<DataType> generate_descending_elements_array(std::size_t n_samples) {
+        std::vector<DataType> elements(n_samples);
+        std::iota(elements.rbegin(), elements.rend(), static_cast<DataType>(0));
+        return elements;
     }
 
     template <typename IteratorType>
@@ -208,7 +216,7 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeIndexedRangesIntegerTest) {
         for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto indices = generate_sorted_indices(samples);
+                const auto indices = generate_ascending_elements_array(samples);
                 const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
 
                 // test on all the possible feature indices
@@ -236,7 +244,7 @@ TEST_F(SortingTestFixture, MedianIndexOfThreeIndexedRangesFloatTest) {
         for (std::size_t samples = 1; samples <= n_samples_; ++samples) {
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
-                const auto indices = generate_sorted_indices(samples);
+                const auto indices = generate_ascending_elements_array(samples);
                 const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
 
                 // test on all the possible feature indices
@@ -343,7 +351,7 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesIntegerTest) {
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
                 const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_sorted_indices(samples);
+                const auto data_indices = generate_ascending_elements_array(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -383,7 +391,7 @@ TEST_F(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesFloatTest) {
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
                 const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_sorted_indices(samples);
+                const auto data_indices = generate_ascending_elements_array(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -509,7 +517,7 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesIntegerT
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
                 const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_sorted_indices(samples);
+                const auto data_indices = generate_ascending_elements_array(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -553,7 +561,7 @@ TEST_F(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesFloatTes
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
                 const auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                const auto data_indices = generate_sorted_indices(samples);
+                const auto data_indices = generate_ascending_elements_array(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -727,7 +735,7 @@ TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeIntegerTest) {
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
                 auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                auto data_indices = generate_sorted_indices(samples);
+                auto data_indices = generate_ascending_elements_array(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -797,7 +805,7 @@ TEST_F(SortingTestFixture, PartitionAroundNTHIndexedRangeFloatTest) {
             // tests on data from 1 to n_features_ features
             for (std::size_t features = 1; features <= n_features_; ++features) {
                 auto data = generate_random_uniform_vector<DataType>(samples, features, lower_bound, upper_bound);
-                auto data_indices = generate_sorted_indices(samples);
+                auto data_indices = generate_ascending_elements_array(samples);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
