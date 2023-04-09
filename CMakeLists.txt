@@ -162,7 +162,7 @@ elseif(MODE STREQUAL "gtest")
         DistributionsTest
 
         # ---
-        test/src/DistributionsTest.cpp
+        test/src/math/random/DistributionsTest.cpp
     )
     target_link_libraries(
         DistributionsTest
@@ -179,7 +179,7 @@ elseif(MODE STREQUAL "gtest")
         UtilsTest
 
         # ---
-        test/src/UtilsTest.cpp
+        test/src/common/UtilsTest.cpp
     )
     target_link_libraries(
         UtilsTest
@@ -196,7 +196,7 @@ elseif(MODE STREQUAL "gtest")
         KMedoidsTest
 
         # ---
-        test/src/KMedoidsTest.cpp
+        test/src/kmedoids/KMedoidsTest.cpp
     )
     target_link_libraries(
         KMedoidsTest
@@ -213,7 +213,7 @@ elseif(MODE STREQUAL "gtest")
         KMeansTest
 
         # ---
-        test/src/KMeansTest.cpp
+        test/src/kmeans/KMeansTest.cpp
     )
     target_link_libraries(
         KMeansTest
@@ -230,7 +230,7 @@ elseif(MODE STREQUAL "gtest")
         KDTreeTest
 
         # ---
-        test/src/KDTreeTest.cpp
+        test/src/containers/kdtree/KDTreeTest.cpp
     )
     target_link_libraries(
         KDTreeTest
