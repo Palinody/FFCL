@@ -225,9 +225,12 @@ TEST(CommonUtilsTest, GetNSamplesTest) {
     std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
     ASSERT_EQ(n_samples, 3);
 
-    // Test assertion when input data missing values or wrong number of features specified.
+// Test assertion when input data missing values or wrong number of features specified.
+// Test only if assert enabled
+#ifndef NDEBUG
     n_features = 5;
     ASSERT_DEATH(common::utils::get_n_samples(data.begin(), data.end(), n_features), ".*");
+#endif
 }
 
 TEST(CommonUtilsTest, IsElementInTest) {
