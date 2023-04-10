@@ -184,7 +184,7 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& data_first,
         printf("---\nAttempt(%ld/%ld): ", k + 1, centroids_candidates.size());
 #endif
         auto kmeans_algorithm =
-            KMeansAlgorithm<SamplesIterator>({data_first, data_last, n_features_}, centroids_candidates[k]);
+            KMeansAlgorithm(std::make_tuple(data_first, data_last, n_features_), centroids_candidates[k]);
 
         std::size_t patience_iter = 0;
 
