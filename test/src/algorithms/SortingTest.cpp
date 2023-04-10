@@ -283,9 +283,9 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
                         // the values after the pivot according to the feature_index dimension should be greater or
                         // equal
                         const auto res =
-                            this->is_pivot_valid(data.begin(), data.end(), features, new_pivot_index, feature_index);
+                            this->is_pivot_faulty(data.begin(), data.end(), features, new_pivot_index, feature_index);
 
-                        // print only if this->is_pivot_valid returned values (meaning that its not valid)
+                        // print only if this->is_pivot_faulty returned values (meaning that its not valid)
                         if (res.has_value()) {
                             printf("n_samples: %ld, n_features: %ld\n", samples, features);
                             printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
@@ -306,7 +306,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
                             printf("\n");
                             this->print_data(data, features);
                         }
-                        // the pivot is not valid if it disnt return std::nullopt
+                        // the pivot is not valid if it didn't return std::nullopt
                         ASSERT_TRUE(!res.has_value());
                     }
                 }
@@ -345,15 +345,15 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
                         // the values before the pivot according to the feature_index dimension should be less
                         // the values after the pivot according to the feature_index dimension should be greater or
                         // equal
-                        const auto res = this->is_pivot_valid(data_indices.begin(),
-                                                              data_indices.end(),
-                                                              data.begin(),
-                                                              data.end(),
-                                                              features,
-                                                              new_pivot_index,
-                                                              feature_index);
+                        const auto res = this->is_pivot_faulty(data_indices.begin(),
+                                                               data_indices.end(),
+                                                               data.begin(),
+                                                               data.end(),
+                                                               features,
+                                                               new_pivot_index,
+                                                               feature_index);
 
-                        // print only if this->is_pivot_valid returned values (meaning that its not valid)
+                        // print only if this->is_pivot_faulty returned values (meaning that its not valid)
                         if (res.has_value()) {
                             printf("n_samples: %ld, n_features: %ld\n", samples, features);
                             printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
@@ -374,7 +374,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
                             printf("\n");
                             this->print_data(data, features);
                         }
-                        // the pivot is not valid if it disnt return std::nullopt
+                        // the pivot is not valid if it didn't return std::nullopt
                         ASSERT_TRUE(!res.has_value());
                     }
                 }

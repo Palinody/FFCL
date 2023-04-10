@@ -85,11 +85,12 @@ class Range2DBaseFixture : public ::testing::Test {
     }
 
     template <typename IteratorType>
-    std::optional<std::pair<std::size_t, typename IteratorType::value_type>> is_pivot_valid(IteratorType element_first,
-                                                                                            IteratorType element_last,
-                                                                                            std::size_t  n_features,
-                                                                                            std::size_t  pivot_index,
-                                                                                            std::size_t feature_index) {
+    std::optional<std::pair<std::size_t, typename IteratorType::value_type>> is_pivot_faulty(
+        IteratorType element_first,
+        IteratorType element_last,
+        std::size_t  n_features,
+        std::size_t  pivot_index,
+        std::size_t  feature_index) {
         const std::size_t n_samples = common::utils::get_n_samples(element_first, element_last, n_features);
 
         if (pivot_index == 0 && n_samples == 1) {
@@ -116,13 +117,14 @@ class Range2DBaseFixture : public ::testing::Test {
     }
 
     template <typename IteratorIntType, typename IteratorType>
-    std::optional<std::pair<std::size_t, typename IteratorType::value_type>> is_pivot_valid(IteratorIntType index_first,
-                                                                                            IteratorIntType index_last,
-                                                                                            IteratorType element_first,
-                                                                                            IteratorType element_last,
-                                                                                            std::size_t  n_features,
-                                                                                            std::size_t  pivot_index,
-                                                                                            std::size_t feature_index) {
+    std::optional<std::pair<std::size_t, typename IteratorType::value_type>> is_pivot_faulty(
+        IteratorIntType index_first,
+        IteratorIntType index_last,
+        IteratorType    element_first,
+        IteratorType    element_last,
+        std::size_t     n_features,
+        std::size_t     pivot_index,
+        std::size_t     feature_index) {
         common::utils::ignore_parameters(element_last);
 
         const std::size_t n_samples = std::distance(index_first, index_last);
