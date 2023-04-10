@@ -161,29 +161,7 @@ class Range2DBaseFixture : public ::testing::Test {
 
         std::shuffle(indices.begin(), indices.end(), std::mt19937{std::random_device{}()});
 
-        return this->remap_dataset(indices.begin(), indices.end(), element_first, element_last, n_features);
-    }
-
-    template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-    std::vector<typename RandomAccessIterator::value_type> remap_dataset(RandomAccessIntIterator index_first,
-                                                                         RandomAccessIntIterator index_last,
-                                                                         RandomAccessIterator    first,
-                                                                         RandomAccessIterator    last,
-                                                                         std::size_t             n_features) {
-        const auto n_samples = common::utils::get_n_samples(first, last, n_features);
-
-        assert(static_cast<std::ptrdiff_t>(n_samples) == std::distance(index_first, index_last));
-
-        common::utils::ignore_parameters(index_last);
-
-        auto remapped_flattened_vector = std::vector<typename RandomAccessIterator::value_type>(n_samples * n_features);
-
-        for (std::size_t index = 0; index < n_samples; ++index) {
-            std::copy(first + index_first[index] * n_features,
-                      first + index_first[index] * n_features + n_features,
-                      remapped_flattened_vector.begin() + index * n_features);
-        }
-        return remapped_flattened_vector;
+        return common::utils::remap_ranges_from_indices(indices, std::vector(element_first, element_last), n_features);
     }
 
     void print_data(const std::vector<DataType>& data, std::size_t n_features) {

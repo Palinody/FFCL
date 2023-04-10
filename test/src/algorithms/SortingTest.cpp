@@ -553,12 +553,8 @@ TYPED_TEST(SortingTestFixture, QuicksortIndexedRangeTest) {
 
                         // sort the shuffled_ascending_elements_array with the index vector remapped inplace by
                         // quicksort_indexed_range
-                        shuffled_ascending_elements_array =
-                            this->remap_dataset(data_indices.begin(),
-                                                data_indices.end(),
-                                                shuffled_ascending_elements_array.begin(),
-                                                shuffled_ascending_elements_array.end(),
-                                                features);
+                        shuffled_ascending_elements_array = common::utils::remap_ranges_from_indices(
+                            data_indices, shuffled_ascending_elements_array, features);
 
                         // the data sorted by quickselect should now be the same as the original dataset
                         // shuffled_ascending_elements_array has been sorted inplace by quicksort

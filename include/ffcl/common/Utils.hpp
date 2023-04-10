@@ -39,7 +39,7 @@ constexpr bool equality(const T& a, const U& b) noexcept {
         return a == b;
 
     } else if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<U>) {
-        return std::abs(b - a) < std::numeric_limits<decltype(b - a)>::epsilon();
+        return std::abs(b - a) <= std::numeric_limits<decltype(b - a)>::epsilon();
 
     } else {
         static_assert(std::is_same_v<T, U>, "equality comparison only supported for comparable types");
@@ -70,7 +70,7 @@ OutputContainer abs_distances(const Iterator& data_first, const Iterator& data_l
     auto abs_distances_values = OutputContainer(n_elements);
 
     for (std::size_t n = 0; n < n_elements; ++n) {
-        abs_distances_values[n] = std::abs(*(data_first + n) - *(other_first + n));
+        abs_distances_values[n] = std::abs(data_first[n] - other_first[n]);
     }
     return abs_distances_values;
 }
@@ -102,7 +102,7 @@ bool are_containers_equal(
                 return false;
             }
         } else if constexpr (std::is_floating_point_v<InputType>) {
-            if (std::abs(*first1 - *first2) > tolerance) {
+            if (std::abs(*first1 - *first2) >= tolerance) {
                 return false;
             }
         } else {
@@ -154,8 +154,8 @@ std::size_t count_matches_for_value(Iterator1 first1, Iterator1 last1, Iterator2
     return count;
 }
 
-template <typename InputContainer, typename IndicesContainer>
-InputContainer permutation_from_indices(const InputContainer& input, const IndicesContainer& indices) {
+template <typename IndicesContainer, typename InputContainer>
+InputContainer permutation_from_indices(const IndicesContainer& indices, const InputContainer& input) {
     if (input.size() != indices.size()) {
         throw std::invalid_argument("The number of elements in the input and indices containers must match.");
     }
@@ -167,23 +167,25 @@ InputContainer permutation_from_indices(const InputContainer& input, const Indic
     return swapped;
 }
 
-template <typename InputContainer, typename IndicesContainer>
-InputContainer range_permutation_from_indices(const InputContainer&   input,
-                                              const IndicesContainer& indices,
-                                              std::size_t             length) {
-    if (input.size() / length != indices.size()) {
-        throw std::invalid_argument(
-            "The number of elements in the input and indices containers must match. The input size or the "
-            "length you provided is wrong.");
+template <typename IndicesContainer, typename InputContainer>
+InputContainer remap_ranges_from_indices(const IndicesContainer& indices,
+                                         const InputContainer&   flattened_matrix,
+                                         std::size_t             n_features) {
+    using IndicesType = typename IndicesContainer::value_type;
+
+    if (flattened_matrix.size() / n_features != indices.size()) {
+        throw std::invalid_argument("The number of elements in the flattened_matrix and indices containers must match. "
+                                    "The flattened_matrix size or the "
+                                    "n_features you provided is wrong.");
     }
     // Create a copy container to store the elements (overlapping indices wont be copied)
-    auto swapped = input;
-    for (std::size_t i = 0; i < indices.size(); ++i) {
+    auto swapped = flattened_matrix;
+    for (IndicesType i = 0; i < static_cast<IndicesType>(indices.size()); ++i) {
         // indices must be non overlapping
         if (indices[i] != i) {
-            std::copy(input.begin() + indices[i] * length,
-                      input.begin() + indices[i] * length + length,
-                      swapped.begin() + i * length);
+            std::copy(flattened_matrix.begin() + indices[i] * n_features,
+                      flattened_matrix.begin() + indices[i] * n_features + n_features,
+                      swapped.begin() + i * n_features);
         }
     }
     return swapped;
@@ -255,25 +257,6 @@ bool is_element_not_in_first(const IteratorPair&                                
     // so we want is_element_in to return the same boolean value
     return std::find_if(data_first, data_last, [&element](const auto& pair) { return element == pair.first; }) ==
            data_last;
-}
-
-template <typename Iterator, typename IteratorInt>
-void update_except_at(const Iterator&    target_first,
-                      const Iterator&    target_last,
-                      const Iterator&    source_first,
-                      const IteratorInt& invalid_indices_first,
-                      const IteratorInt& invalid_indices_last) {
-    static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
-
-    const std::size_t n_elements = target_last - target_first;
-
-    for (std::size_t idx = 0; idx < n_elements; ++idx) {
-        // enter condition only if the current index is not in the invalid indices
-        if (common::utils::is_element_not_in(invalid_indices_first, invalid_indices_last, idx)) {
-            // update the target vector if its the case
-            *(target_first + idx) = *(source_first + idx);
-        }
-    }
 }
 
 }  // namespace common::utils
