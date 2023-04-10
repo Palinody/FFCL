@@ -197,10 +197,9 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
 #pragma omp parallel for
 #endif
     for (std::size_t k = 0; k < medoids_candidates.size(); ++k) {
-        auto kmedoids_algorithm =
-            PrecomputePairwiseDistanceMatrix
-                ? KMedoidsAlgorithm<SamplesIterator>(*pairwise_distance_matrix_ptr, medoids_candidates[k])
-                : KMedoidsAlgorithm<SamplesIterator>(dataset_descriptor, medoids_candidates[k]);
+        auto kmedoids_algorithm = PrecomputePairwiseDistanceMatrix
+                                      ? KMedoidsAlgorithm(*pairwise_distance_matrix_ptr, medoids_candidates[k])
+                                      : KMedoidsAlgorithm(dataset_descriptor, medoids_candidates[k]);
 
         std::size_t patience_iter = 0;
 
