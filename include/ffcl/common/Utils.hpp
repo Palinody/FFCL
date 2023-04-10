@@ -235,8 +235,9 @@ bool is_element_in_first(const IteratorPair&                                  da
                          const typename IteratorPair::value_type::first_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the opposite boolean value
-    return !(std::find_if(data_first, data_last, [&element](const auto& pair) { return element == pair.first; }) ==
-             data_last);
+    return !(std::find_if(data_first, data_last, [&element](const auto& pair) {
+                 return equality(element, pair.first);
+             }) == data_last);
 }
 
 /**
@@ -255,8 +256,9 @@ bool is_element_not_in_first(const IteratorPair&                                
                              const typename IteratorPair::value_type::first_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the same boolean value
-    return std::find_if(data_first, data_last, [&element](const auto& pair) { return element == pair.first; }) ==
-           data_last;
+    return std::find_if(data_first, data_last, [&element](const auto& pair) {
+               return equality(element, pair.first);
+           }) == data_last;
 }
 
 }  // namespace common::utils

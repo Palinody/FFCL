@@ -255,13 +255,13 @@ TEST(CommonUtilsTest, IsElementNotInTest) {
 }
 
 TEST(CommonUtilsTest, IsElementInFirstTest) {
-    std::vector<std::pair<int, float>> data{{1, 1.1f}, {2, 2.2f}, {3, 3.3f}};
-    int                                element = 2;
+    std::vector<std::pair<float, int>> data{{1.1f, 1}, {2.2f, 2}, {3.3f, 3}};
+    float                              element = 2.2f;
 
     bool is_in = common::utils::is_element_in_first(data.begin(), data.end(), element);
     ASSERT_TRUE(is_in);
 
-    element = 4;
+    element = 4.4f;
     is_in   = common::utils::is_element_in_first(data.begin(), data.end(), element);
     ASSERT_FALSE(is_in);
 }
