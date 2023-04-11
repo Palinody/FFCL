@@ -300,8 +300,6 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
                     // the pivot index has now the value of the index it was swapped with (left index here)
                     pivot_index = left_index;
                 }
-                // shift the left index back by one to avoid crossing over the pivot
-                --left_index;
             }
             // if the value at the left index is not equal to the value at the pivot index
             else {
@@ -309,9 +307,11 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
                 std::iter_swap(index_first + left_index, index_first + pivot_index);
                 // the pivot index has now the value of the index it was swapped with (left index here)
                 pivot_index = left_index;
-                // shift the left index back by one to avoid crossing over the pivot
-                --left_index;
             }
+            // shift the left index back by one to avoid crossing over the pivot
+            // this operation is needed in all the conditional branches at the current level because the left range is
+            // either swapped with the pivot range or left_index is equal to pivot_index
+            --left_index;
         }
     }
     return pivot_index;
