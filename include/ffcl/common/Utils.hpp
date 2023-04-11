@@ -105,7 +105,7 @@ bool are_containers_equal(
                 return false;
             }
         } else if constexpr (std::is_floating_point_v<InputType>) {
-            if (std::abs(*first1 - *first2) >= tolerance) {
+            if (std::abs(*first1 - *first2) > tolerance) {
                 return false;
             }
         } else {
