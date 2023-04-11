@@ -18,12 +18,12 @@ class SortingTestFixture : public Range2DBaseFixture<DataType> {
   public:
     void SetUp() override {
         if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
-            lower_bound_ = -10;
-            upper_bound_ = 10;
+            lower_bound_ = -1;
+            upper_bound_ = 1;
 
         } else if constexpr (std::is_integral_v<DataType> && std::is_unsigned_v<DataType>) {
             lower_bound_ = 0;
-            upper_bound_ = 10;
+            upper_bound_ = 1;
 
         } else if constexpr (std::is_floating_point_v<DataType>) {
             lower_bound_ = -1;
@@ -31,8 +31,8 @@ class SortingTestFixture : public Range2DBaseFixture<DataType> {
         }
         min_n_samples_  = 1;
         max_n_samples_  = 10;
-        n_features_     = 3;
-        n_random_tests_ = 3;
+        n_features_     = 1;
+        n_random_tests_ = 5;
     }
 
   protected:
@@ -313,6 +313,50 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
             }
         }
     }
+}
+
+TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeWithDuplicatesTest) {
+    using DataType = TypeParam;
+
+    static constexpr std::size_t samples  = 8;
+    static constexpr std::size_t features = 1;
+
+    static constexpr std::size_t pivot_index   = 4;
+    static constexpr std::size_t feature_index = 0;
+
+    std::vector<DataType> data = {1, 1, 1, 1, 1, 1, 0, 3};
+
+    const auto new_pivot_index = ffcl::algorithms::three_way_partition_around_nth_range(
+        data.begin(), data.end(), features, pivot_index, feature_index);
+
+    // the values before the pivot according to the feature_index dimension should be less
+    // the values after the pivot according to the feature_index dimension should be greater or
+    // equal
+    const auto res = this->is_pivot_faulty(data.begin(), data.end(), features, new_pivot_index, feature_index);
+
+    // print only if this->is_pivot_faulty returned values (meaning that its not valid)
+    if (res.has_value()) {
+        printf("n_samples: %ld, n_features: %ld\n", samples, features);
+        printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
+
+        const auto pivot_value = data[new_pivot_index * features + feature_index];
+
+        const auto [not_pivot_index, not_pivot_value] = res.value();
+        if (not_pivot_index < new_pivot_index) {
+            std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
+                      << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < " << pivot_value
+                      << ", which is wrong.\n";
+
+        } else {
+            std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
+                      << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " >= " << pivot_value
+                      << ", which is wrong.\n";
+        }
+        printf("\n");
+        this->print_data(data, features);
+    }
+    // the pivot is not valid if it didn't return std::nullopt
+    ASSERT_TRUE(!res.has_value());
 }
 
 TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {

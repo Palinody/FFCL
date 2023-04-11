@@ -39,6 +39,8 @@ import timeit
 import os
 import sys
 
+BUCKET_SIZE: int = 40
+
 
 def read_dataset(filepath: str):
     return np.loadtxt(filepath, dtype=np.float32, delimiter=" ")
@@ -67,7 +69,7 @@ def TestSklearnKDTreeBuildTime(points: np.ndarray):
     np.random.shuffle(points)
 
     start_time = time.process_time()
-    tree = KDTree(points, leaf_size=10)
+    tree = KDTree(points, leaf_size=BUCKET_SIZE)
     end_time = time.process_time()
     # print the elapsed time
     print(
@@ -98,7 +100,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
         copy_data=False,
         cores=1,
         trees=1,
-        leaf_max_size=10,
+        leaf_max_size=BUCKET_SIZE,
         sample_fraction=0.1,
         checks=-1,
         build_weight=0.01,
@@ -110,11 +112,38 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
         "seconds",
     )
 
-    print("FLANN build_index parameters:")
-    print(params)
+    # print("FLANN build_index parameters:")
+    # print(params)
 
 
-def main():
+def run_all():
+    """noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""
+    root_folder = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "clustering/inputs/"
+    )
+
+    file_names = os.listdir(root_folder)
+
+    for filename in file_names:
+        input_path = root_folder + filename
+
+        dataset = read_dataset(input_path)
+
+        print("---")
+        print(filename)
+        print(dataset.shape)
+
+        TestPyclusteringKDTreeBuildTime(dataset)
+
+        TestSklearnKDTreeBuildTime(dataset)
+
+        try:
+            TestFlannKDTreeBuildTime(dataset)
+        except:
+            print(dir(pyflann))
+
+
+def run_mnist():
     # where the datasets are placed (if they arent the should be generated from dataset_maker.py)
     root_folder = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "clustering/"
@@ -130,7 +159,7 @@ def main():
 
     # TestPyclusteringKDTreeBuildTime(dataset)
 
-    # TestSklearnKDTreeBuildTime(dataset)
+    TestSklearnKDTreeBuildTime(dataset)
 
     try:
         TestFlannKDTreeBuildTime(dataset)
@@ -139,4 +168,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_all()

@@ -37,10 +37,10 @@ SHIFT = 0
 TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
-n_samples = 1000
+n_samples = 20000
 # None to load everything else specify
 n_samples_mnist = None
-n_samples_mnist = 100
+n_samples_mnist = 20000
 
 # np.random.seed(1)
 random_state = 1

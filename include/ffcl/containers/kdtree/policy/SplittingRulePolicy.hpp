@@ -8,13 +8,13 @@ template <typename RandomAccessIterator>
 struct SplittingRulePolicy {
     SplittingRulePolicy() = default;
 
-    virtual std::tuple<std::size_t,
-                       IteratorPairType<RandomAccessIterator>,
-                       IteratorPairType<RandomAccessIterator>,
-                       IteratorPairType<RandomAccessIterator>>
+    inline std::tuple<std::size_t,
+                      IteratorPairType<RandomAccessIterator>,
+                      IteratorPairType<RandomAccessIterator>,
+                      IteratorPairType<RandomAccessIterator>>
     operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
                std::size_t                            n_features,
-               std::size_t                            feature_index) const = 0;
+               std::size_t                            feature_index) const;
 
   private:
     SplittingRulePolicy(const SplittingRulePolicy&) = delete;
@@ -24,13 +24,13 @@ struct SplittingRulePolicy {
 
 template <typename RandomAccessIterator>
 struct QuickselectMedianRange : public SplittingRulePolicy<RandomAccessIterator> {
-    std::tuple<std::size_t,
-               IteratorPairType<RandomAccessIterator>,
-               IteratorPairType<RandomAccessIterator>,
-               IteratorPairType<RandomAccessIterator>>
+    inline std::tuple<std::size_t,
+                      IteratorPairType<RandomAccessIterator>,
+                      IteratorPairType<RandomAccessIterator>,
+                      IteratorPairType<RandomAccessIterator>>
     operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
                std::size_t                            n_features,
-               std::size_t                            feature_index) const override;
+               std::size_t                            feature_index) const;
 };
 
 }  // namespace kdtree::policy

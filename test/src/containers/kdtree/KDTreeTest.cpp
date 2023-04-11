@@ -1,6 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "ffcl/common/Timer.hpp"
 #include "ffcl/containers/kdtree/KDTree.hpp"
 
 #include <sys/types.h>  // std::ssize_t
@@ -15,6 +16,11 @@
 #include "rapidjson/writer.h"
 
 namespace fs = std::filesystem;
+
+/*
+Can we consider that floating point points cannot be equal? For instance in a point cloud, and so hoares partitioning
+algorithm can be executed without handling values that might be equal?
+*/
 
 class KDTreeErrorsTest : public ::testing::Test {
   public:
@@ -143,8 +149,6 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
     std::cout << axis << "\n";
 }
 
-#include "ffcl/common/Timer.hpp"
-
 TEST_F(KDTreeErrorsTest, MNISTTest) {
     fs::path filename = "mnist.txt";
 
@@ -152,8 +156,10 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
     const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
+    const std::size_t n_samples = labels.size();
+
     std::cout << "n_elements: " << data.size() << "\n";
-    std::cout << "n_samples: " << labels.size() << "\n";
+    std::cout << "n_samples: " << n_samples << "\n";
     std::cout << "n_features: " << n_features << "\n";
 
     printf("Making the kdtree:\n");
@@ -161,9 +167,13 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     using IteratorType = decltype(data)::iterator;
-
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
     auto kdtree = ffcl::containers::KDTree(
-        std::make_pair(data.begin(), data.end()), n_features, kdtree::policy::MaximumSpreadBuild<IteratorType>());
+        std::make_pair(data.begin(), data.end()),
+        n_features,
+        kdtree::policy::HighestVarianceBuild<IteratorType>().sampling_proportion(0.1),
+        kdtree::policy::QuickselectMedianRange<IteratorType>(),
+        ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40) /*.max_depth(std::log2(n_samples))*/);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
@@ -188,7 +198,7 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
                                  n_features,
                                  kdtree::policy::MaximumSpreadBuild<decltype(data)::iterator>(),
                                  kdtree::policy::QuickselectMedianRange<decltype(data)::iterator>(),
-                                 ffcl::containers::KDTree<decltype(data)::iterator>::Options().bucket_size(1));
+                                 ffcl::containers::KDTree<decltype(data)::iterator>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 

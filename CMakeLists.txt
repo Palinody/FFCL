@@ -4,6 +4,7 @@ project(ffcl)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
 add_compile_options(
     -std=c++17
     -Ofast
@@ -17,7 +18,6 @@ add_compile_options(
     -fopenmp
 )
 
-# add_compile_options(-std=c++17 -g -pg)
 find_package(OpenMP REQUIRED)
 
 set(HEADER_FILES
@@ -59,7 +59,7 @@ add_definitions(-DTHREADS_ENABLED=true)
 add_definitions(-DVERBOSE=false)
 
 # disable all assertions
-# add_definitions(-DNDEBUG)
+add_definitions(-DNDEBUG)
 
 # set(MODE "run-benchmarks")
 if(MODE STREQUAL "benchmark")
@@ -156,6 +156,40 @@ elseif(MODE STREQUAL "gtest")
     add_test(
         SortingTest
         SortingTest
+    )
+
+    add_executable(
+        StatisticsTest
+
+        # ---
+        test/src/math/statistics/StatisticsTest.cpp
+    )
+    target_link_libraries(
+        StatisticsTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        StatisticsTest
+        StatisticsTest
+    )
+
+    add_executable(
+        TransposeTest
+
+        # ---
+        test/src/math/linear_algebra/TransposeTest.cpp
+    )
+    target_link_libraries(
+        TransposeTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        TransposeTest
+        TransposeTest
     )
 
     add_executable(

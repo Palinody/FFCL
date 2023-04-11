@@ -26,7 +26,7 @@ constexpr T abs(const T& x) {
         return x < static_cast<T>(0) ? -x : x;
 
     } else if constexpr (std::is_floating_point_v<T>) {
-        return std::abs(x);
+        return std::fabs(x);
 
     } else {
         throw std::invalid_argument("Data type not handled by any heuristic.");
@@ -38,11 +38,14 @@ constexpr bool equality(const T& a, const U& b) noexcept {
     if constexpr (std::is_integral_v<T> && std::is_integral_v<U>) {
         return a == b;
 
+    } else if constexpr (std::is_floating_point_v<T> && std::is_floating_point_v<U>) {
+        return std::fabs(b - a) <= std::numeric_limits<decltype(b - a)>::epsilon();
+
     } else if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<U>) {
         return std::abs(b - a) <= std::numeric_limits<decltype(b - a)>::epsilon();
 
     } else {
-        static_assert(std::is_same_v<T, U>, "equality comparison only supported for comparable types");
+        static_assert(std::is_same_v<T, U>, "(in)equality comparison only supported for comparable types");
         return a == b;
     }
 }

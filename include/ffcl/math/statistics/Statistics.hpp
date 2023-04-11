@@ -1,8 +1,11 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/math/linear_algebra/Transpose.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <numeric>
 #include <vector>
 
 namespace math::statistics {
@@ -67,6 +70,37 @@ std::vector<typename Iterator::value_type> compute_variance_per_feature(Iterator
                    variance_per_feature.begin(),
                    [n_samples](const auto& feature) { return feature / (n_samples - 1); });
 
+    return variance_per_feature;
+}
+
+template <typename Iterator>
+typename Iterator::value_type compute_variance(Iterator data_first, Iterator data_last) {
+    using DataType = typename Iterator::value_type;
+
+    const auto n_elements     = std::distance(data_first, data_last);
+    const auto sum            = std::accumulate(data_first, data_last, static_cast<DataType>(0));
+    const auto sum_of_squares = std::inner_product(data_first, data_last, data_first, static_cast<DataType>(0));
+
+    return (sum_of_squares - sum * sum / n_elements) / (n_elements - 1);
+}
+
+template <typename Iterator>
+std::vector<typename Iterator::value_type> compute_variance_per_feature_v2(Iterator    data_first,
+                                                                           Iterator    data_last,
+                                                                           std::size_t n_features) {
+    using DataType = typename Iterator::value_type;
+
+    assert(common::utils::get_n_samples(data_first, data_last, n_features) > 1);
+
+    const auto [transposed_data, _, n_samples] = math::linear_algebra::transpose(data_first, data_last, n_features);
+
+    auto variance_per_feature = std::vector<DataType>(n_features);
+
+    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+        variance_per_feature[feature_index] =
+            compute_variance(transposed_data.begin() + feature_index * n_samples,
+                             transposed_data.begin() + feature_index * n_samples + n_samples);
+    }
     return variance_per_feature;
 }
 

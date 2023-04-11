@@ -10,10 +10,10 @@ template <typename RandomAccessIterator>
 struct AxisSelectionPolicy {
     AxisSelectionPolicy() = default;
 
-    virtual std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
-                                   std::size_t                                   n_features,
-                                   ssize_t                                       depth,
-                                   BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const = 0;
+    inline std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
+                                  std::size_t                                   n_features,
+                                  ssize_t                                       depth,
+                                  BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const;
 
   private:
     AxisSelectionPolicy(const AxisSelectionPolicy&) = delete;
@@ -23,10 +23,10 @@ struct AxisSelectionPolicy {
 
 template <typename RandomAccessIterator>
 struct CycleThroughAxesBuild : public AxisSelectionPolicy<RandomAccessIterator> {
-    std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
-                           std::size_t                                   n_features,
-                           ssize_t                                       depth,
-                           BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const override;
+    inline std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
+                                  std::size_t                                   n_features,
+                                  ssize_t                                       depth,
+                                  BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const;
 };
 
 template <typename RandomAccessIterator>
@@ -36,20 +36,20 @@ struct HighestVarianceBuild : public AxisSelectionPolicy<RandomAccessIterator> {
         return *this;
     }
 
-    std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
-                           std::size_t                                   n_features,
-                           ssize_t                                       depth,
-                           BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const override;
+    inline std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
+                                  std::size_t                                   n_features,
+                                  ssize_t                                       depth,
+                                  BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const;
 
     double sampling_proportion_ = 0.1;
 };
 
 template <typename RandomAccessIterator>
 struct MaximumSpreadBuild : public AxisSelectionPolicy<RandomAccessIterator> {
-    std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
-                           std::size_t                                   n_features,
-                           ssize_t                                       depth,
-                           BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const override;
+    inline std::size_t operator()(const IteratorPairType<RandomAccessIterator>& iterator_pair,
+                                  std::size_t                                   n_features,
+                                  ssize_t                                       depth,
+                                  BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const;
 };
 
 }  // namespace kdtree::policy
