@@ -44,7 +44,7 @@ transpose_parallel_openmp(RandomAccessIterator first, RandomAccessIterator last,
     std::size_t           output_n_samples  = n_features;
     std::size_t           output_n_features = n_samples;
 
-    const std::size_t block_size = 64;
+    static constexpr std::size_t block_size = 64;
 
 #if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for collapse(2)
