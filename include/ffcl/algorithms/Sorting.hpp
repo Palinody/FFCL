@@ -312,59 +312,6 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
     }
     return pivot_index;
 }
-/*
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_first,
-                                               RandomAccessIntIterator index_last,
-                                               RandomAccessIterator    first,
-                                               RandomAccessIterator    last,
-                                               std::size_t             n_features,
-                                               std::size_t             pivot_index,
-                                               std::size_t             feature_index) {
-    static_assert(std::is_integral_v<typename RandomAccessIntIterator::value_type>, "Index input should be integral.");
-
-    common::utils::ignore_parameters(last);
-
-    // no op if the input contains only one feature vector
-    if (std::distance(index_first, index_last) == static_cast<std::ptrdiff_t>(1)) {
-        return pivot_index;
-    }
-    // Initialize the left and right indices to be out of bounds, so that they never go out of bounds when incremented
-    // or decremented in the loops
-    ssize_t left_index  = -1;
-    ssize_t right_index = std::distance(index_first, index_last);
-
-    while (true) {
-        do {
-            ++left_index;
-        } while (first[index_first[left_index] * n_features + feature_index] <
-                 first[index_first[pivot_index] * n_features + feature_index]);
-
-        do {
-            --right_index;
-        } while (first[index_first[pivot_index] * n_features + feature_index] <
-                 first[index_first[right_index] * n_features + feature_index]);
-
-        // the partitioning is done if the left and right indices cross
-        if (left_index >= right_index) {
-            break;
-        }
-        std::iter_swap(index_first + left_index, index_first + right_index);
-
-        // if the pivot index was swapped, update it to the index it was swapped with
-        if (pivot_index == static_cast<std::size_t>(left_index)) {
-            pivot_index = right_index;
-            // shift the right index by one to avoid crossing over the left of the new pivot
-            ++right_index;
-
-        } else if (pivot_index == static_cast<std::size_t>(right_index)) {
-            pivot_index = left_index;
-            --left_index;
-        }
-    }
-    return pivot_index;
-}
-*/
 
 /**
  * @brief A quickselect implementation https://en.wikipedia.org/wiki/Quickselect
