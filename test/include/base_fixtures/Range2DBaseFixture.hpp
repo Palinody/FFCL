@@ -70,18 +70,7 @@ class Range2DBaseFixture : public ::testing::Test {
         if (std::distance(element_first, element_last) != std::distance(other_element_first, other_element_last)) {
             return false;
         }
-        // Iterate over both ranges and compare their elements
-        auto it1 = element_first;
-        auto it2 = other_element_first;
-        while (it1 != element_last && it2 != other_element_last) {
-            if (common::utils::inequality(*it1, *it2)) {
-                return false;
-            }
-            ++it1;
-            ++it2;
-        }
-        // If we iterated over all elements in both ranges, they are equal
-        return (it1 == element_last && it2 == other_element_last);
+        return common::utils::are_containers_equal(element_first, element_last, other_element_first);
     }
 
     template <typename IteratorType>
