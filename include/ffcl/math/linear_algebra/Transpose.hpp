@@ -63,7 +63,4 @@ transpose_parallel_openmp(RandomAccessIterator first, RandomAccessIterator last,
     return {transposed, output_n_samples, output_n_features};
 }
 
-// #if defined(_OPENMP) && THREADS_ENABLED == true
-// #endif
-
 }  // namespace math::linear_algebra
