@@ -123,11 +123,11 @@ median_index_and_values_range_of_three_indexed_ranges(RandomAccessIntIterator in
  * @brief Wiki (Dutch national flag problem): https://en.wikipedia.org/wiki/Dutch_national_flag_problem
  */
 template <typename RandomAccessIterator>
-std::size_t three_way_partition_around_nth_range(RandomAccessIterator first,
-                                                 RandomAccessIterator last,
-                                                 std::size_t          n_features,
-                                                 std::size_t          pivot_index,
-                                                 std::size_t          feature_index) {
+std::pair<std::size_t, std::size_t> three_way_partition_around_nth_range(RandomAccessIterator first,
+                                                                         RandomAccessIterator last,
+                                                                         std::size_t          n_features,
+                                                                         std::size_t          pivot_index,
+                                                                         std::size_t          feature_index) {
     // values less than pivot: [0, i)
     std::size_t i = 0;
     // values equal to pivot: [i, j)
@@ -152,7 +152,7 @@ std::size_t three_way_partition_around_nth_range(RandomAccessIterator first,
             ++j;
         }
     }
-    return i;
+    return {i, j};
 }
 
 /**
@@ -218,8 +218,6 @@ std::size_t partition_around_nth_range(RandomAccessIterator first,
                     // the pivot index has now the value of the index it was swapped with (left index here)
                     pivot_index = left_index;
                 }
-                // shift the left index back by one to avoid crossing over the pivot
-                --left_index;
             }
             // if the value at the left index is not equal to the value at the pivot index
             else {
@@ -230,9 +228,11 @@ std::size_t partition_around_nth_range(RandomAccessIterator first,
 
                 // the pivot index has now the value of the index it was swapped with (right index here)
                 pivot_index = left_index;
-                // shift the left index back by one to avoid crossing over the pivot
-                --left_index;
             }
+            // shift the left index back by one to avoid crossing over the pivot
+            // this operation is needed in all the conditional branches at the current level because the left range is
+            // either swapped with the pivot range or left_index is equal to pivot_index
+            --left_index;
         }
     }
     return pivot_index;

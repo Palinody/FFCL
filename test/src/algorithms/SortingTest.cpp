@@ -318,38 +318,38 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
 TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeWithDuplicatesTest) {
     using DataType = TypeParam;
 
-    static constexpr std::size_t samples  = 8;
+    static constexpr std::size_t samples  = 9;
     static constexpr std::size_t features = 1;
 
     static constexpr std::size_t pivot_index   = 4;
     static constexpr std::size_t feature_index = 0;
 
-    std::vector<DataType> data = {1, 1, 1, 1, 1, 1, 0, 3};
+    std::vector<DataType> data = {1, 1, 1, 1, 1, 1, 0, 3, 0};
 
-    const auto new_pivot_index = ffcl::algorithms::three_way_partition_around_nth_range(
+    const auto [new_pivot_index_first, new_pivot_index_second] = ffcl::algorithms::three_way_partition_around_nth_range(
         data.begin(), data.end(), features, pivot_index, feature_index);
 
     // the values before the pivot according to the feature_index dimension should be less
     // the values after the pivot according to the feature_index dimension should be greater or
     // equal
-    const auto res = this->is_pivot_faulty(data.begin(), data.end(), features, new_pivot_index, feature_index);
+    const auto res = this->is_pivot_faulty(data.begin(), data.end(), features, new_pivot_index_first, feature_index);
 
     // print only if this->is_pivot_faulty returned values (meaning that its not valid)
     if (res.has_value()) {
         printf("n_samples: %ld, n_features: %ld\n", samples, features);
         printf("pivot_index: %ld, feature_index: %ld\n", pivot_index, feature_index);
 
-        const auto pivot_value = data[new_pivot_index * features + feature_index];
+        const auto pivot_value = data[new_pivot_index_first * features + feature_index];
 
         const auto [not_pivot_index, not_pivot_value] = res.value();
-        if (not_pivot_index < new_pivot_index) {
+        if (not_pivot_index < new_pivot_index_first) {
             std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] < "
-                      << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " < " << pivot_value
+                      << "pivot[" << new_pivot_index_first << "] but got: " << not_pivot_value << " < " << pivot_value
                       << ", which is wrong.\n";
 
         } else {
             std::cout << "Error, expected: not_pivot[" << not_pivot_index << "] >= "
-                      << "pivot[" << new_pivot_index << "] but got: " << not_pivot_value << " >= " << pivot_value
+                      << "pivot[" << new_pivot_index_first << "] but got: " << not_pivot_value << " >= " << pivot_value
                       << ", which is wrong.\n";
         }
         printf("\n");
