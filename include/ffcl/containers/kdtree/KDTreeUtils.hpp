@@ -78,23 +78,11 @@ BoundingBoxKDType<Iterator> make_kd_bounding_box(const Iterator& samples_first,
 
 template <typename Iterator>
 ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<Iterator>& kd_bounding_box) {
-    using DataType = DataType<Iterator>;
-
-    const std::size_t n_features = kd_bounding_box.size();
-
-    DataType absolute_difference = std::abs(kd_bounding_box[0].first - kd_bounding_box[0].second);
-    ssize_t  axis                = 0;
-
-    for (std::size_t feature_index = 1; feature_index < n_features; ++feature_index) {
-        const auto absolute_difference_candidate =
-            std::abs(kd_bounding_box[feature_index].first - kd_bounding_box[feature_index].second);
-
-        if (absolute_difference_candidate > absolute_difference) {
-            absolute_difference = absolute_difference_candidate;
-            axis                = feature_index;
-        }
-    }
-    return axis;
+    const auto cmp = [](const auto& lhs, const auto& rhs) {
+        return std::abs(lhs.first - lhs.second) < std::abs(rhs.first - rhs.second);
+    };
+    auto it = std::max_element(kd_bounding_box.begin(), kd_bounding_box.end(), cmp);
+    return std::distance(kd_bounding_box.begin(), it);
 }
 
 template <typename Iterator>
