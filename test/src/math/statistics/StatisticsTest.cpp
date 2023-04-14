@@ -93,7 +93,7 @@ TYPED_TEST(MathStatisticsTestFixture, ComputeVarianceV2PerFeature) {
         printf("\n");
 #endif
 
-        // ASSERT_TRUE(this->ranges_equality(result.begin(), result.end(), result_v2.begin(), result_v2.end()));
+        ASSERT_TRUE(this->ranges_equality(result.begin(), result.end(), result_v2.begin(), result_v2.end()));
     }
 }
 
