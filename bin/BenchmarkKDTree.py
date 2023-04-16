@@ -111,9 +111,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
         end_time - start_time,
         "seconds",
     )
-
     # flann.get_indexed_data()
-
     # print("FLANN build_index parameters:")
     # print(params)
 
@@ -159,7 +157,7 @@ def run_mnist():
 
     print(dataset.shape)
 
-    # TestPyclusteringKDTreeBuildTime(dataset)
+    TestPyclusteringKDTreeBuildTime(dataset)
 
     TestSklearnKDTreeBuildTime(dataset)
 

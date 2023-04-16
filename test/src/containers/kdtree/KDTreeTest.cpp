@@ -171,7 +171,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
     auto kdtree = ffcl::containers::KDTree(
         std::make_pair(data.begin(), data.end()),
         n_features,
-        kdtree::policy::HighestVarianceBuild<IteratorType>(),
+        kdtree::policy::MaximumSpreadBuild<IteratorType>(),
         kdtree::policy::QuickselectMedianRange<IteratorType>(),
         ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40) /*.max_depth(std::log2(n_samples))*/);
 
@@ -193,7 +193,13 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    using IteratorType = decltype(data)::iterator;
+
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                           n_features,
+                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
+                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -219,7 +225,13 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    using IteratorType = decltype(data)::iterator;
+
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                           n_features,
+                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
+                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -245,7 +257,13 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    using IteratorType = decltype(data)::iterator;
+
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                           n_features,
+                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
+                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -271,7 +289,13 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    using IteratorType = decltype(data)::iterator;
+
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                           n_features,
+                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
+                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -297,7 +321,13 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    using IteratorType = decltype(data)::iterator;
+
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                           n_features,
+                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
+                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -323,7 +353,13 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    using IteratorType = decltype(data)::iterator;
+
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                           n_features,
+                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
+                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -349,7 +385,13 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()), n_features);
+    using IteratorType = decltype(data)::iterator;
+
+    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+                                           n_features,
+                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
+                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
