@@ -171,7 +171,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
     auto kdtree = ffcl::containers::KDTree(
         std::make_pair(data.begin(), data.end()),
         n_features,
-        kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+        kdtree::policy::HighestVarianceBuild<IteratorType>(),
         kdtree::policy::QuickselectMedianRange<IteratorType>(),
         ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40) /*.max_depth(std::log2(n_samples))*/);
 
@@ -197,7 +197,7 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                            n_features,
-                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
                                            ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
@@ -229,7 +229,7 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
 
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                            n_features,
-                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
                                            ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
@@ -261,7 +261,7 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
 
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                            n_features,
-                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
                                            ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
@@ -293,7 +293,7 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
 
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                            n_features,
-                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
                                            ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
@@ -325,7 +325,7 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
 
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                            n_features,
-                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
                                            ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
@@ -357,7 +357,7 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
 
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                            n_features,
-                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
                                            ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 
@@ -389,7 +389,7 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
                                            n_features,
-                                           kdtree::policy::MaximumSpreadBuild<IteratorType>(),
+                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
                                            ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
 

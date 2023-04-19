@@ -48,13 +48,11 @@ TYPED_TEST(MathStatisticsTestFixture, ComputeMeanPerFeature) {
     const std::vector<DataType>  expected_mean = {4, 5, 6};
     static constexpr std::size_t n_features    = 3;
 
-    auto result = math::statistics::compute_mean_per_feature(data.begin(), data.end(), n_features);
+    const auto result = math::statistics::compute_mean_per_feature(data.begin(), data.end(), n_features);
 
     ASSERT_EQ(result.size(), n_features);
 
-    for (std::size_t i = 0; i < result.size(); ++i) {
-        EXPECT_DOUBLE_EQ(result[i], expected_mean[i]);
-    }
+    ASSERT_TRUE(this->ranges_equality(result.begin(), result.end(), expected_mean.begin(), expected_mean.end()));
 }
 
 TYPED_TEST(MathStatisticsTestFixture, ComputeVariancePerFeature) {
@@ -64,36 +62,39 @@ TYPED_TEST(MathStatisticsTestFixture, ComputeVariancePerFeature) {
     const std::vector<DataType>  expected_variance = {9, 9, 9};
     static constexpr std::size_t n_features        = 3;
 
-    auto result = math::statistics::compute_variance_per_feature(data.begin(), data.end(), n_features);
+    const auto result = math::statistics::compute_variance_per_feature(data.begin(), data.end(), n_features);
 
     ASSERT_EQ(result.size(), n_features);
 
-    for (std::size_t i = 0; i < result.size(); ++i) {
-        EXPECT_DOUBLE_EQ(result[i], expected_variance[i]);
-    }
+    ASSERT_TRUE(
+        this->ranges_equality(result.begin(), result.end(), expected_variance.begin(), expected_variance.end()));
 }
 
-TYPED_TEST(MathStatisticsTestFixture, ComputeVarianceV2PerFeature) {
+TYPED_TEST(MathStatisticsTestFixture, ComputeVariance) {
+    using DataType = TypeParam;
+
+    const std::vector<DataType> data              = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    const DataType              expected_variance = 7.5;
+
+    const auto result1 = math::statistics::compute_variance_per_feature(data.begin(), data.end(), 1)[0];
+    const auto result2 = math::statistics::compute_variance(data.begin(), data.end());
+
+    EXPECT_DOUBLE_EQ(result1, static_cast<DataType>(expected_variance));
+    EXPECT_DOUBLE_EQ(result2, static_cast<DataType>(expected_variance));
+}
+
+TYPED_TEST(MathStatisticsTestFixture, ArgmaxVariancePerFeature) {
     for (std::size_t test_index = 0; test_index < this->n_tests_; ++test_index) {
         const auto data = this->generate_random_uniform_vector(
             this->n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
 
-        auto result    = math::statistics::compute_variance_per_feature(data.begin(), data.end(), this->n_features_);
-        auto result_v2 = math::statistics::compute_variance_per_feature_v2(data.begin(), data.end(), this->n_features_);
+        const auto var_per_feat =
+            math::statistics::compute_variance_per_feature(data.begin(), data.end(), this->n_features_);
+        const auto argmax1 = math::statistics::argmax(var_per_feat.begin(), var_per_feat.end());
 
-        ASSERT_TRUE(result.size() == result_v2.size());
+        const auto argmax2 = math::statistics::argmax_variance_per_feature(data.begin(), data.end(), this->n_features_);
 
-        for (std::size_t feature_index = 0; feature_index; ++feature_index) {
-            EXPECT_DOUBLE_EQ(result[feature_index], result_v2[feature_index]);
-        }
-#if defined(VERBOSE) && VERBOSE == true
-        this->print_data(result, this->n_features_);
-        printf("\n");
-        this->print_data(result_v2, this->n_features_);
-        printf("\n");
-#endif
-
-        ASSERT_TRUE(this->ranges_equality(result.begin(), result.end(), result_v2.begin(), result_v2.end()));
+        EXPECT_EQ(argmax1, argmax2);
     }
 }
 

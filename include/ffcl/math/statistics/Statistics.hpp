@@ -10,100 +10,6 @@
 
 namespace math::statistics {
 
-template <typename Iterator>
-std::vector<typename Iterator::value_type> compute_mean_per_feature(Iterator    data_first,
-                                                                    Iterator    data_last,
-                                                                    std::size_t n_features) {
-    using DataType = typename Iterator::value_type;
-
-    const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
-
-    assert(n_samples > 0);
-
-    auto mean_per_feature = std::vector<DataType>(n_features);
-
-    for (; data_first != data_last; std::advance(data_first, n_features)) {
-        std::transform(
-            data_first, data_first + n_features, mean_per_feature.begin(), mean_per_feature.begin(), std::plus<>());
-    }
-    std::transform(
-        mean_per_feature.begin(), mean_per_feature.end(), mean_per_feature.begin(), [n_samples](const auto& feature) {
-            return feature / n_samples;
-        });
-    return mean_per_feature;
-}
-
-template <typename Iterator>
-std::vector<typename Iterator::value_type> compute_variance_per_feature(Iterator    data_first,
-                                                                        Iterator    data_last,
-                                                                        std::size_t n_features) {
-    using DataType = typename Iterator::value_type;
-
-    const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
-
-    assert(n_samples > 1);
-
-    const auto mean_per_feature = compute_mean_per_feature(data_first, data_last, n_features);
-
-    auto variance_per_feature = std::vector<DataType>(n_features);
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        auto features_accumulator = std::vector<DataType>(n_features);
-
-        std::transform(data_first + sample_index * n_features,
-                       data_first + sample_index * n_features + n_features,
-                       mean_per_feature.begin(),
-                       features_accumulator.begin(),
-                       [](const auto& x, const auto& mean) {
-                           const auto temp = x - mean;
-                           return temp * temp;
-                       });
-
-        std::transform(features_accumulator.begin(),
-                       features_accumulator.end(),
-                       variance_per_feature.begin(),
-                       variance_per_feature.begin(),
-                       std::plus<DataType>());
-    }
-    std::transform(variance_per_feature.begin(),
-                   variance_per_feature.end(),
-                   variance_per_feature.begin(),
-                   [n_samples](const auto& feature) { return feature / (n_samples - 1); });
-
-    return variance_per_feature;
-}
-
-template <typename Iterator>
-typename Iterator::value_type compute_variance(Iterator data_first, Iterator data_last) {
-    using DataType = typename Iterator::value_type;
-
-    const auto n_elements     = std::distance(data_first, data_last);
-    const auto sum            = std::accumulate(data_first, data_last, static_cast<DataType>(0));
-    const auto sum_of_squares = std::inner_product(data_first, data_last, data_first, static_cast<DataType>(0));
-
-    return (sum_of_squares - sum * sum / n_elements) / (n_elements - 1);
-}
-
-template <typename Iterator>
-std::vector<typename Iterator::value_type> compute_variance_per_feature_v2(Iterator    data_first,
-                                                                           Iterator    data_last,
-                                                                           std::size_t n_features) {
-    using DataType = typename Iterator::value_type;
-
-    assert(common::utils::get_n_samples(data_first, data_last, n_features) > 1);
-
-    const auto [transposed_data, _, n_samples] = math::linear_algebra::transpose(data_first, data_last, n_features);
-
-    auto variance_per_feature = std::vector<DataType>(n_features);
-
-    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-        variance_per_feature[feature_index] =
-            compute_variance(transposed_data.begin() + feature_index * n_samples,
-                             transposed_data.begin() + feature_index * n_samples + n_samples);
-    }
-    return variance_per_feature;
-}
-
 template <typename T = double, typename IteratorFloat>
 std::vector<T> normalize_min_max(const IteratorFloat& data_first, const IteratorFloat& data_last) {
     const auto [min, max] = std::minmax_element(data_first, data_last);
@@ -227,6 +133,113 @@ std::pair<std::size_t, typename Iterator::value_type> find_nth_smallest_index_an
     auto index = std::distance(data_first, it);
 
     return {index, nth_smallest};
+}
+
+template <typename Iterator>
+std::vector<typename Iterator::value_type> compute_mean_per_feature(Iterator    data_first,
+                                                                    Iterator    data_last,
+                                                                    std::size_t n_features) {
+    using DataType = typename Iterator::value_type;
+
+    const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
+
+    assert(n_samples > 0);
+
+    auto mean_per_feature = std::vector<DataType>(n_features);
+
+    for (; data_first != data_last; std::advance(data_first, n_features)) {
+        std::transform(
+            data_first, data_first + n_features, mean_per_feature.begin(), mean_per_feature.begin(), std::plus<>());
+    }
+    std::transform(
+        mean_per_feature.begin(), mean_per_feature.end(), mean_per_feature.begin(), [n_samples](const auto& feature) {
+            return feature / n_samples;
+        });
+    return mean_per_feature;
+}
+
+template <typename Iterator>
+std::vector<typename Iterator::value_type> compute_variance_per_feature(Iterator    data_first,
+                                                                        Iterator    data_last,
+                                                                        std::size_t n_features) {
+    using DataType = typename Iterator::value_type;
+
+    const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
+
+    assert(n_samples > 1);
+
+    const auto mean_per_feature = compute_mean_per_feature(data_first, data_last, n_features);
+
+    auto variance_per_feature = std::vector<DataType>(n_features);
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        auto features_accumulator = std::vector<DataType>(n_features);
+
+        std::transform(data_first + sample_index * n_features,
+                       data_first + sample_index * n_features + n_features,
+                       mean_per_feature.begin(),
+                       features_accumulator.begin(),
+                       [](const auto& x, const auto& mean) {
+                           const auto temp = x - mean;
+                           return temp * temp;
+                       });
+
+        std::transform(features_accumulator.begin(),
+                       features_accumulator.end(),
+                       variance_per_feature.begin(),
+                       variance_per_feature.begin(),
+                       std::plus<DataType>());
+    }
+    std::transform(variance_per_feature.begin(),
+                   variance_per_feature.end(),
+                   variance_per_feature.begin(),
+                   [n_samples](const auto& feature) { return feature / (n_samples - 1); });
+
+    return variance_per_feature;
+}
+
+template <typename Iterator>
+std::size_t argmax_variance_per_feature(Iterator data_first, Iterator data_last, std::size_t n_features) {
+    using DataType = typename Iterator::value_type;
+
+    const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
+
+    assert(n_samples > 1);
+
+    const auto mean_per_feature = compute_mean_per_feature(data_first, data_last, n_features);
+
+    auto variance_per_feature = std::vector<DataType>(n_features);
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        auto features_accumulator = std::vector<DataType>(n_features);
+
+        std::transform(data_first + sample_index * n_features,
+                       data_first + sample_index * n_features + n_features,
+                       mean_per_feature.begin(),
+                       features_accumulator.begin(),
+                       [](const auto& x, const auto& mean) {
+                           const auto temp = x - mean;
+                           return temp * temp;
+                       });
+
+        std::transform(features_accumulator.begin(),
+                       features_accumulator.end(),
+                       variance_per_feature.begin(),
+                       variance_per_feature.begin(),
+                       std::plus<DataType>());
+    }
+    return math::statistics::argmax(variance_per_feature.begin(), variance_per_feature.end());
+}
+
+template <typename Iterator>
+typename Iterator::value_type compute_variance(Iterator data_first, Iterator data_last) {
+    using DataType = typename Iterator::value_type;
+
+    const auto n_elements     = std::distance(data_first, data_last);
+    const auto sum            = std::accumulate(data_first, data_last, static_cast<DataType>(0));
+    const auto sum_of_squares = std::inner_product(data_first, data_last, data_first, static_cast<DataType>(0));
+
+    return (sum_of_squares - sum * sum / n_elements) / (n_elements - 1);
 }
 
 }  // namespace math::statistics
