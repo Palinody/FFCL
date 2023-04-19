@@ -37,7 +37,7 @@ BoundingBoxKDType<Iterator> make_1d_bounding_box(const Iterator& samples_first,
         BoundingBox1DType<Iterator>({std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        const auto min_max_feature_candidate = *(samples_first + sample_index * n_features + axis);
+        const auto min_max_feature_candidate = samples_first[sample_index * n_features + axis];
 
         if (min_max_feature_candidate < bounding_box_1d.first) {
             bounding_box_1d.first = min_max_feature_candidate;
@@ -63,7 +63,7 @@ BoundingBoxKDType<Iterator> make_kd_bounding_box(const Iterator& samples_first,
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            const auto min_max_feature_candidate = *(samples_first + sample_index * n_features + feature_index);
+            const auto min_max_feature_candidate = samples_first[sample_index * n_features + feature_index];
 
             if (min_max_feature_candidate < kd_bounding_box[feature_index].first) {
                 kd_bounding_box[feature_index].first = min_max_feature_candidate;
