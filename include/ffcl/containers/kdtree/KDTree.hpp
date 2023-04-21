@@ -181,7 +181,7 @@ std::shared_ptr<KDNodeView<Iterator>> KDTree<Iterator>::build(
 
         kdnode = std::make_shared<KDNodeView<Iterator>>(cut_range, n_features_, cut_feature_index, kd_bounding_box);
 
-        const auto cut_value = *(cut_range.first + cut_feature_index);
+        const auto cut_value = cut_range.first[cut_feature_index];
 
         // set the right bound of the left child to the cut value
         kd_bounding_box[cut_feature_index].second = cut_value;

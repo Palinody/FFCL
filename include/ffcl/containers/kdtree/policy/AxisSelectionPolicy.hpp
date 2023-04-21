@@ -40,7 +40,7 @@ struct HighestVarianceBuild : public AxisSelectionPolicy<RandomAccessIterator> {
                                   std::size_t                                   n_features,
                                   ssize_t                                       depth,
                                   BoundingBoxKDType<RandomAccessIterator>&      kd_bounding_box) const;
-
+    // default sampling proportion value. Range: [0, 1]
     double sampling_proportion_ = 0.1;
 };
 
