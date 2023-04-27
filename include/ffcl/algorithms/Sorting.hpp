@@ -226,7 +226,7 @@ std::size_t partition_around_nth_range(RandomAccessIterator first,
                                  first + left_index * n_features + n_features,
                                  first + pivot_index * n_features);
 
-                // the pivot index has now the value of the index it was swapped with (right index here)
+                // the pivot index has now the value of the index it was swapped with (left index here)
                 pivot_index = left_index;
             }
             // shift the left index back by one to avoid crossing over the pivot

@@ -71,6 +71,13 @@ class KDTree {
     };
 
   public:
+    using RandomAccessIntIterator = std::vector<std::size_t>::iterator;
+
+    template <typename IndexIterator>
+    using IndexAndSamplesVariantType = std::pair<IteratorPairType<IndexIterator>, IteratorPairType<Iterator>>;
+    using SamplesVariantType         = IteratorPairType<Iterator>;
+    using StorageVariantType = std::variant<IndexAndSamplesVariantType<RandomAccessIntIterator>, SamplesVariantType>;
+
     template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunction>
     KDTree(const IteratorPairType<Iterator>&  iterator_pair,
            std::size_t                        n_features,
@@ -85,6 +92,11 @@ class KDTree {
            const Options&                     options = Options());
 
     KDTree(const IteratorPairType<Iterator>& iterator_pair, std::size_t n_features, const Options& options = Options());
+
+    KDTree(const IteratorPairType<RandomAccessIntIterator>& indices_iterator_pair,
+           const IteratorPairType<Iterator>&                values_iterator_pair,
+           std::size_t                                      n_features,
+           const Options&                                   options = Options());
 
     KDTree(const KDTree&) = delete;
 
@@ -102,7 +114,8 @@ class KDTree {
                                                 const AxisSelectionPolicyFunction& axis_selection_policy,
                                                 const SplittingRulePolicyFunction& splitting_rule_policy);
 
-    IteratorPairType<Iterator> iterator_pair_;
+    // IteratorPairType<Iterator> iterator_pair_;
+    StorageVariantType storage_variant_;
 
     std::size_t n_features_;
     // bounding box hyper rectangle (w.r.t. each dimension)
@@ -120,14 +133,14 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>&  iterator_pair,
                          const AxisSelectionPolicyFunction& axis_selection_policy,
                          const SplittingRulePolicyFunction& splitting_rule_policy,
                          const Options&                     options)
-  : iterator_pair_{iterator_pair}
+  : storage_variant_{SamplesVariantType(iterator_pair)}
   , n_features_{n_features}
-  , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(iterator_pair_),
-                                                         std::get<1>(iterator_pair_),
+  , kd_bounding_box_{kdtree::utils::make_kd_bounding_box(std::get<0>(std::get<SamplesVariantType>(storage_variant_)),
+                                                         std::get<1>(std::get<SamplesVariantType>(storage_variant_)),
                                                          n_features_)}
   , options_{options}
-  , root_{build(iterator_pair_,
-                axis_selection_policy(iterator_pair_, n_features_, 0, kd_bounding_box_),
+  , root_{build(std::get<SamplesVariantType>(storage_variant_),
+                axis_selection_policy(std::get<SamplesVariantType>(storage_variant_), n_features_, 0, kd_bounding_box_),
                 0,
                 kd_bounding_box_,
                 axis_selection_policy,
@@ -154,6 +167,12 @@ KDTree<Iterator>::KDTree(const IteratorPairType<Iterator>& iterator_pair,
                              kdtree::policy::MaximumSpreadBuild<Iterator>(),
                              kdtree::policy::QuickselectMedianRange<Iterator>(),
                              options) {}
+
+template <typename Iterator>
+KDTree<Iterator>::KDTree(const IteratorPairType<RandomAccessIntIterator>& indices_iterator_pair,
+                         const IteratorPairType<Iterator>&                values_iterator_pair,
+                         std::size_t                                      n_features,
+                         const Options&                                   options) {}
 
 template <typename Iterator>
 template <typename AxisSelectionPolicyFunction, typename SplittingRulePolicyFunction>
@@ -253,9 +272,13 @@ void KDTree<Iterator>::serialize(const fs::path& filepath) const {
 
     writer.StartObject();
     {
+        const auto [samples_first, samples_last] =
+            std::holds_alternative<IndexAndSamplesVariantType<RandomAccessIntIterator>>(storage_variant_)
+                ? std::get<1>(std::get<IndexAndSamplesVariantType<RandomAccessIntIterator>>(storage_variant_))
+                : std::get<SamplesVariantType>(storage_variant_);
+
         writer.String("n_samples");
-        writer.Int64(
-            common::utils::get_n_samples(std::get<0>(iterator_pair_), std::get<1>(iterator_pair_), n_features_));
+        writer.Int64(common::utils::get_n_samples(samples_first, samples_last, n_features_));
 
         writer.String("n_features");
         writer.Int64(n_features_);
