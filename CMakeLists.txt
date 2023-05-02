@@ -261,6 +261,23 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        KDTreeUtilsTest
+
+        # ---
+        test/src/containers/kdtree/KDTreeUtilsTest.cpp
+    )
+    target_link_libraries(
+        KDTreeUtilsTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        KDTreeUtilsTest
+        KDTreeUtilsTest
+    )
+
+    add_executable(
         KDTreeTest
 
         # ---
@@ -281,7 +298,7 @@ elseif(MODE STREQUAL "gtest")
         LABELS "DistributionTests"
     )
 
-    set_tests_properties(UtilsTest PROPERTIES
+    set_tests_properties(UtilsTest KDTreeUtilsTest PROPERTIES
         LABELS "UtilityTests"
     )
 

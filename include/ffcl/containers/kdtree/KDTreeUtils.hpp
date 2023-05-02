@@ -112,12 +112,11 @@ std::tuple<std::size_t,
            IteratorPairType<RandomAccessIterator>,
            IteratorPairType<RandomAccessIterator>,
            IteratorPairType<RandomAccessIterator>>
-quickselect_median_range(IteratorPairType<RandomAccessIterator> iterator_pair,
-                         std::size_t                            n_features,
-                         std::size_t                            feature_index) {
+quickselect_median_range(RandomAccessIterator samples_first,
+                         RandomAccessIterator samples_last,
+                         std::size_t          n_features,
+                         std::size_t          feature_index) {
     assert(feature_index < n_features);
-
-    const auto [samples_first, samples_last] = iterator_pair;
 
     const auto median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
 

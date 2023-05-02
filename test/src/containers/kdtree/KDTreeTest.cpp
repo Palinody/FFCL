@@ -149,6 +149,38 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
     std::cout << axis << "\n";
 }
 
+TEST_F(KDTreeErrorsTest, MNISTIndexedKDTreeTest) {
+    return;
+    fs::path filename = "mnist.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+
+    const std::size_t n_samples = labels.size();
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << n_samples << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    // make indices
+    const auto indices = common::utils::generate_values<std::size_t>(0, n_samples);
+
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    // using IteratorType = decltype(data)::iterator;
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    /*
+    auto kdtree = ffcl::containers::KDTree(
+        std::make_pair(std::make_pair(indices.begin(), indices.end()), data.begin(), data.end()),
+        n_features);
+    */
+
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+}
+
 TEST_F(KDTreeErrorsTest, MNISTTest) {
     fs::path filename = "mnist.txt";
 
@@ -169,7 +201,8 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
     using IteratorType = decltype(data)::iterator;
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
     auto kdtree = ffcl::containers::KDTree(
-        std::make_pair(data.begin(), data.end()),
+        data.begin(),
+        data.end(),
         n_features,
         kdtree::policy::HighestVarianceBuild<IteratorType>(),
         kdtree::policy::QuickselectMedianRange<IteratorType>(),
@@ -195,7 +228,8 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+    auto kdtree = ffcl::containers::KDTree(data.begin(),
+                                           data.end(),
                                            n_features,
                                            kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
@@ -227,7 +261,8 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+    auto kdtree = ffcl::containers::KDTree(data.begin(),
+                                           data.end(),
                                            n_features,
                                            kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
@@ -259,7 +294,8 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+    auto kdtree = ffcl::containers::KDTree(data.begin(),
+                                           data.end(),
                                            n_features,
                                            kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
@@ -291,7 +327,8 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+    auto kdtree = ffcl::containers::KDTree(data.begin(),
+                                           data.end(),
                                            n_features,
                                            kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
@@ -323,7 +360,8 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+    auto kdtree = ffcl::containers::KDTree(data.begin(),
+                                           data.end(),
                                            n_features,
                                            kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
@@ -355,7 +393,8 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+    auto kdtree = ffcl::containers::KDTree(data.begin(),
+                                           data.end(),
                                            n_features,
                                            kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),
@@ -387,7 +426,8 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(std::make_pair(data.begin(), data.end()),
+    auto kdtree = ffcl::containers::KDTree(data.begin(),
+                                           data.end(),
                                            n_features,
                                            kdtree::policy::HighestVarianceBuild<IteratorType>(),
                                            kdtree::policy::QuickselectMedianRange<IteratorType>(),

@@ -357,20 +357,20 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAc
 }
 
 template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_indexed_range(RandomAccessIntIterator index_first,
-                                                                                RandomAccessIntIterator index_last,
-                                                                                RandomAccessIterator    first,
-                                                                                RandomAccessIterator    last,
-                                                                                std::size_t             n_features,
-                                                                                std::size_t             kth_smallest,
-                                                                                std::size_t             feature_index) {
+std::pair<RandomAccessIntIterator, RandomAccessIntIterator> quickselect_indexed_range(
+    RandomAccessIntIterator index_first,
+    RandomAccessIntIterator index_last,
+    RandomAccessIterator    first,
+    RandomAccessIterator    last,
+    std::size_t             n_features,
+    std::size_t             kth_smallest,
+    std::size_t             feature_index) {
     std::size_t left_index  = 0;
     std::size_t right_index = std::distance(index_first, index_last) - 1;
 
     while (true) {
         if (left_index == right_index) {
-            return {first + index_first[left_index] * n_features,
-                    first + index_first[right_index] * n_features + n_features};
+            return {index_first + left_index, index_first + right_index};
         }
         std::size_t pivot_index = median_index_of_three_indexed_ranges(
             index_first + left_index, index_first + right_index + 1, first, last, n_features, feature_index);
@@ -386,8 +386,7 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_indexed_range(
                                                                       feature_index);
 
         if (kth_smallest == pivot_index) {
-            return {first + index_first[pivot_index] * n_features,
-                    first + index_first[pivot_index] * n_features + n_features};
+            return {index_first + pivot_index, index_first + pivot_index};
 
         } else if (kth_smallest < pivot_index) {
             right_index = pivot_index - 1;

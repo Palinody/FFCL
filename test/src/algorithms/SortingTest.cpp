@@ -1,5 +1,6 @@
 #include "ffcl/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
 
 #include "Range2DBaseFixture.hpp"
 
@@ -490,7 +491,7 @@ TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
                         auto shuffled_ascending_elements_array = this->shuffle_by_row(
                             ascending_elements_array.begin(), ascending_elements_array.end(), features);
 
-                        const auto [kth_smallest_begin, kth_smallest_end] =
+                        const auto [kth_smallest_index_begin, kth_smallest_index_end] =
                             ffcl::algorithms::quickselect_indexed_range(data_indices.begin(),
                                                                         data_indices.end(),
                                                                         shuffled_ascending_elements_array.begin(),
@@ -502,8 +503,8 @@ TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
                         // the range returned from quickselect should be the same as in the sorted dataset at index
                         // kth_smallest_index
                         ASSERT_TRUE(this->ranges_equality(
-                            kth_smallest_begin,
-                            kth_smallest_end,
+                            shuffled_ascending_elements_array.begin() + *kth_smallest_index_begin * features,
+                            shuffled_ascending_elements_array.begin() + *kth_smallest_index_end * features + features,
                             ascending_elements_array.begin() + kth_smallest_index * features,
                             ascending_elements_array.begin() + kth_smallest_index * features + features));
 

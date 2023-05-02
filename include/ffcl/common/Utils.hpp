@@ -264,4 +264,14 @@ bool is_element_not_in_first(const IteratorPair&                                
            }) == data_last;
 }
 
+template <typename DataType>
+std::vector<DataType> generate_values(const DataType& value_first, const DataType& value_last) {
+    assert(value_last >= value_first);
+
+    std::vector<DataType> elements(static_cast<std::size_t>(value_last - value_first));
+    // construct the range
+    std::iota(elements.begin(), elements.end(), value_first);
+    return elements;
+}
+
 }  // namespace common::utils
