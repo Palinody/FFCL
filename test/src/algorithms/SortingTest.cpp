@@ -1,6 +1,5 @@
 #include "ffcl/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
 
 #include "Range2DBaseFixture.hpp"
 
