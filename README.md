@@ -10,8 +10,8 @@
 
 ## TODO (in order)
 
-- `ffcl::containers::KDTree` (ongoing)
-- Proper unit testing
+- `ffcl::containers::KDTree` (**update**: kdtree build only with multiple axis selection and one splitting rule. CLient can make its own rules. The build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axist selection policy)
+- Proper unit testing (**update**: all the generic code is now unit tested)
 - DBSCAN
 - OPTICS
 - DENCLUE
