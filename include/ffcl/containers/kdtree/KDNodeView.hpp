@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
+#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // ssize_t

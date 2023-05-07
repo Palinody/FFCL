@@ -1,6 +1,6 @@
-#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
 #include "ffcl/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 
 #include "Range2DBaseFixture.hpp"
 
@@ -65,10 +65,10 @@ TYPED_TEST(KDTreeUtilsTestFixture, QuickselectMedianRangeTest) {
                         ascending_elements_array.begin(), ascending_elements_array.end(), features);
 
                     const auto [cut_index, left_range, cut_range, right_range] =
-                        kdtree::utils::quickselect_median_range(shuffled_ascending_elements_array.begin(),
-                                                                shuffled_ascending_elements_array.end(),
-                                                                features,
-                                                                feature_index);
+                        kdtree::algorithms::quickselect_median_range(shuffled_ascending_elements_array.begin(),
+                                                                     shuffled_ascending_elements_array.end(),
+                                                                     features,
+                                                                     feature_index);
 
                     const auto [kth_smallest_begin, kth_smallest_end] = cut_range;
 

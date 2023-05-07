@@ -38,7 +38,7 @@ set(HEADER_FILES
 
     include/ffcl/containers/kdtree/KDTree.hpp
     include/ffcl/containers/kdtree/KDNodeView.hpp
-    include/ffcl/containers/kdtree/KDTreeUtils.hpp
+    include/ffcl/containers/kdtree/KDTreeAlgorithms.hpp
     include/ffcl/containers/LowerTriangleMatrix.hpp
 
     include/ffcl/heuristics/Heuristics.hpp

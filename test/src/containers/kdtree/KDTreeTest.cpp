@@ -139,12 +139,12 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
 
     const auto n_features = 3;
 
-    const auto kd_bounding_box = kdtree::utils::make_kd_bounding_box(dataset.begin(), dataset.end(), n_features);
+    const auto kd_bounding_box = kdtree::algorithms::make_kd_bounding_box(dataset.begin(), dataset.end(), n_features);
 
     print_kd_bounding_box<DataType>(kd_bounding_box, n_features);
 
-    ssize_t axis =
-        kdtree::utils::select_axis_with_largest_bounding_box_difference<decltype(dataset.begin())>(kd_bounding_box);
+    ssize_t axis = kdtree::algorithms::select_axis_with_largest_bounding_box_difference<decltype(dataset.begin())>(
+        kd_bounding_box);
 
     std::cout << axis << "\n";
 }

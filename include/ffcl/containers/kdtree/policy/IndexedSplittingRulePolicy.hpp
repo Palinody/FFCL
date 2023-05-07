@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
+#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 
 namespace kdtree::policy {
 
@@ -45,7 +45,7 @@ std::tuple<std::size_t,
 QuickselectMedianRange<RandomAccessIterator>::operator()(IteratorPairType<RandomAccessIterator> iterator_pair,
                                                          std::size_t                            n_features,
                                                          std::size_t                            feature_index) const {
-    return kdtree::utils::quickselect_median_range(iterator_pair, n_features, feature_index);
+    return kdtree::algorithms::quickselect_median_range(iterator_pair, n_features, feature_index);
 }
 
 }  // namespace kdtree::policy

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/containers/kdtree/KDTreeUtils.hpp"
+#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 
 #include "ffcl/common/Utils.hpp"
 
@@ -79,7 +79,7 @@ std::size_t HighestVarianceBuild<RandomAccessIterator>::operator()(
     BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const {
     common::utils::ignore_parameters(depth, kd_bounding_box);
     // select the cut_feature_index according to the one with the most variance
-    return kdtree::utils::select_axis_with_largest_variance<RandomAccessIterator>(
+    return kdtree::algorithms::select_axis_with_largest_variance<RandomAccessIterator>(
         samples_first, samples_last, n_features, sampling_proportion_);
 }
 
@@ -92,7 +92,7 @@ std::size_t MaximumSpreadBuild<RandomAccessIterator>::operator()(
     BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const {
     common::utils::ignore_parameters(samples_first, samples_last, n_features, depth);
     // select the cut_feature_index according to the one with the most spread (min-max values)
-    return kdtree::utils::select_axis_with_largest_bounding_box_difference<RandomAccessIterator>(kd_bounding_box);
+    return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<RandomAccessIterator>(kd_bounding_box);
 }
 
 }  // namespace kdtree::policy

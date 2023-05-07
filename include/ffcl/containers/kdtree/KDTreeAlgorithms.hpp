@@ -23,7 +23,7 @@ using BoundingBox1DType = std::pair<DataType<SamplesIterator>, DataType<SamplesI
 template <typename SamplesIterator>
 using BoundingBoxKDType = std::vector<BoundingBox1DType<SamplesIterator>>;
 
-namespace kdtree::utils {
+namespace kdtree::algorithms {
 
 template <typename SamplesIterator>
 BoundingBoxKDType<SamplesIterator> make_1d_bounding_box(const SamplesIterator& samples_first,
@@ -145,4 +145,4 @@ quickselect_median_range(SamplesIterator samples_first,
     return {median_index, left_range, median_range, right_range};
 }
 
-}  // namespace kdtree::utils
+}  // namespace kdtree::algorithms
