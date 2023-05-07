@@ -11,31 +11,31 @@
 #include <limits>
 #include <vector>
 
-template <typename Iterator>
-using IteratorPairType = std::pair<Iterator, Iterator>;
+template <typename SamplesIterator>
+using IteratorPairType = std::pair<SamplesIterator, SamplesIterator>;
 
-template <typename Iterator>
-using DataType = typename Iterator::value_type;
+template <typename SamplesIterator>
+using DataType = typename SamplesIterator::value_type;
 
-template <typename Iterator>
-using BoundingBox1DType = std::pair<DataType<Iterator>, DataType<Iterator>>;
+template <typename SamplesIterator>
+using BoundingBox1DType = std::pair<DataType<SamplesIterator>, DataType<SamplesIterator>>;
 
-template <typename Iterator>
-using BoundingBoxKDType = std::vector<BoundingBox1DType<Iterator>>;
+template <typename SamplesIterator>
+using BoundingBoxKDType = std::vector<BoundingBox1DType<SamplesIterator>>;
 
 namespace kdtree::utils {
 
-template <typename Iterator>
-BoundingBoxKDType<Iterator> make_1d_bounding_box(const Iterator& samples_first,
-                                                 const Iterator& samples_last,
-                                                 std::size_t     n_features,
-                                                 ssize_t         axis) {
-    using DataType = DataType<Iterator>;
+template <typename SamplesIterator>
+BoundingBoxKDType<SamplesIterator> make_1d_bounding_box(const SamplesIterator& samples_first,
+                                                        const SamplesIterator& samples_last,
+                                                        std::size_t            n_features,
+                                                        ssize_t                axis) {
+    using DataType = DataType<SamplesIterator>;
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
-    auto bounding_box_1d =
-        BoundingBox1DType<Iterator>({std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
+    auto bounding_box_1d = BoundingBox1DType<SamplesIterator>(
+        {std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         const auto min_max_feature_candidate = samples_first[sample_index * n_features + axis];
@@ -50,17 +50,18 @@ BoundingBoxKDType<Iterator> make_1d_bounding_box(const Iterator& samples_first,
     return bounding_box_1d;
 }
 
-template <typename Iterator>
-BoundingBoxKDType<Iterator> make_kd_bounding_box(const Iterator& samples_first,
-                                                 const Iterator& samples_last,
-                                                 std::size_t     n_features) {
-    using DataType = DataType<Iterator>;
+template <typename SamplesIterator>
+BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const SamplesIterator& samples_first,
+                                                        const SamplesIterator& samples_last,
+                                                        std::size_t            n_features) {
+    using DataType = DataType<SamplesIterator>;
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
-    auto kd_bounding_box = BoundingBoxKDType<Iterator>(
+    auto kd_bounding_box = BoundingBoxKDType<SamplesIterator>(
         n_features,
-        BoundingBox1DType<Iterator>({std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()}));
+        BoundingBox1DType<SamplesIterator>(
+            {std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()}));
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -77,8 +78,8 @@ BoundingBoxKDType<Iterator> make_kd_bounding_box(const Iterator& samples_first,
     return kd_bounding_box;
 }
 
-template <typename Iterator>
-ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<Iterator>& kd_bounding_box) {
+template <typename SamplesIterator>
+ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
     const auto cmp = [](const auto& lhs, const auto& rhs) {
         return std::abs(lhs.first - lhs.second) < std::abs(rhs.first - rhs.second);
     };
@@ -86,11 +87,11 @@ ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType
     return std::distance(kd_bounding_box.begin(), it);
 }
 
-template <typename Iterator>
-ssize_t select_axis_with_largest_variance(const Iterator& samples_first,
-                                          const Iterator& samples_last,
-                                          std::size_t     n_features,
-                                          double          n_samples_fraction) {
+template <typename SamplesIterator>
+ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
+                                          const SamplesIterator& samples_last,
+                                          std::size_t            n_features,
+                                          double                 n_samples_fraction) {
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
     // set the number of samples as a fraction of the input
     const std::size_t n_choices = n_samples_fraction * n_samples;
@@ -114,21 +115,21 @@ ssize_t select_axis_with_largest_variance(const Iterator& samples_first,
     if (n_samples == 2) {
         // otherwise apply the bounding box method
         const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
-        return select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box);
+        return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
     }
     // return a random axis if theres only one sample left (should never be called if leaves cannot be empty)
     return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
 }
 
-template <typename RandomAccessIterator>
+template <typename SamplesIterator>
 std::tuple<std::size_t,
-           IteratorPairType<RandomAccessIterator>,
-           IteratorPairType<RandomAccessIterator>,
-           IteratorPairType<RandomAccessIterator>>
-quickselect_median_range(RandomAccessIterator samples_first,
-                         RandomAccessIterator samples_last,
-                         std::size_t          n_features,
-                         std::size_t          feature_index) {
+           IteratorPairType<SamplesIterator>,
+           IteratorPairType<SamplesIterator>,
+           IteratorPairType<SamplesIterator>>
+quickselect_median_range(SamplesIterator samples_first,
+                         SamplesIterator samples_last,
+                         std::size_t     n_features,
+                         std::size_t     feature_index) {
     assert(feature_index < n_features);
 
     const auto median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
