@@ -32,7 +32,7 @@ class KDTree {
   public:
     struct Options {
         Options()
-          : bucket_size_{10}
+          : bucket_size_{40}
           , max_depth_{common::utils::infinity<ssize_t>()}
           , axis_selection_policy_ptr_{std::make_unique<kdtree::policy::HighestVarianceBuild<SamplesIterator>>()}
           , splitting_rule_policy_ptr_{std::make_unique<kdtree::policy::QuickselectMedianRange<SamplesIterator>>()} {}
