@@ -17,9 +17,6 @@ struct AxisSelectionPolicy {
                                           BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const = 0;
 
   private:
-    AxisSelectionPolicy(const AxisSelectionPolicy&) = delete;
-
-    AxisSelectionPolicy& operator=(const AxisSelectionPolicy&) = delete;
 };
 
 template <typename RandomAccessIterator>

@@ -16,11 +16,6 @@ struct SplittingRulePolicy {
                RandomAccessIterator samples_last,
                std::size_t          n_features,
                std::size_t          feature_index) const = 0;
-
-  private:
-    SplittingRulePolicy(const SplittingRulePolicy&) = delete;
-
-    SplittingRulePolicy& operator=(const SplittingRulePolicy&) = delete;
 };
 
 template <typename RandomAccessIterator>

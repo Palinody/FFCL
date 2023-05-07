@@ -52,13 +52,23 @@ class KDTree {
         }
 
         template <typename AxisSelectionPolicy>
-        Options& axis_selection_policy(const AxisSelectionPolicy&) {
-            axis_selection_policy_ptr_ = std::make_unique<AxisSelectionPolicy>();
+        Options& axis_selection_policy(const AxisSelectionPolicy& axis_selection_policy) {
+            static_assert(
+                std::is_base_of<kdtree::policy::AxisSelectionPolicy<SamplesIterator>, AxisSelectionPolicy>::value,
+                "The provided axis selection policy must be derived from "
+                "kdtree::policy::AxisSelectionPolicy<SamplesIterator>");
+
+            axis_selection_policy_ptr_ = std::make_unique<AxisSelectionPolicy>(axis_selection_policy);
             return *this;
         }
 
         template <typename SplittingRulePolicy>
         Options& splitting_rule_policy(const SplittingRulePolicy&) {
+            static_assert(
+                std::is_base_of<kdtree::policy::SplittingRulePolicy<SamplesIterator>, SplittingRulePolicy>::value,
+                "The provided splitting rule policy must be derived from "
+                "kdtree::policy::SplittingRulePolicy<SamplesIterator>");
+
             splitting_rule_policy_ptr_ = std::make_unique<SplittingRulePolicy>();
             return *this;
         }

@@ -2,6 +2,7 @@
 
 #include "ffcl/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 #include "ffcl/math/random/Sampling.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
 
@@ -101,10 +102,22 @@ ssize_t select_axis_with_largest_variance(const Iterator& samples_first,
         // return the feature index with the maximum variance
         return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
     }
-    // otherwise apply the bounding box method
-    const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
+    // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
+    // compute the variance with the minimum number of samples, which is 3
+    if (n_samples > 2) {
+        const auto random_samples = math::random::select_n_random_samples(samples_first, samples_last, n_features, 3);
 
-    return select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box);
+        // return the feature index with the maximum variance
+        return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
+    }
+    // select the axis according to the dimension with the most spread between 2 points
+    if (n_samples == 2) {
+        // otherwise apply the bounding box method
+        const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
+        return select_axis_with_largest_bounding_box_difference<Iterator>(kd_bounding_box);
+    }
+    // return a random axis if theres only one sample left (should never be called if leaves cannot be empty)
+    return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
 }
 
 template <typename RandomAccessIterator>

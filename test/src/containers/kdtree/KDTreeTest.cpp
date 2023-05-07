@@ -171,14 +171,14 @@ TEST_F(KDTreeErrorsTest, MNISTIndexedKDTreeTest) {
 
     using IteratorType = decltype(data)::iterator;
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto kdtree =
-        ffcl::containers::KDTree(data.begin(),
-                                 data.end(),
-                                 n_features,
-                                 ffcl::containers::KDTree<IteratorType>::Options()
-                                     .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
-                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
+    auto kdtree = ffcl::containers::KDTree(
+        data.begin(),
+        data.end(),
+        n_features,
+        ffcl::containers::KDTree<IteratorType>::Options()
+            .bucket_size(40)
+            .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>().sampling_proportion(0.1))
+            .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
@@ -209,7 +209,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
                                      .max_depth(std::log2(n_samples))
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -238,7 +238,7 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
                                  n_features,
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -273,7 +273,7 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
                                  n_features,
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -308,7 +308,7 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
                                  n_features,
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -343,7 +343,7 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
                                  n_features,
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -378,7 +378,7 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
                                  n_features,
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -413,7 +413,7 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
                                  n_features,
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
@@ -448,7 +448,7 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
                                  n_features,
                                  ffcl::containers::KDTree<IteratorType>::Options()
                                      .bucket_size(40)
-                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .axis_selection_policy(kdtree::policy::MaximumSpreadBuild<IteratorType>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
