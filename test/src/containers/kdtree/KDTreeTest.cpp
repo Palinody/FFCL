@@ -150,7 +150,6 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
 }
 
 TEST_F(KDTreeErrorsTest, MNISTIndexedKDTreeTest) {
-    return;
     fs::path filename = "mnist.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
@@ -170,13 +169,16 @@ TEST_F(KDTreeErrorsTest, MNISTIndexedKDTreeTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    // using IteratorType = decltype(data)::iterator;
+    using IteratorType = decltype(data)::iterator;
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    /*
-    auto kdtree = ffcl::containers::KDTree(
-        std::make_pair(std::make_pair(indices.begin(), indices.end()), data.begin(), data.end()),
-        n_features);
-    */
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
@@ -200,13 +202,15 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
 
     using IteratorType = decltype(data)::iterator;
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTree(
-        data.begin(),
-        data.end(),
-        n_features,
-        kdtree::policy::HighestVarianceBuild<IteratorType>(),
-        kdtree::policy::QuickselectMedianRange<IteratorType>(),
-        ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40) /*.max_depth(std::log2(n_samples))*/);
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .max_depth(std::log2(n_samples))
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
@@ -228,12 +232,14 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(data.begin(),
-                                           data.end(),
-                                           n_features,
-                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
-                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
-                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -261,12 +267,14 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(data.begin(),
-                                           data.end(),
-                                           n_features,
-                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
-                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
-                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -294,12 +302,14 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(data.begin(),
-                                           data.end(),
-                                           n_features,
-                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
-                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
-                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -327,12 +337,14 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(data.begin(),
-                                           data.end(),
-                                           n_features,
-                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
-                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
-                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -360,12 +372,14 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(data.begin(),
-                                           data.end(),
-                                           n_features,
-                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
-                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
-                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -393,12 +407,14 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(data.begin(),
-                                           data.end(),
-                                           n_features,
-                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
-                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
-                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 
@@ -426,12 +442,14 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     using IteratorType = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTree(data.begin(),
-                                           data.end(),
-                                           n_features,
-                                           kdtree::policy::HighestVarianceBuild<IteratorType>(),
-                                           kdtree::policy::QuickselectMedianRange<IteratorType>(),
-                                           ffcl::containers::KDTree<IteratorType>::Options().bucket_size(40));
+    auto kdtree =
+        ffcl::containers::KDTree(data.begin(),
+                                 data.end(),
+                                 n_features,
+                                 ffcl::containers::KDTree<IteratorType>::Options()
+                                     .bucket_size(40)
+                                     .axis_selection_policy(kdtree::policy::HighestVarianceBuild<IteratorType>())
+                                     .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<IteratorType>()));
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 

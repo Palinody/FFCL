@@ -10,11 +10,11 @@ template <typename RandomAccessIterator>
 struct AxisSelectionPolicy {
     AxisSelectionPolicy() = default;
 
-    inline std::size_t operator()(RandomAccessIterator                     samples_first,
-                                  RandomAccessIterator                     samples_last,
-                                  std::size_t                              n_features,
-                                  ssize_t                                  depth,
-                                  BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const;
+    inline virtual std::size_t operator()(RandomAccessIterator                     samples_first,
+                                          RandomAccessIterator                     samples_last,
+                                          std::size_t                              n_features,
+                                          ssize_t                                  depth,
+                                          BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const = 0;
 
   private:
     AxisSelectionPolicy(const AxisSelectionPolicy&) = delete;

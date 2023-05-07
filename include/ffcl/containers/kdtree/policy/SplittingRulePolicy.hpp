@@ -8,14 +8,14 @@ template <typename RandomAccessIterator>
 struct SplittingRulePolicy {
     SplittingRulePolicy() = default;
 
-    inline std::tuple<std::size_t,
-                      IteratorPairType<RandomAccessIterator>,
-                      IteratorPairType<RandomAccessIterator>,
-                      IteratorPairType<RandomAccessIterator>>
+    inline virtual std::tuple<std::size_t,
+                              IteratorPairType<RandomAccessIterator>,
+                              IteratorPairType<RandomAccessIterator>,
+                              IteratorPairType<RandomAccessIterator>>
     operator()(RandomAccessIterator samples_first,
                RandomAccessIterator samples_last,
                std::size_t          n_features,
-               std::size_t          feature_index) const;
+               std::size_t          feature_index) const = 0;
 
   private:
     SplittingRulePolicy(const SplittingRulePolicy&) = delete;
