@@ -89,10 +89,10 @@ void KDNodeView<Iterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>&
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(samples_iterator_pair_.first[sample_index * n_features_ + feature_index]);
+                writer.Int64(range_first[sample_index * n_features_ + feature_index]);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(samples_iterator_pair_.first[sample_index * n_features_ + feature_index]);
+                writer.Double(range_first[sample_index * n_features_ + feature_index]);
             }
         }
         writer.EndArray();

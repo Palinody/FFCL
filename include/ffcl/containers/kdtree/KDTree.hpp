@@ -27,7 +27,7 @@ namespace ffcl::containers {
 
 namespace fs = std::filesystem;
 
-template <typename IndicesIterator, typename SamplesIterator>
+template <typename SamplesIterator>
 class KDTree {
   public:
     struct Options {
@@ -102,13 +102,6 @@ class KDTree {
            std::size_t     n_features,
            const Options&  options = Options());
 
-    KDTree(IndicesIterator indices_first,
-           IndicesIterator indices_last,
-           SamplesIterator samples_first,
-           SamplesIterator samples_last,
-           std::size_t     n_features,
-           const Options&  options = Options());
-
     KDTree(const KDTree&) = delete;
 
     void serialize(const std::shared_ptr<KDNodeView<SamplesIterator>>& kdnode,
@@ -132,11 +125,11 @@ class KDTree {
     std::shared_ptr<KDNodeView<SamplesIterator>> root_;
 };
 
-template <typename IndicesIterator, typename SamplesIterator>
-KDTree<IndicesIterator, SamplesIterator>::KDTree(SamplesIterator samples_first,
-                                                 SamplesIterator samples_last,
-                                                 std::size_t     n_features,
-                                                 const Options&  options)
+template <typename SamplesIterator>
+KDTree<SamplesIterator>::KDTree(SamplesIterator samples_first,
+                                SamplesIterator samples_last,
+                                std::size_t     n_features,
+                                const Options&  options)
   : n_features_{n_features}
   , kd_bounding_box_{kdtree::algorithms::make_kd_bounding_box(samples_first, samples_last, n_features_)}
   , options_{options}
@@ -146,8 +139,8 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(SamplesIterator samples_first,
                 0,
                 kd_bounding_box_)} {}
 
-template <typename IndicesIterator, typename SamplesIterator>
-std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<IndicesIterator, SamplesIterator>::build(
+template <typename SamplesIterator>
+std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<SamplesIterator>::build(
     SamplesIterator                     samples_first,
     SamplesIterator                     samples_last,
     ssize_t                             cut_feature_index,
@@ -199,9 +192,9 @@ std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<IndicesIterator, SamplesIter
     return kdnode;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-void KDTree<IndicesIterator, SamplesIterator>::serialize(const std::shared_ptr<KDNodeView<SamplesIterator>>& kdnode,
-                                                         rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+template <typename SamplesIterator>
+void KDTree<SamplesIterator>::serialize(const std::shared_ptr<KDNodeView<SamplesIterator>>& kdnode,
+                                        rapidjson::Writer<rapidjson::StringBuffer>&         writer) const {
     writer.StartObject();
     {
         writer.String("axis");
@@ -227,8 +220,8 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const std::shared_ptr<K
     writer.EndObject();
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepath) const {
+template <typename SamplesIterator>
+void KDTree<SamplesIterator>::serialize(const fs::path& filepath) const {
     using DataType = DataType<SamplesIterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
