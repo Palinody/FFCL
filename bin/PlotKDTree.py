@@ -48,12 +48,10 @@ class KDTree:
     def deserialize_kdtree(self, input_path: str) -> KDNode:
         data = load_json(input_path)
 
-        n_samples: int = data["n_samples"]
         n_features: int = data["n_features"]
         options: Dict[str, Any] = data["options"]
         self.kd_bounding_box: KDBoundingBoxType = data["bounding_box"]
 
-        print(f"n_samples: {n_samples}")
         print(f"n_features: {n_features}")
         print(f"options: {options}")
         print(f"bounding_box: {self.kd_bounding_box}")
