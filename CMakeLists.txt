@@ -278,6 +278,40 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        SplittingRulePolicyTest
+
+        # ---
+        test/src/containers/kdtree/policy/SplittingRulePolicyTest.cpp
+    )
+    target_link_libraries(
+        SplittingRulePolicyTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        SplittingRulePolicyTest
+        SplittingRulePolicyTest
+    )
+
+    add_executable(
+        AxisSelectionPolicyTest
+
+        # ---
+        test/src/containers/kdtree/policy/AxisSelectionPolicyTest.cpp
+    )
+    target_link_libraries(
+        AxisSelectionPolicyTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        AxisSelectionPolicyTest
+        AxisSelectionPolicyTest
+    )
+
+    add_executable(
         KDTreeTest
 
         # ---
