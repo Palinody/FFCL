@@ -97,6 +97,8 @@ ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
                                           const SamplesIterator& samples_last,
                                           std::size_t            n_features,
                                           double                 n_samples_fraction) {
+    assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
+
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
     // set the number of samples as a fraction of the input
     const std::size_t n_choices = n_samples_fraction * n_samples;
