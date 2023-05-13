@@ -26,10 +26,10 @@ using BoundingBoxKDType = std::vector<BoundingBox1DType<SamplesIterator>>;
 namespace kdtree::algorithms {
 
 template <typename SamplesIterator>
-BoundingBox1DType<SamplesIterator> make_1d_bounding_box(const SamplesIterator& samples_first,
-                                                        const SamplesIterator& samples_last,
-                                                        std::size_t            n_features,
-                                                        ssize_t                feature_index) {
+auto make_1d_bounding_box(const SamplesIterator& samples_first,
+                          const SamplesIterator& samples_last,
+                          std::size_t            n_features,
+                          ssize_t                feature_index) {
     using DataType = DataType<SamplesIterator>;
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -60,10 +60,11 @@ BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const SamplesIterator& s
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
-    auto kd_bounding_box = BoundingBoxKDType<SamplesIterator>(
-        n_features,
-        BoundingBox1DType<SamplesIterator>(
-            {std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()}));
+    // min max elements per feature vector
+    auto kd_bounding_box =
+        BoundingBoxKDType<SamplesIterator>(n_features,
+                                           BoundingBox1DType<SamplesIterator>(std::numeric_limits<DataType>::max(),
+                                                                              std::numeric_limits<DataType>::lowest()));
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
