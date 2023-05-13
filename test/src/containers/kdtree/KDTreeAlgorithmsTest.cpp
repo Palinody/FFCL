@@ -60,12 +60,12 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto [min, max] =
+                    const auto [min, max] =
                         kdtree::algorithms::make_1d_bounding_box(data.begin(), data.end(), features, feature_index);
 
-                    auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
-                    auto target_min    = *std::min_element(target_column.begin(), target_column.end());
-                    auto target_max    = *std::max_element(target_column.begin(), target_column.end());
+                    const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
+                    const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
+                    const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
 
                     ASSERT_TRUE(common::utils::equality(min, target_min) && common::utils::equality(max, target_max));
                 }
@@ -84,15 +84,16 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxTest) {
                 const auto data =
                     this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
-                auto kd_bounding_box = kdtree::algorithms::make_kd_bounding_box(data.begin(), data.end(), features);
+                const auto kd_bounding_box =
+                    kdtree::algorithms::make_kd_bounding_box(data.begin(), data.end(), features);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    auto [min, max] = kd_bounding_box[feature_index];
+                    const auto [min, max] = kd_bounding_box[feature_index];
 
-                    auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
-                    auto target_min    = *std::min_element(target_column.begin(), target_column.end());
-                    auto target_max    = *std::max_element(target_column.begin(), target_column.end());
+                    const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
+                    const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
+                    const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
 
                     ASSERT_TRUE(common::utils::equality(min, target_min) && common::utils::equality(max, target_max));
                 }

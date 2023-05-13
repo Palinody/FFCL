@@ -86,9 +86,9 @@ BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const SamplesIterator& s
 template <typename SamplesIterator>
 ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
     const auto cmp = [](const auto& lhs, const auto& rhs) {
-        return std::abs(lhs.first - lhs.second) < std::abs(rhs.first - rhs.second);
+        return common::utils::abs(lhs.first - lhs.second) < common::utils::abs(rhs.first - rhs.second);
     };
-    auto it = std::max_element(kd_bounding_box.begin(), kd_bounding_box.end(), cmp);
+    const auto it = std::max_element(kd_bounding_box.begin(), kd_bounding_box.end(), cmp);
     return std::distance(kd_bounding_box.begin(), it);
 }
 
