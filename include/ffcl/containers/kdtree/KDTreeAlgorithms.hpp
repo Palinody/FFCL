@@ -106,7 +106,6 @@ ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
     if (n_choices > 2) {
         const auto random_samples =
             math::random::select_n_random_samples(samples_first, samples_last, n_features, n_choices);
-
         // return the feature index with the maximum variance
         return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
     }
@@ -114,7 +113,6 @@ ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
     // compute the variance with the minimum number of samples, which is 3
     if (n_samples > 2) {
         const auto random_samples = math::random::select_n_random_samples(samples_first, samples_last, n_features, 3);
-
         // return the feature index with the maximum variance
         return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
     }
