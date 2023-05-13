@@ -67,8 +67,6 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
                     auto target_min    = *std::min_element(target_column.begin(), target_column.end());
                     auto target_max    = *std::max_element(target_column.begin(), target_column.end());
 
-                    // common::utils::ignore_parameters(min, max, target_column, target_min, target_max);
-
                     ASSERT_TRUE(common::utils::equality(min, static_cast<decltype(min)>(target_min)) &&
                                 common::utils::equality(max, static_cast<decltype(max)>(target_max)));
                 }
