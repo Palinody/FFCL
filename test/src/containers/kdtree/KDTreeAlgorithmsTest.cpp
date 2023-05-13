@@ -1,6 +1,6 @@
+#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 #include "ffcl/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 
 #include "Range2DBaseFixture.hpp"
 
@@ -15,7 +15,7 @@
 #include <random>
 
 template <typename DataType>
-class KDTreeUtilsTestFixture : public Range2DBaseFixture<DataType> {
+class KDTreeAlgorithmsTestFixture : public Range2DBaseFixture<DataType> {
   public:
     void SetUp() override {
         if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
@@ -32,8 +32,8 @@ class KDTreeUtilsTestFixture : public Range2DBaseFixture<DataType> {
         }
         min_n_samples_  = 1;
         max_n_samples_  = 10;
-        n_features_     = 1;
-        n_random_tests_ = 5;
+        n_features_     = 3;
+        n_random_tests_ = 10;
     }
 
   protected:
@@ -46,9 +46,38 @@ class KDTreeUtilsTestFixture : public Range2DBaseFixture<DataType> {
 };
 
 using DataTypes = ::testing::Types<int, std::size_t, float, double>;
-TYPED_TEST_SUITE(KDTreeUtilsTestFixture, DataTypes);
+TYPED_TEST_SUITE(KDTreeAlgorithmsTestFixture, DataTypes);
 
-TYPED_TEST(KDTreeUtilsTestFixture, QuickselectMedianRangeTest) {
+TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto [min, max] =
+                        kdtree::algorithms::make_1d_bounding_box(data.begin(), data.end(), features, feature_index);
+
+                    auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
+                    auto target_min    = *std::min_element(target_column.begin(), target_column.end());
+                    auto target_max    = *std::max_element(target_column.begin(), target_column.end());
+
+                    // common::utils::ignore_parameters(min, max, target_column, target_min, target_max);
+
+                    ASSERT_TRUE(common::utils::equality(min, static_cast<decltype(min)>(target_min)) &&
+                                common::utils::equality(max, static_cast<decltype(max)>(target_max)));
+                }
+            }
+        }
+    }
+}
+
+TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
         // tests on data from 1 to this->max_n_samples_ samples

@@ -62,6 +62,21 @@ class Range2DBaseFixture : public ::testing::Test {
     }
 
     template <typename IteratorType>
+    std::vector<typename IteratorType::value_type> get_column(IteratorType element_first,
+                                                              IteratorType element_last,
+                                                              std::size_t  n_features,
+                                                              std::size_t  target_column) {
+        const std::size_t n_samples = common::utils::get_n_samples(element_first, element_last, n_features);
+
+        auto column = std::vector<typename IteratorType::value_type>(n_samples);
+
+        for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+            column[sample_index] = element_first[sample_index * n_features + target_column];
+        }
+        return column;
+    }
+
+    template <typename IteratorType>
     bool ranges_equality(IteratorType element_first,
                          IteratorType element_last,
                          IteratorType other_element_first,
