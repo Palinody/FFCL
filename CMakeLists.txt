@@ -59,7 +59,7 @@ add_definitions(-DTHREADS_ENABLED=true)
 add_definitions(-DVERBOSE=false)
 
 # disable all assertions
-add_definitions(-DNDEBUG)
+# add_definitions(-DNDEBUG)
 
 # set(MODE "run-benchmarks")
 if(MODE STREQUAL "benchmark")
@@ -328,6 +328,23 @@ elseif(MODE STREQUAL "gtest")
         KDTreeTest
     )
 
+    add_executable(
+        KDTreeIndexedTest
+
+        # ---
+        test/src/containers/kdtree/KDTreeIndexedTest.cpp
+    )
+    target_link_libraries(
+        KDTreeIndexedTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        KDTreeIndexedTest
+        KDTreeIndexedTest
+    )
+
     set_tests_properties(SortingTest DistributionsTest PROPERTIES
         LABELS "DistributionTests"
     )
@@ -336,7 +353,7 @@ elseif(MODE STREQUAL "gtest")
         LABELS "UtilityTests"
     )
 
-    set_tests_properties(KMedoidsTest KMeansTest KDTreeTest PROPERTIES
+    set_tests_properties(KMedoidsTest KMeansTest KDTreeTest KDTreeIndexedTest PROPERTIES
         LABELS "AlgorithmTests"
     )
 

@@ -270,16 +270,16 @@ quickselect_median_indexed_range(RandomAccessIntIterator index_first,
 
     const auto median_index = std::distance(index_first, index_last) / 2;
 
-    const auto median_indexed_range = ffcl::algorithms::quickselect_indexed_range(
+    const auto median_indices_range = ffcl::algorithms::quickselect_indexed_range(
         index_first, index_last, samples_first, samples_last, n_features, median_index, feature_index);
 
     // all the points at the left of the pivot point
-    const auto left_indexed_range = std::make_pair(index_first, index_first + median_index);
+    const auto left_indices_range = std::make_pair(index_first, index_first + median_index);
 
     // all the points at the right of the pivot point
-    const auto right_indexed_range = std::make_pair(index_first + median_index + 1, index_last);
+    const auto right_indices_range = std::make_pair(index_first + median_index + 1, index_last);
 
-    return {median_index, left_indexed_range, median_indexed_range, right_indexed_range};
+    return {median_index, left_indices_range, median_indices_range, right_indices_range};
 }
 
 }  // namespace kdtree::algorithms

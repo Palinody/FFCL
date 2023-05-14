@@ -2,7 +2,6 @@
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/kdtree/KDNodeView.hpp"
-#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 #include "ffcl/containers/kdtree/policy/AxisSelectionPolicy.hpp"
 #include "ffcl/containers/kdtree/policy/SplittingRulePolicy.hpp"
 

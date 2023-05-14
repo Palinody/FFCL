@@ -370,7 +370,7 @@ std::pair<RandomAccessIntIterator, RandomAccessIntIterator> quickselect_indexed_
 
     while (true) {
         if (left_index == right_index) {
-            return {index_first + left_index, index_first + right_index};
+            return {index_first + left_index, index_first + right_index + 1};
         }
         std::size_t pivot_index = median_index_of_three_indexed_ranges(
             index_first + left_index, index_first + right_index + 1, first, last, n_features, feature_index);
@@ -386,7 +386,7 @@ std::pair<RandomAccessIntIterator, RandomAccessIntIterator> quickselect_indexed_
                                                                       feature_index);
 
         if (kth_smallest == pivot_index) {
-            return {index_first + pivot_index, index_first + pivot_index};
+            return {index_first + pivot_index, index_first + pivot_index + 1};
 
         } else if (kth_smallest < pivot_index) {
             right_index = pivot_index - 1;

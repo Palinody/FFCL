@@ -218,6 +218,23 @@ TEST(RangePermutationFromIndicesTest, RangePermutationFromIndicesTest) {
     EXPECT_EQ(result, expected);
 }
 
+TEST(CommonUtilsTest, GetOneSampleTest) {
+    std::vector<int> data{1};
+    std::size_t      n_features = 1;
+
+    printf("Distance: %ld\n", std::distance(data.begin(), data.end()));
+
+    std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    ASSERT_EQ(n_samples, 1);
+
+// Test assertion when input data missing values or wrong number of features specified.
+// Test only if assert enabled
+#ifndef NDEBUG
+    n_features = 2;
+    ASSERT_DEATH(common::utils::get_n_samples(data.begin(), data.end(), n_features), ".*");
+#endif
+}
+
 TEST(CommonUtilsTest, GetNSamplesTest) {
     std::vector<int> data{1, 2, 3, 4, 5, 6};
     std::size_t      n_features = 2;
