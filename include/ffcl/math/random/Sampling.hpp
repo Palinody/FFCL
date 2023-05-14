@@ -115,14 +115,14 @@ std::vector<typename Iterator::value_type> select_n_random_samples(const Iterato
     return random_samples;
 }
 
-template <typename RandomAccessIntIterator, typename SamplesIterator>
+template <typename IndicesIterator, typename SamplesIterator>
 std::vector<typename SamplesIterator::value_type> select_n_random_samples_from_indices(
-    const RandomAccessIntIterator& index_first,
-    const RandomAccessIntIterator& index_last,
-    const SamplesIterator&         data_first,
-    const SamplesIterator&         data_last,
-    std::size_t                    n_features,
-    std::size_t                    n_choices) {
+    const IndicesIterator& index_first,
+    const IndicesIterator& index_last,
+    const SamplesIterator& data_first,
+    const SamplesIterator& data_last,
+    std::size_t            n_features,
+    std::size_t            n_choices) {
     using DataType = typename SamplesIterator::value_type;
 
     common::utils::ignore_parameters(data_last);
