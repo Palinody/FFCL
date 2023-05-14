@@ -115,6 +115,34 @@ std::vector<typename Iterator::value_type> select_n_random_samples(const Iterato
     return random_samples;
 }
 
+template <typename RandomAccessIntIterator, typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> select_n_random_samples_from_indices(
+    const RandomAccessIntIterator& index_first,
+    const RandomAccessIntIterator& index_last,
+    const SamplesIterator&         data_first,
+    const SamplesIterator&         data_last,
+    std::size_t                    n_features,
+    std::size_t                    n_choices) {
+    using DataType = typename SamplesIterator::value_type;
+
+    common::utils::ignore_parameters(data_last);
+
+    const std::size_t n_samples = std::distance(index_first, index_last);
+    // clip n_choices to prevent overflows
+    n_choices = std::min(n_choices, n_samples);
+    // return n_choices distinctive indices from the pool of indices defined by the desired indices range
+    const auto random_distinct_indices = select_from_range(n_choices, {0, n_samples});
+
+    auto random_samples = std::vector<DataType>(n_choices * n_features);
+
+    for (std::size_t sample_index = 0; sample_index < n_choices; ++sample_index) {
+        std::copy(data_first + index_first[random_distinct_indices[sample_index]] * n_features,
+                  data_first + index_first[random_distinct_indices[sample_index]] * n_features + n_features,
+                  random_samples.begin() + sample_index * n_features);
+    }
+    return random_samples;
+}
+
 template <typename IteratorFloat>
 std::vector<typename IteratorFloat::value_type> init_spatial_uniform(const IteratorFloat& data_first,
                                                                      const IteratorFloat& data_last,

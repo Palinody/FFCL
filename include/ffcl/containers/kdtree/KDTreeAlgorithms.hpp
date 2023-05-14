@@ -193,6 +193,43 @@ ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
     return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
 }
 
+template <typename RandomAccessIntIterator, typename SamplesIterator>
+ssize_t select_axis_with_largest_variance(const RandomAccessIntIterator& index_first,
+                                          const RandomAccessIntIterator& index_last,
+                                          const SamplesIterator&         samples_first,
+                                          const SamplesIterator&         samples_last,
+                                          std::size_t                    n_features,
+                                          double                         n_samples_fraction) {
+    assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
+
+    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    // set the number of samples as a fraction of the input
+    const std::size_t n_choices = n_samples_fraction * n_samples;
+    // select the axis based on variance only if the number of selected samples is greater than 2
+    if (n_choices > 2) {
+        const auto random_samples = math::random::select_n_random_samples_from_indices(
+            index_first, index_last, samples_first, samples_last, n_features, n_choices);
+        // return the feature index with the maximum variance
+        return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
+    }
+    // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
+    // compute the variance with the minimum number of samples, which is 3
+    if (n_samples > 2) {
+        const auto random_samples = math::random::select_n_random_samples_from_indices(
+            index_first, index_last, samples_first, samples_last, n_features, 3);
+        // return the feature index with the maximum variance
+        return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
+    }
+    // select the axis according to the dimension with the most spread between 2 points
+    if (n_samples == 2) {
+        // otherwise apply the bounding box method
+        const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
+        return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
+    }
+    // return a random axis if theres only one sample left (should never be called if leaves cannot be empty)
+    return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
+}
+
 template <typename SamplesIterator>
 std::tuple<std::size_t,
            IteratorPairType<SamplesIterator>,
