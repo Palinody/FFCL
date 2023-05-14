@@ -175,13 +175,13 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianIndexedRangeTest) {
                                                                              features,
                                                                              feature_index);
 
-                    const auto [cut_indexed_range_begin, cut_indexed_range_end] = cut_indexed_range;
+                    const auto [indexed_cut_range_begin, indexed_cut_range_end] = cut_indexed_range;
 
                     // the range returned from quickselect should be the same as in the sorted dataset at index
                     // kth_smallest_index
                     ASSERT_TRUE(this->ranges_equality(
-                        shuffled_ascending_elements_array.begin() + *cut_indexed_range_begin * features,
-                        shuffled_ascending_elements_array.begin() + *cut_indexed_range_end * features + features,
+                        shuffled_ascending_elements_array.begin() + *indexed_cut_range_begin * features,
+                        shuffled_ascending_elements_array.begin() + *indexed_cut_range_end * features + features,
                         ascending_elements_array.begin() + kth_smallest_index * features,
                         ascending_elements_array.begin() + kth_smallest_index * features + features));
 
