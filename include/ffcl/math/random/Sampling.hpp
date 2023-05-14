@@ -76,11 +76,11 @@ inline std::vector<std::size_t> select_from_range_buffered(std::size_t          
     return random_distinct_indices;
 }
 
-template <typename Iterator>
-std::vector<typename Iterator::value_type> select_random_sample(const Iterator& data_first,
-                                                                const Iterator& data_last,
-                                                                std::size_t     n_features) {
-    using DataType = typename Iterator::value_type;
+template <typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> select_random_sample(const SamplesIterator& data_first,
+                                                                       const SamplesIterator& data_last,
+                                                                       std::size_t            n_features) {
+    using DataType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
     // selects an index w.r.t. an uniform random distribution [0, n_samples)
@@ -92,12 +92,12 @@ std::vector<typename Iterator::value_type> select_random_sample(const Iterator& 
                                  data_first + random_index * n_features + n_features);
 }
 
-template <typename Iterator>
-std::vector<typename Iterator::value_type> select_n_random_samples(const Iterator& data_first,
-                                                                   const Iterator& data_last,
-                                                                   std::size_t     n_features,
-                                                                   std::size_t     n_choices) {
-    using DataType = typename Iterator::value_type;
+template <typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> select_n_random_samples(const SamplesIterator& data_first,
+                                                                          const SamplesIterator& data_last,
+                                                                          std::size_t            n_features,
+                                                                          std::size_t            n_choices) {
+    using DataType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
     // clip n_choices to prevent overflows
