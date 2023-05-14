@@ -306,7 +306,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
                             printf("\n");
                             this->print_data(data, features);
                         }
-                        // the pivot is not valid if it didn't return std::nullopt
+                        // the pivot is valid if it didn't return std::nullopt
                         ASSERT_TRUE(!res.has_value());
                     }
                 }
@@ -355,7 +355,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeWithDuplicatesTest) {
         printf("\n");
         this->print_data(data, features);
     }
-    // the pivot is not valid if it didn't return std::nullopt
+    // the pivot is valid if it didn't return std::nullopt
     ASSERT_TRUE(!res.has_value());
 }
 
@@ -418,7 +418,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
                             printf("\n");
                             this->print_data(data, features);
                         }
-                        // the pivot is not valid if it didn't return std::nullopt
+                        // the pivot is valid if it didn't return std::nullopt
                         ASSERT_TRUE(!res.has_value());
                     }
                 }

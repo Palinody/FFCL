@@ -143,6 +143,14 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
                         shuffled_ascending_elements_array.begin() + kth_smallest_index * features + features,
                         ascending_elements_array.begin() + kth_smallest_index * features,
                         ascending_elements_array.begin() + kth_smallest_index * features + features));
+
+                    const auto res = this->is_pivot_faulty(shuffled_ascending_elements_array.begin(),
+                                                           shuffled_ascending_elements_array.end(),
+                                                           features,
+                                                           kth_smallest_index,
+                                                           feature_index);
+
+                    ASSERT_TRUE(!res.has_value());
                 }
             }
         }
@@ -193,6 +201,39 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianIndexedRangeTest) {
                             features,
                         ascending_elements_array.begin() + kth_smallest_index * features,
                         ascending_elements_array.begin() + kth_smallest_index * features + features));
+
+                    const auto res = this->is_pivot_faulty(data_indices.begin(),
+                                                           data_indices.end(),
+                                                           shuffled_ascending_elements_array.begin(),
+                                                           shuffled_ascending_elements_array.end(),
+                                                           features,
+                                                           kth_smallest_index,
+                                                           feature_index);
+
+                    // print only if this->is_pivot_faulty returned values (meaning that its not valid)
+                    if (res.has_value()) {
+                        printf("------\nShuffled dataset with pivot_index: %ld\n", kth_smallest_index);
+                        this->print_data(shuffled_ascending_elements_array, features);
+
+                        printf("------\nPivot range:\n");
+                        this->print_data(
+                            std::vector(shuffled_ascending_elements_array.begin() + *indexed_cut_range_begin * features,
+                                        shuffled_ascending_elements_array.begin() + *indexed_cut_range_end * features +
+                                            features),
+                            features);
+
+                        printf("---\nRemapped dataset with pivot_index: %ld\n", kth_smallest_index);
+                        const auto remapped_shuffled_ascending_elements_array =
+                            common::utils::remap_ranges_from_indices(
+                                std::vector(data_indices.begin(), data_indices.end()),
+                                std::vector(shuffled_ascending_elements_array.begin(),
+                                            shuffled_ascending_elements_array.end()),
+                                features);
+
+                        this->print_data(remapped_shuffled_ascending_elements_array, features);
+                    }
+                    // the pivot is valid if it didn't return std::nullopt
+                    ASSERT_TRUE(!res.has_value());
                 }
             }
         }
