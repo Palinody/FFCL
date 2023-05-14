@@ -14,6 +14,8 @@
 #include <iostream>
 #include <random>
 
+#include "ffcl/common/Timer.hpp"
+
 template <typename DataType>
 class KDTreeAlgorithmsTestFixture : public Range2DBaseFixture<DataType> {
   public:
@@ -139,6 +141,56 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
                     ASSERT_TRUE(this->ranges_equality(
                         shuffled_ascending_elements_array.begin() + kth_smallest_index * features,
                         shuffled_ascending_elements_array.begin() + kth_smallest_index * features + features,
+                        ascending_elements_array.begin() + kth_smallest_index * features,
+                        ascending_elements_array.begin() + kth_smallest_index * features + features));
+                }
+            }
+        }
+    }
+}
+
+TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianIndexedRangeTest) {
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                // nth smallest elements is the median by default
+                const auto kth_smallest_index = samples / 2;
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    auto ascending_elements_array = this->generate_ascending_elements_array(samples * features);
+
+                    auto data_indices = this->generate_indices(samples);
+
+                    auto shuffled_ascending_elements_array = this->shuffle_by_row(
+                        ascending_elements_array.begin(), ascending_elements_array.end(), features);
+
+                    const auto [cut_index, left_indexed_range, cut_indexed_range, right_indexed_range] =
+                        kdtree::algorithms::quickselect_median_indexed_range(data_indices.begin(),
+                                                                             data_indices.end(),
+                                                                             shuffled_ascending_elements_array.begin(),
+                                                                             shuffled_ascending_elements_array.end(),
+                                                                             features,
+                                                                             feature_index);
+
+                    const auto [cut_indexed_range_begin, cut_indexed_range_end] = cut_indexed_range;
+
+                    // the range returned from quickselect should be the same as in the sorted dataset at index
+                    // kth_smallest_index
+                    ASSERT_TRUE(this->ranges_equality(
+                        shuffled_ascending_elements_array.begin() + *cut_indexed_range_begin * features,
+                        shuffled_ascending_elements_array.begin() + *cut_indexed_range_end * features + features,
+                        ascending_elements_array.begin() + kth_smallest_index * features,
+                        ascending_elements_array.begin() + kth_smallest_index * features + features));
+
+                    // also check that the indices at kth_smallest_index are mapping to the correct range in the
+                    // original dataset
+                    ASSERT_TRUE(this->ranges_equality(
+                        shuffled_ascending_elements_array.begin() + data_indices[kth_smallest_index] * features,
+                        shuffled_ascending_elements_array.begin() + data_indices[kth_smallest_index] * features +
+                            features,
                         ascending_elements_array.begin() + kth_smallest_index * features,
                         ascending_elements_array.begin() + kth_smallest_index * features + features));
                 }

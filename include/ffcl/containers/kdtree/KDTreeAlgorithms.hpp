@@ -141,6 +141,7 @@ quickselect_median_range(SamplesIterator samples_first,
 
     const auto median_range =
         ffcl::algorithms::quickselect_range(samples_first, samples_last, n_features, median_index, feature_index);
+
     // all the points at the left of the pivot point
     const auto left_range = std::make_pair(samples_first, samples_first + median_index * n_features);
 
@@ -148,6 +149,33 @@ quickselect_median_range(SamplesIterator samples_first,
     const auto right_range = std::make_pair(samples_first + median_index * n_features + n_features, samples_last);
 
     return {median_index, left_range, median_range, right_range};
+}
+
+template <typename RandomAccessIntIterator, typename SamplesIterator>
+std::tuple<std::size_t,
+           IteratorPairType<RandomAccessIntIterator>,
+           IteratorPairType<RandomAccessIntIterator>,
+           IteratorPairType<RandomAccessIntIterator>>
+quickselect_median_indexed_range(RandomAccessIntIterator index_first,
+                                 RandomAccessIntIterator index_last,
+                                 SamplesIterator         samples_first,
+                                 SamplesIterator         samples_last,
+                                 std::size_t             n_features,
+                                 std::size_t             feature_index) {
+    assert(feature_index < n_features);
+
+    const auto median_index = std::distance(index_first, index_last) / 2;
+
+    const auto median_indexed_range = ffcl::algorithms::quickselect_indexed_range(
+        index_first, index_last, samples_first, samples_last, n_features, median_index, feature_index);
+
+    // all the points at the left of the pivot point
+    const auto left_indexed_range = std::make_pair(index_first, index_first + median_index);
+
+    // all the points at the right of the pivot point
+    const auto right_indexed_range = std::make_pair(index_first + median_index + 1, index_last);
+
+    return {median_index, left_indexed_range, median_indexed_range, right_indexed_range};
 }
 
 }  // namespace kdtree::algorithms
