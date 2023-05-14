@@ -76,6 +76,34 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
     }
 }
 
+TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxIndexedTest) {
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
+
+                auto data_indices = this->generate_indices(samples);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    const auto [min, max] = kdtree::algorithms::make_1d_bounding_box(
+                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
+
+                    const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
+                    const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
+                    const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
+
+                    ASSERT_TRUE(common::utils::equality(min, target_min) && common::utils::equality(max, target_max));
+                }
+            }
+        }
+    }
+}
+
 TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
@@ -88,6 +116,36 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxTest) {
 
                 const auto kd_bounding_box =
                     kdtree::algorithms::make_kd_bounding_box(data.begin(), data.end(), features);
+
+                // test on all the possible feature indices
+                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
+                    const auto [min, max] = kd_bounding_box[feature_index];
+
+                    const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
+                    const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
+                    const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
+
+                    ASSERT_TRUE(common::utils::equality(min, target_min) && common::utils::equality(max, target_max));
+                }
+            }
+        }
+    }
+}
+
+TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxIndexedTest) {
+    // the number of times to perform the tests
+    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
+        // tests on data from 1 to this->max_n_samples_ samples
+        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
+            // tests on data from 1 to this->n_features_ features
+            for (std::size_t features = 1; features <= this->n_features_; ++features) {
+                const auto data =
+                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
+
+                auto data_indices = this->generate_indices(samples);
+
+                const auto kd_bounding_box = kdtree::algorithms::make_kd_bounding_box(
+                    data_indices.begin(), data_indices.end(), data.begin(), data.end(), features);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {

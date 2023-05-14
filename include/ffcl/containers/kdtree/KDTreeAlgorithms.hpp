@@ -52,6 +52,37 @@ auto make_1d_bounding_box(const SamplesIterator& samples_first,
     return bounding_box_1d;
 }
 
+template <typename RandomAccessIntIterator, typename SamplesIterator>
+auto make_1d_bounding_box(const RandomAccessIntIterator& index_first,
+                          const RandomAccessIntIterator& index_last,
+                          const SamplesIterator&         samples_first,
+                          const SamplesIterator&         samples_last,
+                          std::size_t                    n_features,
+                          ssize_t                        feature_index) {
+    using DataType = DataType<SamplesIterator>;
+
+    common::utils::ignore_parameters(samples_last);
+
+    const std::size_t n_samples = std::distance(index_first, index_last);
+
+    auto bounding_box_1d = BoundingBox1DType<SamplesIterator>(std::numeric_limits<DataType>::max(),
+                                                              std::numeric_limits<DataType>::lowest());
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        // a candidate for being a min, max or min-max compared to the current min and max according to the current
+        // feature_index
+        const auto min_max_feature_candidate = samples_first[index_first[sample_index] * n_features + feature_index];
+
+        if (min_max_feature_candidate < bounding_box_1d.first) {
+            bounding_box_1d.first = min_max_feature_candidate;
+        }
+        if (min_max_feature_candidate > bounding_box_1d.second) {
+            bounding_box_1d.second = min_max_feature_candidate;
+        }
+    }
+    return bounding_box_1d;
+}
+
 template <typename SamplesIterator>
 BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const SamplesIterator& samples_first,
                                                         const SamplesIterator& samples_last,
@@ -71,6 +102,42 @@ BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const SamplesIterator& s
             // a candidate for being a min, max or min-max compared to the current min and max according to the current
             // feature_index
             const auto min_max_feature_candidate = samples_first[sample_index * n_features + feature_index];
+
+            if (min_max_feature_candidate < kd_bounding_box[feature_index].first) {
+                kd_bounding_box[feature_index].first = min_max_feature_candidate;
+            }
+            if (min_max_feature_candidate > kd_bounding_box[feature_index].second) {
+                kd_bounding_box[feature_index].second = min_max_feature_candidate;
+            }
+        }
+    }
+    return kd_bounding_box;
+}
+
+template <typename RandomAccessIntIterator, typename SamplesIterator>
+BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const RandomAccessIntIterator& index_first,
+                                                        const RandomAccessIntIterator& index_last,
+                                                        const SamplesIterator&         samples_first,
+                                                        const SamplesIterator&         samples_last,
+                                                        std::size_t                    n_features) {
+    using DataType = DataType<SamplesIterator>;
+
+    common::utils::ignore_parameters(samples_last);
+
+    const std::size_t n_samples = std::distance(index_first, index_last);
+
+    // min max elements per feature vector
+    auto kd_bounding_box =
+        BoundingBoxKDType<SamplesIterator>(n_features,
+                                           BoundingBox1DType<SamplesIterator>(std::numeric_limits<DataType>::max(),
+                                                                              std::numeric_limits<DataType>::lowest()));
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            // a candidate for being a min, max or min-max compared to the current min and max according to the current
+            // feature_index
+            const auto min_max_feature_candidate =
+                samples_first[index_first[sample_index] * n_features + feature_index];
 
             if (min_max_feature_candidate < kd_bounding_box[feature_index].first) {
                 kd_bounding_box[feature_index].first = min_max_feature_candidate;
