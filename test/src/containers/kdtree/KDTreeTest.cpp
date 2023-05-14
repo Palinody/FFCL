@@ -17,11 +17,6 @@
 
 namespace fs = std::filesystem;
 
-/*
-Can we consider that floating point points cannot be equal? For instance in a point cloud, and so hoares partitioning
-algorithm can be executed without handling values that might be equal?
-*/
-
 class KDTreeErrorsTest : public ::testing::Test {
   public:
     using dType = float;

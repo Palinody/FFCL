@@ -17,11 +17,6 @@
 
 namespace fs = std::filesystem;
 
-/*
-Can we consider that floating point points cannot be equal? For instance in a point cloud, and so hoares partitioning
-algorithm can be executed without handling values that might be equal?
-*/
-
 class KDTreeIndexedErrorsTest : public ::testing::Test {
   public:
     using dType = float;
@@ -109,23 +104,16 @@ class KDTreeIndexedErrorsTest : public ::testing::Test {
         }
     }
 
-    std::vector<std::size_t> generate_indices(std::size_t n_samples) {
-        std::vector<std::size_t> elements(n_samples);
-        std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
-        return elements;
-    }
-
     const fs::path kdtree_folder_root_     = fs::path("../bin/kdtree");
     const fs::path clustering_folder_root_ = fs::path("../bin/clustering");
     const fs::path inputs_folder_          = clustering_folder_root_ / fs::path("inputs");
     const fs::path targets_folder_         = clustering_folder_root_ / fs::path("targets");
 };
 
-template <typename DataType>
-void print_kd_bounding_box(const std::vector<std::pair<DataType, DataType>>& kd_bounding_box, std::size_t n_features) {
-    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-        std::cout << kd_bounding_box[feature_index].first << ", " << kd_bounding_box[feature_index].second << "\n";
-    }
+std::vector<std::size_t> generate_indices(std::size_t n_samples) {
+    std::vector<std::size_t> elements(n_samples);
+    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
+    return elements;
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
