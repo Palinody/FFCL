@@ -79,11 +79,11 @@ std::vector<typename IteratorFloat::value_type> cohesion(const IteratorFloat& sa
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
-        const std::size_t centroid_index = *(sample_to_closest_centroid_index_first + sample_index);
+        const std::size_t centroid_index = sample_to_closest_centroid_index_first[sample_index];
         // iterate over all the other data samples by skipping when i == j or C_I != C_J
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // get the centroid associated to the other sample
-            const std::size_t other_centroid_index = *(sample_to_closest_centroid_index_first + other_sample_index);
+            const std::size_t other_centroid_index = sample_to_closest_centroid_index_first[other_sample_index];
             // compute distance only when sample is not itself and belongs to the same cluster
             if ((centroid_index == other_centroid_index) && (sample_index != other_sample_index)) {
                 // accumulate the squared distances
@@ -144,13 +144,13 @@ std::vector<typename IteratorFloat::value_type> separation(const IteratorFloat& 
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
-        const std::size_t centroid_index = *(sample_to_closest_centroid_index_first + sample_index);
+        const std::size_t centroid_index = sample_to_closest_centroid_index_first[sample_index];
         // the sum of distances from the current sample to other samples from different centroids
         auto sample_to_other_cluster_samples_distance_mean = std::vector<FloatType>(cluster_sizes.size());
         // iterate over all the other data samples (j) that dont belong to the same cluster
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // get the centroid associated to the other sample
-            const std::size_t other_centroid_index = *(sample_to_closest_centroid_index_first + other_sample_index);
+            const std::size_t other_centroid_index = sample_to_closest_centroid_index_first[other_sample_index];
             // compute distance only when sample belongs to a different cluster
             if (centroid_index != other_centroid_index) {
                 // accumulate the squared distances for the correct centroid index
