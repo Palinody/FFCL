@@ -247,7 +247,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianIndexedRangeTest) {
                     // kth_smallest_index
                     ASSERT_TRUE(this->ranges_equality(
                         shuffled_ascending_elements_array.begin() + *indexed_cut_range_begin * features,
-                        shuffled_ascending_elements_array.begin() + *indexed_cut_range_end * features + features,
+                        shuffled_ascending_elements_array.begin() + *indexed_cut_range_begin * features + features,
                         ascending_elements_array.begin() + kth_smallest_index * features,
                         ascending_elements_array.begin() + kth_smallest_index * features + features));
 

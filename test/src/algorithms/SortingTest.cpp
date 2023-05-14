@@ -503,7 +503,7 @@ TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
                         // kth_smallest_index
                         ASSERT_TRUE(this->ranges_equality(
                             shuffled_ascending_elements_array.begin() + *kth_smallest_index_begin * features,
-                            shuffled_ascending_elements_array.begin() + *kth_smallest_index_end * features + features,
+                            shuffled_ascending_elements_array.begin() + *kth_smallest_index_begin * features + features,
                             ascending_elements_array.begin() + kth_smallest_index * features,
                             ascending_elements_array.begin() + kth_smallest_index * features + features));
 
