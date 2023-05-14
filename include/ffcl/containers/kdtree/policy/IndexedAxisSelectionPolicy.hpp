@@ -6,11 +6,13 @@
 
 namespace kdtree::policy {
 
-template <typename RandomAccessIterator>
+template <typename RandomAccessIntIterator, typename RandomAccessIterator>
 struct AxisSelectionPolicy {
     AxisSelectionPolicy() = default;
 
-    inline virtual std::size_t operator()(RandomAccessIterator                     samples_first,
+    inline virtual std::size_t operator()(RandomAccessIntIterator                  index_first,
+                                          RandomAccessIntIterator                  index_last,
+                                          RandomAccessIterator                     samples_first,
                                           RandomAccessIterator                     samples_last,
                                           std::size_t                              n_features,
                                           ssize_t                                  depth,
@@ -19,23 +21,27 @@ struct AxisSelectionPolicy {
   private:
 };
 
-template <typename RandomAccessIterator>
-struct CycleThroughAxesBuild : public AxisSelectionPolicy<RandomAccessIterator> {
-    inline std::size_t operator()(RandomAccessIterator                     samples_first,
+template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+struct CycleThroughAxesBuild : public AxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
+    inline std::size_t operator()(RandomAccessIntIterator                  index_first,
+                                  RandomAccessIntIterator                  index_last,
+                                  RandomAccessIterator                     samples_first,
                                   RandomAccessIterator                     samples_last,
                                   std::size_t                              n_features,
                                   ssize_t                                  depth,
                                   BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const;
 };
 
-template <typename RandomAccessIterator>
-struct HighestVarianceBuild : public AxisSelectionPolicy<RandomAccessIterator> {
+template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+struct HighestVarianceBuild : public AxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
     HighestVarianceBuild& sampling_proportion(double sampling_proportion) {
         sampling_proportion_ = sampling_proportion;
         return *this;
     }
 
-    inline std::size_t operator()(RandomAccessIterator                     samples_first,
+    inline std::size_t operator()(RandomAccessIntIterator                  index_first,
+                                  RandomAccessIntIterator                  index_last,
+                                  RandomAccessIterator                     samples_first,
                                   RandomAccessIterator                     samples_last,
                                   std::size_t                              n_features,
                                   ssize_t                                  depth,
@@ -44,9 +50,11 @@ struct HighestVarianceBuild : public AxisSelectionPolicy<RandomAccessIterator> {
     double sampling_proportion_ = 0.1;
 };
 
-template <typename RandomAccessIterator>
-struct MaximumSpreadBuild : public AxisSelectionPolicy<RandomAccessIterator> {
-    inline std::size_t operator()(RandomAccessIterator                     samples_first,
+template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+struct MaximumSpreadBuild : public AxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
+    inline std::size_t operator()(RandomAccessIntIterator                  index_first,
+                                  RandomAccessIntIterator                  index_last,
+                                  RandomAccessIterator                     samples_first,
                                   RandomAccessIterator                     samples_last,
                                   std::size_t                              n_features,
                                   ssize_t                                  depth,
@@ -57,21 +65,25 @@ struct MaximumSpreadBuild : public AxisSelectionPolicy<RandomAccessIterator> {
 
 namespace kdtree::policy {
 
-template <typename RandomAccessIterator>
-std::size_t CycleThroughAxesBuild<RandomAccessIterator>::operator()(
+template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+std::size_t CycleThroughAxesBuild<RandomAccessIntIterator, RandomAccessIterator>::operator()(
+    RandomAccessIntIterator                  index_first,
+    RandomAccessIntIterator                  index_last,
     RandomAccessIterator                     samples_first,
     RandomAccessIterator                     samples_last,
     std::size_t                              n_features,
     ssize_t                                  depth,
     BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const {
-    common::utils::ignore_parameters(samples_first, samples_last, kd_bounding_box);
+    common::utils::ignore_parameters(index_first, index_last, samples_first, samples_last, kd_bounding_box);
     // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
     // select the cut_feature_index according to the one with the most variance
     return depth % n_features;
 }
 
-template <typename RandomAccessIterator>
-std::size_t HighestVarianceBuild<RandomAccessIterator>::operator()(
+template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+std::size_t HighestVarianceBuild<RandomAccessIntIterator, RandomAccessIterator>::operator()(
+    RandomAccessIntIterator                  index_first,
+    RandomAccessIntIterator                  index_last,
     RandomAccessIterator                     samples_first,
     RandomAccessIterator                     samples_last,
     std::size_t                              n_features,
@@ -80,17 +92,19 @@ std::size_t HighestVarianceBuild<RandomAccessIterator>::operator()(
     common::utils::ignore_parameters(depth, kd_bounding_box);
     // select the cut_feature_index according to the one with the most variance
     return kdtree::algorithms::select_axis_with_largest_variance<RandomAccessIterator>(
-        samples_first, samples_last, n_features, sampling_proportion_);
+        index_first, index_last, samples_first, samples_last, n_features, sampling_proportion_);
 }
 
-template <typename RandomAccessIterator>
-std::size_t MaximumSpreadBuild<RandomAccessIterator>::operator()(
+template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+std::size_t MaximumSpreadBuild<RandomAccessIntIterator, RandomAccessIterator>::operator()(
+    RandomAccessIntIterator                  index_first,
+    RandomAccessIntIterator                  index_last,
     RandomAccessIterator                     samples_first,
     RandomAccessIterator                     samples_last,
     std::size_t                              n_features,
     ssize_t                                  depth,
     BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const {
-    common::utils::ignore_parameters(samples_first, samples_last, n_features, depth);
+    common::utils::ignore_parameters(index_first, index_last, samples_first, samples_last, n_features, depth);
     // select the cut_feature_index according to the one with the most spread (min-max values)
     return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<RandomAccessIterator>(kd_bounding_box);
 }
