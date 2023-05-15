@@ -271,7 +271,10 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
     std::size_t               current_nearest_neighbor_index,
     DataType                  current_nearest_neighbor_distance) const {
     // draft function
+    common::utils::ignore_parameters(
+        sample_index_query, kdnode, current_nearest_neighbor_index, current_nearest_neighbor_distance);
     return 0;
+    /*
     if (!kdnode->is_leaf()) {
         const std::size_t candidate_nearest_neighbor_index = *root_->indices_iterator_pair_.first;
         const DataType    candidate_nearest_neighbor_distance =
@@ -286,6 +289,7 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
     } else {
         // use ffcl/math/heuristics/NearestNeighbor.hpp for sequences
     }
+    */
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
