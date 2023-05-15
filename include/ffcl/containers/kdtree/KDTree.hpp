@@ -29,6 +29,8 @@ namespace fs = std::filesystem;
 template <typename SamplesIterator>
 class KDTree {
   public:
+    using DataType = typename SamplesIterator::value_type;
+
     struct Options {
         Options()
           : bucket_size_{40}
@@ -221,8 +223,6 @@ void KDTree<SamplesIterator>::serialize(const std::shared_ptr<KDNodeView<Samples
 
 template <typename SamplesIterator>
 void KDTree<SamplesIterator>::serialize(const fs::path& filepath) const {
-    using DataType = DataType<SamplesIterator>;
-
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdtree serialization");
 

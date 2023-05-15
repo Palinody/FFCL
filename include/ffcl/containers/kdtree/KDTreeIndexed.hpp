@@ -5,6 +5,7 @@
 #include "ffcl/containers/kdtree/policy/IndexedAxisSelectionPolicy.hpp"
 #include "ffcl/containers/kdtree/policy/IndexedSplittingRulePolicy.hpp"
 
+#include "ffcl/math/heuristics/NearestNeighbor.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // ssize_t
@@ -29,6 +30,9 @@ namespace fs = std::filesystem;
 template <typename IndicesIterator, typename SamplesIterator>
 class KDTreeIndexed {
   public:
+    using DataType           = typename SamplesIterator::value_type;
+    using KDNodeIndexViewPtr = std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>;
+
     struct Options {
         Options()
           : bucket_size_{40}
@@ -109,28 +113,34 @@ class KDTreeIndexed {
 
     KDTreeIndexed(const KDTreeIndexed&) = delete;
 
-    void serialize(const std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>& kdnode,
-                   rapidjson::Writer<rapidjson::StringBuffer>&                               writer) const;
+    ssize_t get_nearest_neighbor_index(std::size_t sample_index_query) const;
+
+    void serialize(const KDNodeIndexViewPtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     void serialize(const fs::path& filepath) const;
 
   private:
-    std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> build(
-        IndicesIterator                     index_first,
-        IndicesIterator                     index_last,
-        SamplesIterator                     samples_first,
-        SamplesIterator                     samples_last,
-        ssize_t                             cut_feature_index,
-        ssize_t                             depth,
-        BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
+    KDNodeIndexViewPtr build(IndicesIterator                     index_first,
+                             IndicesIterator                     index_last,
+                             SamplesIterator                     samples_first,
+                             SamplesIterator                     samples_last,
+                             ssize_t                             cut_feature_index,
+                             ssize_t                             depth,
+                             BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
 
-    std::size_t n_features_;
+    ssize_t get_nearest_neighbor_index(std::size_t               sample_index_query,
+                                       const KDNodeIndexViewPtr& kdnode,
+                                       std::size_t               current_nearest_neighbor_index,
+                                       DataType                  current_nearest_neighbor_distance) const;
+
+    SamplesIterator samples_first_, samples_last_;
+    std::size_t     n_features_;
     // bounding box hyper rectangle (w.r.t. each dimension)
     BoundingBoxKDType<SamplesIterator> kd_bounding_box_;
 
     Options options_;
 
-    std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> root_;
+    KDNodeIndexViewPtr root_;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -140,7 +150,9 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::KDTreeIndexed(IndicesIterator i
                                                                SamplesIterator samples_last,
                                                                std::size_t     n_features,
                                                                const Options&  options)
-  : n_features_{n_features}
+  : samples_first_{samples_first}
+  , samples_last_{samples_last}
+  , n_features_{n_features}
   , kd_bounding_box_{kdtree::algorithms::make_kd_bounding_box(index_first,
                                                               index_last,
                                                               samples_first,
@@ -175,7 +187,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
     if (n_samples == 0) {
         return nullptr;
     }
-    std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> kdnode;
+    KDNodeIndexViewPtr kdnode;
 
     // the current kdnode is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
@@ -236,9 +248,50 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
+ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_index(
+    std::size_t sample_index_query) const {
+    const std::size_t current_nearest_neighbor_index = *root_->indices_iterator_pair_.first;
+    const DataType    current_nearest_neighbor_distance =
+        math::heuristics::auto_distance(samples_first_ + sample_index_query * n_features_,
+                                        samples_first_ + sample_index_query * n_features_ + n_features_,
+                                        samples_first_ + current_nearest_neighbor_index * n_features_);
+
+    printf("Current nearest index: %ld, distance: %.3f\n",
+           current_nearest_neighbor_index,
+           current_nearest_neighbor_distance);
+
+    return get_nearest_neighbor_index(
+        sample_index_query, root_, current_nearest_neighbor_index, current_nearest_neighbor_distance);
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_index(
+    std::size_t               sample_index_query,
+    const KDNodeIndexViewPtr& kdnode,
+    std::size_t               current_nearest_neighbor_index,
+    DataType                  current_nearest_neighbor_distance) const {
+    // draft function
+    return 0;
+    if (!kdnode->is_leaf()) {
+        const std::size_t candidate_nearest_neighbor_index = *root_->indices_iterator_pair_.first;
+        const DataType    candidate_nearest_neighbor_distance =
+            math::heuristics::auto_distance(samples_first_ + sample_index_query * n_features_,
+                                            samples_first_ + sample_index_query * n_features_ + n_features_,
+                                            samples_first_ + candidate_nearest_neighbor_index * n_features_);
+
+        if (candidate_nearest_neighbor_distance < current_nearest_neighbor_distance) {
+            current_nearest_neighbor_index    = candidate_nearest_neighbor_index;
+            current_nearest_neighbor_distance = candidate_nearest_neighbor_distance;
+        }
+    } else {
+        // use ffcl/math/heuristics/NearestNeighbor.hpp for sequences
+    }
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
 void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(
-    const std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>& kdnode,
-    rapidjson::Writer<rapidjson::StringBuffer>&                               writer) const {
+    const KDNodeIndexViewPtr&                   kdnode,
+    rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     writer.StartObject();
     {
         writer.String("axis");
@@ -266,8 +319,6 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(
 
 template <typename IndicesIterator, typename SamplesIterator>
 void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepath) const {
-    using DataType = DataType<SamplesIterator>;
-
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdtree serialization");
 
