@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <tuple>
 
 #include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
@@ -130,7 +131,7 @@ class KDTreeIndexed {
 
     ssize_t get_nearest_neighbor_index(std::size_t               sample_index_query,
                                        const KDNodeIndexViewPtr& kdnode,
-                                       std::size_t               current_nearest_neighbor_index,
+                                       ssize_t                   current_nearest_neighbor_index,
                                        DataType                  current_nearest_neighbor_distance) const;
 
     SamplesIterator samples_first_, samples_last_;
@@ -250,6 +251,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
 template <typename IndicesIterator, typename SamplesIterator>
 ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_index(
     std::size_t sample_index_query) const {
+    /*
     const std::size_t current_nearest_neighbor_index = *root_->indices_iterator_pair_.first;
     const DataType    current_nearest_neighbor_distance =
         math::heuristics::auto_distance(samples_first_ + sample_index_query * n_features_,
@@ -259,37 +261,72 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
     printf("Current nearest index: %ld, distance: %.3f\n",
            current_nearest_neighbor_index,
            current_nearest_neighbor_distance);
+    */
 
-    return get_nearest_neighbor_index(
-        sample_index_query, root_, current_nearest_neighbor_index, current_nearest_neighbor_distance);
+    return get_nearest_neighbor_index(sample_index_query, root_, -1, common::utils::infinity<DataType>());
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_index(
     std::size_t               sample_index_query,
     const KDNodeIndexViewPtr& kdnode,
-    std::size_t               current_nearest_neighbor_index,
+    ssize_t                   current_nearest_neighbor_index,
     DataType                  current_nearest_neighbor_distance) const {
-    // draft function
-    common::utils::ignore_parameters(
-        sample_index_query, kdnode, current_nearest_neighbor_index, current_nearest_neighbor_distance);
-    return 0;
     /*
-    if (!kdnode->is_leaf()) {
-        const std::size_t candidate_nearest_neighbor_index = *root_->indices_iterator_pair_.first;
-        const DataType    candidate_nearest_neighbor_distance =
-            math::heuristics::auto_distance(samples_first_ + sample_index_query * n_features_,
-                                            samples_first_ + sample_index_query * n_features_ + n_features_,
-                                            samples_first_ + candidate_nearest_neighbor_index * n_features_);
-
-        if (candidate_nearest_neighbor_distance < current_nearest_neighbor_distance) {
-            current_nearest_neighbor_index    = candidate_nearest_neighbor_index;
-            current_nearest_neighbor_distance = candidate_nearest_neighbor_distance;
-        }
-    } else {
-        // use ffcl/math/heuristics/NearestNeighbor.hpp for sequences
-    }
+    printf("sample_index_query: %ld\n", sample_index_query);
+    printf("current_nearest_neighbor_index: %ld\n", current_nearest_neighbor_index);
+    printf("current_nearest_neighbor_distance: %.3f\n", current_nearest_neighbor_distance);
     */
+
+    if (!kdnode->is_leaf()) {
+        // get the pivot sample index in the dataset
+        const auto sample_index_pivot = *kdnode->indices_iterator_pair_.first;
+        // get the split value according to the current split dimension
+        const auto sample_split_value = samples_first_[sample_index_pivot * n_features_ + kdnode->cut_feature_index_];
+
+        // compute the distance from the current pivot sample to the query only if the pivot sample is not the query
+        if (sample_index_pivot != sample_index_query) {
+            const DataType nearest_neighbor_distance_candidate =
+                math::heuristics::auto_distance(samples_first_ + sample_index_pivot * n_features_,
+                                                samples_first_ + sample_index_pivot * n_features_ + n_features_,
+                                                samples_first_ + sample_index_query * n_features_);
+
+            if (nearest_neighbor_distance_candidate < current_nearest_neighbor_distance) {
+                current_nearest_neighbor_index    = sample_index_pivot;
+                current_nearest_neighbor_distance = nearest_neighbor_distance_candidate;
+            }
+        }
+        // traverse either the left or right child node depending on where the target sample is located relatively to
+        // the cut value
+        if (samples_first_[sample_index_query * n_features_] < sample_split_value) {
+            current_nearest_neighbor_index = get_nearest_neighbor_index(
+                sample_index_query, kdnode->left_, current_nearest_neighbor_index, current_nearest_neighbor_distance);
+
+        } else {
+            current_nearest_neighbor_index = get_nearest_neighbor_index(
+                sample_index_query, kdnode->right_, current_nearest_neighbor_index, current_nearest_neighbor_distance);
+        }
+
+    } else {
+        const auto [leaf_node_nearest_neighbor_index_candidate, leaf_node_nearest_neighbor_distance_candidate] =
+            math::heuristics::nearest_neighbor_indexed_range(kdnode->indices_iterator_pair_.first,
+                                                             kdnode->indices_iterator_pair_.second,
+                                                             samples_first_,
+                                                             samples_last_,
+                                                             n_features_,
+                                                             current_nearest_neighbor_index);
+
+        if (leaf_node_nearest_neighbor_distance_candidate < current_nearest_neighbor_distance) {
+            current_nearest_neighbor_index    = leaf_node_nearest_neighbor_index_candidate;
+            current_nearest_neighbor_distance = leaf_node_nearest_neighbor_distance_candidate;
+        }
+        /*
+        printf("sample_index_query: %ld\n", sample_index_query);
+        printf("current_nearest_neighbor_index: %ld\n", current_nearest_neighbor_index);
+        printf("current_nearest_neighbor_distance: %.3f\n", current_nearest_neighbor_distance);
+        */
+    }
+    return current_nearest_neighbor_index;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>

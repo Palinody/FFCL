@@ -117,13 +117,15 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MainTest) {
-    fs::path filename = "mnist.txt";
+    fs::path filename = "noisy_circles.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     const std::size_t n_samples = labels.size();
+
+    const std::size_t sample_index_query = 1;
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -143,18 +145,34 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(10)
+            .bucket_size(n_samples)
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    const auto nn_index = kdtree.get_nearest_neighbor_index(n_samples / 2);
+    timer.reset();
+    const auto nn_index = kdtree.get_nearest_neighbor_index(1);
+    timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    printf("Query position: %.3f, %.3f\n",
+           data.begin()[sample_index_query * n_features + 0],
+           data.begin()[sample_index_query * n_features + 1]);
 
     printf("nn_index: %ld\n", nn_index);
+    printf(
+        "nn position: %.3f, %.3f\n", data.begin()[nn_index * n_features + 0], data.begin()[nn_index * n_features + 1]);
 
+    timer.reset();
+    const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_indexed_range(
+        data_indices.begin(), data_indices.end(), data.begin(), data.end(), n_features, sample_index_query);
     timer.print_elapsed_seconds(/*n_decimals=*/6);
+
+    printf("CORRECT ANSWER: nn_index: %ld, nn_distance: %.3f\n", nearest_neighbor_index, nearest_neighbor_distance);
+    printf("nn position: %.3f, %.3f\n",
+           data.begin()[nearest_neighbor_index * n_features + 0],
+           data.begin()[nearest_neighbor_index * n_features + 1]);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
