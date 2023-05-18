@@ -280,9 +280,11 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
 
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto sample_index_pivot = *kdnode->indices_iterator_pair_.first;
+        const auto sample_index_pivot = kdnode->indices_iterator_pair_.first[0];
         // get the split value according to the current split dimension
         const auto sample_split_value = samples_first_[sample_index_pivot * n_features_ + kdnode->cut_feature_index_];
+        // get the value of the query according to the split dimension
+        const auto query_split_value = samples_first_[sample_index_query * n_features_ + kdnode->cut_feature_index_];
 
         // compute the distance from the current pivot sample to the query only if the pivot sample is not the query
         if (sample_index_pivot != sample_index_query) {
@@ -298,7 +300,7 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
         }
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value
-        if (samples_first_[sample_index_query * n_features_] < sample_split_value) {
+        if (query_split_value < sample_split_value) {
             current_nearest_neighbor_index = get_nearest_neighbor_index(
                 sample_index_query, kdnode->left_, current_nearest_neighbor_index, current_nearest_neighbor_distance);
 
@@ -320,11 +322,9 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
             current_nearest_neighbor_index    = leaf_node_nearest_neighbor_index_candidate;
             current_nearest_neighbor_distance = leaf_node_nearest_neighbor_distance_candidate;
         }
-        /*
         printf("sample_index_query: %ld\n", sample_index_query);
         printf("current_nearest_neighbor_index: %ld\n", current_nearest_neighbor_index);
         printf("current_nearest_neighbor_distance: %.3f\n", current_nearest_neighbor_distance);
-        */
     }
     return current_nearest_neighbor_index;
 }

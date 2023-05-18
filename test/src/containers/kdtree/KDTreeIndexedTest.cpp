@@ -3,6 +3,7 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -125,7 +126,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
 
     const std::size_t n_samples = labels.size();
 
-    const std::size_t sample_index_query = 1;
+    const auto sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -145,7 +146,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(n_samples)
+            .bucket_size(10)
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
@@ -153,23 +154,24 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     timer.reset();
-    const auto nn_index = kdtree.get_nearest_neighbor_index(1);
-    timer.print_elapsed_seconds(/*n_decimals=*/6);
+    const auto nn_index = kdtree.get_nearest_neighbor_index(sample_index_query);
+    timer.print_elapsed_seconds(/*n_decimals=*/9);
 
     printf("Query position: %.3f, %.3f\n",
            data.begin()[sample_index_query * n_features + 0],
            data.begin()[sample_index_query * n_features + 1]);
 
-    printf("nn_index: %ld\n", nn_index);
+    printf("---\nnn_index: %ld\n", nn_index);
     printf(
         "nn position: %.3f, %.3f\n", data.begin()[nn_index * n_features + 0], data.begin()[nn_index * n_features + 1]);
 
     timer.reset();
     const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_indexed_range(
         data_indices.begin(), data_indices.end(), data.begin(), data.end(), n_features, sample_index_query);
-    timer.print_elapsed_seconds(/*n_decimals=*/6);
+    timer.print_elapsed_seconds(/*n_decimals=*/9);
 
-    printf("CORRECT ANSWER: nn_index: %ld, nn_distance: %.3f\n", nearest_neighbor_index, nearest_neighbor_distance);
+    printf(
+        "---\nCORRECT ANSWER: nn_index: %ld, nn_distance: %.3f\n", nearest_neighbor_index, nearest_neighbor_distance);
     printf("nn position: %.3f, %.3f\n",
            data.begin()[nearest_neighbor_index * n_features + 0],
            data.begin()[nearest_neighbor_index * n_features + 1]);
