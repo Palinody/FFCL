@@ -32,6 +32,10 @@ struct KDNodeIndexView {
 
     bool is_leaf() const;
 
+    bool has_parent() const;
+
+    std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> get_sibling_node() const;
+
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     IteratorPairType<IndicesIterator> indices_iterator_pair_;
@@ -43,6 +47,7 @@ struct KDNodeIndexView {
     BoundingBoxKDType<SamplesIterator>                                 kd_bounding_box_;
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> left_;
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> right_;
+    std::weak_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>   parent_;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -78,6 +83,27 @@ bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_empty() const {
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_leaf() const {
     return cut_feature_index_ == -1;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+bool KDNodeIndexView<IndicesIterator, SamplesIterator>::has_parent() const {
+    return parent_.lock() != nullptr;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>
+KDNodeIndexView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
+    if (has_parent()) {
+        auto parent_shared_ptr = parent_.lock();
+
+        if (this == parent_shared_ptr->left_.get()) {
+            return parent_shared_ptr->right_;
+
+        } else {
+            return parent_shared_ptr->left_;
+        }
+    }
+    return nullptr;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>

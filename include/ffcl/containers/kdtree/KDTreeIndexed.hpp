@@ -134,6 +134,11 @@ class KDTreeIndexed {
                                        ssize_t                   current_nearest_neighbor_index,
                                        DataType                  current_nearest_neighbor_distance) const;
 
+    ssize_t unwind_tree(std::size_t               sample_index_query,
+                        const KDNodeIndexViewPtr& kdnode,
+                        ssize_t                   current_nearest_neighbor_index,
+                        DataType                  current_nearest_neighbor_distance) const;
+
     SamplesIterator samples_first_, samples_last_;
     std::size_t     n_features_;
     // bounding box hyper rectangle (w.r.t. each dimension)
@@ -219,6 +224,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
                               cut_feature_index,
                               depth + 1,
                               kd_bounding_box);
+        // provide a parent pointer to the child node for reversed traversal of the kdtree
+        kdnode->left_->parent_ = kdnode;
 
         // reset the right bound of the bounding box to the current kdnode right bound
         kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_[cut_feature_index].second;
@@ -234,6 +241,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
                                    cut_feature_index,
                                    depth + 1,
                                    kd_bounding_box);
+            // provide a parent pointer to the child node for reversed traversal of the kdtree
+            kdnode->right_->parent_ = kdnode;
 
             // reset the left bound of the bounding box to the current kdnode left bound
             kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_[cut_feature_index].first;
@@ -272,12 +281,6 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
     const KDNodeIndexViewPtr& kdnode,
     ssize_t                   current_nearest_neighbor_index,
     DataType                  current_nearest_neighbor_distance) const {
-    /*
-    printf("sample_index_query: %ld\n", sample_index_query);
-    printf("current_nearest_neighbor_index: %ld\n", current_nearest_neighbor_index);
-    printf("current_nearest_neighbor_distance: %.3f\n", current_nearest_neighbor_distance);
-    */
-
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
         const auto sample_index_pivot = kdnode->indices_iterator_pair_.first[0];
@@ -316,15 +319,53 @@ ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::get_nearest_neighbor_in
                                                              samples_first_,
                                                              samples_last_,
                                                              n_features_,
-                                                             current_nearest_neighbor_index);
+                                                             sample_index_query);
 
         if (leaf_node_nearest_neighbor_distance_candidate < current_nearest_neighbor_distance) {
             current_nearest_neighbor_index    = leaf_node_nearest_neighbor_index_candidate;
             current_nearest_neighbor_distance = leaf_node_nearest_neighbor_distance_candidate;
         }
-        printf("sample_index_query: %ld\n", sample_index_query);
-        printf("current_nearest_neighbor_index: %ld\n", current_nearest_neighbor_index);
-        printf("current_nearest_neighbor_distance: %.3f\n", current_nearest_neighbor_distance);
+        current_nearest_neighbor_index =
+            unwind_tree(sample_index_query, kdnode, current_nearest_neighbor_index, current_nearest_neighbor_distance);
+    }
+    return current_nearest_neighbor_index;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+ssize_t KDTreeIndexed<IndicesIterator, SamplesIterator>::unwind_tree(std::size_t               sample_index_query,
+                                                                     const KDNodeIndexViewPtr& kdnode,
+                                                                     ssize_t  current_nearest_neighbor_index,
+                                                                     DataType current_nearest_neighbor_distance) const {
+    printf("\t1\n");
+
+    if (auto kdnode_parent = kdnode->parent_.lock()) {
+        // get the pivot sample index in the dataset
+        const auto sample_index_pivot = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto sample_split_value =
+            samples_first_[sample_index_pivot * n_features_ + kdnode_parent->cut_feature_index_];
+        // get the value of the query according to the split dimension
+        const auto query_split_value =
+            samples_first_[sample_index_query * n_features_ + kdnode_parent->cut_feature_index_];
+        //
+        const auto current_nearest_neighbor_split_value =
+            samples_first_[current_nearest_neighbor_index * n_features_ + kdnode_parent->cut_feature_index_];
+
+        // if the current hypersphere crosses the current hyperrectangle
+        if (common::utils::abs(sample_split_value - query_split_value) <
+            common::utils::abs(current_nearest_neighbor_split_value - query_split_value)) {
+            if (auto sibling_node = kdnode->get_sibling_node()) {
+                printf("\t2\n");
+                current_nearest_neighbor_index = get_nearest_neighbor_index(sample_index_query,
+                                                                            sibling_node,
+                                                                            current_nearest_neighbor_index,
+                                                                            current_nearest_neighbor_distance);
+            }
+        }
+        // current_nearest_neighbor_index = unwind_tree(
+        // sample_index_query, kdnode_parent, current_nearest_neighbor_index, current_nearest_neighbor_distance);
+
+    } else {
+        printf("Currently in root node\n");
     }
     return current_nearest_neighbor_index;
 }
