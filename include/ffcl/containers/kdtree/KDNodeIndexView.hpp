@@ -30,6 +30,8 @@ struct KDNodeIndexView {
 
     bool is_empty() const;
 
+    std::size_t n_samples() const;
+
     bool is_leaf() const;
 
     bool has_parent() const;
@@ -77,7 +79,12 @@ KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_empty() const {
-    return std::distance(indices_iterator_pair_.first, indices_iterator_pair_.second) == static_cast<std::ptrdiff_t>(0);
+    return n_samples() == static_cast<std::ptrdiff_t>(0);
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t KDNodeIndexView<IndicesIterator, SamplesIterator>::n_samples() const {
+    return std::distance(indices_iterator_pair_.first, indices_iterator_pair_.second);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
