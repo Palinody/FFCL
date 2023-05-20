@@ -4,20 +4,19 @@ project(ffcl)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
-
-# add_compile_options(
-# -std=c++17
-# -Ofast
-# -march=native
-# -Wall
-# -Wextra
-# -Werror
-# -Wfloat-equal
-# -Wshadow
-# -Wfatal-errors
-# -fopenmp
-# )
+# add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
+add_compile_options(
+    -std=c++17
+    -Ofast
+    -march=native
+    -Wall
+    -Wextra
+    -Werror
+    -Wfloat-equal
+    -Wshadow
+    -Wfatal-errors
+    -fopenmp
+)
 find_package(OpenMP REQUIRED)
 
 set(HEADER_FILES
@@ -125,20 +124,19 @@ elseif(MODE STREQUAL "gtest")
     # -------------------------------
     enable_testing()
 
-    add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
-
-    # add_compile_options(
-    # -std=c++17
-    # -Ofast
-    # -march=native
-    # -Wall
-    # -Wextra
-    # -Werror
-    # -Wfloat-equal
-    # -Wshadow
-    # -Wfatal-errors
-    # -fopenmp
-    # )
+    # add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
+    add_compile_options(
+        -std=c++17
+        -Ofast
+        -march=native
+        -Wall
+        -Wextra
+        -Werror
+        -Wfloat-equal
+        -Wshadow
+        -Wfatal-errors
+        -fopenmp
+    )
     include(CTest)
 
     include_directories(test/include/base_fixtures)

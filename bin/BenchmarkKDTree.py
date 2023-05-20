@@ -91,10 +91,13 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     """
     np.random.shuffle(points)
 
+    query_index = 946
+    query_point = points[query_index, :]
+
     start_time = time.process_time()
     flann = pyflann.FLANN()
     params = flann.build_index(
-        points,
+        np.delete(points, query_index, axis=0),
         algorithm="kdtree",
         split_method="median",
         copy_data=False,
@@ -114,6 +117,18 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # flann.get_indexed_data()
     # print("FLANN build_index parameters:")
     # print(params)
+    k = 1
+
+    start_time = time.process_time()
+    result = flann.nn_index(query_point, k)
+    end_time = time.process_time()
+    print(
+        f"Elapsed time for KDTree {k} nearest neighbor (pyflann):",
+        end_time - start_time,
+        "seconds",
+    )
+    print("result: ", result)
+    # print(f"Result: {result}, dist: {dists}")
 
 
 def run_all():
