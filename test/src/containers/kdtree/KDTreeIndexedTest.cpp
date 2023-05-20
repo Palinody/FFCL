@@ -118,7 +118,7 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MainTest) {
-    fs::path filename = "noisy_circles.txt";
+    fs::path filename = "mnist.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
@@ -163,6 +163,9 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_indexed_range(
         indices.begin(), indices.end(), data.begin(), data.end(), n_features, sample_index_query);
     timer.print_elapsed_seconds(/*n_decimals=*/9);
+
+    printf("Result: nn_index = %ld\n", nn_index);
+    printf("Result remapped: nn_index = %ld\n", indices[nn_index]);
 
     ASSERT_EQ(nn_index, nearest_neighbor_index);
 }

@@ -11,10 +11,11 @@
 ## TODO (in order)
 
 - `ffcl::containers::KDTree`
-  **update**: the build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axis selection policy.
+  **update**: the build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axis selection policy. The nearest neighbor search seems to be faster than FLANN on all the datasets. Nearest neighbor search is much more effective with kdtrees when n_features is relatively small and n_samples large. The speed is slightly worse with kdtree on MNIST (curiously not bad at all). The tests were made with a `bucket_size=40`.
     - kdtree build only with custom options: depth, bucket size, axis selection and split policies
     - multiple axis selection policies (client can make its own policies)
     - quickselect (handles duplicate data) splitting rule policy (client can make its own rules)
+    - (single) nearest neighbor with `KDTreeIndexed`. The search can be made from any node and with an index query refering to the input dataset for now. Next I will make the implementation for a new point query as well as the not indexed `KDTree`.
 - Proper unit testing (**update**: all the generic code is now unit tested)
 - DBSCAN
 - OPTICS

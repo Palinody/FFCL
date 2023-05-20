@@ -89,7 +89,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     "threshold": split the points using a fixed threshold value in the chosen dimension.
     "best": choose the best splitting method automatically based on the data and other parameters.
     """
-    np.random.shuffle(points)
+    # np.random.shuffle(points)
 
     query_index = 33
     query_point = points[query_index, :]
