@@ -309,6 +309,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_closest_leaf_node(
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value. Also checks if the children nodes are nullptr
         if (query_split_value < sample_split_value) {
+            // Checking for left child validity is not necessary with median split but done if a different policy where
+            // to be used
             if (kdnode->left_) {
                 kdnode = get_closest_leaf_node(
                     /**/ sample_index_query,
@@ -317,6 +319,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_closest_leaf_node(
                     /**/ current_nearest_neighbor_distance);
             }
         } else {
+            // Only the right child might be nullptr if the parent node had 2 samples
             if (kdnode->right_) {
                 kdnode = get_closest_leaf_node(
                     /**/ sample_index_query,
@@ -397,9 +400,12 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(
 
         // continue the recursion if the current node is not leaf
         if (!kdnode->is_leaf()) {
-            writer.String("left");
-            serialize(kdnode->left_, writer);
-
+            // Checking for left child validity is not necessary with median split but done if a different policy where
+            // to be used
+            if (kdnode->left_) {
+                writer.String("left");
+                serialize(kdnode->left_, writer);
+            }
             // The right pointer might be nullptr when a node had 2 samples. The median computation chooses the
             // second sample as the pivot because the median of 2 samples will output index 1. The other index will
             // be 0 and thus the left child

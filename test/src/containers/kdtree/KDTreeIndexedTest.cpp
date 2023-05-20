@@ -146,7 +146,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
