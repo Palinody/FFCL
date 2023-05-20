@@ -118,7 +118,7 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MainTest) {
-    fs::path filename = "mnist.txt";
+    fs::path filename = "noisy_circles.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
@@ -126,8 +126,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
 
     const std::size_t n_samples = labels.size();
 
-    const std::size_t sample_index_query = 946;  // math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
-    // 949, 329, 998, 543
+    const std::size_t sample_index_query = 33;  // math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -147,7 +146,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(40)
+            .bucket_size(1)
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
@@ -170,12 +169,12 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     timer.print_elapsed_seconds(/*n_decimals=*/9);
 
     printf("---\nRESULT: nn_index: %ld, nn_distance: %.3f\n", nn_index, nn_distance);
-    printf("nn position: %.3f, %.3f\n", data[nn_index * n_features + 0], data[nn_index * n_features + 1]);
+    // printf("nn position: %.3f, %.3f\n", data[nn_index * n_features + 0], data[nn_index * n_features + 1]);
 
     printf("---\nEXPECTED: nn_index: %ld, nn_distance: %.3f\n", nearest_neighbor_index, nearest_neighbor_distance);
-    printf("nn position: %.3f, %.3f\n",
-           data[nearest_neighbor_index * n_features + 0],
-           data[nearest_neighbor_index * n_features + 1]);
+    // printf("nn position: %.3f, %.3f\n",
+    //        data[nearest_neighbor_index * n_features + 0],
+    //        data[nearest_neighbor_index * n_features + 1]);
 
     ASSERT_EQ(nn_index, nearest_neighbor_index);
 }

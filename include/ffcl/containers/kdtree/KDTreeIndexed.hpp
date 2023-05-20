@@ -307,14 +307,23 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_closest_leaf_node(
             }
         }
         // traverse either the left or right child node depending on where the target sample is located relatively to
-        // the cut value
+        // the cut value. Also checks if the children nodes are nullptr
         if (query_split_value < sample_split_value) {
-            kdnode = get_closest_leaf_node(
-                sample_index_query, kdnode->left_, current_nearest_neighbor_index, current_nearest_neighbor_distance);
-
+            if (kdnode->left_) {
+                kdnode = get_closest_leaf_node(
+                    /**/ sample_index_query,
+                    /**/ kdnode->left_,
+                    /**/ current_nearest_neighbor_index,
+                    /**/ current_nearest_neighbor_distance);
+            }
         } else {
-            kdnode = get_closest_leaf_node(
-                sample_index_query, kdnode->right_, current_nearest_neighbor_index, current_nearest_neighbor_distance);
+            if (kdnode->right_) {
+                kdnode = get_closest_leaf_node(
+                    /**/ sample_index_query,
+                    /**/ kdnode->right_,
+                    /**/ current_nearest_neighbor_index,
+                    /**/ current_nearest_neighbor_distance);
+            }
         }
     }
     // if the current kdnode is leaf
@@ -352,19 +361,21 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::backtrack_step(std::size_t     
         // get the value of the query according to the split dimension
         const auto query_split_value =
             samples_first_[sample_index_query * n_features_ + kdnode_parent->cut_feature_index_];
-        //
-        const auto current_nearest_neighbor_split_value =
-            samples_first_[current_nearest_neighbor_index * n_features_ + kdnode_parent->cut_feature_index_];
 
-        // if the current hypersphere crosses the current hyperrectangle
-        if (common::utils::abs(sample_split_value - query_split_value) <
-            common::utils::abs(current_nearest_neighbor_split_value - query_split_value)) {
+        if (common::utils::abs(sample_split_value - query_split_value) < current_nearest_neighbor_distance) {
             // if the sibling kdnode is not nullptr
             if (auto sibling_node = kdnode->get_sibling_node()) {
-                kdnode = get_closest_leaf_node(sample_index_query,
-                                               sibling_node,
-                                               current_nearest_neighbor_index,
-                                               current_nearest_neighbor_distance);
+                auto current_kdnode = get_closest_leaf_node(sample_index_query,
+                                                            sibling_node,
+                                                            current_nearest_neighbor_index,
+                                                            current_nearest_neighbor_distance);
+                while (current_kdnode.get() != sibling_node.get()) {
+                    current_kdnode = backtrack_step(
+                        /**/ sample_index_query,
+                        /**/ current_kdnode,
+                        /**/ current_nearest_neighbor_index,
+                        /**/ current_nearest_neighbor_distance);
+                }
             }
         }
     }
