@@ -134,14 +134,14 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
 
     printf("Making the kdtree:\n");
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -154,10 +154,6 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     printf("Query index: %ld\n", sample_index_query);
-    printf("Query index remapped: %ld\n", data_indices[sample_index_query]);
-    printf("Query position: %.3f, %.3f\n",
-           data[sample_index_query * n_features + 0],
-           data[sample_index_query * n_features + 1]);
 
     timer.reset();
     const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_index_and_distance(sample_index_query);
@@ -165,16 +161,8 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
 
     timer.reset();
     const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_indexed_range(
-        data_indices.begin(), data_indices.end(), data.begin(), data.end(), n_features, sample_index_query);
+        indices.begin(), indices.end(), data.begin(), data.end(), n_features, sample_index_query);
     timer.print_elapsed_seconds(/*n_decimals=*/9);
-
-    printf("---\nRESULT: nn_index: %ld, nn_distance: %.3f\n", nn_index, nn_distance);
-    // printf("nn position: %.3f, %.3f\n", data[nn_index * n_features + 0], data[nn_index * n_features + 1]);
-
-    printf("---\nEXPECTED: nn_index: %ld, nn_distance: %.3f\n", nearest_neighbor_index, nearest_neighbor_distance);
-    // printf("nn position: %.3f, %.3f\n",
-    //        data[nearest_neighbor_index * n_features + 0],
-    //        data[nearest_neighbor_index * n_features + 1]);
 
     ASSERT_EQ(nn_index, nearest_neighbor_index);
 }
@@ -196,14 +184,14 @@ TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -233,14 +221,14 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyCirclesTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -275,14 +263,14 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyMoonsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -317,14 +305,14 @@ TEST_F(KDTreeIndexedErrorsTest, VariedTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -359,14 +347,14 @@ TEST_F(KDTreeIndexedErrorsTest, AnisoTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -401,14 +389,14 @@ TEST_F(KDTreeIndexedErrorsTest, BlobsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -443,14 +431,14 @@ TEST_F(KDTreeIndexedErrorsTest, NoStructureTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,
@@ -485,14 +473,14 @@ TEST_F(KDTreeIndexedErrorsTest, UnbalancedBlobsTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto data_indices = generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
-    using IndicesIterator = decltype(data_indices)::iterator;
+    using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
     auto kdtree = ffcl::containers::KDTreeIndexed(
-        data_indices.begin(),
-        data_indices.end(),
+        indices.begin(),
+        indices.end(),
         data.begin(),
         data.end(),
         n_features,

@@ -114,7 +114,11 @@ class KDTreeIndexed {
 
     KDTreeIndexed(const KDTreeIndexed&) = delete;
 
-    auto nearest_neighbor_index_and_distance(std::size_t sample_index_query) const;
+    auto nearest_neighbor_index_and_distance(
+        std::size_t        sample_index_query,
+        KDNodeIndexViewPtr kdnode                            = nullptr,
+        ssize_t            current_nearest_neighbor_index    = -1,
+        DataType           current_nearest_neighbor_distance = common::utils::infinity<DataType>()) const;
 
     void serialize(const KDNodeIndexViewPtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
@@ -129,15 +133,15 @@ class KDTreeIndexed {
                              ssize_t                             depth,
                              BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
 
-    KDNodeIndexViewPtr get_closest_leaf_node(std::size_t        sample_index_query,
-                                             KDNodeIndexViewPtr kdnode,
-                                             ssize_t&           current_nearest_neighbor_index,
-                                             DataType&          current_nearest_neighbor_distance) const;
+    KDNodeIndexViewPtr recurse_to_closest_leaf_node(std::size_t        sample_index_query,
+                                                    KDNodeIndexViewPtr kdnode,
+                                                    ssize_t&           current_nearest_neighbor_index,
+                                                    DataType&          current_nearest_neighbor_distance) const;
 
-    KDNodeIndexViewPtr backtrack_step(std::size_t        sample_index_query,
-                                      KDNodeIndexViewPtr kdnode,
-                                      ssize_t&           current_nearest_neighbor_index,
-                                      DataType&          current_nearest_neighbor_distance) const;
+    KDNodeIndexViewPtr nearest_neighbor_backtrack_step(std::size_t        sample_index_query,
+                                                       KDNodeIndexViewPtr kdnode,
+                                                       ssize_t&           current_nearest_neighbor_index,
+                                                       DataType&          current_nearest_neighbor_distance) const;
 
     SamplesIterator samples_first_, samples_last_;
     std::size_t     n_features_;
@@ -259,29 +263,33 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_index_and_distance(
-    std::size_t sample_index_query) const {
-    ssize_t  current_nearest_neighbor_index    = -1;
-    DataType current_nearest_neighbor_distance = common::utils::infinity<DataType>();
+    std::size_t        sample_index_query,
+    KDNodeIndexViewPtr kdnode,
+    ssize_t            current_nearest_neighbor_index,
+    DataType           current_nearest_neighbor_distance) const {
+    // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
+    auto current_kdnode = recurse_to_closest_leaf_node(sample_index_query,
+                                                       kdnode == nullptr ? root_ : kdnode,
+                                                       current_nearest_neighbor_index,
+                                                       current_nearest_neighbor_distance);
 
-    auto current_kdnode = get_closest_leaf_node(
-        /**/ sample_index_query,
-        /**/ root_,
-        /**/ current_nearest_neighbor_index,
-        /**/ current_nearest_neighbor_distance);
-
-    // backtrack from the nearest neighbor leaf node while the current node is not root (or not nullptr)
-    while (current_kdnode = backtrack_step(
-               /**/ sample_index_query,
-               /**/ current_kdnode,
-               /**/ current_nearest_neighbor_index,
-               /**/ current_nearest_neighbor_distance)) {
+    // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
+    // kdnode parameter is a subtree. A search through the entire tree
+    while (current_kdnode != kdnode) {
+        // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
+        // (nullptr otherwise)
+        current_kdnode = nearest_neighbor_backtrack_step(
+            /**/ sample_index_query,
+            /**/ current_kdnode,
+            /**/ current_nearest_neighbor_index,
+            /**/ current_nearest_neighbor_distance);
     }
     return std::make_pair(current_nearest_neighbor_index, current_nearest_neighbor_distance);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 typename KDTreeIndexed<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr
-KDTreeIndexed<IndicesIterator, SamplesIterator>::get_closest_leaf_node(
+KDTreeIndexed<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     std::size_t        sample_index_query,
     KDNodeIndexViewPtr kdnode,
     ssize_t&           current_nearest_neighbor_index,
@@ -312,7 +320,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_closest_leaf_node(
             // Checking for left child validity is not necessary with median split but done if a different policy where
             // to be used
             if (kdnode->left_) {
-                kdnode = get_closest_leaf_node(
+                kdnode = recurse_to_closest_leaf_node(
                     /**/ sample_index_query,
                     /**/ kdnode->left_,
                     /**/ current_nearest_neighbor_index,
@@ -321,7 +329,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_closest_leaf_node(
         } else {
             // Only the right child might be nullptr if the parent node had 2 samples
             if (kdnode->right_) {
-                kdnode = get_closest_leaf_node(
+                kdnode = recurse_to_closest_leaf_node(
                     /**/ sample_index_query,
                     /**/ kdnode->right_,
                     /**/ current_nearest_neighbor_index,
@@ -349,10 +357,11 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_closest_leaf_node(
 
 template <typename IndicesIterator, typename SamplesIterator>
 typename KDTreeIndexed<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr
-KDTreeIndexed<IndicesIterator, SamplesIterator>::backtrack_step(std::size_t        sample_index_query,
-                                                                KDNodeIndexViewPtr kdnode,
-                                                                ssize_t&           current_nearest_neighbor_index,
-                                                                DataType& current_nearest_neighbor_distance) const {
+KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_backtrack_step(
+    std::size_t        sample_index_query,
+    KDNodeIndexViewPtr kdnode,
+    ssize_t&           current_nearest_neighbor_index,
+    DataType&          current_nearest_neighbor_distance) const {
     auto kdnode_parent = kdnode->parent_.lock();
 
     // if kdnode has a parent
@@ -365,20 +374,17 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::backtrack_step(std::size_t     
         const auto query_split_value =
             samples_first_[sample_index_query * n_features_ + kdnode_parent->cut_feature_index_];
 
+        // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
+        // closer to the query sample than the current nearest neighbor
         if (common::utils::abs(sample_split_value - query_split_value) < current_nearest_neighbor_distance) {
             // if the sibling kdnode is not nullptr
             if (auto sibling_node = kdnode->get_sibling_node()) {
-                auto current_kdnode = get_closest_leaf_node(sample_index_query,
-                                                            sibling_node,
-                                                            current_nearest_neighbor_index,
-                                                            current_nearest_neighbor_distance);
-                while (current_kdnode.get() != sibling_node.get()) {
-                    current_kdnode = backtrack_step(
-                        /**/ sample_index_query,
-                        /**/ current_kdnode,
-                        /**/ current_nearest_neighbor_index,
-                        /**/ current_nearest_neighbor_distance);
-                }
+                // get the nearest neighbor from the sibling node
+                std::tie(current_nearest_neighbor_index, current_nearest_neighbor_distance) =
+                    nearest_neighbor_index_and_distance(sample_index_query,
+                                                        sibling_node,
+                                                        current_nearest_neighbor_index,
+                                                        current_nearest_neighbor_distance);
             }
         }
     }
