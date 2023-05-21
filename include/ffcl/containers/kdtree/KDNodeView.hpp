@@ -26,11 +26,11 @@ struct KDNodeView {
 
     KDNodeView(const KDNodeView&) = delete;
 
-    bool is_empty() const;  //
+    bool is_empty() const;
 
     std::size_t n_samples() const;
 
-    bool is_leaf() const;  //
+    bool is_leaf() const;
 
     bool is_left_child() const;
 
