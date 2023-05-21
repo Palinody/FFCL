@@ -112,17 +112,16 @@ class KDTree {
         ssize_t       current_nearest_neighbor_index    = -1,
         DataType      current_nearest_neighbor_distance = common::utils::infinity<DataType>()) const;
 
-    void serialize(const std::shared_ptr<KDNodeView<SamplesIterator>>& kdnode,
-                   rapidjson::Writer<rapidjson::StringBuffer>&         writer) const;
+    void serialize(const KDNodeViewPtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     void serialize(const fs::path& filepath) const;
 
   private:
-    std::shared_ptr<KDNodeView<SamplesIterator>> build(SamplesIterator                     samples_first,
-                                                       SamplesIterator                     samples_last,
-                                                       ssize_t                             cut_feature_index,
-                                                       ssize_t                             depth,
-                                                       BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
+    KDNodeViewPtr build(SamplesIterator                     samples_first,
+                        SamplesIterator                     samples_last,
+                        ssize_t                             cut_feature_index,
+                        ssize_t                             depth,
+                        BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
 
     KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t   sample_index_query,
                                                KDNodeViewPtr kdnode,
@@ -140,7 +139,7 @@ class KDTree {
 
     Options options_;
 
-    std::shared_ptr<KDNodeView<SamplesIterator>> root_;
+    KDNodeViewPtr root_;
 };
 
 template <typename SamplesIterator>
@@ -158,7 +157,7 @@ KDTree<SamplesIterator>::KDTree(SamplesIterator samples_first,
                 kd_bounding_box_)} {}
 
 template <typename SamplesIterator>
-std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<SamplesIterator>::build(
+typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::build(
     SamplesIterator                     samples_first,
     SamplesIterator                     samples_last,
     ssize_t                             cut_feature_index,
@@ -169,7 +168,7 @@ std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<SamplesIterator>::build(
     if (n_samples == 0) {
         return nullptr;
     }
-    std::shared_ptr<KDNodeView<SamplesIterator>> kdnode;
+    KDNodeViewPtr kdnode;
 
     // the current kdnode is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
@@ -217,8 +216,8 @@ std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<SamplesIterator>::build(
 }
 
 template <typename SamplesIterator>
-void KDTree<SamplesIterator>::serialize(const std::shared_ptr<KDNodeView<SamplesIterator>>& kdnode,
-                                        rapidjson::Writer<rapidjson::StringBuffer>&         writer) const {
+void KDTree<SamplesIterator>::serialize(const KDNodeViewPtr&                        kdnode,
+                                        rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     writer.StartObject();
     {
         writer.String("axis");
