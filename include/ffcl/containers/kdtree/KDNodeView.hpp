@@ -26,9 +26,19 @@ struct KDNodeView {
 
     KDNodeView(const KDNodeView&) = delete;
 
-    bool is_empty() const;
+    bool is_empty() const;  //
 
-    bool is_leaf() const;
+    std::size_t n_samples() const;
+
+    bool is_leaf() const;  //
+
+    bool is_left_child() const;
+
+    bool is_right_child() const;
+
+    bool has_parent() const;
+
+    std::shared_ptr<KDNodeView<Iterator>> get_sibling_node() const;
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
@@ -40,6 +50,7 @@ struct KDNodeView {
     BoundingBoxKDType<Iterator>           kd_bounding_box_;
     std::shared_ptr<KDNodeView<Iterator>> left_;
     std::shared_ptr<KDNodeView<Iterator>> right_;
+    std::weak_ptr<KDNodeView<Iterator>>   parent_;
 };
 
 template <typename Iterator>
@@ -67,8 +78,51 @@ bool KDNodeView<Iterator>::is_empty() const {
 }
 
 template <typename Iterator>
+std::size_t KDNodeView<Iterator>::n_samples() const {
+    return common::utils::get_n_samples(samples_iterator_pair_.first, samples_iterator_pair_.second, n_features_);
+}
+
+template <typename Iterator>
 bool KDNodeView<Iterator>::is_leaf() const {
     return cut_feature_index_ == -1;
+}
+
+//
+
+template <typename Iterator>
+bool KDNodeView<Iterator>::has_parent() const {
+    return parent_.lock() != nullptr;
+}
+
+template <typename Iterator>
+bool KDNodeView<Iterator>::is_left_child() const {
+    if (has_parent()) {
+        return this == parent_.lock()->left_.get();
+    }
+    return false;
+}
+
+template <typename Iterator>
+bool KDNodeView<Iterator>::is_right_child() const {
+    if (has_parent()) {
+        return this == parent_.lock()->right_.get();
+    }
+    return false;
+}
+
+template <typename Iterator>
+std::shared_ptr<KDNodeView<Iterator>> KDNodeView<Iterator>::get_sibling_node() const {
+    if (has_parent()) {
+        auto parent_shared_ptr = parent_.lock();
+
+        if (this == parent_shared_ptr->left_.get()) {
+            return parent_shared_ptr->right_;
+
+        } else {
+            return parent_shared_ptr->left_;
+        }
+    }
+    return nullptr;
 }
 
 template <typename Iterator>

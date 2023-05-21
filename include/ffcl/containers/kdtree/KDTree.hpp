@@ -29,7 +29,8 @@ namespace fs = std::filesystem;
 template <typename SamplesIterator>
 class KDTree {
   public:
-    using DataType = typename SamplesIterator::value_type;
+    using DataType      = typename SamplesIterator::value_type;
+    using KDNodeViewPtr = std::shared_ptr<KDNodeView<SamplesIterator>>;
 
     struct Options {
         Options()
@@ -105,6 +106,12 @@ class KDTree {
 
     KDTree(const KDTree&) = delete;
 
+    auto nearest_neighbor_index_and_distance(
+        std::size_t   sample_index_query,
+        KDNodeViewPtr kdnode                            = nullptr,
+        ssize_t       current_nearest_neighbor_index    = -1,
+        DataType      current_nearest_neighbor_distance = common::utils::infinity<DataType>()) const;
+
     void serialize(const std::shared_ptr<KDNodeView<SamplesIterator>>& kdnode,
                    rapidjson::Writer<rapidjson::StringBuffer>&         writer) const;
 
@@ -116,6 +123,16 @@ class KDTree {
                                                        ssize_t                             cut_feature_index,
                                                        ssize_t                             depth,
                                                        BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
+
+    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t   sample_index_query,
+                                               KDNodeViewPtr kdnode,
+                                               ssize_t&      current_nearest_neighbor_index,
+                                               DataType&     current_nearest_neighbor_distance) const;
+
+    KDNodeViewPtr nearest_neighbor_backtrack_step(std::size_t   sample_index_query,
+                                                  KDNodeViewPtr kdnode,
+                                                  ssize_t&      current_nearest_neighbor_index,
+                                                  DataType&     current_nearest_neighbor_distance) const;
 
     std::size_t n_features_;
     // bounding box hyper rectangle (w.r.t. each dimension)
@@ -173,6 +190,9 @@ std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<SamplesIterator>::build(
 
         kdnode->left_ = build(left_range.first, left_range.second, cut_feature_index, depth + 1, kd_bounding_box);
 
+        // provide a parent pointer to the child node for reversed traversal of the kdtree
+        kdnode->left_->parent_ = kdnode;
+
         // reset the right bound of the bounding box to the current kdnode right bound
         kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_[cut_feature_index].second;
 
@@ -182,6 +202,9 @@ std::shared_ptr<KDNodeView<SamplesIterator>> KDTree<SamplesIterator>::build(
 
             kdnode->right_ =
                 build(right_range.first, right_range.second, cut_feature_index, depth + 1, kd_bounding_box);
+
+            // provide a parent pointer to the child node for reversed traversal of the kdtree
+            kdnode->right_->parent_ = kdnode;
 
             // reset the left bound of the bounding box to the current kdnode left bound
             kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_[cut_feature_index].first;
