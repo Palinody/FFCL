@@ -170,7 +170,8 @@ class Range2DBaseFixture : public ::testing::Test {
         return common::utils::remap_ranges_from_indices(indices, std::vector(element_first, element_last), n_features);
     }
 
-    void print_data(const std::vector<DataType>& data, std::size_t n_features) {
+    template <typename Type = DataType>
+    void print_data(const std::vector<Type>& data, std::size_t n_features) {
         const std::size_t n_samples = data.size() / n_features;
 
         for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {

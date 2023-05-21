@@ -158,6 +158,22 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        NearestNeighborTest
+
+        # ---
+        test/src/math/heuristics/NearestNeighborTest.cpp
+    )
+    target_link_libraries(
+        NearestNeighborTest
+        GTest::gtest_main
+        GTest::gmock_main
+    )
+    add_test(
+        NearestNeighborTest
+        NearestNeighborTest
+    )
+
+    add_executable(
         StatisticsTest
 
         # ---
