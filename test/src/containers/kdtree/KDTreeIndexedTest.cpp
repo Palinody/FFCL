@@ -156,7 +156,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     printf("Query index: %ld\n", sample_index_query);
 
     timer.reset();
-    const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_index_and_distance(sample_index_query);
+    const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_around_query_index(sample_index_query);
     timer.print_elapsed_seconds(/*n_decimals=*/9);
 
     timer.reset();

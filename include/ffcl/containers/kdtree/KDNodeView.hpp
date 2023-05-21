@@ -87,8 +87,6 @@ bool KDNodeView<Iterator>::is_leaf() const {
     return cut_feature_index_ == -1;
 }
 
-//
-
 template <typename Iterator>
 bool KDNodeView<Iterator>::has_parent() const {
     return parent_.lock() != nullptr;
