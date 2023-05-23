@@ -280,6 +280,18 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
     return kdnode;
 }
 
+template <typename Type>
+void print_data(const std::vector<Type>& data, std::size_t n_features) {
+    const std::size_t n_samples = data.size() / n_features;
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            std::cout << data[sample_index * n_features + feature_index] << " ";
+        }
+        std::cout << "\n";
+    }
+}
+
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_index(
     std::size_t        query_index,
@@ -291,6 +303,14 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_qu
                                                        kdnode == nullptr ? root_ : kdnode,
                                                        current_nearest_neighbor_index,
                                                        current_nearest_neighbor_distance);
+    printf("\t---(start)\n");
+    // if (!current_kdnode->is_leaf()) {
+    printf("Indices: ");
+    print_data(std::vector(current_kdnode->indices_iterator_pair_.first, current_kdnode->indices_iterator_pair_.second),
+               n_features_);
+    printf("Cut feature index: %ld\n", current_kdnode->cut_feature_index_);
+    // }
+    printf("\t---(end)\n");
 
     // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
     // kdnode parameter is a subtree. A search through the entire tree
@@ -325,29 +345,28 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     KDNodeIndexViewPtr kdnode,
     ssize_t&           current_nearest_neighbor_index,
     DataType&          current_nearest_neighbor_distance) const {
+    // update the current neighbor index and distance. No op if no candidate is closer or if the ranges are empty
+    std::tie(current_nearest_neighbor_index, current_nearest_neighbor_distance) =
+        math::heuristics::nearest_neighbor_indexed_range(kdnode->indices_iterator_pair_.first,
+                                                         kdnode->indices_iterator_pair_.second,
+                                                         samples_first_,
+                                                         samples_last_,
+                                                         n_features_,
+                                                         query_index,
+                                                         current_nearest_neighbor_index,
+                                                         current_nearest_neighbor_distance);
+    // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto sample_index_pivot = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
         // get the split value according to the current split dimension
-        const auto sample_split_value = samples_first_[sample_index_pivot * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
-        // compute the distance from the current pivot sample to the query only if the pivot sample is not the query
-        if (sample_index_pivot != query_index) {
-            const DataType nearest_neighbor_distance_candidate =
-                math::heuristics::auto_distance(samples_first_ + sample_index_pivot * n_features_,
-                                                samples_first_ + sample_index_pivot * n_features_ + n_features_,
-                                                samples_first_ + query_index * n_features_);
-
-            if (nearest_neighbor_distance_candidate < current_nearest_neighbor_distance) {
-                current_nearest_neighbor_index    = sample_index_pivot;
-                current_nearest_neighbor_distance = nearest_neighbor_distance_candidate;
-            }
-        }
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value. Also checks if the children nodes are nullptr
-        if (query_split_value < sample_split_value) {
+        if (query_split_value <= pivot_split_value) {
             // Checking for left child validity is not necessary with median split but done if a different policy where
             // to be used
             if (kdnode->left_) {
@@ -357,7 +376,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
                     /**/ current_nearest_neighbor_index,
                     /**/ current_nearest_neighbor_distance);
             }
-        } else {
+        } else if (query_split_value >= pivot_split_value) {
             // Only the right child might be nullptr if the parent node had 2 samples
             if (kdnode->right_) {
                 kdnode = recurse_to_closest_leaf_node(
@@ -366,21 +385,6 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
                     /**/ current_nearest_neighbor_index,
                     /**/ current_nearest_neighbor_distance);
             }
-        }
-    }
-    // if the current kdnode is leaf
-    else {
-        const auto [leaf_node_nearest_neighbor_index_candidate, leaf_node_nearest_neighbor_distance_candidate] =
-            math::heuristics::nearest_neighbor_indexed_range(kdnode->indices_iterator_pair_.first,
-                                                             kdnode->indices_iterator_pair_.second,
-                                                             samples_first_,
-                                                             samples_last_,
-                                                             n_features_,
-                                                             query_index);
-
-        if (leaf_node_nearest_neighbor_distance_candidate < current_nearest_neighbor_distance) {
-            current_nearest_neighbor_index    = leaf_node_nearest_neighbor_index_candidate;
-            current_nearest_neighbor_distance = leaf_node_nearest_neighbor_distance_candidate;
         }
     }
     return kdnode;
@@ -396,17 +400,16 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_backtrack_step
     auto kdnode_parent = kdnode->parent_.lock();
 
     // if kdnode has a parent
-    if (kdnode_parent) {
+    if (kdnode_parent /*&& kdnode->get_sibling_node()*/) {
         // get the pivot sample index in the dataset
-        const auto sample_index_pivot = kdnode_parent->indices_iterator_pair_.first[0];
-        const auto sample_split_value =
-            samples_first_[sample_index_pivot * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_index       = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
 
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
-        if (common::utils::abs(sample_split_value - query_split_value) < current_nearest_neighbor_distance) {
+        if (common::utils::abs(pivot_split_value - query_split_value) < current_nearest_neighbor_distance) {
             // if the sibling kdnode is not nullptr
             if (auto sibling_node = kdnode->get_sibling_node()) {
                 // get the nearest neighbor from the sibling node

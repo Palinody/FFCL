@@ -126,7 +126,7 @@ KDNodeIndexView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
         if (this == parent_shared_ptr->left_.get()) {
             return parent_shared_ptr->right_;
 
-        } else {
+        } else if (this == parent_shared_ptr->right_.get()) {
             return parent_shared_ptr->left_;
         }
     }
