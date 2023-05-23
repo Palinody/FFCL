@@ -107,21 +107,25 @@ template <typename Iterator1, typename Iterator2>
 auto auto_distance(const Iterator1& feature_first,
                    const Iterator1& feature_last,
                    const Iterator2& other_feature_first) {
-    using ValueType = typename Iterator1::value_type;
+    using ValueType1 = typename Iterator1::value_type;
+    using ValueType2 = typename Iterator2::value_type;
 
-    if constexpr (std::is_floating_point_v<ValueType>) {
+    static_assert(std::is_same_v<ValueType1, ValueType2>);
+
+    if constexpr (std::is_floating_point_v<ValueType1>) {
         return euclidean_distance(feature_first, feature_last, other_feature_first);
 
-    } else if constexpr (std::is_signed_v<ValueType>) {
+    } else if constexpr (std::is_signed_v<ValueType1>) {
         return manhattan_distance(feature_first, feature_last, other_feature_first);
 
-    } else if constexpr (std::is_unsigned_v<ValueType>) {
+    } else if constexpr (std::is_unsigned_v<ValueType1>) {
         return unsigned_manhattan_distance(feature_first, feature_last, other_feature_first);
-    }
+    } else {
 #if defined(VERBOSE) && VERBOSE == true
-    std::cout << "[WARN] requested type for auto_distance not handled. Using default: euclidean.\n";
+        std::cout << "[WARN] requested type for auto_distance not handled. Using default: euclidean.\n";
 #endif
-    return euclidean_distance(feature_first, feature_last, other_feature_first);
+        return euclidean_distance(feature_first, feature_last, other_feature_first);
+    }
 }
 
 }  // namespace math::heuristics
