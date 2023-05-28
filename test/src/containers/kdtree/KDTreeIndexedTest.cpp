@@ -162,19 +162,23 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
     timer.reset();
     const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
-    timer.print_elapsed_seconds(/*n_decimals=*/9);
+    timer.print_elapsed_seconds(9);
 
     timer.reset();
     const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_indexed_range(
         indices.begin(), indices.end(), data.begin(), data.end(), n_features, indices[sample_index_query]);
-    timer.print_elapsed_seconds(/*n_decimals=*/9);
+    timer.print_elapsed_seconds(9);
+
+    printf("Query index: %ld\n", indices[sample_index_query]);
+    std::cout << "Kdtree distance: " << nn_distance << " | sequential distance: " << nearest_neighbor_distance << "\n";
+    /*
 
     // ---
 
@@ -211,8 +215,8 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     print_data(std::vector(data.begin() + nearest_neighbor_index * n_features,
                            data.begin() + nearest_neighbor_index * n_features + n_features),
                n_features);
-
-    ASSERT_EQ(nn_index, nearest_neighbor_index);
+    */
+    ASSERT_TRUE(common::utils::equality(nn_distance, nearest_neighbor_distance));
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
@@ -244,7 +248,7 @@ TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
@@ -281,7 +285,7 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyCirclesTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
@@ -323,7 +327,7 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyMoonsTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
@@ -365,7 +369,7 @@ TEST_F(KDTreeIndexedErrorsTest, VariedTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
@@ -407,7 +411,7 @@ TEST_F(KDTreeIndexedErrorsTest, AnisoTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
@@ -449,7 +453,7 @@ TEST_F(KDTreeIndexedErrorsTest, BlobsTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
@@ -491,7 +495,7 @@ TEST_F(KDTreeIndexedErrorsTest, NoStructureTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
@@ -533,7 +537,7 @@ TEST_F(KDTreeIndexedErrorsTest, UnbalancedBlobsTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(1)
+            .bucket_size(40)
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 

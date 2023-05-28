@@ -202,7 +202,7 @@ ssize_t select_axis_with_largest_variance(const RandomAccessIntIterator& index_f
                                           double                         n_samples_fraction) {
     assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = std::distance(index_first, index_last);
     // set the number of samples as a fraction of the input
     const std::size_t n_choices = n_samples_fraction * n_samples;
     // select the axis based on variance only if the number of selected samples is greater than 2

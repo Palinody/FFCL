@@ -212,10 +212,11 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
                                                        ssize_t                             depth,
                                                        BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
     const std::size_t n_samples = std::distance(index_first, index_last);
-
+    /*
     if (n_samples == 0) {
         return nullptr;
     }
+    */
     KDNodeIndexViewPtr kdnode;
 
     // the current kdnode is not leaf
@@ -239,7 +240,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
 
         // set the right bound of the left child to the cut value
 
-        if (std::distance(left_index_range.first, left_index_range.second)) {
+        // if (std::distance(left_index_range.first, left_index_range.second)) {
+        {
             kd_bounding_box[cut_feature_index].second = cut_value;
 
             kdnode->left_ = build(left_index_range.first,
@@ -255,8 +257,10 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
             // reset the right bound of the bounding box to the current kdnode right bound
             kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_[cut_feature_index].second;
         }
-        if (std::distance(right_index_range.first, right_index_range.second)) {
-            // set the left bound of the right child to the cut value
+        // }
+        // if (std::distance(right_index_range.first, right_index_range.second)) {
+        // set the left bound of the right child to the cut value
+        {
             kd_bounding_box[cut_feature_index].first = cut_value;
 
             kdnode->right_ = build(right_index_range.first,
@@ -272,6 +276,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
             // reset the left bound of the bounding box to the current kdnode left bound
             kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_[cut_feature_index].first;
         }
+        // }
     } else {
         kdnode = std::make_shared<KDNodeIndexView<IndicesIterator, SamplesIterator>>(
             std::make_pair(index_first, index_last),
@@ -305,7 +310,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_qu
                                                        kdnode == nullptr ? root_ : kdnode,
                                                        current_nearest_neighbor_index,
                                                        current_nearest_neighbor_distance);
-
+    /*
     printf("\t---(start)\n");
 
     printf("Indices: ");
@@ -321,6 +326,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_qu
                     samples_first_ + current_kdnode->indices_iterator_pair_.first[0] * n_features_ + n_features_),
         n_features_);
     printf("\t---(end)\n");
+    */
 
     // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
     // kdnode parameter is a subtree. A search through the entire tree
@@ -416,10 +422,15 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_backtrack_step
         const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
-
+        // if the axiswise distance is equal to the current nearest neighbor distance, there could be a nearest neighbor
+        // to the other side of the hyperrectangle since the values that are equal to the pivot are put to the right
+        bool cross_hyperrectangle =
+            kdnode->is_left_child()
+                ? common::utils::abs(pivot_split_value - query_split_value) <= current_nearest_neighbor_distance
+                : common::utils::abs(pivot_split_value - query_split_value) < current_nearest_neighbor_distance;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
-        if (common::utils::abs(pivot_split_value - query_split_value) <= current_nearest_neighbor_distance) {
+        if (cross_hyperrectangle) {
             // if the sibling kdnode is not nullptr
             if (auto sibling_node = kdnode->get_sibling_node()) {
                 // get the nearest neighbor from the sibling node

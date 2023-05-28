@@ -38,6 +38,7 @@ import time
 import timeit
 import os
 import sys
+import random
 
 BUCKET_SIZE: int = 40
 
@@ -91,7 +92,8 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     """
     # np.random.shuffle(points)
 
-    query_index = 33
+    # random_query_index = random.randint(0, points.shape[0] - 1)
+    query_index = 10168
     query_point = points[query_index, :]
 
     start_time = time.process_time()

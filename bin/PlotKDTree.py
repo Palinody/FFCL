@@ -104,7 +104,7 @@ def plot_2dtree(kdnode: KDNode, ax: Axes) -> None:
 
     is_leaf: bool = kdnode.is_leaf()
 
-    x, y = zip(*kdnode.points)
+    x, y = zip(*kdnode.points) if kdnode.points else [[], []]
     # set the leaf points to green and the pivot ones to blue
     points_color = "green" if is_leaf else "blue"
     # put the pivot points in the foreground so that they can be seen

@@ -40,6 +40,8 @@ struct KDNodeIndexView {
 
     bool has_parent() const;
 
+    bool has_children() const;
+
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> get_sibling_node() const;
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
@@ -97,11 +99,6 @@ bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_leaf() const {
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-bool KDNodeIndexView<IndicesIterator, SamplesIterator>::has_parent() const {
-    return parent_.lock() != nullptr;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_left_child() const {
     if (has_parent()) {
         return this == parent_.lock()->left_.get();
@@ -115,6 +112,16 @@ bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_right_child() const {
         return this == parent_.lock()->right_.get();
     }
     return false;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+bool KDNodeIndexView<IndicesIterator, SamplesIterator>::has_parent() const {
+    return parent_.lock() != nullptr;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+bool KDNodeIndexView<IndicesIterator, SamplesIterator>::has_children() const {
+    return left_ != nullptr && right_ != nullptr;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
