@@ -208,7 +208,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
                                                        BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
     KDNodeIndexViewPtr kdnode;
     const std::size_t  n_samples = std::distance(index_first, index_last);
-    // the current number of samples are greater than the target bucket size, the node is not leaf
+    // if the current number of samples is greater than the target bucket size, the node is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index = (*options_.axis_selection_policy_ptr_)(
