@@ -93,7 +93,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # np.random.shuffle(points)
 
     # random_query_index = random.randint(0, points.shape[0] - 1)
-    query_index = 10168
+    query_index = 11198
     query_point = points[query_index, :]
 
     start_time = time.process_time()

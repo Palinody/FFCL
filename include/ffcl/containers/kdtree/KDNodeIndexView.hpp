@@ -16,13 +16,9 @@ namespace ffcl::containers {
 template <typename IndicesIterator, typename SamplesIterator>
 struct KDNodeIndexView {
     KDNodeIndexView(IteratorPairType<IndicesIterator>         indices_iterator_pair,
-                    IteratorPairType<SamplesIterator>         samples_iterator_pair,
-                    std::size_t                               n_features,
                     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
 
     KDNodeIndexView(IteratorPairType<IndicesIterator>         indices_iterator_pair,
-                    IteratorPairType<SamplesIterator>         samples_iterator_pair,
-                    std::size_t                               n_features,
                     ssize_t                                   cut_feature_index,
                     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
 
@@ -44,12 +40,12 @@ struct KDNodeIndexView {
 
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> get_sibling_node() const;
 
-    void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
+    void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
+                   SamplesIterator                             samples_first,
+                   SamplesIterator                             samples_last,
+                   std::size_t                                 n_features) const;
 
     IteratorPairType<IndicesIterator> indices_iterator_pair_;
-    // might contain [0, bucket_size] samples if the node is leaf, else only 1
-    IteratorPairType<SamplesIterator> samples_iterator_pair_;
-    std::size_t                       n_features_;
     ssize_t                           cut_feature_index_;
     // bounding box hyper rectangle (w.r.t. each dimension)
     BoundingBoxKDType<SamplesIterator>                                 kd_bounding_box_;
@@ -61,25 +57,17 @@ struct KDNodeIndexView {
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
     IteratorPairType<IndicesIterator>         indices_iterator_pair,
-    IteratorPairType<SamplesIterator>         samples_iterator_pair,
-    std::size_t                               n_features,
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
-  , samples_iterator_pair_{samples_iterator_pair}
-  , n_features_{n_features}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
     IteratorPairType<IndicesIterator>         indices_iterator_pair,
-    IteratorPairType<SamplesIterator>         samples_iterator_pair,
-    std::size_t                               n_features,
     ssize_t                                   cut_feature_index,
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
-  , samples_iterator_pair_{samples_iterator_pair}
-  , n_features_{n_features}
   , cut_feature_index_{cut_feature_index}
   , kd_bounding_box_{kd_bounding_box} {}
 
@@ -141,8 +129,10 @@ KDNodeIndexView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void KDNodeIndexView<IndicesIterator, SamplesIterator>::serialize(
-    rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+void KDNodeIndexView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
+                                                                  SamplesIterator samples_first,
+                                                                  SamplesIterator samples_last,
+                                                                  std::size_t     n_features) const {
     using DataType = DataType<SamplesIterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
@@ -150,22 +140,20 @@ void KDNodeIndexView<IndicesIterator, SamplesIterator>::serialize(
 
     writer.StartArray();
     const auto [indices_range_first, indices_range_last] = indices_iterator_pair_;
-    // upper-left and lower-right (with sentinel) iterators
-    const auto [range_first, range_last] = samples_iterator_pair_;
 
-    common::utils::ignore_parameters(range_last);
+    common::utils::ignore_parameters(samples_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // sample (feature vector) array
         writer.StartArray();
-        for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(range_first[indices_range_first[sample_index] * n_features_ + feature_index]);
+                writer.Int64(samples_first[indices_range_first[sample_index] * n_features + feature_index]);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(range_first[indices_range_first[sample_index] * n_features_ + feature_index]);
+                writer.Double(samples_first[indices_range_first[sample_index] * n_features + feature_index]);
             }
         }
         writer.EndArray();

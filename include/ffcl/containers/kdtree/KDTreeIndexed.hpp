@@ -146,8 +146,6 @@ class KDTreeIndexed {
   private:
     KDNodeIndexViewPtr build(IndicesIterator                     index_first,
                              IndicesIterator                     index_last,
-                             SamplesIterator                     samples_first,
-                             SamplesIterator                     samples_last,
                              ssize_t                             cut_feature_index,
                              ssize_t                             depth,
                              BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
@@ -162,7 +160,8 @@ class KDTreeIndexed {
                                                        ssize_t&           current_nearest_neighbor_index,
                                                        DataType&          current_nearest_neighbor_distance) const;
 
-    SamplesIterator samples_first_, samples_last_;
+    SamplesIterator samples_first_;
+    SamplesIterator samples_last_;
     std::size_t     n_features_;
     // bounding box hyper rectangle (w.r.t. each dimension)
     BoundingBoxKDType<SamplesIterator> kd_bounding_box_;
@@ -184,18 +183,16 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::KDTreeIndexed(IndicesIterator i
   , n_features_{n_features}
   , kd_bounding_box_{kdtree::algorithms::make_kd_bounding_box(index_first,
                                                               index_last,
-                                                              samples_first,
-                                                              samples_last,
+                                                              samples_first_,
+                                                              samples_last_,
                                                               n_features_)}
   , options_{options}
   , root_{build(index_first,
                 index_last,
-                samples_first,
-                samples_last,
                 (*options_.axis_selection_policy_ptr_)(index_first,
                                                        index_last,
-                                                       samples_first,
-                                                       samples_last,
+                                                       samples_first_,
+                                                       samples_last_,
                                                        n_features_,
                                                        0,
                                                        kd_bounding_box_),
@@ -206,49 +203,34 @@ template <typename IndicesIterator, typename SamplesIterator>
 std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>
 KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator                     index_first,
                                                        IndicesIterator                     index_last,
-                                                       SamplesIterator                     samples_first,
-                                                       SamplesIterator                     samples_last,
                                                        ssize_t                             cut_feature_index,
                                                        ssize_t                             depth,
                                                        BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
-    const std::size_t n_samples = std::distance(index_first, index_last);
-    /*
-    if (n_samples == 0) {
-        return nullptr;
-    }
-    */
     KDNodeIndexViewPtr kdnode;
-
+    const std::size_t  n_samples = std::distance(index_first, index_last);
     // the current kdnode is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index = (*options_.axis_selection_policy_ptr_)(
-            index_first, index_last, samples_first, samples_last, n_features_, depth, kd_bounding_box);
+            index_first, index_last, samples_first_, samples_last_, n_features_, depth, kd_bounding_box);
 
         // [cut_index, left_range, cut_range, right_range]
         auto [cut_index, left_index_range, cut_index_range, right_index_range] = (*options_.splitting_rule_policy_ptr_)(
-            index_first, index_last, samples_first, samples_last, n_features_, cut_feature_index);
+            index_first, index_last, samples_first_, samples_last_, n_features_, cut_feature_index);
 
         kdnode = std::make_shared<KDNodeIndexView<IndicesIterator, SamplesIterator>>(
-            cut_index_range,
-            std::make_pair(samples_first, samples_last),
-            n_features_,
-            cut_feature_index,
-            kd_bounding_box);
+            cut_index_range, cut_feature_index, kd_bounding_box);
 
-        const auto cut_value = samples_first[*cut_index_range.first * n_features_ + cut_feature_index];
-
+        const auto cut_value = samples_first_[*cut_index_range.first * n_features_ + cut_feature_index];
         {
             // set the right bound of the left child to the cut value
             kd_bounding_box[cut_feature_index].second = cut_value;
 
-            kdnode->left_ = build(left_index_range.first,
-                                  left_index_range.second,
-                                  samples_first,
-                                  samples_last,
-                                  cut_feature_index,
-                                  depth + 1,
-                                  kd_bounding_box);
+            kdnode->left_ = build(/**/ left_index_range.first,
+                                  /**/ left_index_range.second,
+                                  /**/ cut_feature_index,
+                                  /**/ depth + 1,
+                                  /**/ kd_bounding_box);
             // provide a parent pointer to the child node for reversed traversal of the kdtree
             kdnode->left_->parent_ = kdnode;
 
@@ -259,13 +241,11 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
             // set the left bound of the right child to the cut value
             kd_bounding_box[cut_feature_index].first = cut_value;
 
-            kdnode->right_ = build(right_index_range.first,
-                                   right_index_range.second,
-                                   samples_first,
-                                   samples_last,
-                                   cut_feature_index,
-                                   depth + 1,
-                                   kd_bounding_box);
+            kdnode->right_ = build(/**/ right_index_range.first,
+                                   /**/ right_index_range.second,
+                                   /**/ cut_feature_index,
+                                   /**/ depth + 1,
+                                   /**/ kd_bounding_box);
             // provide a parent pointer to the child node for reversed traversal of the kdtree
             kdnode->right_->parent_ = kdnode;
 
@@ -274,10 +254,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
         }
     } else {
         kdnode = std::make_shared<KDNodeIndexView<IndicesIterator, SamplesIterator>>(
-            std::make_pair(index_first, index_last),
-            std::make_pair(samples_first, samples_last),
-            n_features_,
-            kd_bounding_box);
+            std::make_pair(index_first, index_last), kd_bounding_box);
     }
     return kdnode;
 }
@@ -346,26 +323,19 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
         // traverse either the left or right child node depending on where the target sample is located relatively to
-        // the cut value. Also checks if the children nodes are nullptr
+        // the cut value
         if (query_split_value < pivot_split_value) {
-            // Checking for left child validity is not necessary with median split but done if a different policy where
-            // to be used
-            if (kdnode->left_) {
-                kdnode = recurse_to_closest_leaf_node(
-                    /**/ query_index,
-                    /**/ kdnode->left_,
-                    /**/ current_nearest_neighbor_index,
-                    /**/ current_nearest_neighbor_distance);
-            }
+            kdnode = recurse_to_closest_leaf_node(
+                /**/ query_index,
+                /**/ kdnode->left_,
+                /**/ current_nearest_neighbor_index,
+                /**/ current_nearest_neighbor_distance);
         } else {
-            // Only the right child might be nullptr if the parent node had 2 samples
-            if (kdnode->right_) {
-                kdnode = recurse_to_closest_leaf_node(
-                    /**/ query_index,
-                    /**/ kdnode->right_,
-                    /**/ current_nearest_neighbor_index,
-                    /**/ current_nearest_neighbor_distance);
-            }
+            kdnode = recurse_to_closest_leaf_node(
+                /**/ query_index,
+                /**/ kdnode->right_,
+                /**/ current_nearest_neighbor_index,
+                /**/ current_nearest_neighbor_distance);
         }
     }
     return kdnode;
@@ -422,20 +392,15 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(
         writer.Int64(kdnode->cut_feature_index_);
 
         writer.String("points");
-        kdnode->serialize(writer);
+        kdnode->serialize(writer, samples_first_, samples_last_, n_features_);
 
         // continue the recursion if the current node is not leaf
         if (!kdnode->is_leaf()) {
-            // Checking for left child validity is not necessary with median split but done if a different policy where
-            // to be used
-            if (kdnode->left_) {
+            {
                 writer.String("left");
                 serialize(kdnode->left_, writer);
             }
-            // The right pointer might be nullptr when a node had 2 samples. The median computation chooses the
-            // second sample as the pivot because the median of 2 samples will output index 1. The other index will
-            // be 0 and thus the left child
-            if (kdnode->right_) {
+            {
                 writer.String("right");
                 serialize(kdnode->right_, writer);
             }
