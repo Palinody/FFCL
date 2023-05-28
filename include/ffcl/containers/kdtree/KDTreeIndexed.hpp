@@ -420,6 +420,9 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(const fs::path& 
 
     writer.StartObject();
     {
+        writer.String("n_samples");
+        writer.Int64(common::utils::get_n_samples(samples_first_, samples_last_, n_features_));
+
         writer.String("n_features");
         writer.Int64(n_features_);
 
