@@ -38,6 +38,8 @@ struct KDNodeView {
 
     bool has_parent() const;
 
+    bool has_children() const;
+
     std::shared_ptr<KDNodeView<Iterator>> get_sibling_node() const;
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
@@ -88,11 +90,6 @@ bool KDNodeView<Iterator>::is_leaf() const {
 }
 
 template <typename Iterator>
-bool KDNodeView<Iterator>::has_parent() const {
-    return parent_.lock() != nullptr;
-}
-
-template <typename Iterator>
 bool KDNodeView<Iterator>::is_left_child() const {
     if (has_parent()) {
         return this == parent_.lock()->left_.get();
@@ -106,6 +103,16 @@ bool KDNodeView<Iterator>::is_right_child() const {
         return this == parent_.lock()->right_.get();
     }
     return false;
+}
+
+template <typename Iterator>
+bool KDNodeView<Iterator>::has_parent() const {
+    return parent_.lock() != nullptr;
+}
+
+template <typename SamplesIterator>
+bool KDNodeView<SamplesIterator>::has_children() const {
+    return left_ != nullptr && right_ != nullptr;
 }
 
 template <typename Iterator>
@@ -132,19 +139,19 @@ void KDNodeView<Iterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>&
 
     writer.StartArray();
     // upper-left and lower-right (with sentinel) iterators
-    const auto [range_first, range_last] = samples_iterator_pair_;
+    const auto [samples_first, samples_last] = samples_iterator_pair_;
 
-    const std::size_t n_samples = common::utils::get_n_samples(range_first, range_last, n_features_);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // sample (feature vector) array
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(range_first[sample_index * n_features_ + feature_index]);
+                writer.Int64(samples_first[sample_index * n_features_ + feature_index]);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(range_first[sample_index * n_features_ + feature_index]);
+                writer.Double(samples_first[sample_index * n_features_ + feature_index]);
             }
         }
         writer.EndArray();

@@ -235,13 +235,50 @@ std::tuple<std::size_t,
            IteratorPairType<SamplesIterator>,
            IteratorPairType<SamplesIterator>,
            IteratorPairType<SamplesIterator>>
+shift_median_to_leftmost_equal_value(std::size_t                       median_index,
+                                     IteratorPairType<SamplesIterator> left_range,
+                                     IteratorPairType<SamplesIterator> median_range,
+                                     IteratorPairType<SamplesIterator> right_range,
+                                     std::size_t                       n_features,
+                                     std::size_t                       feature_index) {
+    const auto left_range_samples = common::utils::get_n_samples(left_range.first, left_range.second, n_features);
+    // return if the left range is empty because no left shift is possible
+    if (!left_range_samples) {
+        return {median_index, left_range, median_range, right_range};
+    }
+    // the target value of the median
+    const auto cut_value = median_range.first[feature_index];
+    // the left range iterator at the value the current pointer will be compared to at each iteration
+    auto left_neighbor_value_it = left_range.second + feature_index - n_features;
+
+    // decrement the iterators while the left range isnt empty and the neighbor value at the left of the median is still
+    // equal to the cut value at the corresponding feature index
+    while (std::distance(left_range.first + feature_index, left_neighbor_value_it) >= 0 &&
+           common::utils::equality(*left_neighbor_value_it, cut_value)) {
+        left_neighbor_value_it -= n_features;
+        median_range.first -= n_features;
+    }
+    // update the ranges accordingly
+    left_range.second   = median_range.first;
+    median_range.second = median_range.first + n_features;
+    right_range.first   = median_range.second;
+    median_index        = common::utils::get_n_samples(left_range.first, median_range.first, n_features);
+
+    return {median_index, left_range, median_range, right_range};
+}
+
+template <typename SamplesIterator>
+std::tuple<std::size_t,
+           IteratorPairType<SamplesIterator>,
+           IteratorPairType<SamplesIterator>,
+           IteratorPairType<SamplesIterator>>
 quickselect_median_range(SamplesIterator samples_first,
                          SamplesIterator samples_last,
                          std::size_t     n_features,
                          std::size_t     feature_index) {
     assert(feature_index < n_features);
 
-    const auto median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
+    std::size_t median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
 
     const auto median_range =
         ffcl::algorithms::quickselect_range(samples_first, samples_last, n_features, median_index, feature_index);
@@ -252,7 +289,13 @@ quickselect_median_range(SamplesIterator samples_first,
     // all the points at the right of the pivot point
     const auto right_range = std::make_pair(samples_first + median_index * n_features + n_features, samples_last);
 
-    return {median_index, left_range, median_range, right_range};
+    return shift_median_to_leftmost_equal_value(
+        /**/ median_index,
+        /**/ left_range,
+        /**/ median_range,
+        /**/ right_range,
+        /**/ n_features,
+        /**/ feature_index);
 }
 
 template <typename RandomAccessIntIterator, typename SamplesIterator>
@@ -260,7 +303,7 @@ std::tuple<std::size_t,
            IteratorPairType<RandomAccessIntIterator>,
            IteratorPairType<RandomAccessIntIterator>,
            IteratorPairType<RandomAccessIntIterator>>
-shift_median_to_leftmost_equal_value(std::size_t&                              median_index,
+shift_median_to_leftmost_equal_value(std::size_t                               median_index,
                                      IteratorPairType<RandomAccessIntIterator> left_indices_range,
                                      IteratorPairType<RandomAccessIntIterator> median_indices_range,
                                      IteratorPairType<RandomAccessIntIterator> right_indices_range,

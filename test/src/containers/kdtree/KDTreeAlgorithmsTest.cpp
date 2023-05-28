@@ -74,7 +74,7 @@ std::vector<typename IndicesIterator::value_type> kdtree_index_ranges_to_vector(
     return indices;
 }
 
-TYPED_TEST(KDTreeAlgorithmsTestFixture, MainTest) {
+TYPED_TEST(KDTreeAlgorithmsTestFixture, ALotOfDuplicatesInDatasetToIndexTest) {
     const std::size_t samples       = 6;
     const std::size_t features      = 3;
     const std::size_t feature_index = 2;
@@ -131,6 +131,49 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MainTest) {
 
     printf("Remapped dataset:\n");
     this->print_data(remapped_dataset, features);
+}
+*/
+
+/*
+TYPED_TEST(KDTreeAlgorithmsTestFixture, ALotOfDuplicatesInDatasetTest) {
+    const std::size_t samples       = 6;
+    const std::size_t features      = 3;
+    const std::size_t feature_index = 2;
+
+    auto data = this->generate_random_uniform_vector(samples, features, 0, 2);
+    // std::vector({2, 2, 2, 0, 5, 10});  // this->generate_ascending_elements_array(samples * features);
+
+    printf("Dataset (original):\n");
+    this->print_data(data, features);
+    printf("\n---\n");
+
+    const auto [cut_index, left_range, cut_range, right_range] =
+        kdtree::algorithms::quickselect_median_range(data.begin(), data.end(), features, feature_index);
+
+    const auto [cut_range_begin, cut_range_end] = cut_range;
+
+    printf("n_samples_left: %ld", common::utils::get_n_samples(left_range.first, left_range.second, features));
+    printf("\n---\n");
+
+    printf("left values:\n");
+    this->print_data(std::vector(left_range.first, left_range.second), features);
+    printf("\n---\n");
+
+    printf("Cut index: %ld\n", cut_index);
+
+    printf("median values:\n");
+    this->print_data(std::vector(cut_range_begin, cut_range_end), features);
+    printf("\n---\n");
+
+    printf("n_samples_right: %ld", common::utils::get_n_samples(right_range.first, right_range.second, features));
+    printf("\n---\n");
+
+    printf("right values:\n");
+    this->print_data(std::vector(right_range.first, right_range.second), features);
+    printf("\n---\n");
+
+    printf("Dataset (remapped):\n");
+    this->print_data(data, features);
 }
 */
 
