@@ -133,7 +133,9 @@ class KDTree {
                                                   ssize_t&      current_nearest_neighbor_index,
                                                   DataType&     current_nearest_neighbor_distance) const;
 
-    std::size_t n_features_;
+    SamplesIterator samples_first_;
+    SamplesIterator samples_last_;
+    std::size_t     n_features_;
     // bounding box hyper rectangle (w.r.t. each dimension)
     BoundingBoxKDType<SamplesIterator> kd_bounding_box_;
 
@@ -147,12 +149,14 @@ KDTree<SamplesIterator>::KDTree(SamplesIterator samples_first,
                                 SamplesIterator samples_last,
                                 std::size_t     n_features,
                                 const Options&  options)
-  : n_features_{n_features}
-  , kd_bounding_box_{kdtree::algorithms::make_kd_bounding_box(samples_first, samples_last, n_features_)}
+  : samples_first_{samples_first}
+  , samples_last_{samples_last}
+  , n_features_{n_features}
+  , kd_bounding_box_{kdtree::algorithms::make_kd_bounding_box(samples_first_, samples_last_, n_features_)}
   , options_{options}
-  , root_{build(samples_first,
-                samples_last,
-                (*options_.axis_selection_policy_ptr_)(samples_first, samples_last, n_features_, 0, kd_bounding_box_),
+  , root_{build(samples_first_,
+                samples_last_,
+                (*options_.axis_selection_policy_ptr_)(samples_first_, samples_last_, n_features_, 0, kd_bounding_box_),
                 0,
                 kd_bounding_box_)} {}
 
@@ -163,13 +167,8 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::build(
     ssize_t                             cut_feature_index,
     ssize_t                             depth,
     BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
+    KDNodeViewPtr     kdnode;
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
-
-    if (n_samples == 0) {
-        return nullptr;
-    }
-    KDNodeViewPtr kdnode;
-
     // the current kdnode is not leaf
     if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
@@ -183,19 +182,19 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::build(
             std::make_shared<KDNodeView<SamplesIterator>>(cut_range, n_features_, cut_feature_index, kd_bounding_box);
 
         const auto cut_value = cut_range.first[cut_feature_index];
+        {
+            // set the right bound of the left child to the cut value
+            kd_bounding_box[cut_feature_index].second = cut_value;
 
-        // set the right bound of the left child to the cut value
-        kd_bounding_box[cut_feature_index].second = cut_value;
+            kdnode->left_ = build(left_range.first, left_range.second, cut_feature_index, depth + 1, kd_bounding_box);
 
-        kdnode->left_ = build(left_range.first, left_range.second, cut_feature_index, depth + 1, kd_bounding_box);
+            // provide a parent pointer to the child node for reversed traversal of the kdtree
+            kdnode->left_->parent_ = kdnode;
 
-        // provide a parent pointer to the child node for reversed traversal of the kdtree
-        kdnode->left_->parent_ = kdnode;
-
-        // reset the right bound of the bounding box to the current kdnode right bound
-        kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_[cut_feature_index].second;
-
-        if (n_samples > 2) {
+            // reset the right bound of the bounding box to the current kdnode right bound
+            kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_[cut_feature_index].second;
+        }
+        {
             // set the left bound of the right child to the cut value
             kd_bounding_box[cut_feature_index].first = cut_value;
 
@@ -254,6 +253,9 @@ void KDTree<SamplesIterator>::serialize(const fs::path& filepath) const {
 
     writer.StartObject();
     {
+        writer.String("n_samples");
+        writer.Int64(common::utils::get_n_samples(samples_first_, samples_last_, n_features_));
+
         writer.String("n_features");
         writer.Int64(n_features_);
 
