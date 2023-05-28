@@ -176,6 +176,8 @@ InputContainer remap_ranges_from_indices(const IndicesContainer& indices,
                                          std::size_t             n_features) {
     using IndicesType = typename IndicesContainer::value_type;
 
+    static_assert(std::is_integral_v<IndicesType>);
+
     if (flattened_matrix.size() / n_features != indices.size()) {
         throw std::invalid_argument("The number of elements in the flattened_matrix and indices containers must match. "
                                     "The flattened_matrix size or the "

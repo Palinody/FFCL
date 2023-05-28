@@ -260,6 +260,47 @@ std::tuple<std::size_t,
            IteratorPairType<RandomAccessIntIterator>,
            IteratorPairType<RandomAccessIntIterator>,
            IteratorPairType<RandomAccessIntIterator>>
+shift_median_to_leftmost_equal_value(std::size_t&                              median_index,
+                                     IteratorPairType<RandomAccessIntIterator> left_indices_range,
+                                     IteratorPairType<RandomAccessIntIterator> median_indices_range,
+                                     IteratorPairType<RandomAccessIntIterator> right_indices_range,
+                                     SamplesIterator                           samples_first,
+                                     SamplesIterator                           samples_last,
+                                     std::size_t                               n_features,
+                                     std::size_t                               feature_index) {
+    common::utils::ignore_parameters(samples_last);
+
+    const auto left_range_length = std::distance(left_indices_range.first, left_indices_range.second);
+    // return if the left range is empty because no left shift is possible
+    if (!left_range_length) {
+        return {median_index, left_indices_range, median_indices_range, right_indices_range};
+    }
+    // the target value of the median
+    const auto cut_value = samples_first[median_indices_range.first[0] * n_features + feature_index];
+    // the left range iterator at the value the current pointer will be compared to at each iteration
+    auto left_neighbor_value_it = left_indices_range.second - 1;
+
+    // decrement the iterators while the left range isnt empty and the neighbor value at the left of the median is still
+    // equal to the cut value at the corresponding feature index
+    while (std::distance(left_indices_range.first, left_neighbor_value_it) >= 0 &&
+           common::utils::equality(samples_first[left_neighbor_value_it[0] * n_features + feature_index], cut_value)) {
+        --left_neighbor_value_it;
+        --median_indices_range.first;
+    }
+    // update the ranges accordingly
+    left_indices_range.second   = median_indices_range.first;
+    median_indices_range.second = median_indices_range.first + 1;
+    right_indices_range.first   = median_indices_range.second;
+    median_index                = std::distance(left_indices_range.first, median_indices_range.first);
+
+    return {median_index, left_indices_range, median_indices_range, right_indices_range};
+}
+
+template <typename RandomAccessIntIterator, typename SamplesIterator>
+std::tuple<std::size_t,
+           IteratorPairType<RandomAccessIntIterator>,
+           IteratorPairType<RandomAccessIntIterator>,
+           IteratorPairType<RandomAccessIntIterator>>
 quickselect_median_indexed_range(RandomAccessIntIterator index_first,
                                  RandomAccessIntIterator index_last,
                                  SamplesIterator         samples_first,
@@ -268,7 +309,7 @@ quickselect_median_indexed_range(RandomAccessIntIterator index_first,
                                  std::size_t             feature_index) {
     assert(feature_index < n_features);
 
-    const auto median_index = std::distance(index_first, index_last) / 2;
+    std::size_t median_index = std::distance(index_first, index_last) / 2;
 
     const auto median_indices_range = ffcl::algorithms::quickselect_indexed_range(
         index_first, index_last, samples_first, samples_last, n_features, median_index, feature_index);
@@ -279,7 +320,14 @@ quickselect_median_indexed_range(RandomAccessIntIterator index_first,
     // all the points at the right of the pivot point
     const auto right_indices_range = std::make_pair(index_first + median_index + 1, index_last);
 
-    return {median_index, left_indices_range, median_indices_range, right_indices_range};
+    return shift_median_to_leftmost_equal_value(median_index,
+                                                left_indices_range,
+                                                median_indices_range,
+                                                right_indices_range,
+                                                samples_first,
+                                                samples_last,
+                                                n_features,
+                                                feature_index);
 }
 
 }  // namespace kdtree::algorithms

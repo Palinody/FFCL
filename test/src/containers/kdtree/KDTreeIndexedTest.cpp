@@ -117,6 +117,18 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
+template <typename Type>
+void print_data(const std::vector<Type>& data, std::size_t n_features) {
+    const std::size_t n_samples = data.size() / n_features;
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            std::cout << data[sample_index * n_features + feature_index] << " ";
+        }
+        std::cout << "\n";
+    }
+}
+
 TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -131,6 +143,8 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     auto indices = generate_indices(n_samples);
 
     const std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
+
+    // const std::size_t remapped_query_index = 7;  // indices[sample_index_query]
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -161,6 +175,42 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_indexed_range(
         indices.begin(), indices.end(), data.begin(), data.end(), n_features, indices[sample_index_query]);
     timer.print_elapsed_seconds(/*n_decimals=*/9);
+
+    // ---
+
+    printf("Original dataset:\n");
+    print_data(std::vector(data.begin(), data.end()), n_features);
+    printf("---\nRemapped dataset:\n");
+    print_data(common::utils::remap_ranges_from_indices(indices, data, n_features), n_features);
+
+    // print_data(data, n_features);
+
+    printf("Query index: %ld\n", indices[sample_index_query]);
+
+    printf("Result: nn_index (kdtree) = %ld | distance: %.3f\n",
+           nn_index,
+           math::heuristics::auto_distance(data.begin() + nn_index * n_features,
+                                           data.begin() + nn_index * n_features + n_features,
+                                           data.begin() + indices[sample_index_query] * n_features));
+    printf("Answer: nn_index (sequential) = %ld | distance: %.3f\n",
+           nearest_neighbor_index,
+           math::heuristics::auto_distance(data.begin() + nearest_neighbor_index * n_features,
+                                           data.begin() + nearest_neighbor_index * n_features + n_features,
+                                           data.begin() + indices[sample_index_query] * n_features));
+
+    printf("Query sample: ");
+    print_data(std::vector(data.begin() + indices[sample_index_query] * n_features,
+                           data.begin() + indices[sample_index_query] * n_features + n_features),
+               n_features);
+
+    printf("Result sample: ");
+    print_data(std::vector(data.begin() + nn_index * n_features, data.begin() + nn_index * n_features + n_features),
+               n_features);
+
+    printf("Answer sample: ");
+    print_data(std::vector(data.begin() + nearest_neighbor_index * n_features,
+                           data.begin() + nearest_neighbor_index * n_features + n_features),
+               n_features);
 
     ASSERT_EQ(nn_index, nearest_neighbor_index);
 }

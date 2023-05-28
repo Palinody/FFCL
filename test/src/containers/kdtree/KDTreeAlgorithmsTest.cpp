@@ -47,8 +47,92 @@ class KDTreeAlgorithmsTestFixture : public Range2DBaseFixture<DataType> {
     std::size_t n_random_tests_;
 };
 
+// using DataTypes = ::testing::Types<int>;
 using DataTypes = ::testing::Types<int, std::size_t, float, double>;
 TYPED_TEST_SUITE(KDTreeAlgorithmsTestFixture, DataTypes);
+
+/*
+template <typename IndicesIterator>
+std::vector<typename IndicesIterator::value_type> kdtree_index_ranges_to_vector(
+    IndicesIterator left_range_indices_first,
+    IndicesIterator left_range_indices_last,
+    IndicesIterator median_range_indices_first,
+    IndicesIterator median_range_indices_last,
+    IndicesIterator right_range_indices_first,
+    IndicesIterator right_range_indices_last) {
+    using DataType = typename IndicesIterator::value_type;
+
+    std::vector<DataType> indices;
+    indices.reserve(std::distance(left_range_indices_first, left_range_indices_last) +
+                    std::distance(median_range_indices_first, median_range_indices_last) +
+                    std::distance(right_range_indices_first, right_range_indices_last));
+
+    std::copy(left_range_indices_first, left_range_indices_last, std::back_inserter(indices));
+    std::copy(median_range_indices_first, median_range_indices_last, std::back_inserter(indices));
+    std::copy(right_range_indices_first, right_range_indices_last, std::back_inserter(indices));
+
+    return indices;
+}
+
+TYPED_TEST(KDTreeAlgorithmsTestFixture, MainTest) {
+    const std::size_t samples       = 6;
+    const std::size_t features      = 3;
+    const std::size_t feature_index = 2;
+
+    auto data = this->generate_random_uniform_vector(samples, features, 0, 2);
+    // std::vector({2, 2, 2, 0, 5, 10});  // this->generate_ascending_elements_array(samples * features);
+
+    auto data_indices = this->generate_indices(samples);
+
+    const auto [cut_index, left_indexed_range, cut_indexed_range, right_indexed_range] =
+        kdtree::algorithms::quickselect_median_indexed_range(
+            data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
+
+    const auto [indexed_cut_range_begin, indexed_cut_range_end] = cut_indexed_range;
+
+    printf("n_left_indices: %ld", std::distance(left_indexed_range.first, left_indexed_range.second));
+    printf("\n---\n");
+
+    printf("left indices:\n");
+    this->print_data(std::vector(left_indexed_range.first, left_indexed_range.second), 1);
+    printf("\n---\n");
+
+    printf("n_median_indices: %ld", std::distance(indexed_cut_range_begin, indexed_cut_range_end));
+    printf("\n---\n");
+
+    printf("Cut index: %ld\n", cut_index);
+
+    printf("median indices:\n");
+    this->print_data(std::vector(indexed_cut_range_begin, indexed_cut_range_end), 1);
+    printf("\n---\n");
+
+    printf("n_right_indices: %ld", std::distance(right_indexed_range.first, right_indexed_range.second));
+    printf("\n---\n");
+
+    printf("right indices:\n");
+    this->print_data(std::vector(right_indexed_range.first, right_indexed_range.second), 1);
+    printf("\n---\n");
+
+    printf("Dataset:\n");
+    this->print_data(data, features);
+    printf("\n---\n");
+
+    printf("All indices:\n");
+    const auto all_indices = kdtree_index_ranges_to_vector(left_indexed_range.first,
+                                                           left_indexed_range.second,
+                                                           cut_indexed_range.first,
+                                                           cut_indexed_range.second,
+                                                           right_indexed_range.first,
+                                                           right_indexed_range.second);
+    this->print_data(all_indices, 1);
+    printf("\n---\n");
+
+    const auto remapped_dataset = common::utils::remap_ranges_from_indices(all_indices, data, features);
+
+    printf("Remapped dataset:\n");
+    this->print_data(remapped_dataset, features);
+}
+*/
 
 TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
     // the number of times to perform the tests
