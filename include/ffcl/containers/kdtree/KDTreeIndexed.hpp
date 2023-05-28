@@ -238,10 +238,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
 
         const auto cut_value = samples_first[*cut_index_range.first * n_features_ + cut_feature_index];
 
-        // set the right bound of the left child to the cut value
-
-        // if (std::distance(left_index_range.first, left_index_range.second)) {
         {
+            // set the right bound of the left child to the cut value
             kd_bounding_box[cut_feature_index].second = cut_value;
 
             kdnode->left_ = build(left_index_range.first,
@@ -257,10 +255,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
             // reset the right bound of the bounding box to the current kdnode right bound
             kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_[cut_feature_index].second;
         }
-        // }
-        // if (std::distance(right_index_range.first, right_index_range.second)) {
-        // set the left bound of the right child to the cut value
         {
+            // set the left bound of the right child to the cut value
             kd_bounding_box[cut_feature_index].first = cut_value;
 
             kdnode->right_ = build(right_index_range.first,
@@ -276,7 +272,6 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
             // reset the left bound of the bounding box to the current kdnode left bound
             kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_[cut_feature_index].first;
         }
-        // }
     } else {
         kdnode = std::make_shared<KDNodeIndexView<IndicesIterator, SamplesIterator>>(
             std::make_pair(index_first, index_last),
