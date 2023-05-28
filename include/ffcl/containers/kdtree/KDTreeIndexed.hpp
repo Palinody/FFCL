@@ -282,18 +282,6 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
     return kdnode;
 }
 
-template <typename Type>
-void print_data(const std::vector<Type>& data, std::size_t n_features) {
-    const std::size_t n_samples = data.size() / n_features;
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            std::cout << data[sample_index * n_features + feature_index] << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_index(
     std::size_t        query_index,
@@ -305,24 +293,6 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_qu
                                                        kdnode == nullptr ? root_ : kdnode,
                                                        current_nearest_neighbor_index,
                                                        current_nearest_neighbor_distance);
-    /*
-    printf("\t---(start)\n");
-
-    printf("Indices: ");
-    print_data(
-        std::vector(current_kdnode->indices_iterator_pair_.first, current_kdnode->indices_iterator_pair_.second),
-        std::distance(current_kdnode->indices_iterator_pair_.first, current_kdnode->indices_iterator_pair_.second));
-
-    printf("Cut feature index: %ld\n", current_kdnode->cut_feature_index_);
-
-    printf("Samples: ");
-    print_data(
-        std::vector(samples_first_ + current_kdnode->indices_iterator_pair_.first[0] * n_features_,
-                    samples_first_ + current_kdnode->indices_iterator_pair_.first[0] * n_features_ + n_features_),
-        n_features_);
-    printf("\t---(end)\n");
-    */
-
     // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
     // kdnode parameter is a subtree. A search through the entire tree
     while (current_kdnode != kdnode) {
