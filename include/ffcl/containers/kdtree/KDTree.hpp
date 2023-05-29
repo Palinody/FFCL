@@ -227,6 +227,22 @@ auto KDTree<SamplesIterator>::nearest_neighbor_around_query_index(std::size_t   
                                                                   KDNodeViewPtr kdnode,
                                                                   ssize_t       current_nearest_neighbor_index,
                                                                   DataType current_nearest_neighbor_distance) const {
+    // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
+    auto current_kdnode = recurse_to_closest_leaf_node(query_index,
+                                                       kdnode == nullptr ? root_ : kdnode,
+                                                       current_nearest_neighbor_index,
+                                                       current_nearest_neighbor_distance);
+    // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
+    // kdnode parameter is a subtree. A search through the entire tree
+    while (current_kdnode != kdnode) {
+        // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
+        // (nullptr otherwise)
+        current_kdnode = nearest_neighbor_backtrack_step(
+            /**/ query_index,
+            /**/ current_kdnode,
+            /**/ current_nearest_neighbor_index,
+            /**/ current_nearest_neighbor_distance);
+    }
     return std::make_pair(current_nearest_neighbor_index, current_nearest_neighbor_distance);
 }
 
@@ -240,6 +256,8 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::recurse
     std::tie(current_nearest_neighbor_index, current_nearest_neighbor_distance) =
         math::heuristics::nearest_neighbor_range(kdnode->samples_iterator_pair_.first,
                                                  kdnode->samples_iterator_pair_.second,
+                                                 samples_first_,
+                                                 samples_last_,
                                                  kdnode->n_features_,
                                                  query_index,
                                                  current_nearest_neighbor_index,
@@ -277,22 +295,21 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::nearest
     ssize_t&      current_nearest_neighbor_index,
     DataType&     current_nearest_neighbor_distance) const {
     auto kdnode_parent = kdnode->parent_.lock();
-
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the split value according to the current split dimension
-        const auto pivot_split_value = kdnode->samples_iterator_pair_.first[kdnode->cut_feature_index_];
+        const auto pivot_split_value = kdnode_parent->samples_iterator_pair_.first[kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
+        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current nearest neighbor distance, there could be a nearest neighbor
         // to the other side of the hyperrectangle since the values that are equal to the pivot are put to the right
-        bool cross_hyperrectangle =
+        bool visit_sibling =
             kdnode->is_left_child()
                 ? common::utils::abs(pivot_split_value - query_split_value) <= current_nearest_neighbor_distance
                 : common::utils::abs(pivot_split_value - query_split_value) < current_nearest_neighbor_distance;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
-        if (cross_hyperrectangle) {
+        if (visit_sibling) {
             // if the sibling kdnode is not nullptr
             if (auto sibling_node = kdnode->get_sibling_node()) {
                 // get the nearest neighbor from the sibling node
@@ -305,6 +322,7 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::nearest
             }
         }
     }
+    // returns nullptr if kdnode doesnt have parent (or is root)
     return kdnode_parent;
 }
 

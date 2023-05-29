@@ -15,7 +15,8 @@
     - kdtree build only with custom options: depth, bucket size, axis selection and split policies
     - multiple axis selection policies (client can make its own policies)
     - quickselect (handles duplicate data) splitting rule policy (client can make its own rules)
-    - (single) nearest neighbor with `KDTreeIndexed`. The search can be made from any node and with an index query refering to the input dataset for now. Next I will make the implementation for a new point query as well as the not indexed `KDTree`.
+    - (single) nearest neighbor index with `KDTreeIndexed` (bug fixed) and `KDTree`. The nearest neighbor is an already existing point in the dataset that is designated by index. The function returns a remapped index that can be passed to the original unswapped dataset (for `KDTreeIndexed`) to retreive the neighbor sample. The same function has been implemented for `KDTree`. The nearest neighbor retrieval seems much faster in practice (both kdtrees) than FLANN but no in depth study has been made to guarantee that this is true, only quick tests by choosing various realistic hyperparameters. I also made the tests with FLANN using `result = flann.nn_index(query_point, k=1)`. I removed the queried sample from the original dataset to not call it since the nearest neighbor finds itself when querying an already existing point (see `BenchmarkKDTree.py`).
+    - **Next**: **k**-nearest neighbors and nearest neighbor
 - Proper unit testing (**update**: all the generic code is now unit tested)
 - DBSCAN
 - OPTICS
@@ -213,11 +214,9 @@ for (std::size_t k = k_min; k < k_max; ++k) {
     // map the samples to their closest centroid/medoid
     const auto predictions = kmeans.predict(data.begin(), data.end());
     // compute the silhouette scores for each sample
-    const auto samples_silhouette_values = math::heuristics::silhouette(data.begin(),
-                                                                                         data.end(),
-                                                                                         predictions.begin(),
-                                                                                         predictions.end(),
-                                                                                         n_features);
+    const auto samples_silhouette_values =
+        math::heuristics::silhouette(data.begin(), data.end(), predictions.begin(), predictions.end(), n_features);
+
     // get the average score
     const auto mean_silhouette_coefficient = math::heuristics::get_mean_silhouette_coefficient(
         samples_silhouette_values.begin(), samples_silhouette_values.end());

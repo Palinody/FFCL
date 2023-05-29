@@ -178,44 +178,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
 
     printf("Query index: %ld\n", indices[sample_index_query]);
     std::cout << "Kdtree distance: " << nn_distance << " | sequential distance: " << nearest_neighbor_distance << "\n";
-    /*
 
-    // ---
-
-    printf("Original dataset:\n");
-    print_data(std::vector(data.begin(), data.end()), n_features);
-    printf("---\nRemapped dataset:\n");
-    print_data(common::utils::remap_ranges_from_indices(indices, data, n_features), n_features);
-
-    // print_data(data, n_features);
-
-    printf("Query index: %ld\n", indices[sample_index_query]);
-
-    printf("Result: nn_index (kdtree) = %ld | distance: %.3f\n",
-           nn_index,
-           math::heuristics::auto_distance(data.begin() + nn_index * n_features,
-                                           data.begin() + nn_index * n_features + n_features,
-                                           data.begin() + indices[sample_index_query] * n_features));
-    printf("Answer: nn_index (sequential) = %ld | distance: %.3f\n",
-           nearest_neighbor_index,
-           math::heuristics::auto_distance(data.begin() + nearest_neighbor_index * n_features,
-                                           data.begin() + nearest_neighbor_index * n_features + n_features,
-                                           data.begin() + indices[sample_index_query] * n_features));
-
-    printf("Query sample: ");
-    print_data(std::vector(data.begin() + indices[sample_index_query] * n_features,
-                           data.begin() + indices[sample_index_query] * n_features + n_features),
-               n_features);
-
-    printf("Result sample: ");
-    print_data(std::vector(data.begin() + nn_index * n_features, data.begin() + nn_index * n_features + n_features),
-               n_features);
-
-    printf("Answer sample: ");
-    print_data(std::vector(data.begin() + nearest_neighbor_index * n_features,
-                           data.begin() + nearest_neighbor_index * n_features + n_features),
-               n_features);
-    */
     ASSERT_TRUE(common::utils::equality(nn_distance, nearest_neighbor_distance));
 }
 

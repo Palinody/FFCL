@@ -350,7 +350,6 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_backtrack_step
     ssize_t&           current_nearest_neighbor_index,
     DataType&          current_nearest_neighbor_distance) const {
     auto kdnode_parent = kdnode->parent_.lock();
-
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
@@ -361,13 +360,13 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_backtrack_step
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current nearest neighbor distance, there could be a nearest neighbor
         // to the other side of the hyperrectangle since the values that are equal to the pivot are put to the right
-        bool cross_hyperrectangle =
+        bool visit_sibling =
             kdnode->is_left_child()
                 ? common::utils::abs(pivot_split_value - query_split_value) <= current_nearest_neighbor_distance
                 : common::utils::abs(pivot_split_value - query_split_value) < current_nearest_neighbor_distance;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
-        if (cross_hyperrectangle) {
+        if (visit_sibling) {
             // if the sibling kdnode is not nullptr
             if (auto sibling_node = kdnode->get_sibling_node()) {
                 // get the nearest neighbor from the sibling node
