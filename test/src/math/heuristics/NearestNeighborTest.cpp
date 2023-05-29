@@ -37,7 +37,7 @@ class NearestNeighborTestFixture : public Range2DBaseFixture<DataType> {
 using DataTypes = ::testing::Types<float, double>;
 TYPED_TEST_SUITE(NearestNeighborTestFixture, DataTypes);
 
-TYPED_TEST(NearestNeighborTestFixture, MainTest) {
+TYPED_TEST(NearestNeighborTestFixture, UpdateNearestNeighborIndicesBufferTest) {
     const std::size_t query_index                      = this->max_n_samples_ / 2;
     const std::size_t candidate_nearest_neighbor_index = this->max_n_samples_ - 1;
     const std::size_t n_neighbors                      = 5;

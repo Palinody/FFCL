@@ -207,9 +207,10 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
                                                        ssize_t                             depth,
                                                        BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
     KDNodeIndexViewPtr kdnode;
-    const std::size_t  n_samples = std::distance(index_first, index_last);
+    // number of samples in the current node
+    const std::size_t n_node_samples = std::distance(index_first, index_last);
     // if the current number of samples is greater than the target bucket size, the node is not leaf
-    if (n_samples > options_.bucket_size_ && depth < options_.max_depth_) {
+    if (n_node_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index = (*options_.axis_selection_policy_ptr_)(
             index_first, index_last, samples_first_, samples_last_, n_features_, depth, kd_bounding_box);
@@ -353,7 +354,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_backtrack_step
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index       = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        // get the split value according to the current split dimension
         const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];

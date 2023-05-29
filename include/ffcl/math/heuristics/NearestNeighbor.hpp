@@ -7,6 +7,36 @@
 
 namespace math::heuristics {
 
+template <typename SamplesIterator>
+std::pair<ssize_t, typename SamplesIterator::value_type> nearest_neighbor_range(
+    const SamplesIterator&               samples_first,
+    const SamplesIterator&               samples_last,
+    std::size_t                          n_features,
+    std::size_t                          sample_index_query,
+    ssize_t                              current_nearest_neighbor_index = -1,
+    typename SamplesIterator::value_type current_nearest_neighbor_distance =
+        common::utils::infinity<typename SamplesIterator::value_type>()) {
+    using DataType = typename SamplesIterator::value_type;
+
+    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+
+    for (std::size_t candidate_nearest_neighbor_index = 0; candidate_nearest_neighbor_index < n_samples;
+         ++candidate_nearest_neighbor_index) {
+        if (candidate_nearest_neighbor_index != sample_index_query) {
+            const DataType candidate_nearest_neighbor_distance =
+                math::heuristics::auto_distance(samples_first + sample_index_query * n_features,
+                                                samples_first + sample_index_query * n_features + n_features,
+                                                samples_first + candidate_nearest_neighbor_index * n_features);
+
+            if (candidate_nearest_neighbor_distance < current_nearest_neighbor_distance) {
+                current_nearest_neighbor_index    = candidate_nearest_neighbor_index;
+                current_nearest_neighbor_distance = candidate_nearest_neighbor_distance;
+            }
+        }
+    }
+    return {current_nearest_neighbor_index, current_nearest_neighbor_distance};
+}
+
 template <typename IndicesIterator, typename SamplesIterator>
 std::pair<ssize_t, typename SamplesIterator::value_type> nearest_neighbor_indexed_range(
     const IndicesIterator&               index_first,
