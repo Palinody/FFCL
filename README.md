@@ -16,7 +16,7 @@
     - multiple axis selection policies (client can make its own policies)
     - quickselect (handles duplicate data) splitting rule policy (client can make its own rules)
     - (single) nearest neighbor index with `KDTreeIndexed` (bug fixed) and `KDTree`. The nearest neighbor is an already existing point in the dataset that is designated by index. The function returns a remapped index that can be passed to the original unswapped dataset (for `KDTreeIndexed`) to retreive the neighbor sample. The same function has been implemented for `KDTree`. The nearest neighbor retrieval seems much faster in practice (both kdtrees) than FLANN but no in depth study has been made to guarantee that this is true, only quick tests by choosing various realistic hyperparameters. I also made the tests with FLANN using `result = flann.nn_index(query_point, k=1)`. I removed the queried sample from the original dataset to not call it since the nearest neighbor finds itself when querying an already existing point (see `BenchmarkKDTree.py`).
-    - **Next**: **k**-nearest neighbors and nearest neighbor
+    - **Next**: **k**-nearest neighbors and nearest neighbor with unknown sample query.
 - Proper unit testing (**update**: all the generic code is now unit tested)
 - DBSCAN
 - OPTICS
