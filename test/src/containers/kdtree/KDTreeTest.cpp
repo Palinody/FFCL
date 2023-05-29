@@ -173,6 +173,7 @@ TEST_F(KDTreeErrorsTest, MainTest) {
 
     printf("Making the kdtree:\n");
 
+    timer.reset();
     using SamplesIterator = decltype(data)::iterator;
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
     auto kdtree =
@@ -184,21 +185,31 @@ TEST_F(KDTreeErrorsTest, MainTest) {
                                      .max_depth(std::log2(n_samples))
                                      .axis_selection_policy(kdtree::policy::HighestVarianceBuild<SamplesIterator>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<SamplesIterator>()));
-    // 51 with n_samples = 100
-    const std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
+    timer.print_elapsed_seconds(9);
+
+    std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
+
+    std::size_t nn_index                  = 0;
+    auto        nn_distance               = common::utils::infinity<dType>();
+    std::size_t nearest_neighbor_index    = 0;
+    dType       nearest_neighbor_distance = common::utils::infinity<dType>();
 
     timer.reset();
-    const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_around_query_index(sample_index_query);
+    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nn_index, nn_distance) = kdtree.nearest_neighbor_around_query_index(sample_index_query);
+    }
     timer.print_elapsed_seconds(9);
 
     timer.reset();
-    const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_range(
-        /**/ data.begin(),
-        /**/ data.end(),
-        /**/ data.begin(),
-        /**/ data.end(),
-        /**/ n_features,
-        /**/ sample_index_query);
+    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nearest_neighbor_index, nearest_neighbor_distance) = math::heuristics::nearest_neighbor_range(
+            /**/ data.begin(),
+            /**/ data.end(),
+            /**/ data.begin(),
+            /**/ data.end(),
+            /**/ n_features,
+            /**/ sample_index_query);
+    }
     timer.print_elapsed_seconds(9);
 
     printf("Query index: %ld\n", sample_index_query);

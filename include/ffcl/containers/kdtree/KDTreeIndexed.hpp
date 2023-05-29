@@ -215,9 +215,13 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
         cut_feature_index = (*options_.axis_selection_policy_ptr_)(
             index_first, index_last, samples_first_, samples_last_, n_features_, depth, kd_bounding_box);
 
-        // [cut_index, left_range, cut_range, right_range]
         auto [cut_index, left_index_range, cut_index_range, right_index_range] = (*options_.splitting_rule_policy_ptr_)(
-            index_first, index_last, samples_first_, samples_last_, n_features_, cut_feature_index);
+            /**/ index_first,
+            /**/ index_last,
+            /**/ samples_first_,
+            /**/ samples_last_,
+            /**/ n_features_,
+            /**/ cut_feature_index);
 
         kdnode = std::make_shared<KDNodeIndexView<IndicesIterator, SamplesIterator>>(
             cut_index_range, cut_feature_index, kd_bounding_box);

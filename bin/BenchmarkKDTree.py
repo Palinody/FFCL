@@ -93,13 +93,30 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # np.random.shuffle(points)
 
     # random_query_index = random.randint(0, points.shape[0] - 1)
-    query_index = 5502
+    """
+    query_index = 13201
     query_point = points[query_index, :]
 
     start_time = time.process_time()
     flann = pyflann.FLANN()
     params = flann.build_index(
         np.delete(points, query_index, axis=0),
+        algorithm="kdtree",
+        split_method="median",
+        copy_data=False,
+        cores=1,
+        trees=1,
+        leaf_max_size=BUCKET_SIZE,
+        sample_fraction=0.1,
+        checks=-1,
+        build_weight=0.01,
+    )
+    end_time = time.process_time()
+    """
+    start_time = time.process_time()
+    flann = pyflann.FLANN()
+    params = flann.build_index(
+        points,
         algorithm="kdtree",
         split_method="median",
         copy_data=False,
@@ -122,7 +139,8 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     k = 1
 
     start_time = time.process_time()
-    result = flann.nn_index(query_point, k)
+    for query_index, query_point in enumerate(points):
+        result = flann.nn_index(query_point, k)
     end_time = time.process_time()
     print(
         f"Elapsed time for KDTree {k} nearest neighbor (pyflann):",
@@ -134,12 +152,20 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
 
 
 def run_all():
-    """noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""
+    """noisy_circles.txt, noisy_moons.txt, varied.txt, aniso.txt, blobs.txt, no_structure.txt, unbalanced_blobs.txt"""
     root_folder = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "clustering/inputs/"
     )
 
-    file_names = os.listdir(root_folder)
+    file_names = [
+        "noisy_circles.txt",
+        "noisy_moons.txt",
+        "varied.txt",
+        "aniso.txt",
+        "blobs.txt",
+        "no_structure.txt",
+        "unbalanced_blobs.txt",
+    ]  # os.listdir(root_folder)
 
     for filename in file_names:
         input_path = root_folder + filename

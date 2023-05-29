@@ -142,15 +142,13 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
 
     auto indices = generate_indices(n_samples);
 
-    const std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
-
-    // const std::size_t remapped_query_index = 7;  // indices[sample_index_query]
-
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
     std::cout << "n_features: " << n_features << "\n";
 
     printf("Making the kdtree:\n");
+
+    timer.reset();
 
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
@@ -167,13 +165,26 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
             .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
+    timer.print_elapsed_seconds(9);
+
+    std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
+
+    std::size_t nn_index                  = 0;
+    auto        nn_distance               = common::utils::infinity<dType>();
+    std::size_t nearest_neighbor_index    = 0;
+    dType       nearest_neighbor_distance = common::utils::infinity<dType>();
+
     timer.reset();
-    const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
+    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nn_index, nn_distance) = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
+    }
     timer.print_elapsed_seconds(9);
 
     timer.reset();
-    const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_indexed_range(
-        indices.begin(), indices.end(), data.begin(), data.end(), n_features, indices[sample_index_query]);
+    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nearest_neighbor_index, nearest_neighbor_distance) = math::heuristics::nearest_neighbor_indexed_range(
+            indices.begin(), indices.end(), data.begin(), data.end(), n_features, indices[sample_index_query]);
+    }
     timer.print_elapsed_seconds(9);
 
     printf("Query index: %ld\n", indices[sample_index_query]);

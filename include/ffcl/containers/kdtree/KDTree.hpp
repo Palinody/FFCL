@@ -177,8 +177,11 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::build(
         cut_feature_index =
             (*options_.axis_selection_policy_ptr_)(samples_first, samples_last, n_features_, depth, kd_bounding_box);
 
-        auto [cut_index, left_range, cut_range, right_range] =
-            (*options_.splitting_rule_policy_ptr_)(samples_first, samples_last, n_features_, cut_feature_index);
+        auto [cut_index, left_range, cut_range, right_range] = (*options_.splitting_rule_policy_ptr_)(
+            /**/ samples_first,
+            /**/ samples_last,
+            /**/ n_features_,
+            /**/ cut_feature_index);
 
         kdnode =
             std::make_shared<KDNodeView<SamplesIterator>>(cut_range, n_features_, cut_feature_index, kd_bounding_box);
