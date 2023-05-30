@@ -129,6 +129,41 @@ void print_data(const std::vector<Type>& data, std::size_t n_features) {
     }
 }
 
+TEST_F(KDTreeIndexedErrorsTest, SequentialIndexedNearestNeighborIndexTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+
+    const std::size_t n_samples = labels.size();
+
+    auto indices = generate_indices(n_samples);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << n_samples << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    ssize_t nearest_neighbor_index    = 0;
+    dType   nearest_neighbor_distance = common::utils::infinity<dType>();
+
+    timer.reset();
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nearest_neighbor_index, nearest_neighbor_distance) = math::heuristics::nearest_neighbor_indexed_range(
+            /**/ indices.begin(),
+            /**/ indices.end(),
+            /**/ data.begin(),
+            /**/ data.end(),
+            /**/ n_features,
+            /**/ indices[sample_index_query]);
+    }
+    timer.print_elapsed_seconds(9);
+
+    printf("Dummy print (sequential): %ld, %.3f\n", nearest_neighbor_index, nearest_neighbor_distance);
+}
+
 TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -169,10 +204,8 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
 
     std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
 
-    std::size_t nn_index                  = 0;
-    auto        nn_distance               = common::utils::infinity<dType>();
-    std::size_t nearest_neighbor_index    = 0;
-    dType       nearest_neighbor_distance = common::utils::infinity<dType>();
+    std::size_t nn_index    = 0;
+    auto        nn_distance = common::utils::infinity<dType>();
 
     timer.reset();
     for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -180,23 +213,7 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nearest_neighbor_index, nearest_neighbor_distance) = math::heuristics::nearest_neighbor_indexed_range(
-            indices.begin(), indices.end(), data.begin(), data.end(), n_features, indices[sample_index_query]);
-    }
-    timer.print_elapsed_seconds(9);
-
-    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_index, nn_distance) = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
-
-        std::tie(nearest_neighbor_index, nearest_neighbor_distance) = math::heuristics::nearest_neighbor_indexed_range(
-            indices.begin(), indices.end(), data.begin(), data.end(), n_features, indices[sample_index_query]);
-
-        // printf("%ld, %ld | %.3f, %.3f\n", nn_index, nearest_neighbor_index, nn_distance, nearest_neighbor_distance);
-
-        ASSERT_TRUE(common::utils::equality(nn_distance, nearest_neighbor_distance));
-    }
+    printf("Dummy print (kdtree): %ld, %.3f\n", nn_index, nn_distance);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {

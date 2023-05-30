@@ -93,26 +93,11 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # np.random.shuffle(points)
 
     # random_query_index = random.randint(0, points.shape[0] - 1)
-    """
-    query_index = 13201
-    query_point = points[query_index, :]
+    
+    # query_index = 13201
+    # query_point = points[query_index, :]
+    # np.delete(points, query_index, axis=0),
 
-    start_time = time.process_time()
-    flann = pyflann.FLANN()
-    params = flann.build_index(
-        np.delete(points, query_index, axis=0),
-        algorithm="kdtree",
-        split_method="median",
-        copy_data=False,
-        cores=1,
-        trees=1,
-        leaf_max_size=BUCKET_SIZE,
-        sample_fraction=0.1,
-        checks=-1,
-        build_weight=0.01,
-    )
-    end_time = time.process_time()
-    """
     start_time = time.process_time()
     flann = pyflann.FLANN()
     params = flann.build_index(
@@ -139,8 +124,10 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     k = 1
 
     start_time = time.process_time()
-    for query_index, query_point in enumerate(points):
+
+    for query_point in points:
         result = flann.nn_index(query_point, k)
+    
     end_time = time.process_time()
     print(
         f"Elapsed time for KDTree {k} nearest neighbor (pyflann):",
@@ -180,10 +167,10 @@ def run_all():
 
         TestSklearnKDTreeBuildTime(dataset)
 
-        try:
-            TestFlannKDTreeBuildTime(dataset)
-        except:
-            print(dir(pyflann))
+        # try:
+        TestFlannKDTreeBuildTime(dataset)
+        # except:
+            # print(dir(pyflann))
 
 
 def run_mnist():
