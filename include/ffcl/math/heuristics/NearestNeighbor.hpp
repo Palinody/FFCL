@@ -9,8 +9,8 @@ namespace math::heuristics {
 
 template <typename SamplesIterator>
 std::pair<ssize_t, typename SamplesIterator::value_type> nearest_neighbor_range(
-    const SamplesIterator&               samples_first,
-    const SamplesIterator&               samples_last,
+    const SamplesIterator&               subrange_samples_first,
+    const SamplesIterator&               subrange_samples_last,
     const SamplesIterator&               dataset_samples_first,
     const SamplesIterator&               dataset_samples_last,
     std::size_t                          n_features,
@@ -22,19 +22,21 @@ std::pair<ssize_t, typename SamplesIterator::value_type> nearest_neighbor_range(
 
     common::utils::ignore_parameters(dataset_samples_last);
     // number of samples in the subrange
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples =
+        common::utils::get_n_samples(subrange_samples_first, subrange_samples_last, n_features);
     // global index of the subrange in the entire dataset
-    const std::size_t global_index = common::utils::get_n_samples(dataset_samples_first, samples_first, n_features);
+    const std::size_t subrange_offset =
+        common::utils::get_n_samples(dataset_samples_first, subrange_samples_first, n_features);
 
     for (std::size_t subrange_candidate_index = 0; subrange_candidate_index < n_samples; ++subrange_candidate_index) {
-        if (global_index + subrange_candidate_index != sample_index_query) {
+        if (subrange_offset + subrange_candidate_index != sample_index_query) {
             const DataType candidate_nearest_neighbor_distance =
                 math::heuristics::auto_distance(dataset_samples_first + sample_index_query * n_features,
                                                 dataset_samples_first + sample_index_query * n_features + n_features,
-                                                samples_first + subrange_candidate_index * n_features);
+                                                subrange_samples_first + subrange_candidate_index * n_features);
 
             if (candidate_nearest_neighbor_distance < current_nearest_neighbor_distance) {
-                current_nearest_neighbor_index    = global_index + subrange_candidate_index;
+                current_nearest_neighbor_index    = subrange_offset + subrange_candidate_index;
                 current_nearest_neighbor_distance = candidate_nearest_neighbor_distance;
             }
         }

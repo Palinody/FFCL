@@ -187,10 +187,16 @@ TEST_F(KDTreeIndexedErrorsTest, MainTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    printf("Query index: %ld\n", indices[sample_index_query]);
-    std::cout << "Kdtree distance: " << nn_distance << " | sequential distance: " << nearest_neighbor_distance << "\n";
+    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nn_index, nn_distance) = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
 
-    ASSERT_TRUE(common::utils::equality(nn_distance, nearest_neighbor_distance));
+        std::tie(nearest_neighbor_index, nearest_neighbor_distance) = math::heuristics::nearest_neighbor_indexed_range(
+            indices.begin(), indices.end(), data.begin(), data.end(), n_features, indices[sample_index_query]);
+
+        // printf("%ld, %ld | %.3f, %.3f\n", nn_index, nearest_neighbor_index, nn_distance, nearest_neighbor_distance);
+
+        ASSERT_TRUE(common::utils::equality(nn_distance, nearest_neighbor_distance));
+    }
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {

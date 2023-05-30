@@ -308,8 +308,8 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::nearest
         // to the other side of the hyperrectangle since the values that are equal to the pivot are put to the right
         bool visit_sibling =
             kdnode->is_left_child()
-                ? common::utils::abs(pivot_split_value - query_split_value) <= current_nearest_neighbor_distance
-                : common::utils::abs(pivot_split_value - query_split_value) < current_nearest_neighbor_distance;
+                ? common::utils::abs(pivot_split_value - query_split_value) < current_nearest_neighbor_distance
+                : common::utils::abs(pivot_split_value - query_split_value) <= current_nearest_neighbor_distance;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -342,13 +342,11 @@ void KDTree<SamplesIterator>::serialize(const KDNodeViewPtr&                    
 
         // continue the recursion if the current node is not leaf
         if (!kdnode->is_leaf()) {
-            writer.String("left");
-            serialize(kdnode->left_, writer);
-
-            // The right pointer might be nullptr when a node had 2 samples. The median computation chooses the
-            // second sample as the pivot because the median of 2 samples will output index 1. The other index will
-            // be 0 and thus the left child
-            if (kdnode->right_) {
+            {
+                writer.String("left");
+                serialize(kdnode->left_, writer);
+            }
+            {
                 writer.String("right");
                 serialize(kdnode->right_, writer);
             }

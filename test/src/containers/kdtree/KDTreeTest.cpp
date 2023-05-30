@@ -156,6 +156,36 @@ void print_data(const std::vector<Type>& data, std::size_t n_features) {
     }
 }
 
+TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+
+    const std::size_t n_samples = labels.size();
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << n_samples << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    timer.reset();
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        /*const auto [nearest_neighbor_index, nearest_neighbor_distance] = */ math::heuristics::nearest_neighbor_range(
+            /**/ data.begin(),
+            /**/ data.end(),
+            /**/ data.begin(),
+            /**/ data.end(),
+            /**/ n_features,
+            /**/ sample_index_query);
+
+        // common::utils::ignore_parameters(nearest_neighbor_index, nearest_neighbor_distance);
+    }
+    timer.print_elapsed_seconds(9);
+}
+
 TEST_F(KDTreeErrorsTest, MainTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -187,36 +217,33 @@ TEST_F(KDTreeErrorsTest, MainTest) {
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<SamplesIterator>()));
     timer.print_elapsed_seconds(9);
 
-    std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
-
-    std::size_t nn_index                  = 0;
-    auto        nn_distance               = common::utils::infinity<dType>();
-    std::size_t nearest_neighbor_index    = 0;
-    dType       nearest_neighbor_distance = common::utils::infinity<dType>();
+    // std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
 
     timer.reset();
-    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_index, nn_distance) = kdtree.nearest_neighbor_around_query_index(sample_index_query);
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        /*const auto [nn_index, nn_distance] = */ kdtree.nearest_neighbor_around_query_index(0);
     }
     timer.print_elapsed_seconds(9);
 
     timer.reset();
-    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nearest_neighbor_index, nearest_neighbor_distance) = math::heuristics::nearest_neighbor_range(
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_around_query_index(sample_index_query);
+
+        const auto [nearest_neighbor_index, nearest_neighbor_distance] = math::heuristics::nearest_neighbor_range(
             /**/ data.begin(),
             /**/ data.end(),
             /**/ data.begin(),
             /**/ data.end(),
             /**/ n_features,
             /**/ sample_index_query);
+
+        // common::utils::ignore_parameters(nearest_neighbor_index);
+
+        // printf("%.3f, %.3f\n", nn_distance, nearest_neighbor_distance);
+
+        ASSERT_TRUE(common::utils::equality(nn_distance, nearest_neighbor_distance));
     }
     timer.print_elapsed_seconds(9);
-
-    printf("Query index: %ld\n", sample_index_query);
-    std::cout << "Kdtree index: " << nn_index << " | sequential index: " << nearest_neighbor_index << "\n";
-    std::cout << "Kdtree distance: " << nn_distance << " | sequential distance: " << nearest_neighbor_distance << "\n";
-
-    ASSERT_TRUE(common::utils::equality(nn_distance, nearest_neighbor_distance));
 }
 
 TEST_F(KDTreeErrorsTest, MNISTTest) {
@@ -248,7 +275,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
                                      .axis_selection_policy(kdtree::policy::HighestVarianceBuild<SamplesIterator>())
                                      .splitting_rule_policy(kdtree::policy::QuickselectMedianRange<SamplesIterator>()));
 
-    timer.print_elapsed_seconds(/*n_decimals=*/6);
+    timer.print_elapsed_seconds(6);
 }
 
 TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
