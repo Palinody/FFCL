@@ -21,9 +21,11 @@ std::pair<ssize_t, typename SamplesIterator::value_type> nearest_neighbor_range(
     using DataType = typename SamplesIterator::value_type;
 
     common::utils::ignore_parameters(dataset_samples_last);
+
     // number of samples in the subrange
     const std::size_t n_samples =
         common::utils::get_n_samples(subrange_samples_first, subrange_samples_last, n_features);
+
     // global index of the subrange in the entire dataset
     const std::size_t subrange_offset =
         common::utils::get_n_samples(dataset_samples_first, subrange_samples_first, n_features);

@@ -135,8 +135,11 @@ class KDTree {
                                                   DataType&     current_nearest_neighbor_distance) const;
 
     SamplesIterator samples_first_;
+
     SamplesIterator samples_last_;
-    std::size_t     n_features_;
+
+    std::size_t n_features_;
+
     // bounding box hyper rectangle (w.r.t. each dimension)
     BoundingBoxKDType<SamplesIterator> kd_bounding_box_;
 
@@ -169,8 +172,10 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::build(
     ssize_t                             depth,
     BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
     KDNodeViewPtr kdnode;
+
     // number of samples in the current node
     const std::size_t n_node_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
+
     // the current kdnode is not leaf
     if (n_node_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
@@ -235,6 +240,7 @@ auto KDTree<SamplesIterator>::nearest_neighbor_around_query_index(std::size_t   
                                                        kdnode == nullptr ? root_ : kdnode,
                                                        current_nearest_neighbor_index,
                                                        current_nearest_neighbor_distance);
+
     // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
     // kdnode parameter is a subtree. A search through the entire tree
     while (current_kdnode != kdnode) {
@@ -265,10 +271,12 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::recurse
                                                  query_index,
                                                  current_nearest_neighbor_index,
                                                  current_nearest_neighbor_distance);
+
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the split value according to the current split dimension
         const auto pivot_split_value = kdnode->samples_iterator_pair_.first[kdnode->cut_feature_index_];
+
         // get the value of the query according to the split dimension
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
@@ -298,12 +306,15 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::nearest
     ssize_t&      current_nearest_neighbor_index,
     DataType&     current_nearest_neighbor_distance) const {
     auto kdnode_parent = kdnode->parent_.lock();
+
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the split value according to the current split dimension
         const auto pivot_split_value = kdnode_parent->samples_iterator_pair_.first[kdnode_parent->cut_feature_index_];
+
         // get the value of the query according to the split dimension
         const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
+
         // if the axiswise distance is equal to the current nearest neighbor distance, there could be a nearest neighbor
         // to the other side of the hyperrectangle since the values that are equal to the pivot are put to the right
         bool visit_sibling =

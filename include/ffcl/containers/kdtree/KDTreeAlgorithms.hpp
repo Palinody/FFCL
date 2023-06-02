@@ -167,8 +167,10 @@ ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
     assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+
     // set the number of samples as a fraction of the input
     const std::size_t n_choices = n_samples_fraction * n_samples;
+
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
         const auto random_samples =
@@ -189,7 +191,7 @@ ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
         const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
         return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
     }
-    // return a random axis if theres only one sample left (should never be called if leaves cannot be empty)
+    // return a random axis if theres only one sample left
     return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
 }
 
@@ -203,8 +205,10 @@ ssize_t select_axis_with_largest_variance(const RandomAccessIntIterator& index_f
     assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
 
     const std::size_t n_samples = std::distance(index_first, index_last);
+
     // set the number of samples as a fraction of the input
     const std::size_t n_choices = n_samples_fraction * n_samples;
+
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
         const auto random_samples = math::random::select_n_random_samples_from_indices(
@@ -226,7 +230,7 @@ ssize_t select_axis_with_largest_variance(const RandomAccessIntIterator& index_f
         const auto kd_bounding_box = make_kd_bounding_box(samples_first, samples_last, n_features);
         return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
     }
-    // return a random axis if theres only one sample left (should never be called if leaves cannot be empty)
+    // return a random axis if theres only one sample left
     return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
 }
 
@@ -242,12 +246,14 @@ shift_median_to_leftmost_equal_value(std::size_t                       median_in
                                      std::size_t                       n_features,
                                      std::size_t                       feature_index) {
     const auto left_range_samples = common::utils::get_n_samples(left_range.first, left_range.second, n_features);
+
     // return if the left range is empty because no left shift is possible
     if (!left_range_samples) {
         return {median_index, left_range, median_range, right_range};
     }
     // the target value of the median
     const auto cut_value = median_range.first[feature_index];
+
     // the left range iterator at the value the current pointer will be compared to at each iteration
     auto left_neighbor_value_it = left_range.second + feature_index - n_features;
 
@@ -314,12 +320,14 @@ shift_median_to_leftmost_equal_value(std::size_t                               m
     common::utils::ignore_parameters(samples_last);
 
     const auto left_range_length = std::distance(left_indices_range.first, left_indices_range.second);
+
     // return if the left range is empty because no left shift is possible
     if (!left_range_length) {
         return {median_index, left_indices_range, median_indices_range, right_indices_range};
     }
     // the target value of the median
     const auto cut_value = samples_first[median_indices_range.first[0] * n_features + feature_index];
+
     // the left range iterator at the value the current pointer will be compared to at each iteration
     auto left_neighbor_value_it = left_indices_range.second - 1;
 

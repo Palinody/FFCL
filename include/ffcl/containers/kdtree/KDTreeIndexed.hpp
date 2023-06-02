@@ -136,8 +136,8 @@ class KDTreeIndexed {
 
     // new samples
 
-    auto nearest_neighbor_around_query(SamplesIterator query_feature_first,
-                                       SamplesIterator query_feature_last) const;  // not implemented
+    auto nearest_neighbor_around_query_sample(SamplesIterator query_feature_first,
+                                              SamplesIterator query_feature_last) const;  // not implemented
 
     void serialize(const KDNodeIndexViewPtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
@@ -419,8 +419,10 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(const fs::path& 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdtree serialization");
 
-    rapidjson::Document                        document;
-    rapidjson::StringBuffer                    buffer;
+    rapidjson::Document document;
+
+    rapidjson::StringBuffer buffer;
+
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
     writer.StartObject();
@@ -457,10 +459,14 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(const fs::path& 
 
     document.Parse(buffer.GetString());
 
-    std::ofstream                                output_file(filepath);
-    rapidjson::OStreamWrapper                    output_stream_wrapper(output_file);
+    std::ofstream output_file(filepath);
+
+    rapidjson::OStreamWrapper output_stream_wrapper(output_file);
+
     rapidjson::Writer<rapidjson::OStreamWrapper> filewriter(output_stream_wrapper);
+
     document.Accept(filewriter);
+
     output_file.close();
 }
 

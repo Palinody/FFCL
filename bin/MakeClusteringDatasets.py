@@ -41,6 +41,7 @@ n_samples = 20000
 # None to load everything else specify
 n_samples_mnist = None
 n_samples_mnist = n_samples
+RESCALE_MNIST = True
 
 # np.random.seed(1)
 random_state = 1
@@ -227,7 +228,7 @@ def write_datasets(root_folder):
     X, y = datasets.fetch_openml(
         "mnist_784", return_X_y=True, parser="auto", as_frame=False
     )
-    X, y = normalize_mnist(X[:n_samples_mnist, :], y[:n_samples_mnist])
+    X, y = normalize_mnist(X[:n_samples_mnist, :], y[:n_samples_mnist]) if RESCALE_MNIST else (X, y)
 
     save_dataset(
         X,
