@@ -155,10 +155,10 @@ class KDTreeIndexed {
                                                     ssize_t&           current_nearest_neighbor_index,
                                                     DataType&          current_nearest_neighbor_distance) const;
 
-    KDNodeIndexViewPtr nearest_neighbor_backtrack_step(std::size_t        query_index,
-                                                       KDNodeIndexViewPtr kdnode,
-                                                       ssize_t&           current_nearest_neighbor_index,
-                                                       DataType&          current_nearest_neighbor_distance) const;
+    KDNodeIndexViewPtr get_parent_node_after_sibling_traversal(std::size_t        query_index,
+                                                               KDNodeIndexViewPtr kdnode,
+                                                               ssize_t&           current_nearest_neighbor_index,
+                                                               DataType& current_nearest_neighbor_distance) const;
 
     SamplesIterator samples_first_;
     SamplesIterator samples_last_;
@@ -280,7 +280,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_qu
     while (current_kdnode != kdnode) {
         // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
         // (nullptr otherwise)
-        current_kdnode = nearest_neighbor_backtrack_step(
+        current_kdnode = get_parent_node_after_sibling_traversal(
             /**/ query_index,
             /**/ current_kdnode,
             /**/ current_nearest_neighbor_index,
@@ -348,7 +348,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
 
 template <typename IndicesIterator, typename SamplesIterator>
 typename KDTreeIndexed<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr
-KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_backtrack_step(
+KDTreeIndexed<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(
     std::size_t        query_index,
     KDNodeIndexViewPtr kdnode,
     ssize_t&           current_nearest_neighbor_index,

@@ -129,10 +129,10 @@ class KDTree {
                                                ssize_t&      current_nearest_neighbor_index,
                                                DataType&     current_nearest_neighbor_distance) const;
 
-    KDNodeViewPtr nearest_neighbor_backtrack_step(std::size_t   query_index,
-                                                  KDNodeViewPtr kdnode,
-                                                  ssize_t&      current_nearest_neighbor_index,
-                                                  DataType&     current_nearest_neighbor_distance) const;
+    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t   query_index,
+                                                          KDNodeViewPtr kdnode,
+                                                          ssize_t&      current_nearest_neighbor_index,
+                                                          DataType&     current_nearest_neighbor_distance) const;
 
     SamplesIterator samples_first_;
 
@@ -246,7 +246,7 @@ auto KDTree<SamplesIterator>::nearest_neighbor_around_query_index(std::size_t   
     while (current_kdnode != kdnode) {
         // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
         // (nullptr otherwise)
-        current_kdnode = nearest_neighbor_backtrack_step(
+        current_kdnode = get_parent_node_after_sibling_traversal(
             /**/ query_index,
             /**/ current_kdnode,
             /**/ current_nearest_neighbor_index,
@@ -300,7 +300,7 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::recurse
 }
 
 template <typename SamplesIterator>
-typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::nearest_neighbor_backtrack_step(
+typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::get_parent_node_after_sibling_traversal(
     std::size_t   query_index,
     KDNodeViewPtr kdnode,
     ssize_t&      current_nearest_neighbor_index,
