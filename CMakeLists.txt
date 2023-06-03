@@ -12,6 +12,7 @@ add_compile_options(
     -Wall
     -Wextra
     -Werror
+    -Wpedantic
     -Wfloat-equal
     -Wshadow
     -Wfatal-errors
@@ -132,6 +133,7 @@ elseif(MODE STREQUAL "gtest")
         -Wall
         -Wextra
         -Werror
+        -Wpedantic
         -Wfloat-equal
         -Wshadow
         -Wfatal-errors

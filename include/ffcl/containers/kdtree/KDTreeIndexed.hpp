@@ -123,11 +123,11 @@ class KDTreeIndexed {
         DataType           current_nearest_neighbor_distance = common::utils::infinity<DataType>()) const;
 
     std::vector<std::size_t> k_nearest_neighbors_around_query_index(
-        std::size_t           query_index,
-        std::size_t           n_neighbors,
-        KDNodeIndexViewPtr    kdnode                              = nullptr,
-        std::vector<ssize_t>  current_nearest_neighbors_indices   = std::vector<ssize_t>(),
-        std::vector<DataType> current_nearest_neighbors_distances = std::vector<DataType>()) const;  // not implemented
+        std::size_t                             query_index,
+        std::size_t                             n_neighbors = 1,
+        KDNodeIndexViewPtr                      kdnode      = nullptr,
+        NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer =
+            NearestNeighborsBuffer<SamplesIterator>()) const;
 
     auto radius_count_around_query_index(std::size_t query_index, DataType radius) const;  // not implemented
 
@@ -291,13 +291,11 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::nearest_neighbor_around_qu
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::vector<std::size_t> KDTreeIndexed<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_index(
-    std::size_t           query_index,
-    std::size_t           n_neighbors,
-    KDNodeIndexViewPtr    kdnode,
-    std::vector<ssize_t>  current_nearest_neighbors_indices,
-    std::vector<DataType> current_nearest_neighbors_distances) const {
-    common::utils::ignore_parameters(
-        query_index, n_neighbors, kdnode, current_nearest_neighbors_indices, current_nearest_neighbors_distances);
+    std::size_t                             query_index,
+    std::size_t                             n_neighbors,
+    KDNodeIndexViewPtr                      kdnode,
+    NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer) const {
+    common::utils::ignore_parameters(query_index, n_neighbors, kdnode, nearest_neighbors_buffer);
     return {};
 }
 

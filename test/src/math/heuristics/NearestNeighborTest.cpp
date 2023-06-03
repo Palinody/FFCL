@@ -38,39 +38,26 @@ using DataTypes = ::testing::Types<float, double>;
 TYPED_TEST_SUITE(NearestNeighborTestFixture, DataTypes);
 
 TYPED_TEST(NearestNeighborTestFixture, UpdateNearestNeighborIndicesBufferTest) {
-    const std::size_t query_index                      = this->max_n_samples_ / 2;
-    const std::size_t candidate_nearest_neighbor_index = this->max_n_samples_ - 1;
-    const std::size_t n_neighbors                      = 5;
+    // const std::size_t query_index                      = this->max_n_samples_ / 2;
+    const std::size_t n_neighbors = 5;
 
-    std::vector<TypeParam>   distances_buffer = {0.9, 1.1, 1.2, 1.4, 5.8};  // {1.9, 2.1, 3.6, 5.4, 7.8};
-    std::vector<std::size_t> indices_buffer   = this->generate_indices(distances_buffer.size());
-
-    const auto data = this->generate_random_uniform_vector(
+    const auto distances_buffer = this->generate_random_uniform_vector(
         this->max_n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
 
-    printf("Candidate distance: %.5f\n",
-           math::heuristics::auto_distance(data.begin() + query_index * this->n_features_,
-                                           data.begin() + query_index * this->n_features_ + this->n_features_,
-                                           data.begin() + candidate_nearest_neighbor_index * this->n_features_));
+    this->print_data(distances_buffer, this->n_features_);
 
-    printf("Indices before update\n");
-    this->print_data(indices_buffer, 1);
-    printf("Distances before update\n");
-    this->print_data(distances_buffer, 1);
+    using DataType        = TypeParam;
+    using SamplesIterator = typename std::vector<DataType>::iterator;
 
-    this->print_data(data, this->n_features_);
+    NearestNeighborsBuffer<SamplesIterator> nn_priority_queue(n_neighbors);
 
-    math::heuristics::update_nearest_neighbors_indices_buffer(data.begin(),
-                                                              data.end(),
-                                                              this->n_features_,
-                                                              query_index,
-                                                              candidate_nearest_neighbor_index,
-                                                              n_neighbors,
-                                                              indices_buffer,
-                                                              distances_buffer);
+    auto nn_priority_queue_2 = nn_priority_queue;
 
-    printf("Indices after update\n");
-    this->print_data(indices_buffer, 1);
+    for (std::size_t index = 0; index < distances_buffer.size(); ++index) {
+        nn_priority_queue_2.update(index, distances_buffer[index]);
+    }
+    nn_priority_queue_2.print();
+
     printf("Distances after update\n");
     this->print_data(distances_buffer, 1);
 }

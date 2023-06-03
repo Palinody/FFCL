@@ -3,7 +3,78 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
 
+#include <functional>
+#include <iostream>
+#include <queue>
+#include <tuple>
 #include <vector>
+
+template <typename SamplesIterator>
+class NearestNeighborsBuffer {
+  private:
+    using IndexType       = std::size_t;
+    using DistanceType    = typename SamplesIterator::value_type;
+    using ElementDataType = typename std::tuple<IndexType, DistanceType>;
+
+    static constexpr auto comparison_lambda = [](const ElementDataType& left_tuple,
+                                                 const ElementDataType& right_tuple) {
+        return std::get<1>(left_tuple) > std::get<1>(right_tuple);
+    };
+
+    using PriorityQueueType =
+        typename std::priority_queue<ElementDataType, std::vector<ElementDataType>, decltype(comparison_lambda)>;
+
+  public:
+    NearestNeighborsBuffer()
+      : max_elements_{1}
+      , priority_queue_{comparison_lambda} {}
+
+    NearestNeighborsBuffer(std::size_t max_elements)
+      : max_elements_{max_elements}
+      , priority_queue_{comparison_lambda} {}
+
+    NearestNeighborsBuffer& operator=(const NearestNeighborsBuffer&) = default;
+
+    NearestNeighborsBuffer(const NearestNeighborsBuffer&) = default;
+
+    std::size_t size() const {
+        return priority_queue_.size();
+    }
+
+    bool empty() const {
+        return priority_queue_.empty();
+    }
+
+    bool update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        // populate the priority queue if theres still empty space
+        if (priority_queue_.size() < max_elements_) {
+            priority_queue_.emplace(std::make_tuple(index_candidate, distance_candidate));
+            return true;
+
+        } else if (distance_candidate < std::get<1>(priority_queue_.top())) {
+            // remove the element with the distance thats greater than the distance candidate
+            priority_queue_.pop();
+            priority_queue_.emplace(std::make_tuple(index_candidate, distance_candidate));
+            return true;
+        }
+        return false;
+    }
+
+    void print() {
+        PriorityQueueType priority_queue_cpy = priority_queue_;  // Create a copy of the priority queue
+
+        while (!priority_queue_cpy.empty()) {
+            auto element = priority_queue_cpy.top();
+            priority_queue_cpy.pop();
+            // printf("(%ld, %.5f)\n", std::get<0>(element), std::get<1>(element));
+            std::cout << "(" << std::get<0>(element) << ", " << std::get<1>(element) << ")\n";
+        }
+    }
+
+  private:
+    std::size_t       max_elements_;
+    PriorityQueueType priority_queue_;
+};
 
 namespace math::heuristics {
 
@@ -79,75 +150,6 @@ std::pair<ssize_t, typename SamplesIterator::value_type> nearest_neighbor_indexe
         }
     }
     return {current_nearest_neighbor_index, current_nearest_neighbor_distance};
-}
-
-template <typename SamplesIterator>
-void update_nearest_neighbors_indices_buffer(const SamplesIterator&    samples_first,
-                                             const SamplesIterator&    samples_last,
-                                             std::size_t               n_features,
-                                             std::size_t               query_index,
-                                             std::size_t               candidate_nearest_neighbor_index,
-                                             std::size_t               n_neighbors,
-                                             std::vector<std::size_t>& indices_buffer,
-                                             std::vector<typename SamplesIterator::value_type>& distances_buffer) {
-    // DRAFT FUNCTION DO NOT USE. NEEDS A PRIORITY QUEUE
-
-    // N.B.: keep the elments sorted and check if a candidate is closer than the furthest current nearest neighbors. If
-    // its the case, place it at the correct position.
-    // Checks whether one of the elements of the buffer is larger than the sample candidate and replace the furthest
-    // nearest neighbor if the buffer is already full
-
-    using DataType = typename SamplesIterator::value_type;
-
-    common::utils::ignore_parameters(samples_last);
-
-    assert(distances_buffer.size() <= n_neighbors);
-
-    bool is_query_valid = (query_index != candidate_nearest_neighbor_index &&
-                           common::utils::is_element_not_in(
-                               indices_buffer.begin(), indices_buffer.end(), candidate_nearest_neighbor_index))
-                              ? true
-                              : false;
-
-    if (is_query_valid) {
-        const DataType candidate_nearest_neighbor_distance =
-            math::heuristics::auto_distance(samples_first + query_index * n_features,
-                                            samples_first + query_index * n_features + n_features,
-                                            samples_first + candidate_nearest_neighbor_index * n_features);
-
-        // if the buffer is not full yet
-        if (indices_buffer.size() < n_neighbors) {
-            indices_buffer.emplace_back(candidate_nearest_neighbor_index);
-            distances_buffer.emplace_back(candidate_nearest_neighbor_distance);
-
-            // sort the indices according to the distances buffer sorting order
-            std::sort(indices_buffer.begin(),
-                      indices_buffer.end(),
-                      [&distances_buffer](const auto& first_index, const auto& second_index) {
-                          return distances_buffer[first_index] < distances_buffer[second_index];
-                      });
-            // then sort the distances buffer itself
-            std::sort(distances_buffer.begin(), distances_buffer.end());
-
-        } else {
-            // get the position where the candidate distance should be inserted, assuming that distances_buffer is
-            // sorted
-            auto index_iterator =
-                std::lower_bound(distances_buffer.begin(), distances_buffer.end(), candidate_nearest_neighbor_distance);
-            // dont do anything if the candidate is larger than all the elements in the buffer
-            if (index_iterator != distances_buffer.end()) {
-                // which position the candidate should be inserted at
-                const std::size_t index = std::distance(distances_buffer.begin(), index_iterator);
-
-                distances_buffer.insert(index_iterator, candidate_nearest_neighbor_distance);
-                indices_buffer.insert(indices_buffer.begin() + index, candidate_nearest_neighbor_index);
-
-                // remove the last element that now overflows the buffers
-                distances_buffer.pop_back();
-                indices_buffer.pop_back();
-            }
-        }
-    }
 }
 
 }  // namespace math::heuristics

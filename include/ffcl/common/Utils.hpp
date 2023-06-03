@@ -64,7 +64,7 @@ constexpr auto division(const T& a, const U& b) -> std::common_type_t<T, U> {
         return 0;
     }
     return a / b;
-};
+}
 
 template <typename OutputContainer, typename Iterator>
 OutputContainer abs_distances(const Iterator& data_first, const Iterator& data_last, const Iterator& other_first) {
