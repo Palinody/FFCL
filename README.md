@@ -8,7 +8,7 @@
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
 
-## TODO (in order)
+## TODO \& Updates
 
 - `ffcl::containers::KDTree`
   **update**: the build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axis selection policy. The nearest neighbor search seems to be faster than FLANN on all the datasets. Nearest neighbor search is much more effective with kdtrees when n_features is relatively small and n_samples large. The speed is slightly worse with kdtree on MNIST (curiously not bad at all). The tests were made with a `bucket_size=40`.
@@ -16,6 +16,8 @@
     - multiple axis selection policies (client can make its own policies)
     - quickselect (handles duplicate data) splitting rule policy (client can make its own rules)
     - (single) nearest neighbor index with `KDTreeIndexed` (bug fixed) and `KDTree`. The nearest neighbor is an already existing point in the dataset that is designated by index. The function returns a remapped index that can be passed to the original unswapped dataset (for `KDTreeIndexed`) to retreive the neighbor sample. The same function has been implemented for `KDTree`. The nearest neighbor retrieval seems much faster in practice (both kdtrees) than FLANN but no in depth study has been made to guarantee that this is true, only quick tests by choosing various realistic hyperparameters. I also made the tests with FLANN using `result = flann.nn_index(query_point, k=1)`. I removed the queried sample from the original dataset to not call it since the nearest neighbor finds itself when querying an already existing point (see `BenchmarkKDTree.py`).
+    - **NEW**: K-nearest neighbors indices for KDTreeIndexed and KDTree. The function outputs a pair of vectors containing the indices of the nearest neighbors according to the general index as well as the corresponding distances to the sample query index. The data is stored in reverse order (furthest to closest) because the nearest neighbors were stored in a priority queue with the furthest neighbor at the top of the queue. The data was "unrolled" from the top to the bottom of the queue sequentially at the very end of the k_nearest_neighbors function call. **The function ignores the query itself as a nearest neighbor. Meaning that a distance to the query cannot be zero, UNLESS another sample is at the exact same position as the query.** K-nearest neighbors has an overhead compared to the single neighbor version so the single version should be prefered if performance is important and a single nearest neighbor is needed.
+    - **Next**: Unit tests for Nearest neighbors functions and kdtrees' nearest neighbors
     - **Next**: **k**-nearest neighbors and nearest neighbor with unknown sample query.
 - Proper unit testing (**update**: all the generic code is now unit tested)
 - DBSCAN
