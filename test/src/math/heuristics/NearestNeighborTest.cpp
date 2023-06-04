@@ -34,32 +34,35 @@ class NearestNeighborTestFixture : public Range2DBaseFixture<DataType> {
     std::size_t n_random_tests_;
 };
 
-using DataTypes = ::testing::Types<float, double>;
+using DataTypes = ::testing::Types<int, std::size_t, float, double>;
 TYPED_TEST_SUITE(NearestNeighborTestFixture, DataTypes);
 
 TYPED_TEST(NearestNeighborTestFixture, UpdateNearestNeighborIndicesBufferTest) {
-    // const std::size_t query_index                      = this->max_n_samples_ / 2;
-    const std::size_t n_neighbors = 5;
-
-    const auto distances_buffer = this->generate_random_uniform_vector(
-        this->max_n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
-
-    this->print_data(distances_buffer, this->n_features_);
-
     using DataType        = TypeParam;
     using SamplesIterator = typename std::vector<DataType>::iterator;
 
+    // const std::size_t query_index = this->max_n_samples_ / 2;
+    const std::size_t n_neighbors = 5;
+    const std::size_t n_samples   = 10;
+
+    const auto distances_buffer =
+        this->generate_random_uniform_vector(n_samples, 1, this->lower_bound_, this->upper_bound_);
+
     NearestNeighborsBuffer<SamplesIterator> nn_priority_queue(n_neighbors);
 
-    auto nn_priority_queue_2 = nn_priority_queue;
-
     for (std::size_t index = 0; index < distances_buffer.size(); ++index) {
-        nn_priority_queue_2.update(index, distances_buffer[index]);
-    }
-    nn_priority_queue_2.print();
+        std::cout << "\t(" << index << ", " << distances_buffer[index] << ")\n";
 
-    printf("Distances after update\n");
-    this->print_data(distances_buffer, 1);
+        nn_priority_queue.update(index, distances_buffer[index]);
+
+        nn_priority_queue.print();
+        printf("---\n");
+    }
+    printf("Data:\n");
+    this->print_data(distances_buffer, this->n_features_);
+    printf("---\n");
+    nn_priority_queue.print();
+    printf("---\n");
 }
 
 int main(int argc, char** argv) {

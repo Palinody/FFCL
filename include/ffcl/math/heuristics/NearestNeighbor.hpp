@@ -18,18 +18,18 @@ class NearestNeighborsBuffer {
 
     static constexpr auto comparison_lambda = [](const ElementDataType& left_tuple,
                                                  const ElementDataType& right_tuple) {
-        return std::get<1>(left_tuple) > std::get<1>(right_tuple);
+        return std::get<1>(left_tuple) < std::get<1>(right_tuple);
     };
 
     using PriorityQueueType =
         typename std::priority_queue<ElementDataType, std::vector<ElementDataType>, decltype(comparison_lambda)>;
 
   public:
-    NearestNeighborsBuffer()
+    explicit NearestNeighborsBuffer()
       : max_elements_{1}
       , priority_queue_{comparison_lambda} {}
 
-    NearestNeighborsBuffer(std::size_t max_elements)
+    explicit NearestNeighborsBuffer(std::size_t max_elements)
       : max_elements_{max_elements}
       , priority_queue_{comparison_lambda} {}
 
