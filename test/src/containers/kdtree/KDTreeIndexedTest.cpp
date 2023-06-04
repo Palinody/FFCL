@@ -163,7 +163,7 @@ TEST_F(KDTreeIndexedErrorsTest, SequentialIndexedNearestNeighborIndexTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    printf("Dummy print (sequential): %ld, %.3f\n", current_nearest_neighbor_index, current_nearest_neighbor_distance);
+    printf("Dummy print (sequential): %ld, %.9f\n", current_nearest_neighbor_index, current_nearest_neighbor_distance);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexTest) {
@@ -197,20 +197,18 @@ TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(40)
+            .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
-            .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
+            .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
     timer.print_elapsed_seconds(9);
-
-    std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
 
     std::size_t nn_index    = 0;
     auto        nn_distance = common::utils::infinity<dType>();
 
     timer.reset();
-    for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         std::tie(nn_index, nn_distance) = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
     }
     timer.print_elapsed_seconds(9);
@@ -238,7 +236,6 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
     printf("Making the kdtree:\n");
 
     timer.reset();
-
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
@@ -249,28 +246,31 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
         data.end(),
         n_features,
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
-            .bucket_size(40)
+            .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
-            .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
+            .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
     timer.print_elapsed_seconds(9);
 
-    std::size_t sample_index_query = math::random::uniform_distribution<std::size_t>(0, n_samples - 1)();
+    std::size_t nn_index;
+    dType       nn_distance;
 
     timer.reset();
-    const auto [nn_index, nn_distance] = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nn_index, nn_distance) = kdtree.nearest_neighbor_around_query_index(indices[sample_index_query]);
+    }
     timer.print_elapsed_seconds(9);
+
+    std::vector<std::size_t> nn_indices;
+    std::vector<dType>       nn_distances;
 
     timer.reset();
-    // for (sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-    const auto [nn_indices, nn_distances] =
-        kdtree.k_nearest_neighbors_around_query_index(indices[sample_index_query], 10);
-    // }
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nn_indices, nn_distances) =
+            kdtree.k_nearest_neighbors_around_query_index(indices[sample_index_query], 1);
+    }
     timer.print_elapsed_seconds(9);
-
-    std::cout << "sample_index_query (raw, remapped): (" << sample_index_query << ", " << indices[sample_index_query]
-              << ")\n";
 
     std::cout << "nearest_neighbor_around_query_index (index, distance): (" << nn_index << ", " << nn_distance << ")\n";
 
@@ -298,6 +298,7 @@ TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
@@ -335,6 +336,7 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyCirclesTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
@@ -377,6 +379,7 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyMoonsTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
@@ -419,6 +422,7 @@ TEST_F(KDTreeIndexedErrorsTest, VariedTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
@@ -461,6 +465,7 @@ TEST_F(KDTreeIndexedErrorsTest, AnisoTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
@@ -503,6 +508,7 @@ TEST_F(KDTreeIndexedErrorsTest, BlobsTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
@@ -545,6 +551,7 @@ TEST_F(KDTreeIndexedErrorsTest, NoStructureTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
@@ -587,6 +594,7 @@ TEST_F(KDTreeIndexedErrorsTest, UnbalancedBlobsTest) {
 
     auto indices = generate_indices(n_samples);
 
+    timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
