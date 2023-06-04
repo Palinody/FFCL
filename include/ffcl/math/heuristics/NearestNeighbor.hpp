@@ -56,15 +56,13 @@ class NearestNeighborsBuffer {
         std::vector<DistanceType> distances;
         distances.reserve(this->size());
 
-        std::size_t element_index = 0;
         while (!priority_queue_.empty()) {
             const auto [index, distance] = priority_queue_.top();
             indices.emplace_back(index);
             distances.emplace_back(distance);
             priority_queue_.pop();
-            ++element_index;
         }
-        return std::make_tuple(indices, distances);
+        return std::make_tuple(std::move(indices), std::move(distances));
     }
 
     std::tuple<std::vector<IndexType>, std::vector<DistanceType>> copy_data_to_indices_distances_pair() const {
@@ -75,15 +73,13 @@ class NearestNeighborsBuffer {
         std::vector<DistanceType> distances;
         distances.reserve(this->size());
 
-        std::size_t element_index = 0;
         while (!priority_queue_cpy.empty()) {
             const auto [index, distance] = priority_queue_cpy.top();
             indices.emplace_back(index);
             distances.emplace_back(distance);
             priority_queue_cpy.pop();
-            ++element_index;
         }
-        return std::make_tuple(indices, distances);
+        return std::make_tuple(std::move(indices), std::move(distances));
     }
 
     bool update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
