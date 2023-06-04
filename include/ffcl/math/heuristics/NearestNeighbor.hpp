@@ -18,6 +18,7 @@ class NearestNeighborsBuffer {
 
     static constexpr auto comparison_lambda = [](const ElementDataType& left_tuple,
                                                  const ElementDataType& right_tuple) {
+        // the greatest element will appear at the top of the priority queue
         return std::get<1>(left_tuple) < std::get<1>(right_tuple);
     };
 
@@ -52,8 +53,9 @@ class NearestNeighborsBuffer {
             return true;
 
         } else if (distance_candidate < std::get<1>(priority_queue_.top())) {
-            // remove the element with the distance thats greater than the distance candidate
+            // pop the element at the top of the priority queue if the candidate is smaller
             priority_queue_.pop();
+            // then place the candidate index-distance pair accordingly
             priority_queue_.emplace(std::make_tuple(index_candidate, distance_candidate));
             return true;
         }
