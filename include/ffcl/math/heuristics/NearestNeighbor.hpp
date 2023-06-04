@@ -63,7 +63,7 @@ class NearestNeighborsBuffer {
     }
 
     void print() {
-        PriorityQueueType priority_queue_cpy = priority_queue_;  // Create a copy of the priority queue
+        PriorityQueueType priority_queue_cpy = priority_queue_;
 
         while (!priority_queue_cpy.empty()) {
             auto element = priority_queue_cpy.top();
