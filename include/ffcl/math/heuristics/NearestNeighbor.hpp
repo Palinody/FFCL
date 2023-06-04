@@ -16,10 +16,10 @@ class NearestNeighborsBuffer {
     using DistanceType    = typename SamplesIterator::value_type;
     using ElementDataType = typename std::tuple<IndexType, DistanceType>;
 
-    static constexpr auto comparison_lambda = [](const ElementDataType& left_tuple,
-                                                 const ElementDataType& right_tuple) {
+    static constexpr auto comparison_lambda = [](const ElementDataType& left_element,
+                                                 const ElementDataType& right_element) {
         // the greatest element will appear at the top of the priority queue
-        return std::get<1>(left_tuple) < std::get<1>(right_tuple);
+        return std::get<1>(left_element) < std::get<1>(right_element);
     };
 
     using PriorityQueueType =
