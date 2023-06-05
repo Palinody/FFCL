@@ -121,7 +121,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # flann.get_indexed_data()
     # print("FLANN build_index parameters:")
     # print(params)
-    k = 1
+    k = 6
 
     start_time = time.process_time()
 

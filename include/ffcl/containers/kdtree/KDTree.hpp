@@ -107,9 +107,31 @@ class KDTree {
 
     KDTree(const KDTree&) = delete;
 
+    // existing samples
+
     auto nearest_neighbor_around_query_index(std::size_t query_index) const;
 
     auto k_nearest_neighbors_around_query_index(std::size_t query_index, std::size_t n_neighbors = 1) const;
+
+    auto radius_count_around_query_index(std::size_t query_index, DataType radius) const;  // not implemented
+
+    std::vector<std::size_t> radius_search_around_query_index(std::size_t query_index,
+                                                              DataType    radius) const;  // not implemented
+
+    // new samples
+
+    auto nearest_neighbor_around_query_sample(SamplesIterator query_feature_first,
+                                              SamplesIterator query_feature_last) const;  // not implemented
+
+    auto k_nearest_neighbors_around_query_sample(SamplesIterator query_feature_first,
+                                                 SamplesIterator query_feature_last,
+                                                 std::size_t     n_neighbors = 1) const;  // not implemented
+
+    auto radius_count_around_query_sample(SamplesIterator query_feature_first,
+                                          SamplesIterator query_feature_last,
+                                          DataType        radius) const;  // not implemented
+
+    // serialization
 
     void serialize(const KDNodeViewPtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 

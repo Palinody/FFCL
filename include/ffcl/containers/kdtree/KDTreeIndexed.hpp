@@ -130,6 +130,20 @@ class KDTreeIndexed {
     auto nearest_neighbor_around_query_sample(SamplesIterator query_feature_first,
                                               SamplesIterator query_feature_last) const;  // not implemented
 
+    auto k_nearest_neighbors_around_query_sample(SamplesIterator query_feature_first,
+                                                 SamplesIterator query_feature_last,
+                                                 std::size_t     n_neighbors = 1) const;  // not implemented
+
+    auto radius_count_around_query_sample(SamplesIterator query_feature_first,
+                                          SamplesIterator query_feature_last,
+                                          DataType        radius) const;  // not implemented
+
+    std::vector<std::size_t> radius_search_around_query_sample(SamplesIterator query_feature_first,
+                                                               SamplesIterator query_feature_last,
+                                                               DataType        radius) const;  // not implemented
+
+    // serialization
+
     void serialize(const KDNodeIndexViewPtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     void serialize(const fs::path& filepath) const;
