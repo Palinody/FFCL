@@ -279,6 +279,56 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
     print_data(nn_distances, nn_distances.size());
 }
 
+TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+
+    const std::size_t n_samples = labels.size();
+
+    auto indices = generate_indices(n_samples);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << n_samples << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    timer.reset();
+
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto kdtree = ffcl::containers::KDTreeIndexed(
+        indices.begin(),
+        indices.end(),
+        data.begin(),
+        data.end(),
+        n_features,
+        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+            .bucket_size(std::sqrt(n_samples))
+            .max_depth(std::log2(n_samples))
+            .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
+            .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
+
+    timer.print_elapsed_seconds(9);
+
+    std::size_t radius_count = 0;
+    dType       radius       = 1;
+
+    timer.reset();
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        radius_count = kdtree.radius_count_around_query_index(indices[sample_index_query], radius);
+    }
+    timer.print_elapsed_seconds(9);
+
+    printf("Dummy print (kdtree): number of neighbors: %ld, radius: %.3f\n", radius_count, radius);
+}
+
 TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
     fs::path filename = "mnist.txt";
 

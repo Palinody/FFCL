@@ -245,4 +245,35 @@ void k_nearest_neighbors_indexed_range(const IndicesIterator&                   
     }
 }
 
+template <typename IndicesIterator, typename SamplesIterator>
+void increment_neighbors_count_in_radius(const IndicesIterator&               subrange_index_first,
+                                         const IndicesIterator&               subrange_index_last,
+                                         const SamplesIterator&               dataset_samples_first,
+                                         const SamplesIterator&               dataset_samples_last,
+                                         std::size_t                          n_features,
+                                         std::size_t                          sample_index_query,
+                                         typename SamplesIterator::value_type radius,
+                                         std::size_t&                         neighbors_count) {
+    using DataType = typename SamplesIterator::value_type;
+
+    common::utils::ignore_parameters(dataset_samples_last);
+
+    const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
+
+    for (std::size_t index = 0; index < n_samples; ++index) {
+        const std::size_t candidate_nearest_neighbor_index = subrange_index_first[index];
+
+        if (candidate_nearest_neighbor_index != sample_index_query) {
+            const DataType candidate_nearest_neighbor_distance =
+                math::heuristics::auto_distance(dataset_samples_first + sample_index_query * n_features,
+                                                dataset_samples_first + sample_index_query * n_features + n_features,
+                                                dataset_samples_first + candidate_nearest_neighbor_index * n_features);
+
+            if (candidate_nearest_neighbor_distance < radius) {
+                ++neighbors_count;
+            }
+        }
+    }
+}
+
 }  // namespace math::heuristics
