@@ -268,7 +268,7 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         std::tie(nn_indices, nn_distances) =
-            kdtree.k_nearest_neighbors_around_query_index(indices[sample_index_query], 1);
+            kdtree.k_nearest_neighbors_around_query_index(indices[sample_index_query], 5);
     }
     timer.print_elapsed_seconds(9);
 

@@ -39,6 +39,7 @@ import timeit
 import os
 import sys
 import random
+import math
 
 BUCKET_SIZE: int = 40
 
@@ -107,7 +108,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
         copy_data=False,
         cores=1,
         trees=1,
-        leaf_max_size=BUCKET_SIZE,
+        leaf_max_size=int(math.sqrt(points.shape[0])),  # BUCKET_SIZE,
         sample_fraction=0.1,
         checks=-1,
         build_weight=0.01,
@@ -121,7 +122,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # flann.get_indexed_data()
     # print("FLANN build_index parameters:")
     # print(params)
-    k = 6
+    k = 5
 
     start_time = time.process_time()
 
