@@ -185,6 +185,41 @@ void k_nearest_neighbors_range(const SamplesIterator&                   subrange
     }
 }
 
+template <typename SamplesIterator>
+void increment_neighbors_count_in_radius_range(const SamplesIterator&               subrange_samples_first,
+                                               const SamplesIterator&               subrange_samples_last,
+                                               const SamplesIterator&               dataset_samples_first,
+                                               const SamplesIterator&               dataset_samples_last,
+                                               std::size_t                          n_features,
+                                               std::size_t                          sample_index_query,
+                                               typename SamplesIterator::value_type radius,
+                                               std::size_t&                         neighbors_count) {
+    using DataType = typename SamplesIterator::value_type;
+
+    common::utils::ignore_parameters(dataset_samples_last);
+
+    // number of samples in the subrange
+    const std::size_t n_samples =
+        common::utils::get_n_samples(subrange_samples_first, subrange_samples_last, n_features);
+
+    // global index of the subrange in the entire dataset
+    const std::size_t subrange_offset =
+        common::utils::get_n_samples(dataset_samples_first, subrange_samples_first, n_features);
+
+    for (std::size_t subrange_candidate_index = 0; subrange_candidate_index < n_samples; ++subrange_candidate_index) {
+        if (subrange_offset + subrange_candidate_index != sample_index_query) {
+            const DataType candidate_nearest_neighbor_distance =
+                math::heuristics::auto_distance(dataset_samples_first + sample_index_query * n_features,
+                                                dataset_samples_first + sample_index_query * n_features + n_features,
+                                                subrange_samples_first + subrange_candidate_index * n_features);
+
+            if (candidate_nearest_neighbor_distance < radius) {
+                ++neighbors_count;
+            }
+        }
+    }
+}
+
 template <typename IndicesIterator, typename SamplesIterator>
 void nearest_neighbor_indexed_range(const IndicesIterator&                subrange_index_first,
                                     const IndicesIterator&                subrange_index_last,
@@ -246,14 +281,14 @@ void k_nearest_neighbors_indexed_range(const IndicesIterator&                   
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void increment_neighbors_count_in_radius(const IndicesIterator&               subrange_index_first,
-                                         const IndicesIterator&               subrange_index_last,
-                                         const SamplesIterator&               dataset_samples_first,
-                                         const SamplesIterator&               dataset_samples_last,
-                                         std::size_t                          n_features,
-                                         std::size_t                          sample_index_query,
-                                         typename SamplesIterator::value_type radius,
-                                         std::size_t&                         neighbors_count) {
+void increment_neighbors_count_in_radius_indexed_range(const IndicesIterator&               subrange_index_first,
+                                                       const IndicesIterator&               subrange_index_last,
+                                                       const SamplesIterator&               dataset_samples_first,
+                                                       const SamplesIterator&               dataset_samples_last,
+                                                       std::size_t                          n_features,
+                                                       std::size_t                          sample_index_query,
+                                                       typename SamplesIterator::value_type radius,
+                                                       std::size_t&                         neighbors_count) {
     using DataType = typename SamplesIterator::value_type;
 
     common::utils::ignore_parameters(dataset_samples_last);

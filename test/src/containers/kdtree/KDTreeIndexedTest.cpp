@@ -318,7 +318,7 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
     timer.print_elapsed_seconds(9);
 
     std::size_t radius_count = 0;
-    dType       radius       = 1;
+    dType       radius       = 1;  // common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {

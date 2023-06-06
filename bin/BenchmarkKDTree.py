@@ -135,8 +135,24 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
         end_time - start_time,
         "seconds",
     )
-    print("result: ", result)
+    # print("result: ", result)
     # print(f"Result: {result}, dist: {dists}")
+    
+    radius = 1
+
+    start_time = time.process_time()
+
+    for query_point in points:
+        indices, distances = flann.nn_radius(query_point, radius)
+    
+    end_time = time.process_time()
+    print(
+        f"Elapsed time for KDTree {k} nearest neighbor (pyflann):",
+        end_time - start_time,
+        "seconds",
+    )
+    print(f"num_neighbors: {indices.shape[0]}, radius: {radius}")
+
 
 
 def run_all():
