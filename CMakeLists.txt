@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.0.2)
 
 project(ffcl)
 
-set(CMAKE_CXX_STANDARD 17)
-
 # add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
 add_compile_options(
     -std=c++17
@@ -41,8 +39,9 @@ set(HEADER_FILES
     include/ffcl/containers/kdtree/KDTreeAlgorithms.hpp
     include/ffcl/containers/LowerTriangleMatrix.hpp
 
-    include/ffcl/heuristics/Heuristics.hpp
-    include/ffcl/heuristics/SilhouetteMethod.hpp
+    include/ffcl/math/heuristics/Distances.hpp
+    include/ffcl/math/heuristics/SilhouetteMethod.hpp
+    include/ffcl/math/heuristics/NearestNeighbor.hpp
 
     include/ffcl/common/Utils.hpp
     include/ffcl/common/Timer.hpp
