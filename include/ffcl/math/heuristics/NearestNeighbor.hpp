@@ -50,7 +50,7 @@ class NearestNeighborsBuffer {
         return std::get<1>(priority_queue_.top());
     }
 
-    std::tuple<std::vector<IndexType>, std::vector<DistanceType>> move_data_to_indices_distances_pair() {
+    auto move_data_to_indices_distances_pair() {
         std::vector<IndexType> indices;
         indices.reserve(this->size());
         std::vector<DistanceType> distances;
@@ -65,7 +65,7 @@ class NearestNeighborsBuffer {
         return std::make_tuple(std::move(indices), std::move(distances));
     }
 
-    std::tuple<std::vector<IndexType>, std::vector<DistanceType>> copy_data_to_indices_distances_pair() const {
+    auto copy_data_to_indices_distances_pair() const {
         PriorityQueueType priority_queue_cpy = priority_queue_;
 
         std::vector<IndexType> indices;

@@ -61,7 +61,7 @@ add_definitions(-DVERBOSE=false)
 # disable all assertions
 add_definitions(-DNDEBUG)
 
-# set(MODE "run-benchmarks")
+# set(MODE "benchmarks")
 if(MODE STREQUAL "benchmark")
     add_executable(
         ${PROJECT_NAME}

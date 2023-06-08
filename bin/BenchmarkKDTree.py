@@ -22,6 +22,11 @@ except:
 try:
     import pyflann
 except:
+    import sys
+    import subprocess
+
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pyflann-py3"])
+    import pyflann
     # dont install automatically pyflann because the default is full of bugs with python3
     # the current tests have been made with a version fixed locally
     # see: https://github.com/primetang/pyflann/issues/1 to fix it yourself if you want to install
@@ -147,7 +152,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     
     end_time = time.process_time()
     print(
-        f"Elapsed time for KDTree {k} nearest neighbor (pyflann):",
+        f"Elapsed time for KDTree {k} radius count (pyflann):",
         end_time - start_time,
         "seconds",
     )
