@@ -186,14 +186,14 @@ void k_nearest_neighbors_range(const SamplesIterator&                   subrange
 }
 
 template <typename SamplesIterator>
-void increment_neighbors_count_in_radius_range(const SamplesIterator&               subrange_samples_first,
-                                               const SamplesIterator&               subrange_samples_last,
-                                               const SamplesIterator&               dataset_samples_first,
-                                               const SamplesIterator&               dataset_samples_last,
-                                               std::size_t                          n_features,
-                                               std::size_t                          sample_index_query,
-                                               typename SamplesIterator::value_type radius,
-                                               std::size_t&                         neighbors_count) {
+void increment_neighbors_count_in_radius_range(const SamplesIterator&                      subrange_samples_first,
+                                               const SamplesIterator&                      subrange_samples_last,
+                                               const SamplesIterator&                      dataset_samples_first,
+                                               const SamplesIterator&                      dataset_samples_last,
+                                               std::size_t                                 n_features,
+                                               std::size_t                                 sample_index_query,
+                                               const typename SamplesIterator::value_type& radius,
+                                               std::size_t&                                neighbors_count) {
     using DataType = typename SamplesIterator::value_type;
 
     common::utils::ignore_parameters(dataset_samples_last);
@@ -221,14 +221,14 @@ void increment_neighbors_count_in_radius_range(const SamplesIterator&           
 }
 
 template <typename SamplesIterator>
-void k_nearest_neighbors_in_radius_range(const SamplesIterator&                   subrange_samples_first,
-                                         const SamplesIterator&                   subrange_samples_last,
-                                         const SamplesIterator&                   dataset_samples_first,
-                                         const SamplesIterator&                   dataset_samples_last,
-                                         std::size_t                              n_features,
-                                         std::size_t                              sample_index_query,
-                                         typename SamplesIterator::value_type     radius,
-                                         NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer) {
+void k_nearest_neighbors_in_radius_range(const SamplesIterator&                      subrange_samples_first,
+                                         const SamplesIterator&                      subrange_samples_last,
+                                         const SamplesIterator&                      dataset_samples_first,
+                                         const SamplesIterator&                      dataset_samples_last,
+                                         std::size_t                                 n_features,
+                                         std::size_t                                 sample_index_query,
+                                         const typename SamplesIterator::value_type& radius,
+                                         NearestNeighborsBuffer<SamplesIterator>&    nearest_neighbors_buffer) {
     using DataType = typename SamplesIterator::value_type;
 
     common::utils::ignore_parameters(dataset_samples_last);
@@ -317,14 +317,14 @@ void k_nearest_neighbors_indexed_range(const IndicesIterator&                   
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void increment_neighbors_count_in_radius_indexed_range(const IndicesIterator&               subrange_index_first,
-                                                       const IndicesIterator&               subrange_index_last,
-                                                       const SamplesIterator&               dataset_samples_first,
-                                                       const SamplesIterator&               dataset_samples_last,
-                                                       std::size_t                          n_features,
-                                                       std::size_t                          sample_index_query,
-                                                       typename SamplesIterator::value_type radius,
-                                                       std::size_t&                         neighbors_count) {
+void increment_neighbors_count_in_radius_indexed_range(const IndicesIterator& subrange_index_first,
+                                                       const IndicesIterator& subrange_index_last,
+                                                       const SamplesIterator& dataset_samples_first,
+                                                       const SamplesIterator& dataset_samples_last,
+                                                       std::size_t            n_features,
+                                                       std::size_t            sample_index_query,
+                                                       const typename SamplesIterator::value_type& radius,
+                                                       std::size_t&                                neighbors_count) {
     using DataType = typename SamplesIterator::value_type;
 
     common::utils::ignore_parameters(dataset_samples_last);
@@ -348,14 +348,14 @@ void increment_neighbors_count_in_radius_indexed_range(const IndicesIterator&   
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void k_nearest_neighbors_in_radius_indexed_range(const IndicesIterator&                   subrange_index_first,
-                                                 const IndicesIterator&                   subrange_index_last,
-                                                 const SamplesIterator&                   dataset_samples_first,
-                                                 const SamplesIterator&                   dataset_samples_last,
-                                                 std::size_t                              n_features,
-                                                 std::size_t                              sample_index_query,
-                                                 typename SamplesIterator::value_type     radius,
-                                                 NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer) {
+void k_nearest_neighbors_in_radius_indexed_range(const IndicesIterator&                      subrange_index_first,
+                                                 const IndicesIterator&                      subrange_index_last,
+                                                 const SamplesIterator&                      dataset_samples_first,
+                                                 const SamplesIterator&                      dataset_samples_last,
+                                                 std::size_t                                 n_features,
+                                                 std::size_t                                 sample_index_query,
+                                                 const typename SamplesIterator::value_type& radius,
+                                                 NearestNeighborsBuffer<SamplesIterator>&    nearest_neighbors_buffer) {
     using DataType = typename SamplesIterator::value_type;
 
     common::utils::ignore_parameters(dataset_samples_last);

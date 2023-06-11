@@ -114,9 +114,9 @@ class KDTree {
     // (2)
     auto k_nearest_neighbors_around_query_index(std::size_t query_index, std::size_t n_neighbors = 1) const;
     // (3)
-    std::size_t radius_count_around_query_index(std::size_t query_index, DataType radius) const;
+    std::size_t radius_count_around_query_index(std::size_t query_index, const DataType& radius) const;
     // (4)
-    auto radius_search_around_query_index(std::size_t query_index, DataType radius) const;
+    auto radius_search_around_query_index(std::size_t query_index, const DataType& radius) const;
 
     // new samples
 
@@ -129,7 +129,7 @@ class KDTree {
 
     auto radius_count_around_query_sample(SamplesIterator query_feature_first,
                                           SamplesIterator query_feature_last,
-                                          DataType        radius) const;  // not implemented
+                                          const DataType& radius) const;  // not implemented
 
     // serialization
 
@@ -172,34 +172,34 @@ class KDTree {
         NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
         KDNodeViewPtr                            kdnode) const;
     // (3)
-    void radius_count_around_query_index(std::size_t   query_index,
-                                         DataType      radius,
-                                         std::size_t&  neighbors_count,
-                                         KDNodeViewPtr kdnode = nullptr) const;
+    void radius_count_around_query_index(std::size_t     query_index,
+                                         const DataType& radius,
+                                         std::size_t&    neighbors_count,
+                                         KDNodeViewPtr   kdnode = nullptr) const;
     // (3)
-    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t   query_index,
-                                               DataType      radius,
-                                               std::size_t&  neighbors_count,
-                                               KDNodeViewPtr kdnode) const;
+    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t     query_index,
+                                               const DataType& radius,
+                                               std::size_t&    neighbors_count,
+                                               KDNodeViewPtr   kdnode) const;
     // (3)
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t   query_index,
-                                                          DataType      radius,
-                                                          std::size_t&  neighbors_count,
-                                                          KDNodeViewPtr kdnode) const;
+    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t     query_index,
+                                                          const DataType& radius,
+                                                          std::size_t&    neighbors_count,
+                                                          KDNodeViewPtr   kdnode) const;
     // (4)
     void radius_search_around_query_index(std::size_t                              query_index,
-                                          DataType                                 radius,
+                                          const DataType&                          radius,
                                           NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
                                           KDNodeViewPtr                            kdnode = nullptr) const;
     // (4)
     KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t                              query_index,
-                                               DataType                                 radius,
+                                               const DataType&                          radius,
                                                NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
                                                KDNodeViewPtr                            kdnode) const;
     // (4)
     KDNodeViewPtr get_parent_node_after_sibling_traversal(
         std::size_t                              query_index,
-        DataType                                 radius,
+        const DataType&                          radius,
         NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
         KDNodeViewPtr                            kdnode) const;
 
@@ -529,7 +529,8 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::get_par
 }
 
 template <typename SamplesIterator>
-std::size_t KDTree<SamplesIterator>::radius_count_around_query_index(std::size_t query_index, DataType radius) const {
+std::size_t KDTree<SamplesIterator>::radius_count_around_query_index(std::size_t     query_index,
+                                                                     const DataType& radius) const {
     std::size_t neighbors_count = 0;
 
     radius_count_around_query_index(query_index, radius, neighbors_count);
@@ -538,10 +539,10 @@ std::size_t KDTree<SamplesIterator>::radius_count_around_query_index(std::size_t
 }
 
 template <typename SamplesIterator>
-void KDTree<SamplesIterator>::radius_count_around_query_index(std::size_t   query_index,
-                                                              DataType      radius,
-                                                              std::size_t&  neighbors_count,
-                                                              KDNodeViewPtr kdnode) const {
+void KDTree<SamplesIterator>::radius_count_around_query_index(std::size_t     query_index,
+                                                              const DataType& radius,
+                                                              std::size_t&    neighbors_count,
+                                                              KDNodeViewPtr   kdnode) const {
     // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
     auto current_kdnode = recurse_to_closest_leaf_node(/**/ query_index,
                                                        /**/ radius,
@@ -563,10 +564,10 @@ void KDTree<SamplesIterator>::radius_count_around_query_index(std::size_t   quer
 
 template <typename SamplesIterator>
 typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::recurse_to_closest_leaf_node(
-    std::size_t   query_index,
-    DataType      radius,
-    std::size_t&  neighbors_count,
-    KDNodeViewPtr kdnode) const {
+    std::size_t     query_index,
+    const DataType& radius,
+    std::size_t&    neighbors_count,
+    KDNodeViewPtr   kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
     math::heuristics::increment_neighbors_count_in_radius_range(kdnode->samples_iterator_pair_.first,
@@ -606,10 +607,10 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::recurse
 
 template <typename SamplesIterator>
 typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::get_parent_node_after_sibling_traversal(
-    std::size_t   query_index,
-    DataType      radius,
-    std::size_t&  neighbors_count,
-    KDNodeViewPtr kdnode) const {
+    std::size_t     query_index,
+    const DataType& radius,
+    std::size_t&    neighbors_count,
+    KDNodeViewPtr   kdnode) const {
     auto kdnode_parent = kdnode->parent_.lock();
     // if kdnode has a parent
     if (kdnode_parent) {
@@ -644,7 +645,7 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::get_par
 }
 
 template <typename SamplesIterator>
-auto KDTree<SamplesIterator>::radius_search_around_query_index(std::size_t query_index, DataType radius) const {
+auto KDTree<SamplesIterator>::radius_search_around_query_index(std::size_t query_index, const DataType& radius) const {
     NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer(common::utils::infinity<std::size_t>());
 
     radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
@@ -655,7 +656,7 @@ auto KDTree<SamplesIterator>::radius_search_around_query_index(std::size_t query
 template <typename SamplesIterator>
 void KDTree<SamplesIterator>::radius_search_around_query_index(
     std::size_t                              query_index,
-    DataType                                 radius,
+    const DataType&                          radius,
     NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
     KDNodeViewPtr                            kdnode) const {
     // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
@@ -681,7 +682,7 @@ void KDTree<SamplesIterator>::radius_search_around_query_index(
 template <typename SamplesIterator>
 typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::recurse_to_closest_leaf_node(
     std::size_t                              query_index,
-    DataType                                 radius,
+    const DataType&                          radius,
     NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
     KDNodeViewPtr                            kdnode) const {
     // update the current neighbor index and distance. No op if no candidate is closer or if the ranges are empty
@@ -724,7 +725,7 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::recurse
 template <typename SamplesIterator>
 typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::get_parent_node_after_sibling_traversal(
     std::size_t                              query_index,
-    DataType                                 radius,
+    const DataType&                          radius,
     NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
     KDNodeViewPtr                            kdnode) const {
     auto kdnode_parent = kdnode->parent_.lock();
