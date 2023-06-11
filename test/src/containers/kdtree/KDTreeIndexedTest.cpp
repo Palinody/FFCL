@@ -119,6 +119,9 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
 
 template <typename Type>
 void print_data(const std::vector<Type>& data, std::size_t n_features) {
+    if (!n_features) {
+        return;
+    }
     const std::size_t n_samples = data.size() / n_features;
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -151,15 +154,14 @@ TEST_F(KDTreeIndexedErrorsTest, SequentialIndexedNearestNeighborIndexTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        math::heuristics::nearest_neighbor_indexed_range(
-            /**/ indices.begin(),
-            /**/ indices.end(),
-            /**/ data.begin(),
-            /**/ data.end(),
-            /**/ n_features,
-            /**/ indices[sample_index_query],
-            current_nearest_neighbor_index,
-            current_nearest_neighbor_distance);
+        math::heuristics::nearest_neighbor_indexed_range(indices.begin(),
+                                                         indices.end(),
+                                                         data.begin(),
+                                                         data.end(),
+                                                         n_features,
+                                                         indices[sample_index_query],
+                                                         current_nearest_neighbor_index,
+                                                         current_nearest_neighbor_distance);
     }
     timer.print_elapsed_seconds(9);
 
@@ -327,6 +329,65 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
     timer.print_elapsed_seconds(9);
 
     printf("Dummy print (kdtree): number of neighbors: %ld, radius: %.3f\n", radius_count, radius);
+}
+
+TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+
+    const std::size_t n_samples = labels.size();
+
+    auto indices = generate_indices(n_samples);
+
+    std::cout << "n_elements: " << data.size() << "\n";
+    std::cout << "n_samples: " << n_samples << "\n";
+    std::cout << "n_features: " << n_features << "\n";
+
+    printf("Making the kdtree:\n");
+
+    timer.reset();
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto kdtree = ffcl::containers::KDTreeIndexed(
+        indices.begin(),
+        indices.end(),
+        data.begin(),
+        data.end(),
+        n_features,
+        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+            .bucket_size(std::sqrt(n_samples))
+            .max_depth(std::log2(n_samples))
+            .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
+            .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
+
+    timer.print_elapsed_seconds(9);
+
+    std::vector<std::size_t> nn_indices;
+    std::vector<dType>       nn_distances;
+    dType                    radius = 0.2;
+
+    std::size_t total_neighbors = 0;
+
+    timer.reset();
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        std::tie(nn_indices, nn_distances) =
+            kdtree.radius_search_around_query_index(indices[sample_index_query], radius);
+
+        total_neighbors += nn_indices.size();
+    }
+    timer.print_elapsed_seconds(9);
+
+    std::cout << "radius_search_around_query_index (indices, distances)\n";
+    print_data(nn_indices, nn_indices.size());
+    print_data(nn_distances, nn_distances.size());
+    std::cout << "Total neighbors number: " << total_neighbors
+              << ", average neighbors number: " << total_neighbors / float(n_samples) << "\n";
 }
 
 TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
