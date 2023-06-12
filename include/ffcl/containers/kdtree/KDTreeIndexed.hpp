@@ -133,7 +133,7 @@ class KDTreeIndexed {
     // (6)
     auto k_nearest_neighbors_around_query_sample(SamplesIterator query_feature_first,
                                                  SamplesIterator query_feature_last,
-                                                 std::size_t     n_neighbors = 1) const;  // not implemented
+                                                 std::size_t     n_neighbors = 1) const;
     // (7)
     auto radius_count_around_query_sample(SamplesIterator query_feature_first,
                                           SamplesIterator query_feature_last,
