@@ -4,7 +4,7 @@ bin/clustering/
 bin/kdtree/
 bin/__pycache__/
 Testing/
-.vscode
+.vscode/
 
 # Ignore all files with the extension ".o" in any directory
 *.o
