@@ -225,7 +225,7 @@ KDTree<SamplesIterator>::KDTree(SamplesIterator samples_first,
   : samples_first_{samples_first}
   , samples_last_{samples_last}
   , n_features_{n_features}
-  , kd_bounding_box_{kdtree::algorithms::make_kd_bounding_box(samples_first_, samples_last_, n_features_)}
+  , kd_bounding_box_{kdtree::make_kd_bounding_box(samples_first_, samples_last_, n_features_)}
   , options_{options}
   , root_{build(samples_first_,
                 samples_last_,

@@ -1,4 +1,4 @@
-# Ignore everything in the following folders
+# Ignore the following folders
 build/
 bin/clustering/
 bin/kdtree/
