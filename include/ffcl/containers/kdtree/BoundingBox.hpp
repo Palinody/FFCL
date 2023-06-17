@@ -162,4 +162,23 @@ bool is_sample_in_kd_bounding_box(const SamplesIterator&                    feat
     return true;
 }
 
+template <typename SamplesIterator>
+auto translate_kd_bounding_box(const SamplesIterator&                    feature_first,
+                               const SamplesIterator&                    feature_last,
+                               const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
+    const std::size_t n_features = std::distance(feature_first, feature_last);
+
+    // make a copy that will be the translated version
+    auto translated_kd_bounding_box = kd_bounding_box;
+
+    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+        // get the 1D bounding box (or range) w.r.t. the current dimension
+        auto& range = translated_kd_bounding_box[feature_index];
+        // shift it by the amount specified at the right dimension
+        range.first += feature_first[feature_index];
+        range.second += feature_first[feature_index];
+    }
+    return translated_kd_bounding_box;
+}
+
 }  // namespace kdtree
