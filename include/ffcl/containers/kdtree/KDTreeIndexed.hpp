@@ -268,71 +268,71 @@ class KDTreeIndexed {
 
     // new samples
 
-    // (9)
+    // (7)
     void nearest_neighbor_around_query_sample(SamplesIterator    query_feature_first,
                                               SamplesIterator    query_feature_last,
                                               ssize_t&           current_nearest_neighbor_index,
                                               DataType&          current_nearest_neighbor_distance,
                                               KDNodeIndexViewPtr kdnode = nullptr) const;
-    // (9)
+    // (7)
     KDNodeIndexViewPtr recurse_to_closest_leaf_node(SamplesIterator    query_feature_first,
                                                     SamplesIterator    query_feature_last,
                                                     ssize_t&           current_nearest_neighbor_index,
                                                     DataType&          current_nearest_neighbor_distance,
                                                     KDNodeIndexViewPtr kdnode) const;
-    // (9)
+    // (7)
     KDNodeIndexViewPtr get_parent_node_after_sibling_traversal(SamplesIterator    query_feature_first,
                                                                SamplesIterator    query_feature_last,
                                                                ssize_t&           current_nearest_neighbor_index,
                                                                DataType&          current_nearest_neighbor_distance,
                                                                KDNodeIndexViewPtr kdnode) const;
-    // (10)
+    // (8)
     void k_nearest_neighbors_around_query_sample(SamplesIterator                          query_feature_first,
                                                  SamplesIterator                          query_feature_last,
                                                  NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
                                                  KDNodeIndexViewPtr                       kdnode = nullptr) const;
-    // (10)
+    // (8)
     KDNodeIndexViewPtr recurse_to_closest_leaf_node(SamplesIterator                          query_feature_first,
                                                     SamplesIterator                          query_feature_last,
                                                     NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
                                                     KDNodeIndexViewPtr                       kdnode) const;
-    // (10)
+    // (8)
     KDNodeIndexViewPtr get_parent_node_after_sibling_traversal(
         SamplesIterator                          query_feature_first,
         SamplesIterator                          query_feature_last,
         NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
         KDNodeIndexViewPtr                       kdnode) const;
-    // (7)
+    // (9)
     void radius_count_around_query_sample(SamplesIterator    query_feature_first,
                                           SamplesIterator    query_feature_last,
                                           const DataType&    radius,
                                           std::size_t&       neighbors_count,
                                           KDNodeIndexViewPtr kdnode = nullptr) const;
-    // (7)
+    // (9)
     KDNodeIndexViewPtr recurse_to_closest_leaf_node(SamplesIterator    query_feature_first,
                                                     SamplesIterator    query_feature_last,
                                                     const DataType&    radius,
                                                     std::size_t&       neighbors_count,
                                                     KDNodeIndexViewPtr kdnode) const;
-    // (7)
+    // (9)
     KDNodeIndexViewPtr get_parent_node_after_sibling_traversal(SamplesIterator    query_feature_first,
                                                                SamplesIterator    query_feature_last,
                                                                const DataType&    radius,
                                                                std::size_t&       neighbors_count,
                                                                KDNodeIndexViewPtr kdnode) const;
-    // (8)
+    // (10)
     void radius_search_around_query_sample(SamplesIterator                          query_feature_first,
                                            SamplesIterator                          query_feature_last,
                                            const DataType&                          radius,
                                            NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
                                            KDNodeIndexViewPtr                       kdnode = nullptr) const;
-    // (8)
+    // (10)
     KDNodeIndexViewPtr recurse_to_closest_leaf_node(SamplesIterator                          query_feature_first,
                                                     SamplesIterator                          query_feature_last,
                                                     const DataType&                          radius,
                                                     NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer,
                                                     KDNodeIndexViewPtr                       kdnode) const;
-    // (8)
+    // (10)
     KDNodeIndexViewPtr get_parent_node_after_sibling_traversal(
         SamplesIterator                          query_feature_first,
         SamplesIterator                          query_feature_last,
