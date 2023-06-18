@@ -474,7 +474,7 @@ void increment_neighbors_count_in_kd_bounding_box_indexed_range(
     const SamplesIterator&                    sample_feature_query_last,
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box,
     std::size_t&                              neighbors_count) {
-    common::utils::ignore_parameters(dataset_samples_first, dataset_samples_last);
+    common::utils::ignore_parameters(dataset_samples_first, dataset_samples_last, n_features);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
 
