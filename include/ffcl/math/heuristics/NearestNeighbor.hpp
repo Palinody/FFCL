@@ -474,13 +474,17 @@ void increment_neighbors_count_in_kd_bounding_box_indexed_range(
     const SamplesIterator&                    sample_feature_query_last,
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box,
     std::size_t&                              neighbors_count) {
-    common::utils::ignore_parameters(dataset_samples_first, dataset_samples_last, n_features);
+    common::utils::ignore_parameters(dataset_samples_last, sample_feature_query_first, sample_feature_query_last);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
 
     for (std::size_t index = 0; index < n_samples; ++index) {
+        const std::size_t candidate_nearest_neighbor_index = subrange_index_first[index];
+
         if (kdtree::is_sample_in_kd_bounding_box(
-                sample_feature_query_first, sample_feature_query_last, kd_bounding_box)) {
+                dataset_samples_first + candidate_nearest_neighbor_index * n_features,
+                dataset_samples_first + candidate_nearest_neighbor_index * n_features + n_features,
+                kd_bounding_box)) {
             ++neighbors_count;
         }
     }
@@ -599,10 +603,12 @@ void k_nearest_neighbors_in_kd_bounding_box_indexed_range(
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
 
     for (std::size_t index = 0; index < n_samples; ++index) {
-        if (kdtree::is_sample_in_kd_bounding_box(
-                sample_feature_query_first, sample_feature_query_last, kd_bounding_box)) {
-            const std::size_t candidate_nearest_neighbor_index = subrange_index_first[index];
+        const std::size_t candidate_nearest_neighbor_index = subrange_index_first[index];
 
+        if (kdtree::is_sample_in_kd_bounding_box(
+                dataset_samples_first + candidate_nearest_neighbor_index * n_features,
+                dataset_samples_first + candidate_nearest_neighbor_index * n_features + n_features,
+                kd_bounding_box)) {
             const DataType candidate_nearest_neighbor_distance =
                 math::heuristics::auto_distance(sample_feature_query_first,
                                                 sample_feature_query_last,
