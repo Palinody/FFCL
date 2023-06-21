@@ -25,8 +25,8 @@ namespace math::heuristics {
  * @return std::vector<std::size_t>
  */
 template <typename IteratorInt>
-std::vector<std::size_t> get_cluster_sizes(IteratorInt sample_to_closest_centroid_index_first,
-                                           IteratorInt sample_to_closest_centroid_index_last) {
+auto get_cluster_sizes(IteratorInt sample_to_closest_centroid_index_first,
+                       IteratorInt sample_to_closest_centroid_index_last) {
     static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
 
     // n_centroids = 1 + greatest_centroid_index
@@ -59,11 +59,11 @@ std::vector<std::size_t> get_cluster_sizes(IteratorInt sample_to_closest_centroi
  * @return std::vector<typename IteratorFloat::value_type>
  */
 template <typename IteratorFloat, typename IteratorInt>
-std::vector<typename IteratorFloat::value_type> cohesion(const IteratorFloat& sample_first,
-                                                         const IteratorFloat& sample_last,
-                                                         const IteratorInt&   sample_to_closest_centroid_index_first,
-                                                         const IteratorInt&   sample_to_closest_centroid_index_last,
-                                                         std::size_t          n_features) {
+auto cohesion(const IteratorFloat& sample_first,
+              const IteratorFloat& sample_last,
+              const IteratorInt&   sample_to_closest_centroid_index_first,
+              const IteratorInt&   sample_to_closest_centroid_index_last,
+              std::size_t          n_features) {
     static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
                   "Data should be a floating point type.");
     static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
@@ -124,11 +124,11 @@ std::vector<typename IteratorFloat::value_type> cohesion(const IteratorFloat& sa
  * @return std::vector<typename IteratorFloat::value_type>
  */
 template <typename IteratorFloat, typename IteratorInt>
-std::vector<typename IteratorFloat::value_type> separation(const IteratorFloat& sample_first,
-                                                           const IteratorFloat& sample_last,
-                                                           const IteratorInt&   sample_to_closest_centroid_index_first,
-                                                           const IteratorInt&   sample_to_closest_centroid_index_last,
-                                                           std::size_t          n_features) {
+auto separation(const IteratorFloat& sample_first,
+                const IteratorFloat& sample_last,
+                const IteratorInt&   sample_to_closest_centroid_index_first,
+                const IteratorInt&   sample_to_closest_centroid_index_last,
+                std::size_t          n_features) {
     static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
                   "Data should be a floating point type.");
     static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
@@ -199,11 +199,11 @@ std::vector<typename IteratorFloat::value_type> separation(const IteratorFloat& 
  * @param n_features
  */
 template <typename IteratorFloat, typename IteratorInt>
-std::vector<typename IteratorFloat::value_type> silhouette(const IteratorFloat& sample_first,
-                                                           const IteratorFloat& sample_last,
-                                                           const IteratorInt&   sample_to_closest_centroid_index_first,
-                                                           const IteratorInt&   sample_to_closest_centroid_index_last,
-                                                           std::size_t          n_features) {
+auto silhouette(const IteratorFloat& sample_first,
+                const IteratorFloat& sample_last,
+                const IteratorInt&   sample_to_closest_centroid_index_first,
+                const IteratorInt&   sample_to_closest_centroid_index_last,
+                std::size_t          n_features) {
     static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
                   "Data should be a floating point type.");
     static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
