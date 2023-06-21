@@ -957,7 +957,7 @@ std::size_t KDTreeIndexed<IndicesIterator, SamplesIterator>::range_count_around_
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const {
     std::size_t neighbors_count = 0;
 
-    const auto translated_kd_bounding_box = kdtree::translate_kd_bounding_box(
+    const auto translated_kd_bounding_box = kdtree::relative_coordinates_sequence_to_range_bounding_box(
         /**/ samples_first_ + query_index * n_features_,
         /**/ samples_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
@@ -1084,7 +1084,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::range_search_around_query_
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const {
     NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer(common::utils::infinity<std::size_t>());
 
-    const auto translated_kd_bounding_box = kdtree::translate_kd_bounding_box(
+    const auto translated_kd_bounding_box = kdtree::relative_coordinates_sequence_to_range_bounding_box(
         /**/ samples_first_ + query_index * n_features_,
         /**/ samples_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
@@ -1731,8 +1731,8 @@ std::size_t KDTreeIndexed<IndicesIterator, SamplesIterator>::range_count_around_
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const {
     std::size_t neighbors_count = 0;
 
-    const auto translated_kd_bounding_box =
-        kdtree::translate_kd_bounding_box(query_feature_first, query_feature_last, kd_bounding_box);
+    const auto translated_kd_bounding_box = kdtree::relative_coordinates_sequence_to_range_bounding_box(
+        query_feature_first, query_feature_last, kd_bounding_box);
 
     range_count_around_query_sample(
         query_feature_first, query_feature_last, translated_kd_bounding_box, neighbors_count);
@@ -1867,8 +1867,8 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::range_search_around_query_
     const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const {
     NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer(common::utils::infinity<std::size_t>());
 
-    const auto translated_kd_bounding_box =
-        kdtree::translate_kd_bounding_box(query_feature_first, query_feature_last, kd_bounding_box);
+    const auto translated_kd_bounding_box = kdtree::relative_coordinates_sequence_to_range_bounding_box(
+        query_feature_first, query_feature_last, kd_bounding_box);
 
     range_search_around_query_sample(
         query_feature_first, query_feature_last, translated_kd_bounding_box, nearest_neighbors_buffer);
