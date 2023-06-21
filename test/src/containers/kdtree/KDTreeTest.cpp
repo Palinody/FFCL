@@ -146,6 +146,9 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
 
 template <typename Type>
 void print_data(const std::vector<Type>& data, std::size_t n_features) {
+    if (!n_features) {
+        return;
+    }
     const std::size_t n_samples = data.size() / n_features;
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -162,10 +165,9 @@ TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -198,10 +200,9 @@ TEST_F(KDTreeErrorsTest, NearestNeighborTest) {
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -241,10 +242,9 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsTest) {
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -297,10 +297,9 @@ TEST_F(KDTreeErrorsTest, RadiusCountTest) {
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -340,10 +339,9 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsInRadiusTest) {
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -390,10 +388,9 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
     fs::path filename = "mnist.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -422,10 +419,9 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
     fs::path filename = "noisy_circles.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -459,10 +455,9 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
     fs::path filename = "noisy_moons.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -496,10 +491,9 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -533,10 +527,9 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
     fs::path filename = "aniso.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -570,10 +563,9 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
     fs::path filename = "blobs.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -607,10 +599,9 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
     fs::path filename = "no_structure.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -644,10 +635,9 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
     fs::path filename = "unbalanced_blobs.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = labels.size();
+    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
