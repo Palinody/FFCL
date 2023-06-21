@@ -166,7 +166,7 @@ TEST_F(KDTreeIndexedErrorsTest, SequentialIndexedNearestNeighborIndexTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    printf("Dummy print (sequential): %ld, %.9f\n", current_nearest_neighbor_index, current_nearest_neighbor_distance);
+    printf("Dummy print (sequential): %ld, %d\n", current_nearest_neighbor_index, current_nearest_neighbor_distance);
 }
 */
 
@@ -208,8 +208,8 @@ TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexTest) {
 
     timer.print_elapsed_seconds(9);
 
-    std::size_t nn_index    = 0;
-    auto        nn_distance = common::utils::infinity<dType>();
+    ssize_t nn_index    = -1;
+    auto    nn_distance = common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -217,7 +217,7 @@ TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    printf("Dummy print (kdtree): %ld, %.3f\n", nn_index, nn_distance);
+    std::cout << "nn_index: " << nn_index << ", nn_distance: " << nn_distance << "\n";
 }
 
 TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
@@ -257,8 +257,8 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
 
     timer.print_elapsed_seconds(9);
 
-    std::size_t nn_index;
-    dType       nn_distance;
+    ssize_t nn_index    = -1;
+    auto    nn_distance = common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -332,7 +332,7 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    printf("Dummy print (kdtree): number of neighbors: %ld, radius: %.3f\n", radius_count, radius);
+    std::cout << "radius_count: " << radius_count << ", radius: " << radius << "\n";
 }
 
 TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
@@ -432,8 +432,8 @@ TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {
 
     timer.print_elapsed_seconds(9);
 
-    std::size_t nn_index    = 0;
-    auto        nn_distance = common::utils::infinity<dType>();
+    ssize_t nn_index    = -1;
+    auto    nn_distance = common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -443,7 +443,7 @@ TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    printf("Nearest neighbor with unknown sample. Global index: %ld, distance: %.6f\n", nn_index, nn_distance);
+    std::cout << "nn_index: " << nn_index << ", nn_distance: " << nn_distance << "\n";
 }
 
 TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsSampleTest) {
@@ -483,8 +483,8 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsSampleTest) {
 
     timer.print_elapsed_seconds(9);
 
-    std::size_t nn_index;
-    dType       nn_distance;
+    ssize_t nn_index    = -1;
+    auto    nn_distance = common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
