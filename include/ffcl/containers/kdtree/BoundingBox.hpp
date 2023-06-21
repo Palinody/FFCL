@@ -80,9 +80,9 @@ auto make_1d_bounding_box(const RandomAccessIntIterator& index_first,
 }
 
 template <typename SamplesIterator>
-BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const SamplesIterator& samples_first,
-                                                        const SamplesIterator& samples_last,
-                                                        std::size_t            n_features) {
+auto make_kd_bounding_box(const SamplesIterator& samples_first,
+                          const SamplesIterator& samples_last,
+                          std::size_t            n_features) {
     using DataType = DataType<SamplesIterator>;
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
@@ -111,11 +111,11 @@ BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const SamplesIterator& s
 }
 
 template <typename RandomAccessIntIterator, typename SamplesIterator>
-BoundingBoxKDType<SamplesIterator> make_kd_bounding_box(const RandomAccessIntIterator& index_first,
-                                                        const RandomAccessIntIterator& index_last,
-                                                        const SamplesIterator&         samples_first,
-                                                        const SamplesIterator&         samples_last,
-                                                        std::size_t                    n_features) {
+auto make_kd_bounding_box(const RandomAccessIntIterator& index_first,
+                          const RandomAccessIntIterator& index_last,
+                          const SamplesIterator&         samples_first,
+                          const SamplesIterator&         samples_last,
+                          std::size_t                    n_features) {
     using DataType = DataType<SamplesIterator>;
 
     common::utils::ignore_parameters(samples_last);
