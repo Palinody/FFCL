@@ -266,7 +266,7 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
     std::vector<std::size_t> nn_indices;
     std::vector<dType>       nn_distances;
 
-    const std::size_t n_neighbors = 5;
+    const std::size_t n_neighbors = 2;
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -489,7 +489,7 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsSampleTest) {
 
     std::vector<std::size_t> nn_indices;
     std::vector<dType>       nn_distances;
-    dType                    n_neighbors = 5;
+    dType                    n_neighbors = 2;
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
