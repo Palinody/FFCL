@@ -166,11 +166,11 @@ template <typename SamplesIterator>
 auto relative_coordinates_sequence_to_range_bounding_box(
     const SamplesIterator&                    feature_first,
     const SamplesIterator&                    feature_last,
-    const BoundingBoxKDType<SamplesIterator>& range_coordinates_sequence) {
+    const BoundingBoxKDType<SamplesIterator>& relative_coordinates_sequence) {
     const std::size_t n_features = std::distance(feature_first, feature_last);
 
     // make a copy that will be the translated version
-    auto range_bounding_box = range_coordinates_sequence;
+    auto range_bounding_box = relative_coordinates_sequence;
 
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
         // get the 1D bounding box (or range) w.r.t. the current dimension
