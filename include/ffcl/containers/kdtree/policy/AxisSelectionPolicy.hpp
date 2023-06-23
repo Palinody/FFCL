@@ -15,8 +15,6 @@ struct AxisSelectionPolicy {
                                           std::size_t                              n_features,
                                           ssize_t                                  depth,
                                           BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const = 0;
-
-  private:
 };
 
 template <typename RandomAccessIterator>
