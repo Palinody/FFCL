@@ -143,6 +143,26 @@ std::vector<typename SamplesIterator::value_type> select_n_random_samples_from_i
     return random_samples;
 }
 
+template <typename IndicesIterator>
+auto select_n_random_indices_from_indices(const IndicesIterator& index_first,
+                                          const IndicesIterator& index_last,
+                                          std::size_t            n_choices) {
+    using IndexType = typename IndicesIterator::value_type;
+
+    const std::size_t n_samples = std::distance(index_first, index_last);
+    // clip n_choices to prevent overflows
+    n_choices = std::min(n_choices, n_samples);
+    // return n_choices distinctive indices from the pool of indices defined by the desired indices range
+    const auto random_distinct_indices = select_from_range(n_choices, {0, n_samples});
+
+    auto random_indices = std::vector<IndexType>(n_choices);
+
+    for (std::size_t index_index = 0; index_index < n_choices; ++index_index) {
+        random_indices[index_index] = index_first[random_distinct_indices[index_index]];
+    }
+    return random_indices;
+}
+
 template <typename IteratorFloat>
 std::vector<typename IteratorFloat::value_type> init_spatial_uniform(const IteratorFloat& data_first,
                                                                      const IteratorFloat& data_last,
