@@ -427,7 +427,13 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
     if (n_node_samples > options_.bucket_size_ && depth < options_.max_depth_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index = (*options_.axis_selection_policy_ptr_)(
-            index_first, index_last, samples_first_, samples_last_, n_features_, depth, kd_bounding_box);
+            /**/ index_first,
+            /**/ index_last,
+            /**/ samples_first_,
+            /**/ samples_last_,
+            /**/ n_features_,
+            /**/ depth,
+            /**/ kd_bounding_box);
 
         auto [cut_index, left_index_range, cut_index_range, right_index_range] = (*options_.splitting_rule_policy_ptr_)(
             /**/ index_first,
