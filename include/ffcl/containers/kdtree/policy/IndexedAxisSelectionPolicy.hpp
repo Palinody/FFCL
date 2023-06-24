@@ -129,6 +129,7 @@ std::size_t IndexedCycleThroughAxesBuild<RandomAccessIntIterator, RandomAccessIt
         // select the cut_feature_index according to the one with the most variance
         return depth % n_features;
     }
+    // cycle through the feature mask possibilities provided by the feature indices sequence
     return feature_mask_[depth % feature_mask_.size()];
 }
 
