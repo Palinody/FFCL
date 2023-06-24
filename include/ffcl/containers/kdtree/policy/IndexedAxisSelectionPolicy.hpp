@@ -28,14 +28,6 @@ class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<RandomAcc
   public:
     using DataType = typename RandomAccessIterator::value_type;
 
-    inline std::size_t operator()(RandomAccessIntIterator                  index_first,
-                                  RandomAccessIntIterator                  index_last,
-                                  RandomAccessIterator                     samples_first,
-                                  RandomAccessIterator                     samples_last,
-                                  std::size_t                              n_features,
-                                  ssize_t                                  depth,
-                                  BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const;
-
     constexpr IndexedCycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
         return *this;
@@ -45,6 +37,14 @@ class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<RandomAcc
         feature_mask_ = std::move(feature_mask);
         return *this;
     }
+
+    inline std::size_t operator()(RandomAccessIntIterator                  index_first,
+                                  RandomAccessIntIterator                  index_last,
+                                  RandomAccessIterator                     samples_first,
+                                  RandomAccessIterator                     samples_last,
+                                  std::size_t                              n_features,
+                                  ssize_t                                  depth,
+                                  BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const;
 
   private:
     // contains the sequence of feature indices of interest
