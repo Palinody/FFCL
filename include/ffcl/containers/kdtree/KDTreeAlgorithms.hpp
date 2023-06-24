@@ -24,6 +24,28 @@ ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType
 }
 
 template <typename SamplesIterator>
+ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<SamplesIterator>& kd_bounding_box,
+                                                         const std::vector<std::size_t>&           feature_mask) {
+    using DataType = typename SamplesIterator::value_type;
+
+    // feature index of the greatest range dimension in the kd bounding box at the indices of the feature_mask
+    std::size_t current_max_range_feature_index = 0;
+    DataType    current_max_range               = 0;
+
+    // "feature_index"s are only the ones specified in the feature_mask
+    for (std::size_t feature_index : feature_mask) {
+        const auto max_range_candidate =
+            common::utils::abs(kd_bounding_box[feature_index].first - kd_bounding_box[feature_index].second);
+
+        if (max_range_candidate > current_max_range) {
+            current_max_range_feature_index = feature_index;
+            current_max_range               = max_range_candidate;
+        }
+    }
+    return current_max_range_feature_index;
+}
+
+template <typename SamplesIterator>
 ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
                                           const SamplesIterator& samples_last,
                                           std::size_t            n_features,
@@ -94,6 +116,47 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator& index_first,
         // otherwise apply the bounding box method
         const auto kd_bounding_box = kdtree::make_kd_bounding_box(samples_first, samples_last, n_features);
         return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
+    }
+    // return a random axis if theres only one sample left
+    return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+ssize_t select_axis_with_largest_variance(const IndicesIterator&          index_first,
+                                          const IndicesIterator&          index_last,
+                                          const SamplesIterator&          samples_first,
+                                          const SamplesIterator&          samples_last,
+                                          std::size_t                     n_features,
+                                          double                          n_samples_fraction,
+                                          const std::vector<std::size_t>& feature_mask) {
+    assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
+
+    const std::size_t n_samples = std::distance(index_first, index_last);
+
+    // set the number of samples as a fraction of the input
+    const std::size_t n_choices = n_samples_fraction * n_samples;
+
+    // select the axis based on variance only if the number of selected samples is greater than 2
+    if (n_choices > 2) {
+        const auto random_indices =
+            math::random::select_n_random_indices_from_indices(index_first, index_last, n_choices);
+        // return the feature index with the maximum variance
+        return math::statistics::argmax_variance_per_feature(
+            random_indices.begin(), random_indices.end(), samples_first, samples_last, n_features, feature_mask);
+    }
+    // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
+    // compute the variance with the minimum number of samples, which is 3
+    if (n_samples > 2) {
+        const auto random_indices = math::random::select_n_random_indices_from_indices(index_first, index_last, 3);
+        // return the feature index with the maximum variance
+        return math::statistics::argmax_variance_per_feature(
+            random_indices.begin(), random_indices.end(), samples_first, samples_last, n_features, feature_mask);
+    }
+    // select the axis according to the dimension with the most spread between 2 points
+    if (n_samples == 2) {
+        // otherwise apply the bounding box method
+        const auto kd_bounding_box = kdtree::make_kd_bounding_box(samples_first, samples_last, n_features);
+        return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box, feature_mask);
     }
     // return a random axis if theres only one sample left
     return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
