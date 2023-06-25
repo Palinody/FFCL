@@ -246,7 +246,7 @@ typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::build(
     const std::size_t n_node_samples = common::utils::get_n_samples(samples_first, samples_last, n_features_);
 
     // the current kdnode is not leaf
-    if (n_node_samples > options_.bucket_size_ && depth < options_.max_depth_) {
+    if (depth < options_.max_depth_ && n_node_samples > options_.bucket_size_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index =
             (*options_.axis_selection_policy_ptr_)(samples_first, samples_last, n_features_, depth, kd_bounding_box);
