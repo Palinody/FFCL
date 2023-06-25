@@ -99,13 +99,12 @@ class NearestNeighborsBuffer {
         return false;
     }
 
-    void print() {
+    void print() const {
         PriorityQueueType priority_queue_cpy = priority_queue_;
 
         while (!priority_queue_cpy.empty()) {
             auto element = priority_queue_cpy.top();
             priority_queue_cpy.pop();
-            // printf("(%ld, %.5f)\n", std::get<0>(element), std::get<1>(element));
             std::cout << "(" << std::get<0>(element) << ", " << std::get<1>(element) << ")\n";
         }
     }
