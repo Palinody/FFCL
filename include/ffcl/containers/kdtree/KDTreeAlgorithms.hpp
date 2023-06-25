@@ -129,7 +129,7 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          index_
                                           std::size_t                     n_features,
                                           double                          n_samples_fraction,
                                           const std::vector<std::size_t>& feature_mask) {
-    assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
+    assert(0 <= n_samples_fraction && n_samples_fraction <= 1);
 
     const std::size_t n_samples = std::distance(index_first, index_last);
 
