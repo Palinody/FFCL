@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/containers/FeatureMaskArray.hpp"
 #include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 
 #include <array>
