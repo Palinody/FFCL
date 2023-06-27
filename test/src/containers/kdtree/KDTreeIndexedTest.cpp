@@ -886,7 +886,10 @@ TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto indices = generate_indices(n_samples);
+    auto indices         = generate_indices(n_samples);
+    auto feature_indices = generate_indices(n_features);
+
+    std::shuffle(feature_indices.begin(), feature_indices.end(), std::mt19937{std::random_device{}()});
 
     timer.reset();
     using IndicesIterator = decltype(indices)::iterator;
@@ -901,7 +904,9 @@ TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
         ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
-            .axis_selection_policy(kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>())
+            .axis_selection_policy(
+                kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>().feature_mask(
+                    feature_indices))
             .splitting_rule_policy(kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>()));
 
     timer.print_elapsed_seconds(9);
