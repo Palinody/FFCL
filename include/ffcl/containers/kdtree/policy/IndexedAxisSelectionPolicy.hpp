@@ -1,10 +1,11 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/FeatureMaskArray.hpp"
+#include "ffcl/containers/FeatureMask.hpp"
 #include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
 
 #include <array>
+#include <initializer_list>
 
 namespace kdtree::policy {
 
@@ -20,10 +21,15 @@ class IndexedAxisSelectionPolicy {
                                    BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const = 0;
 };
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+template <typename RandomAccessIntIterator, typename RandomAccessIterator, std::size_t NStaticFeatures = 0>
 class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
   public:
-    using DataType = typename RandomAccessIterator::value_type;
+    using FeatureMaskType = ffcl::containers::FeatureMask<NStaticFeatures>;
+    using ArrayType =
+        std::conditional_t<NStaticFeatures == 0, std::vector<std::size_t>, std::array<std::size_t, NStaticFeatures>>;
+
+    IndexedCycleThroughAxesBuild(const std::initializer_list<std::size_t>& feature_mask)
+      : feature_mask_{std::move(ArrayType{feature_mask})} {}
 
     constexpr IndexedCycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
@@ -45,14 +51,12 @@ class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<RandomAcc
 
   private:
     // contains the sequence of feature indices of interest
-    std::vector<std::size_t> feature_mask_;
+    FeatureMaskType feature_mask_;
 };
 
 template <typename RandomAccessIntIterator, typename RandomAccessIterator>
 class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
   public:
-    using DataType = typename RandomAccessIterator::value_type;
-
     constexpr IndexedHighestVarianceBuild& sampling_proportion(double sampling_proportion) {
         sampling_proportion_ = sampling_proportion;
         return *this;
@@ -86,8 +90,6 @@ class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<RandomAcce
 template <typename RandomAccessIntIterator, typename RandomAccessIterator>
 class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
   public:
-    using DataType = typename RandomAccessIterator::value_type;
-
     constexpr IndexedMaximumSpreadBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
         return *this;
@@ -115,8 +117,8 @@ class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<RandomAccess
 
 namespace kdtree::policy {
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t IndexedCycleThroughAxesBuild<RandomAccessIntIterator, RandomAccessIterator>::operator()(
+template <typename RandomAccessIntIterator, typename RandomAccessIterator, std::size_t NStaticFeatures>
+std::size_t IndexedCycleThroughAxesBuild<RandomAccessIntIterator, RandomAccessIterator, NStaticFeatures>::operator()(
     RandomAccessIntIterator                  index_first,
     RandomAccessIntIterator                  index_last,
     RandomAccessIterator                     samples_first,
