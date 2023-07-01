@@ -12,10 +12,6 @@
 #include <iterator>
 #include <vector>
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-
 namespace fs = std::filesystem;
 
 class KDTreeIndexedErrorsTest : public ::testing::Test {

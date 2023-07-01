@@ -8,22 +8,22 @@
 
 namespace kdtree::policy {
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
+template <typename IndicesIterator, typename SamplesIterator>
 class IndexedAxisSelectionPolicy {
   public:
-    virtual std::size_t operator()(RandomAccessIntIterator                  index_first,
-                                   RandomAccessIntIterator                  index_last,
-                                   RandomAccessIterator                     samples_first,
-                                   RandomAccessIterator                     samples_last,
-                                   std::size_t                              n_features,
-                                   ssize_t                                  depth,
-                                   BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const = 0;
+    virtual std::size_t operator()(IndicesIterator                     index_first,
+                                   IndicesIterator                     index_last,
+                                   SamplesIterator                     samples_first,
+                                   SamplesIterator                     samples_last,
+                                   std::size_t                         n_features,
+                                   ssize_t                             depth,
+                                   BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const = 0;
 };
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
+template <typename IndicesIterator, typename SamplesIterator>
+class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
-    using DataType = typename RandomAccessIterator::value_type;
+    using DataType = typename SamplesIterator::value_type;
 
     constexpr IndexedCycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
@@ -35,23 +35,23 @@ class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<RandomAcc
         return *this;
     }
 
-    std::size_t operator()(RandomAccessIntIterator                  index_first,
-                           RandomAccessIntIterator                  index_last,
-                           RandomAccessIterator                     samples_first,
-                           RandomAccessIterator                     samples_last,
-                           std::size_t                              n_features,
-                           ssize_t                                  depth,
-                           BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const;
+    std::size_t operator()(IndicesIterator                     index_first,
+                           IndicesIterator                     index_last,
+                           SamplesIterator                     samples_first,
+                           SamplesIterator                     samples_last,
+                           std::size_t                         n_features,
+                           ssize_t                             depth,
+                           BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const;
 
   private:
     // contains the sequence of feature indices of interest
     std::vector<std::size_t> feature_mask_;
 };
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
+template <typename IndicesIterator, typename SamplesIterator>
+class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
-    using DataType = typename RandomAccessIterator::value_type;
+    using DataType = typename SamplesIterator::value_type;
 
     constexpr IndexedHighestVarianceBuild& sampling_proportion(double sampling_proportion) {
         sampling_proportion_ = sampling_proportion;
@@ -68,13 +68,13 @@ class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<RandomAcce
         return *this;
     }
 
-    std::size_t operator()(RandomAccessIntIterator                  index_first,
-                           RandomAccessIntIterator                  index_last,
-                           RandomAccessIterator                     samples_first,
-                           RandomAccessIterator                     samples_last,
-                           std::size_t                              n_features,
-                           ssize_t                                  depth,
-                           BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const;
+    std::size_t operator()(IndicesIterator                     index_first,
+                           IndicesIterator                     index_last,
+                           SamplesIterator                     samples_first,
+                           SamplesIterator                     samples_last,
+                           std::size_t                         n_features,
+                           ssize_t                             depth,
+                           BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const;
 
   private:
     // contains the sequence of feature indices of interest
@@ -83,10 +83,10 @@ class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<RandomAcce
     double sampling_proportion_ = 0.1;
 };
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<RandomAccessIntIterator, RandomAccessIterator> {
+template <typename IndicesIterator, typename SamplesIterator>
+class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
-    using DataType = typename RandomAccessIterator::value_type;
+    using DataType = typename SamplesIterator::value_type;
 
     constexpr IndexedMaximumSpreadBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
@@ -98,13 +98,13 @@ class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<RandomAccess
         return *this;
     }
 
-    std::size_t operator()(RandomAccessIntIterator                  index_first,
-                           RandomAccessIntIterator                  index_last,
-                           RandomAccessIterator                     samples_first,
-                           RandomAccessIterator                     samples_last,
-                           std::size_t                              n_features,
-                           ssize_t                                  depth,
-                           BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const;
+    std::size_t operator()(IndicesIterator                     index_first,
+                           IndicesIterator                     index_last,
+                           SamplesIterator                     samples_first,
+                           SamplesIterator                     samples_last,
+                           std::size_t                         n_features,
+                           ssize_t                             depth,
+                           BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const;
 
   private:
     // contains the sequence of feature indices of interest
@@ -115,15 +115,15 @@ class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<RandomAccess
 
 namespace kdtree::policy {
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t IndexedCycleThroughAxesBuild<RandomAccessIntIterator, RandomAccessIterator>::operator()(
-    RandomAccessIntIterator                  index_first,
-    RandomAccessIntIterator                  index_last,
-    RandomAccessIterator                     samples_first,
-    RandomAccessIterator                     samples_last,
-    std::size_t                              n_features,
-    ssize_t                                  depth,
-    BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const {
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t IndexedCycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
+    IndicesIterator                     index_first,
+    IndicesIterator                     index_last,
+    SamplesIterator                     samples_first,
+    SamplesIterator                     samples_last,
+    std::size_t                         n_features,
+    ssize_t                             depth,
+    BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const {
     common::utils::ignore_parameters(index_first, index_last, samples_first, samples_last, kd_bounding_box);
     if (feature_mask_.empty()) {
         // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
@@ -134,20 +134,20 @@ std::size_t IndexedCycleThroughAxesBuild<RandomAccessIntIterator, RandomAccessIt
     return feature_mask_[depth % feature_mask_.size()];
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t IndexedHighestVarianceBuild<RandomAccessIntIterator, RandomAccessIterator>::operator()(
-    RandomAccessIntIterator                  index_first,
-    RandomAccessIntIterator                  index_last,
-    RandomAccessIterator                     samples_first,
-    RandomAccessIterator                     samples_last,
-    std::size_t                              n_features,
-    ssize_t                                  depth,
-    BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const {
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
+    IndicesIterator                     index_first,
+    IndicesIterator                     index_last,
+    SamplesIterator                     samples_first,
+    SamplesIterator                     samples_last,
+    std::size_t                         n_features,
+    ssize_t                             depth,
+    BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const {
     common::utils::ignore_parameters(depth, kd_bounding_box);
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most variance
-        return kdtree::algorithms::select_axis_with_largest_variance<RandomAccessIntIterator, RandomAccessIterator>(
+        return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator>(
             /**/ index_first,
             /**/ index_last,
             /**/ samples_first,
@@ -155,7 +155,7 @@ std::size_t IndexedHighestVarianceBuild<RandomAccessIntIterator, RandomAccessIte
             /**/ n_features,
             /**/ sampling_proportion_);
     }
-    return kdtree::algorithms::select_axis_with_largest_variance<RandomAccessIntIterator, RandomAccessIterator>(
+    return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator>(
         /**/ index_first,
         /**/ index_last,
         /**/ samples_first,
@@ -165,24 +165,23 @@ std::size_t IndexedHighestVarianceBuild<RandomAccessIntIterator, RandomAccessIte
         /**/ feature_mask_);
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t IndexedMaximumSpreadBuild<RandomAccessIntIterator, RandomAccessIterator>::operator()(
-    RandomAccessIntIterator                  index_first,
-    RandomAccessIntIterator                  index_last,
-    RandomAccessIterator                     samples_first,
-    RandomAccessIterator                     samples_last,
-    std::size_t                              n_features,
-    ssize_t                                  depth,
-    BoundingBoxKDType<RandomAccessIterator>& kd_bounding_box) const {
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
+    IndicesIterator                     index_first,
+    IndicesIterator                     index_last,
+    SamplesIterator                     samples_first,
+    SamplesIterator                     samples_last,
+    std::size_t                         n_features,
+    ssize_t                             depth,
+    BoundingBoxKDType<SamplesIterator>& kd_bounding_box) const {
     common::utils::ignore_parameters(index_first, index_last, samples_first, samples_last, n_features, depth);
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
-        return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<RandomAccessIterator>(
-            kd_bounding_box);
+        return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
     }
-    return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<RandomAccessIterator>(kd_bounding_box,
-                                                                                                      feature_mask_);
+    return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box,
+                                                                                                 feature_mask_);
 }
 
 }  // namespace kdtree::policy

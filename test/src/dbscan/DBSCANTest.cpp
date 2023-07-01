@@ -1,6 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
 #include "ffcl/dbscan/DBSCAN.hpp"
@@ -111,14 +112,65 @@ class DBSCANErrorsTest : public ::testing::Test {
     const fs::path centroids_folder_   = folder_root_ / fs::path("centroids");
 };
 
-TEST_F(DBSCANErrorsTest, MainDBSCANTest) {
+std::vector<std::size_t> generate_indices(std::size_t n_samples) {
+    std::vector<std::size_t> elements(n_samples);
+    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
+    return elements;
+}
+
+template <typename Type>
+void print_data(const std::vector<Type>& data, std::size_t n_features) {
+    if (!n_features) {
+        return;
+    }
+    const std::size_t n_samples = data.size() / n_features;
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            std::cout << data[sample_index * n_features + feature_index] << " ";
+        }
+        std::cout << "\n";
+    }
+}
+
+TEST_F(DBSCANErrorsTest, DBSCANTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
     fs::path filename = "unbalanced_blobs.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
-    common::utils::ignore_parameters(data, labels, n_features);
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
+                                                  indices.end(),
+                                                  data.begin(),
+                                                  data.end(),
+                                                  n_features,
+                                                  OptionsType()
+                                                      .bucket_size(std::sqrt(n_samples))
+                                                      .max_depth(std::log2(n_samples))
+                                                      .axis_selection_policy(AxisSelectionPolicyType())
+                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto dbscan = ffcl::DBSCAN<dType>(n_features);
+
+    const auto predictions = dbscan.predict(kdtree);
+
+    print_data(predictions, 1);
 }
 
 int main(int argc, char** argv) {
