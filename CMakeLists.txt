@@ -277,6 +277,23 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        DBSCANTest
+
+        # ---
+        test/src/dbscan/DBSCANTest.cpp
+    )
+    target_link_libraries(
+        DBSCANTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        DBSCANTest
+        DBSCANTest
+    )
+
+    add_executable(
         KDTreeAlgorithmsTest
 
         # ---
@@ -369,8 +386,12 @@ elseif(MODE STREQUAL "gtest")
         LABELS "UtilityTests"
     )
 
-    set_tests_properties(KMedoidsTest KMeansTest KDTreeTest KDTreeIndexedTest PROPERTIES
-        LABELS "AlgorithmTests"
+    set_tests_properties(KDTreeTest KDTreeIndexedTest PROPERTIES
+        LABELS "IndexingTests"
+    )
+
+    set_tests_properties(DBSCANTest KMedoidsTest KMeansTest PROPERTIES
+        LABELS "ClusteringTests"
     )
 
 else()
