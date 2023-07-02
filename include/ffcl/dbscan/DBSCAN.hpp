@@ -5,7 +5,6 @@
 
 #include <cstddef>
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 namespace ffcl {
@@ -95,22 +94,19 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
         if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
             // the indices of the neighbors in the global dataset with their corresponding distances
             // assumes that the query sample is NOT RETURNED from the query function
-            const auto [nn_indices, _1] = indexer.radius_search_around_query_index(global_index, options_.radius_);
+            auto [seed_indices, _1] = indexer.radius_search_around_query_index(global_index, options_.radius_);
             // process only if the current sample query has enough neighbors
             // N.B.: +1 because the query function assumes that the query isnt returned
-            if (nn_indices.size() + 1 > options_.min_samples_in_radius_) {
+            if (seed_indices.size() + 1 > options_.min_samples_in_radius_) {
                 // set the current sample query as the current cluster label
                 predictions[global_index] = cluster_label;
                 // all points in seeds are density-reachable from the sample query
-                for (const auto& nn_index : nn_indices) {
+                for (const auto& nn_index : seed_indices) {
                     predictions[nn_index] = cluster_label;
                 }
-                // initialize the seed set with the neighbors indices that are around the initial sample query index
-                std::unordered_set<std::size_t> seed_set(nn_indices.begin(), nn_indices.end());
-
-                while (!seed_set.empty()) {
-                    const auto nn_index = *seed_set.begin();
-                    seed_set.erase(seed_set.begin());
+                while (!seed_indices.empty()) {
+                    const auto nn_index = seed_indices.back();
+                    seed_indices.pop_back();
 
                     // then find its own neighbors
                     const auto [nn_neighbors_indices, _2] =
@@ -124,7 +120,7 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
                                 predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::noise)) {
                                 // insert the neighbor to the seed set if it isnt already labelled
                                 if (predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-                                    seed_set.insert(nn_neighbors_index);
+                                    seed_indices.emplace_back(nn_neighbors_index);
                                 }
                                 // label it
                                 predictions[nn_neighbors_index] = cluster_label;
