@@ -21,7 +21,16 @@ def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
     np.random.shuffle(points)
 
     clustering = DBSCAN(eps=epsilon, min_samples=min_samples, algorithm='kd_tree')
+    
+    start_time = time.process_time()
     clustering.kdtree_ = KDTree(points, leaf_size=math.sqrt(points.shape[0]))
+    end_time = time.process_time()
+    # print the elapsed time
+    print(
+        "Elapsed time for KDTREE (sklearn):",
+        end_time - start_time,
+        "seconds",
+    )
 
     start_time = time.process_time()
     clustering.fit(points)

@@ -82,9 +82,6 @@ template <typename Indexer>
 auto DBSCAN<T>::predict(const Indexer& indexer) const {
     const std::size_t n_samples = indexer.n_samples();
 
-    // the current state of the samples. Default: SampleStatus::unknown
-    // auto samples_state = std::vector<SampleStatus>(n_samples);
-
     // vector keeping track of the cluster label for each index specified by the global index range
     auto predictions = std::vector<LabelType>(n_samples);
     // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
