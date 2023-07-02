@@ -88,7 +88,7 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
     // vector keeping track of the cluster label for each index specified by the global index range
     auto predictions = std::vector<LabelType>(n_samples);
     // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
-    LabelType cluster_label = 1;
+    LabelType cluster_label = static_cast<LabelType>(SampleStatus::unknown);
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
         // process the current sample only if its state is unknown
         if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
@@ -98,6 +98,7 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
             // process only if the current sample query has enough neighbors
             // N.B.: +1 because the query function assumes that the query isnt returned
             if (seed_indices.size() + 1 > options_.min_samples_in_radius_) {
+                ++cluster_label;
                 // set the current sample query as the current cluster label
                 predictions[global_index] = cluster_label;
                 // all points in seeds are density-reachable from the sample query
@@ -128,7 +129,6 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
                         }
                     }
                 }
-                ++cluster_label;
             } else {
                 // set the current sample query as noise if it doesnt have enough neighbors
                 predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);

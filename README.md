@@ -23,13 +23,17 @@
     - All the core functions have been implemented for `KDTreeIndexed`. I might consider dropping `KDTree` support because there doesnt seem to be any performance gain and it would simplify the library a bit. Here's an exhaustive list of the current core functions that `KDTreeIndexed` supports: (using an index pointing to one of the samples of the input dataset) `nearest_neighbor_around_query_index`, `k_nearest_neighbors_around_query_index`, `radius_count_around_query_index`, `radius_search_around_query_index`, `range_count_around_query_index`, `range_search_around_query_index`, (using a range pointing to the beginning and end of a new sample query that may not exist in input dataset) `nearest_neighbor_around_query_sample`, `k_nearest_neighbors_around_query_sample`, `radius_count_around_query_sample`, `radius_search_around_query_sample`, `range_count_around_query_sample`, `range_search_around_query_sample`
     - **NEW** `feature_mask({0, 1, ...})` for `KDTreeIndexed`. The feature_mask feature in `KDTreeIndexed` allows you to construct the KD-tree by specifying a sequence of feature indices. These selected features will be used during the axis selection process of the build procedure. This feature enables you to index your entry dataset based only on the features that are of interest to you. For example, if you have a point cloud data structure like `pcl::PointXYZIR`, you can use feature_mask to specify that the build and search operations should only consider the relevant `XYZ` points, without the need to copy the first three dimensions of each `pcl::PointXYZIR` into a new `pcl::PointXYZ` structure. By using feature_mask, you can optimize the KD-tree construction and search process by focusing on the specific features that are important to your application, saving memory and improving performance.
     - **Next**: Some optimization for the nearest neighbors computations of KMeans and KMedoids. I might enable KDTree acceleration but its not beneficial unless a large number of centroids/medoids is needed. Its not a priority for now.
-    - **Next**: DBSCAN now that the KDTreeIndexed query functions are implemented.
 - Proper unit testing (**update**: all the generic code is now unit tested)
 - DBSCAN
+  - **NEW**: first version of DBSCAN using `KDTreeIndexed` has been implemented and the results visualized. The implementation is not optimized: a lot of vector allocation in the loops.
 - OPTICS
 - DENCLUE
 
 ## Current features
+
+- ### DBSCAN (kdtree)
+
+  - DBSCAN [paper](https://www2.cs.uh.edu/~ceick/7363/Papers/dbscan.pdf)
 
 - ### KMedoids
 

@@ -1,14 +1,16 @@
 import numpy as np
-import time, os
+import time, os, math
 
 try:
     from sklearn.cluster import DBSCAN
+    from sklearn.neighbors import KDTree
 except:
     import sys
     import subprocess
 
     subprocess.check_call([sys.executable, "-m", "pip", "install", "sklearn"])
     from sklearn.cluster import DBSCAN
+    from sklearn.neighbors import KDTree
 
 
 
@@ -18,9 +20,11 @@ def read_dataset(filepath: str):
 def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
     np.random.shuffle(points)
 
+    clustering = DBSCAN(eps=epsilon, min_samples=min_samples, algorithm='kd_tree')
+    clustering.kdtree_ = KDTree(points, leaf_size=math.sqrt(points.shape[0]))
+
     start_time = time.process_time()
-    clustering = DBSCAN(
-                eps=epsilon, min_samples=min_samples).fit(points)
+    clustering.fit(points)
     end_time = time.process_time()
     # print the elapsed time
     print(
