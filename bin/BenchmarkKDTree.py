@@ -27,10 +27,9 @@ except:
 
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pyflann-py3"])
     import pyflann
-    # dont install automatically pyflann because the default is full of bugs with python3
+    # dont install automatically "pyflann" because the default is full of bugs with python3
     # the current tests have been made with a version fixed locally
     # see: https://github.com/primetang/pyflann/issues/1 to fix it yourself if you want to install
-    pass
     """
     import sys
     import subprocess
@@ -40,10 +39,8 @@ except:
     """
 # from scipy.spatial import KDTree
 import time
-import timeit
 import os
 import sys
-import random
 import math
 
 BUCKET_SIZE: int = 40
@@ -76,7 +73,7 @@ def TestSklearnKDTreeBuildTime(points: np.ndarray):
     np.random.shuffle(points)
 
     start_time = time.process_time()
-    tree = KDTree(points, leaf_size=BUCKET_SIZE)
+    tree = KDTree(points, leaf_size=math.sqrt(points.shape[0]))
     end_time = time.process_time()
     # print the elapsed time
     print(
@@ -84,6 +81,25 @@ def TestSklearnKDTreeBuildTime(points: np.ndarray):
         end_time - start_time,
         "seconds",
     )
+    # Find k nearest neighbors
+    k = 5
+    start_time = time.process_time()
+
+    for query_point in points:
+        distances, indices = tree.query([query_point], k=k)
+
+    end_time = time.process_time()
+    print(f"Elapsed time for KDTree {k} nearest neighbor (scikit-learn):", end_time - start_time, "seconds")
+
+    # Find points within a radius
+    radius = 0.1
+    start_time = time.process_time()
+
+    for query_point in points:
+        distances, indices = tree.query_radius([query_point], r=radius, return_distance=True, count_only=False)
+
+    end_time = time.process_time()
+    print(f"Elapsed time for KDTree {k} radius count (scikit-learn):", end_time - start_time, "seconds")
 
 
 def TestFlannKDTreeBuildTime(points: np.ndarray):
@@ -143,7 +159,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # print("result: ", result)
     # print(f"Result: {result}, dist: {dists}")
     
-    radius = 1
+    radius = 0.1
 
     start_time = time.process_time()
 

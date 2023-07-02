@@ -73,7 +73,7 @@ KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_empty() const {
-    return n_samples() == static_cast<std::ptrdiff_t>(0);
+    return n_samples() == static_cast<std::size_t>(0);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>

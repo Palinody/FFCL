@@ -19,16 +19,6 @@ except:
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-# datasets.fetch_openml needs pandas. Check if it exists and install if it doesnt
-try:
-    import pandas
-except:
-    import sys
-    import subprocess
-
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "pandas"])
-
-
 VERBOSE = True
 
 # processing on input data

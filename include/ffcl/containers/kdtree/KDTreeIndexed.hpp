@@ -114,6 +114,10 @@ class KDTreeIndexed {
 
     KDTreeIndexed(const KDTreeIndexed&) = delete;
 
+    std::size_t n_samples() const;
+
+    std::size_t n_features() const;
+
     // existing samples
 
     // (1)
@@ -412,6 +416,16 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::KDTreeIndexed(IndicesIterator i
                                                        kd_bounding_box_),
                 0,
                 kd_bounding_box_)} {}
+
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t KDTreeIndexed<IndicesIterator, SamplesIterator>::n_samples() const {
+    return common::utils::get_n_samples(samples_first_, samples_last_, n_features_);
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t KDTreeIndexed<IndicesIterator, SamplesIterator>::n_features() const {
+    return n_features_;
+}
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>

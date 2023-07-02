@@ -109,7 +109,6 @@ class DBSCANErrorsTest : public ::testing::Test {
     const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
     const fs::path targets_folder_     = folder_root_ / fs::path("targets");
     const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
-    const fs::path centroids_folder_   = folder_root_ / fs::path("centroids");
 };
 
 std::vector<std::size_t> generate_indices(std::size_t n_samples) {
@@ -166,11 +165,16 @@ TEST_F(DBSCANErrorsTest, DBSCANTest) {
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>(n_features);
+    auto dbscan = ffcl::DBSCAN<dType>();
+
+    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(5));
 
     const auto predictions = dbscan.predict(kdtree);
 
     print_data(predictions, 1);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
 }
 
 int main(int argc, char** argv) {
