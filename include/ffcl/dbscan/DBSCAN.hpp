@@ -16,13 +16,7 @@ class DBSCAN {
   public:
     using LabelType = ssize_t;
 
-    enum class SampleStatus : LabelType {
-        noise              = -1,
-        unknown            = 0,
-        reachable          = 1,
-        directly_reachable = 2,
-        core_point         = 3
-    };
+    enum class SampleStatus : LabelType { noise = -1, unknown = 0 };
 
     struct Options {
         Options& min_samples_in_radius(std::size_t min_samples_in_radius) {
@@ -123,20 +117,20 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
                         indexer.radius_search_around_query_index(nn_index, options_.radius_);
 
                     if (nn_neighbors_indices.size() + 1 > options_.min_samples_in_radius_) {
-                        //
+                        // iterate over the neighbors of the current sample
                         for (const auto& nn_neighbors_index : nn_neighbors_indices) {
-                            //
+                            // enter the condition if it hasnt been already assigned to a cluster
                             if (predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::unknown) ||
                                 predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::noise)) {
-                                //
+                                // insert the neighbor to the seed set if it isnt already labelled
                                 if (predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::unknown)) {
                                     seed_set.insert(nn_neighbors_index);
                                 }
+                                // label it
                                 predictions[nn_neighbors_index] = cluster_label;
                             }
                         }
                     }
-                    // printf("Seed set size: %ld\n", global_index);
                 }
                 ++cluster_label;
             } else {

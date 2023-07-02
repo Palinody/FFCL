@@ -169,7 +169,11 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 
     dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(2).min_samples_in_radius(5));
 
+    timer.reset();
+
     const auto predictions = dbscan.predict(kdtree);
+
+    timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -211,7 +215,11 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 
     dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(5));
 
+    timer.reset();
+
     const auto predictions = dbscan.predict(kdtree);
+
+    timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -253,7 +261,11 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 
     dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(3));
 
+    timer.reset();
+
     const auto predictions = dbscan.predict(kdtree);
+
+    timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -295,7 +307,11 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 
     dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1.2).min_samples_in_radius(10));
 
+    timer.reset();
+
     const auto predictions = dbscan.predict(kdtree);
+
+    timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -337,7 +353,11 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 
     dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(10));
 
+    timer.reset();
+
     const auto predictions = dbscan.predict(kdtree);
+
+    timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -379,12 +399,16 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(5));
 
+    timer.reset();
+
     const auto predictions = dbscan.predict(kdtree);
+
+    timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(DBSCANErrorsTest, DBSCANTest) {
+TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     fs::path filename = "unbalanced_blobs.txt";
@@ -421,7 +445,11 @@ TEST_F(DBSCANErrorsTest, DBSCANTest) {
 
     dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(2).min_samples_in_radius(5));
 
+    timer.reset();
+
     const auto predictions = dbscan.predict(kdtree);
+
+    timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
