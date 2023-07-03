@@ -2,6 +2,10 @@
 
 **FFCL**: **F**lexible and (probably not the) **f**ast(est) c++ **c**lustering **l**ibrary. 
 
+This can be used as a header only library by dumping `include/*` in your project.
+`KDTree`s use `rapidjson` to save data and its the only dependency. So I just dumped the `rapidjson` headers in `include/rapidjson`.
+It'll stay that way for now for practicality.
+
 - [Current features](#current-features)
 - [Performance](#performance)
 - [Installation](#installation)
