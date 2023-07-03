@@ -30,7 +30,7 @@ It'll stay that way for now for practicality.
     - **Next**: Return `NearestNeighborsBuffer` instead of converting it to a sequence of {index, distance} pairs since the premature convertion leads to useless allocation and conversions in some applicaitons (such as `DBSCAN`'s algorithm).
 - Proper unit testing (**update**: all the generic code is now unit tested)
 - DBSCAN
-  - **NEW**: first version of DBSCAN using `KDTreeIndexed` has been implemented and the results visualized. The implementation is not optimized: a lot of vector allocation in the loops.
+  - **NEW**: first version of DBSCAN using `KDTreeIndexed` has been implemented and the results visualized. The implementation is not optimized: a lot of vector allocation in the loops (see `KDTreeIndexed`'s next feature plan).
 - OPTICS
 - DENCLUE
 
