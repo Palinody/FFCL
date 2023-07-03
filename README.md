@@ -12,7 +12,7 @@ It'll stay that way for now for practicality.
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
 
-## TODO \& Updates
+## New features \& Updates
 
 - `ffcl::containers::KDTree`
   **update (old to recent)**: the build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axis selection policy. The nearest neighbor search seems to be faster than FLANN on all the datasets. Nearest neighbor search is much more effective with kdtrees when n_features is relatively small and n_samples large. The speed is slightly worse with kdtree on MNIST (curiously not bad at all). The tests were made with a `bucket_size=40`.
