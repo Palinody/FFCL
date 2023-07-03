@@ -222,7 +222,9 @@ const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.e
 auto indices = generate_indices(n_samples);
 
 /*
-unfortunately those aliases will be needed if you want to explicitly specify axis selection or splitting rule algorithms as options. The default ones are currently based on a quickselect median selection strategy for the split and the highest variance with a sampling rate of 0.1 for the axis selection. You can also implement your own custom policies.
+unfortunately those aliases will be needed if you want to explicitly specify axis selection or splitting rule algorithms as options.
+The default ones are currently based on a quickselect median selection strategy for the split and the highest variance with a sampling rate of 0.1 for the axis selection.
+You can also implement your own custom policies.
 
 axis_selection_policy: IndexedHighestVarianceBuild (default), IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
 splitting_rule_policy: IndexedQuickselectMedianRange (default)
