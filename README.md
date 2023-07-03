@@ -15,7 +15,7 @@ It'll stay that way for now for practicality.
 ## TODO \& Updates
 
 - `ffcl::containers::KDTree`
-  **update**: the build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axis selection policy. The nearest neighbor search seems to be faster than FLANN on all the datasets. Nearest neighbor search is much more effective with kdtrees when n_features is relatively small and n_samples large. The speed is slightly worse with kdtree on MNIST (curiously not bad at all). The tests were made with a `bucket_size=40`.
+  **update (old to recent)**: the build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axis selection policy. The nearest neighbor search seems to be faster than FLANN on all the datasets. Nearest neighbor search is much more effective with kdtrees when n_features is relatively small and n_samples large. The speed is slightly worse with kdtree on MNIST (curiously not bad at all). The tests were made with a `bucket_size=40`.
     - kdtree build only with custom options: depth, bucket size, axis selection and split policies
     - multiple axis selection policies (client can make its own policies)
     - quickselect (handles duplicate data) splitting rule policy (client can make its own rules)
@@ -48,6 +48,32 @@ It'll stay that way for now for practicality.
 
   - Lloyd
   - Hamerly [paper](https://epubs.siam.org/doi/pdf/10.1137/1.9781611972801.12) | [authors' repo](https://github.com/ghamerly/fast-kmeans)
+
+
+- ### Containers
+  - `KDTreeIndexed` is currently used for `DBSCAN`
+    - methods using an index pointing to one of the samples of the input dataset
+      - nearest_neighbor_around_query_index
+      - k_nearest_neighbors_around_query_index
+      - radius_count_around_query_index
+      - radius_search_around_query_index
+      - range_count_around_query_index
+      - range_search_around_query_index
+    - methods using a range pointing to the beginning and end of a new sample query that may not exist in the input dataset
+      - nearest_neighbor_around_query_index
+      - k_nearest_neighbors_around_query_index
+      - radius_count_around_query_index
+      - radius_search_around_query_index
+      - range_count_around_query_index
+      - range_search_around_query_index
+    - Options
+      - `bucket_size(ssize_t)`: the maximum number of samples that a leaf node can contain
+      - `max_depth(ssize_t)`: the maximum recursion depth of the tree. The `max_depth` takes priority over `bucket_size`, meaning that if the maximum recursion depth cannot be satisfied without violating the bucket size condition, the latter may not be fulfilled.
+      - `axis_selection_policy`: `IndexedHighestVarianceBuild` (default) or `IndexedMaximumSpreadBuild`. Custom policies can be implmented and used.
+      - `feature_mask({feature_index_0, feature_index_1, ..., feature_index_n})`: dynamic feature mask used the select the features of interest for the axis selection procedure during the build phase. The feature indices can be specified in any order, as long as `0 <= feature_index < n_features`. Duplicates feature indices should result in valid results but it hasn't been tested.
+      - `splitting_rule_policy`: `IndexedQuickselectMedianRange` (default): quickselect median selection strategy for partitioning the children leaves around the pivot median value of the binary tree.
+  - `KDTree`: kd-tree without index but with much less features than `KDTreeIndexed`. It was just implemented for experiments purposes against `KDTreeIndexed` but it doesnt seem to have anything better other than no index creation overhead.
+  - `LowerTriangleMatrix` currently used for the pairwise distance values that can be buffered for `KMedoids`.
 
 - ### Distance functions
 
@@ -249,7 +275,7 @@ auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
                                               OptionsType()
                                                   .bucket_size(std::sqrt(n_samples))
                                                   .max_depth(std::log2(n_samples))
-                                                  .axis_selection_policy(AxisSelectionPolicyType())
+                                                  .axis_selection_policy(AxisSelectionPolicyType().feature_mask({0, 1}))
                                                   .splitting_rule_policy(SplittingRulePolicyType())
 
 
