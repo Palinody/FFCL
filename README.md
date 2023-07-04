@@ -61,12 +61,12 @@ It'll stay that way for now for practicality.
       - range_count_around_query_index
       - range_search_around_query_index
     - methods using a range pointing to the beginning and end of a new sample query that may not exist in the input dataset
-      - nearest_neighbor_around_query_index
-      - k_nearest_neighbors_around_query_index
-      - radius_count_around_query_index
-      - radius_search_around_query_index
-      - range_count_around_query_index
-      - range_search_around_query_index
+      - nearest_neighbor_around_query_sample
+      - k_nearest_neighbors_around_query_sample
+      - radius_count_around_query_sample
+      - radius_search_around_query_sample
+      - range_count_around_query_sample
+      - range_search_around_query_sample
     - Options
       - `bucket_size(ssize_t)`: the maximum number of samples that a leaf node can contain
       - `max_depth(ssize_t)`: the maximum recursion depth of the tree. The `max_depth` takes priority over `bucket_size`, meaning that if the maximum recursion depth cannot be satisfied without violating the bucket size condition, the latter may not be fulfilled.
