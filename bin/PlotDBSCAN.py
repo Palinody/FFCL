@@ -32,7 +32,7 @@ for dataset_name in (
     # Separate the points based on their np_labels
     noise_points = np_data[np_labels == -1]
     unknown_points = np_data[np_labels == 0]
-    cluster_points = np_data[np_labels > 0]
+    # cluster_points = np_data[np_labels > 0]
 
     # Plotting
     plt.scatter(noise_points[:, 0], noise_points[:, 1], color='black', marker='x', label='Noise')

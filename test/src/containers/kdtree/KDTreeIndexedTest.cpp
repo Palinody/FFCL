@@ -266,8 +266,9 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_indices, nn_distances) =
+        auto nearest_neighbors_buffer =
             kdtree.k_nearest_neighbors_around_query_index(indices[sample_index_query], n_neighbors);
+        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
     }
     timer.print_elapsed_seconds(9);
 
@@ -371,8 +372,8 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_indices, nn_distances) =
-            kdtree.radius_search_around_query_index(indices[sample_index_query], radius);
+        auto nearest_neighbors_buffer = kdtree.radius_search_around_query_index(indices[sample_index_query], radius);
+        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
 
         total_neighbors += nn_indices.size();
     }
@@ -489,10 +490,12 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsSampleTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_indices, nn_distances) = kdtree.k_nearest_neighbors_around_query_sample(
+        auto nearest_neighbors_buffer = kdtree.k_nearest_neighbors_around_query_sample(
             data.begin() + indices[sample_index_query] * n_features,
             data.begin() + indices[sample_index_query] * n_features + n_features,
             n_neighbors);
+
+        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
     }
     timer.print_elapsed_seconds(9);
 
@@ -605,10 +608,12 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusSampleTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_indices, nn_distances) = kdtree.radius_search_around_query_sample(
+        auto nearest_neighbors_buffer = kdtree.radius_search_around_query_sample(
             data.begin() + indices[sample_index_query] * n_features,
             data.begin() + indices[sample_index_query] * n_features + n_features,
             radius);
+
+        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
 
         total_neighbors += nn_indices.size();
     }
@@ -721,8 +726,10 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxSearchIndexTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_indices, nn_distances) =
+        auto nearest_neighbors_buffer =
             kdtree.range_search_around_query_index(indices[sample_index_query], kd_bounding_box);
+
+        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
 
         total_neighbors += nn_indices.size();
     }
@@ -838,10 +845,12 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxSearchSampleTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        std::tie(nn_indices, nn_distances) = kdtree.range_search_around_query_sample(
+        auto nearest_neighbors_buffer = kdtree.range_search_around_query_sample(
             data.begin() + indices[sample_index_query] * n_features,
             data.begin() + indices[sample_index_query] * n_features + n_features,
             kd_bounding_box);
+
+        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
 
         total_neighbors += nn_indices.size();
     }

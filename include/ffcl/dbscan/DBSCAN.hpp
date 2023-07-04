@@ -15,7 +15,7 @@ class DBSCAN {
   public:
     using LabelType = ssize_t;
 
-    enum class SampleStatus : LabelType { noise = -1, unknown = 0 };
+    enum class SampleStatus : LabelType { visited = -2, noise = -1, unknown = 0 };
 
     struct Options {
         Options& min_samples_in_radius(std::size_t min_samples_in_radius) {
@@ -60,8 +60,10 @@ class DBSCAN {
      * @return auto std::vector<LabelType> that has the same length as the input index range:
      * std::distance(global_index_first, global_index_last)
      */
-    template <typename Indexer>
-    auto predict(const Indexer& indexer) const;
+    template <typename SamplesIterator, typename Indexer>
+    auto predict(const SamplesIterator& samples_first,
+                 const SamplesIterator& samples_last,
+                 const Indexer&         indexer) const;
 
   private:
     Options options_;
@@ -78,47 +80,56 @@ DBSCAN<T>& DBSCAN<T>::set_options(const Options& options) {
 }
 
 template <typename T>
-template <typename Indexer>
-auto DBSCAN<T>::predict(const Indexer& indexer) const {
-    const std::size_t n_samples = indexer.n_samples();
+template <typename SamplesIterator, typename Indexer>
+auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
+                        const SamplesIterator& samples_last,
+                        const Indexer&         indexer) const {
+    const std::size_t n_features = indexer.n_features();
+    const std::size_t n_samples  = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
     // vector keeping track of the cluster label for each index specified by the global index range
     auto predictions = std::vector<LabelType>(n_samples);
+
     // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
     LabelType cluster_label = static_cast<LabelType>(SampleStatus::unknown);
+
+    // global_index means that it pertains to the entire dataset that has been indexed by the indexer
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
         // process the current sample only if its state is unknown
         if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
             // the indices of the neighbors in the global dataset with their corresponding distances
-            // assumes that the query sample is NOT RETURNED from the query function
-            auto [seed_indices, _1] = indexer.radius_search_around_query_index(global_index, options_.radius_);
+            // the query sample is included
+            auto seed_buffer =
+                indexer.radius_search_around_query_sample(samples_first + global_index * n_features,
+                                                          samples_first + global_index * n_features + n_features,
+                                                          options_.radius_);
             // process only if the current sample query has enough neighbors
-            // N.B.: +1 because the query function assumes that the query isnt returned
-            if (seed_indices.size() + 1 > options_.min_samples_in_radius_) {
+            if (seed_buffer.size() >= options_.min_samples_in_radius_) {
                 ++cluster_label;
-                // set the current sample query as the current cluster label
-                predictions[global_index] = cluster_label;
-                // all points in seeds are density-reachable from the sample query
-                for (const auto& nn_index : seed_indices) {
+
+                while (!seed_buffer.empty()) {
+                    std::size_t nn_index = seed_buffer.pop_and_get_index();
+
+                    // set the current sample query as the current cluster label
                     predictions[nn_index] = cluster_label;
-                }
-                while (!seed_indices.empty()) {
-                    const auto nn_index = seed_indices.back();
-                    seed_indices.pop_back();
 
-                    // then find its own neighbors
-                    const auto [nn_neighbors_indices, _2] =
-                        indexer.radius_search_around_query_index(nn_index, options_.radius_);
+                    // then find its own neighbors (itself included)
+                    auto nn_neighbors_buffer =
+                        indexer.radius_search_around_query_sample(samples_first + nn_index * n_features,
+                                                                  samples_first + nn_index * n_features + n_features,
+                                                                  options_.radius_);
 
-                    if (nn_neighbors_indices.size() + 1 > options_.min_samples_in_radius_) {
+                    if (nn_neighbors_buffer.size() >= options_.min_samples_in_radius_) {
                         // iterate over the neighbors of the current sample
-                        for (const auto& nn_neighbors_index : nn_neighbors_indices) {
+                        while (!nn_neighbors_buffer.empty()) {
+                            const auto [nn_neighbors_index, nn_neighbors_distance] =
+                                nn_neighbors_buffer.pop_and_get_index_distance_pair();
                             // enter the condition if it hasnt been already assigned to a cluster
                             if (predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::unknown) ||
                                 predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::noise)) {
                                 // insert the neighbor to the seed set if it isnt already labelled
                                 if (predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-                                    seed_indices.emplace_back(nn_neighbors_index);
+                                    seed_buffer.emplace_back(std::make_pair(nn_neighbors_index, nn_neighbors_distance));
                                 }
                                 // label it
                                 predictions[nn_neighbors_index] = cluster_label;
@@ -134,5 +145,44 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
     }
     return predictions;
 }
+
+/*
+template <typename T>
+template <typename SamplesIterator, typename Indexer>
+auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
+                        const SamplesIterator& samples_last,
+                        const Indexer&         indexer) const {
+    const std::size_t n_features = indexer.n_features();
+    const std::size_t n_samples  = common::utils::get_n_samples(samples_first, samples_last, n_features);
+
+    // vector keeping track of the cluster label for each index specified by the global index range
+    auto predictions = std::vector<LabelType>(n_samples);
+
+    // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
+    LabelType cluster_label = static_cast<LabelType>(SampleStatus::unknown);
+
+    // global_index means that it pertains to the entire dataset that has been indexed by the indexer
+    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
+        // process the current sample only if its state is unknown
+        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
+            predictions[global_index] = static_cast<LabelType>(SampleStatus::visited);
+
+            // the indices of the neighbors in the global dataset with their corresponding distances
+            // the query sample is included
+            auto seed_buffer =
+                indexer.radius_search_around_query_sample(samples_first + global_index * n_features,
+                                                          samples_first + global_index * n_features + n_features,
+                                                          options_.radius_);
+
+            if (seed_buffer.size() < options_.min_samples_in_radius_) {
+                predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
+            } else {
+                //
+            }
+        }
+    }
+    return predictions;
+}
+*/
 
 }  // namespace ffcl

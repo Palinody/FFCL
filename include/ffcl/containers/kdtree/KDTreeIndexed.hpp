@@ -626,7 +626,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around
 
     k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
 
-    return nearest_neighbors_buffer.move_data_to_indices_distances_pair();
+    return nearest_neighbors_buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -858,7 +858,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::radius_search_around_query
 
     radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
 
-    return nearest_neighbors_buffer.move_data_to_indices_distances_pair();
+    return nearest_neighbors_buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -1111,7 +1111,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::range_search_around_query_
 
     range_search_around_query_index(query_index, translated_kd_bounding_box, nearest_neighbors_buffer);
 
-    return nearest_neighbors_buffer.move_data_to_indices_distances_pair();
+    return nearest_neighbors_buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -1367,7 +1367,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around
 
     k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
 
-    return nearest_neighbors_buffer.move_data_to_indices_distances_pair();
+    return nearest_neighbors_buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -1622,7 +1622,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::radius_search_around_query
 
     radius_search_around_query_sample(query_feature_first, query_feature_last, radius, nearest_neighbors_buffer);
 
-    return nearest_neighbors_buffer.move_data_to_indices_distances_pair();
+    return nearest_neighbors_buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -1893,7 +1893,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::range_search_around_query_
     range_search_around_query_sample(
         query_feature_first, query_feature_last, translated_kd_bounding_box, nearest_neighbors_buffer);
 
-    return nearest_neighbors_buffer.move_data_to_indices_distances_pair();
+    return nearest_neighbors_buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>

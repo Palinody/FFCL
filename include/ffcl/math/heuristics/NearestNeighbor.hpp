@@ -51,6 +51,38 @@ class NearestNeighborsBuffer {
         return std::get<1>(priority_queue_.top());
     }
 
+    auto extract_indices() {
+        std::vector<IndexType> extracted_indices;
+        extracted_indices.reserve(priority_queue_.size());
+
+        while (!priority_queue_.empty()) {
+            const auto& index_distance_pair = priority_queue_.top();
+
+            extracted_indices.push_back(std::get<0>(index_distance_pair));
+
+            priority_queue_.pop();
+        }
+        return extracted_indices;
+    }
+
+    auto pop_and_get_index() {
+        const auto last_value_index = std::get<0>(priority_queue_.top());
+        priority_queue_.pop();
+        return last_value_index;
+    }
+
+    auto pop_and_get_distance() {
+        const auto last_value_distance = std::get<1>(priority_queue_.top());
+        priority_queue_.pop();
+        return last_value_distance;
+    }
+
+    auto pop_and_get_index_distance_pair() {
+        const auto index_distance_pair = priority_queue_.top();
+        priority_queue_.pop();
+        return index_distance_pair;
+    }
+
     auto move_data_to_indices_distances_pair() {
         std::vector<IndexType> indices;
         indices.reserve(this->size());
@@ -81,6 +113,11 @@ class NearestNeighborsBuffer {
             priority_queue_cpy.pop();
         }
         return std::make_tuple(std::move(indices), std::move(distances));
+    }
+
+    void emplace_back(ElementDataType&& index_distance_pair) {
+        priority_queue_.emplace(std::move(index_distance_pair));
+        ++max_elements_;
     }
 
     bool update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
