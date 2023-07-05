@@ -79,6 +79,7 @@ DBSCAN<T>& DBSCAN<T>::set_options(const Options& options) {
     return *this;
 }
 
+// /*
 template <typename T>
 template <typename SamplesIterator, typename Indexer>
 auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
@@ -145,6 +146,7 @@ auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
     }
     return predictions;
 }
+// */
 
 /*
 template <typename T>
@@ -163,21 +165,47 @@ auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
 
     // global_index means that it pertains to the entire dataset that has been indexed by the indexer
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
-        // process the current sample only if its state is unknown
+        // process the current sample only if it's not visited
         if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-            predictions[global_index] = static_cast<LabelType>(SampleStatus::visited);
+            // mark the current sample as visited
+            // predictions[global_index] = static_cast<LabelType>(SampleStatus::visited);
 
             // the indices of the neighbors in the global dataset with their corresponding distances
-            // the query sample is included
-            auto seed_buffer =
-                indexer.radius_search_around_query_sample(samples_first + global_index * n_features,
-                                                          samples_first + global_index * n_features + n_features,
-                                                          options_.radius_);
+            // the query sample is not included
+            auto initial_neighbors_buffer = indexer.radius_search_around_query_index(global_index, options_.radius_);
 
-            if (seed_buffer.size() < options_.min_samples_in_radius_) {
+            if (initial_neighbors_buffer.size() + 1 < options_.min_samples_in_radius_) {
                 predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
+
             } else {
-                //
+                ++cluster_label;
+
+                predictions[global_index] = cluster_label;
+
+                while (!initial_neighbors_buffer.empty()) {
+                    std::size_t neighbor_index = initial_neighbors_buffer.pop_and_get_index();
+
+                    if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::unknown)) {
+                        // mark the current sample as visited
+                        // predictions[neighbor_index] = static_cast<LabelType>(SampleStatus::visited);
+                        predictions[neighbor_index] = cluster_label;
+
+                        auto current_neighbors_buffer =
+                            indexer.radius_search_around_query_index(neighbor_index, options_.radius_);
+
+                        if (current_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
+                            initial_neighbors_buffer.add(std::move(current_neighbors_buffer));
+
+                            // for (const auto& inner_neighbor_index : current_neighbors_buffer.extract_indices()) {
+                            // predictions[inner_neighbor_index] = cluster_label;
+                            // }
+                        }
+                    }
+                    // if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::unknown) ||
+                    // predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
+                    // predictions[neighbor_index] = cluster_label;
+                    // }
+                }
             }
         }
     }

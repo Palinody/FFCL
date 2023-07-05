@@ -120,6 +120,12 @@ class NearestNeighborsBuffer {
         ++max_elements_;
     }
 
+    void add(NearestNeighborsBuffer&& nearest_neighbors_buffer) {
+        while (!nearest_neighbors_buffer.empty()) {
+            this->emplace_back(std::move(nearest_neighbors_buffer.pop_and_get_index_distance_pair()));
+        }
+    }
+
     bool update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // populate the priority queue if theres still empty space
         if (priority_queue_.size() < max_elements_) {
