@@ -79,7 +79,7 @@ DBSCAN<T>& DBSCAN<T>::set_options(const Options& options) {
     return *this;
 }
 
-// /*
+/*
 template <typename T>
 template <typename SamplesIterator, typename Indexer>
 auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
@@ -146,7 +146,7 @@ auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
     }
     return predictions;
 }
-// */
+*/
 
 /*
 template <typename T>
@@ -212,5 +212,63 @@ auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
     return predictions;
 }
 */
+
+template <typename T>
+template <typename SamplesIterator, typename Indexer>
+auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
+                        const SamplesIterator& samples_last,
+                        const Indexer&         indexer) const {
+    const std::size_t n_features = indexer.n_features();
+    const std::size_t n_samples  = common::utils::get_n_samples(samples_first, samples_last, n_features);
+
+    // vector keeping track of the cluster label for each index specified by the global index range
+    auto predictions = std::vector<LabelType>(n_samples);
+
+    // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
+    LabelType cluster_label = static_cast<LabelType>(SampleStatus::unknown);
+
+    // global_index means that it pertains to the entire dataset that has been indexed by the indexer
+    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
+        // process the current sample only if it's not visited
+        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
+            // mark the current sample as visited
+            // predictions[global_index] = static_cast<LabelType>(SampleStatus::visited);
+
+            // the indices of the neighbors in the global dataset with their corresponding distances
+            // the query sample is not included
+            auto initial_neighbors_buffer = indexer.radius_search_around_query_index(global_index, options_.radius_);
+
+            if (initial_neighbors_buffer.size() + 1 < options_.min_samples_in_radius_) {
+                predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
+
+            } else {
+                ++cluster_label;
+
+                predictions[global_index] = cluster_label;
+
+                auto initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
+
+                for (std::size_t index = 0; index < initial_neighbors_indices.size(); ++index) {
+                    const auto neighbor_index = initial_neighbors_indices[index];
+                    if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::unknown)) {
+                        predictions[neighbor_index] = cluster_label;
+
+                        auto current_neighbors_buffer =
+                            indexer.radius_search_around_query_index(neighbor_index, options_.radius_);
+
+                        if (current_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
+                            auto current_neighbors_indices = current_neighbors_buffer.extract_indices();
+
+                            initial_neighbors_indices.insert(initial_neighbors_indices.end(),
+                                                             std::make_move_iterator(current_neighbors_indices.begin()),
+                                                             std::make_move_iterator(current_neighbors_indices.end()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return predictions;
+}
 
 }  // namespace ffcl
