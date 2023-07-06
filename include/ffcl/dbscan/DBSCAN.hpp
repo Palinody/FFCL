@@ -248,8 +248,10 @@ auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
 
                 auto initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
 
-                for (std::size_t index = 0; index < initial_neighbors_indices.size(); ++index) {
-                    const auto neighbor_index = initial_neighbors_indices[index];
+                // iterate over the samples that are assigned to the current cluster
+                for (std::size_t cluster_sample_index = 0; cluster_sample_index < initial_neighbors_indices.size();
+                     ++cluster_sample_index) {
+                    const auto neighbor_index = initial_neighbors_indices[cluster_sample_index];
                     if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::unknown)) {
                         predictions[neighbor_index] = cluster_label;
 

@@ -12,7 +12,6 @@ except:
     from sklearn.cluster import DBSCAN
     from sklearn.neighbors import KDTree
 
-PLOT_RESULTS = True
 
 def read_dataset(filepath: str):
     return np.loadtxt(filepath, dtype=np.float32, delimiter=" ")
@@ -41,9 +40,6 @@ def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
         end_time - start_time,
         "seconds",
     )
-
-    if PLOT_RESULTS:
-        pass
 
 def run_all():
     """noisy_circles.txt, noisy_moons.txt, varied.txt, aniso.txt, blobs.txt, no_structure.txt, unbalanced_blobs.txt"""
