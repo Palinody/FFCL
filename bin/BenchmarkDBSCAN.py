@@ -19,7 +19,11 @@ def read_dataset(filepath: str):
 def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
     np.random.shuffle(points)
 
-    clustering = DBSCAN(eps=epsilon, min_samples=min_samples, algorithm='kd_tree')
+    clustering = DBSCAN(eps=epsilon, 
+                        min_samples=min_samples, 
+                        algorithm='kd_tree', 
+                        leaf_size=int(math.sqrt(points.shape[0])), 
+                        n_jobs=None)
     
     start_time = time.process_time()
     clustering.kdtree_ = KDTree(points, leaf_size=math.sqrt(points.shape[0]))
