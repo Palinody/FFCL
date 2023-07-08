@@ -367,7 +367,6 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
-/*
 TEST_F(DBSCANErrorsTest, NoStructureTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -414,7 +413,6 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
-*/
 
 TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
