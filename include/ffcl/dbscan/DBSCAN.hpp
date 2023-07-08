@@ -95,9 +95,9 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
     // initialize the initial cluster counter that's in [0, n_samples)
     LabelType cluster_label = static_cast<LabelType>(SampleStatus::noise);
 
-    auto query_function = [indexer = std::ref(indexer), func = std::forward<IndexerFunction>(func)](
+    auto query_function = [&indexer = static_cast<const Indexer&>(indexer), func = std::forward<IndexerFunction>(func)](
                               std::size_t index, auto&&... funcArgs) mutable {
-        return std::invoke(func, indexer.get(), index, std::forward<decltype(funcArgs)>(funcArgs)...);
+        return std::invoke(func, indexer, index, std::forward<decltype(funcArgs)>(funcArgs)...);
     };
 
     // global_index means that it pertains to the entire dataset that has been indexed by the indexer
@@ -106,7 +106,6 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
         if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise)) {
             // the indices of the neighbors in the global dataset with their corresponding distances
             // the query sample is not included
-            // auto initial_neighbors_buffer = indexer.radius_search_around_query_index(global_index, options_.radius_);
             auto initial_neighbors_buffer = query_function(global_index, std::forward<Args>(args)...);
 
             if (initial_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
@@ -123,8 +122,6 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
                     if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
                         predictions[neighbor_index] = cluster_label;
 
-                        // auto current_neighbors_buffer =
-                        // indexer.radius_search_around_query_index(neighbor_index, options_.radius_);
                         auto current_neighbors_buffer = query_function(neighbor_index, std::forward<Args>(args)...);
 
                         if (current_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
