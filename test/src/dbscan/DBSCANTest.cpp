@@ -171,7 +171,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(data.begin(), data.end(), kdtree);
+    const auto predictions = dbscan.predict(kdtree);
 
     timer.print_elapsed_seconds(9);
 
@@ -217,7 +217,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(data.begin(), data.end(), kdtree);
+    const auto predictions = dbscan.predict(kdtree);
 
     timer.print_elapsed_seconds(9);
 
@@ -263,7 +263,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(data.begin(), data.end(), kdtree);
+    const auto predictions = dbscan.predict(kdtree);
 
     timer.print_elapsed_seconds(9);
 
@@ -309,7 +309,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(data.begin(), data.end(), kdtree);
+    const auto predictions = dbscan.predict(kdtree);
 
     timer.print_elapsed_seconds(9);
 
@@ -355,7 +355,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(data.begin(), data.end(), kdtree);
+    const auto predictions = dbscan.predict(kdtree);
 
     timer.print_elapsed_seconds(9);
 
@@ -401,7 +401,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(data.begin(), data.end(), kdtree);
+    const auto predictions = dbscan.predict(kdtree);
 
     timer.print_elapsed_seconds(9);
 
@@ -447,7 +447,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(data.begin(), data.end(), kdtree);
+    const auto predictions = dbscan.predict(kdtree);
 
     timer.print_elapsed_seconds(9);
 

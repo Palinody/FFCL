@@ -23,6 +23,7 @@ def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
                         min_samples=min_samples, 
                         algorithm='kd_tree', 
                         leaf_size=int(math.sqrt(points.shape[0])), 
+                        metric="euclidean",
                         n_jobs=None)
     
     start_time = time.process_time()

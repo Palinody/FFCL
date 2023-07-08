@@ -30,13 +30,13 @@ for dataset_name in (
     np_labels = np.array(predictions, dtype=int)
 
     # Separate the points based on their np_labels
-    noise_points = np_data[np_labels == -1]
-    unknown_points = np_data[np_labels == 0]
+    noise_points = np_data[np_labels == 0]
+    # unknown_points = np_data[np_labels == 0]
     # cluster_points = np_data[np_labels > 0]
 
     # Plotting
     plt.scatter(noise_points[:, 0], noise_points[:, 1], color='black', marker='x', label='Noise')
-    plt.scatter(unknown_points[:, 0], unknown_points[:, 1], facecolors='none', edgecolors='black', label='Unknown')
+    # plt.scatter(unknown_points[:, 0], unknown_points[:, 1], facecolors='none', edgecolors='black', label='Unknown')
 
     # Assign a unique color to each cluster index
     unique_predictions = np.unique(np_labels)

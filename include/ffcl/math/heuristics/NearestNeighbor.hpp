@@ -12,11 +12,12 @@
 
 template <typename SamplesIterator>
 class NearestNeighborsBuffer {
-  private:
+  public:
     using IndexType       = std::size_t;
     using DistanceType    = typename SamplesIterator::value_type;
     using ElementDataType = typename std::tuple<IndexType, DistanceType>;
 
+  private:
     static constexpr auto comparison_lambda = [](const ElementDataType& left_element,
                                                  const ElementDataType& right_element) {
         // the greatest element will appear at the top of the priority queue

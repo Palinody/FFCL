@@ -58,7 +58,7 @@ add_definitions(-DTHREADS_ENABLED=true)
 add_definitions(-DVERBOSE=false)
 
 # disable all assertions
-add_definitions(-DNDEBUG)
+# add_definitions(-DNDEBUG)
 
 # set(MODE "benchmarks")
 if(MODE STREQUAL "benchmark")

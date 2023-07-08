@@ -15,8 +15,6 @@ class DBSCAN {
   public:
     using LabelType = ssize_t;
 
-    enum class SampleStatus : LabelType { visited = -2, noise = -1, unknown = 0 };
-
     struct Options {
         Options& min_samples_in_radius(std::size_t min_samples_in_radius) {
             min_samples_in_radius_ = min_samples_in_radius;
@@ -60,12 +58,15 @@ class DBSCAN {
      * @return auto std::vector<LabelType> that has the same length as the input index range:
      * std::distance(global_index_first, global_index_last)
      */
-    template <typename SamplesIterator, typename Indexer>
-    auto predict(const SamplesIterator& samples_first,
-                 const SamplesIterator& samples_last,
-                 const Indexer&         indexer) const;
+    template <typename Indexer>
+    auto predict(const Indexer& indexer) const;
+
+    template <typename Indexer>
+    auto predict_with_buffers(const Indexer& indexer) const;
 
   private:
+    enum class SampleStatus : LabelType { noise = 0 /*, unknown = 0 */ };
+
     Options options_;
 };
 
@@ -79,180 +80,39 @@ DBSCAN<T>& DBSCAN<T>::set_options(const Options& options) {
     return *this;
 }
 
-/*
 template <typename T>
-template <typename SamplesIterator, typename Indexer>
-auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
-                        const SamplesIterator& samples_last,
-                        const Indexer&         indexer) const {
-    const std::size_t n_features = indexer.n_features();
-    const std::size_t n_samples  = common::utils::get_n_samples(samples_first, samples_last, n_features);
+template <typename Indexer>
+auto DBSCAN<T>::predict(const Indexer& indexer) const {
+    const std::size_t n_samples = indexer.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
     auto predictions = std::vector<LabelType>(n_samples);
 
-    // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
-    LabelType cluster_label = static_cast<LabelType>(SampleStatus::unknown);
+    // initialize the initial cluster counter that's in [0, n_samples)
+    LabelType cluster_label = static_cast<LabelType>(SampleStatus::noise);
 
-    // global_index means that it pertains to the entire dataset that has been indexed by the indexer
-    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
-        // process the current sample only if its state is unknown
-        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-            // the indices of the neighbors in the global dataset with their corresponding distances
-            // the query sample is included
-            auto seed_buffer =
-                indexer.radius_search_around_query_sample(samples_first + global_index * n_features,
-                                                          samples_first + global_index * n_features + n_features,
-                                                          options_.radius_);
-            // process only if the current sample query has enough neighbors
-            if (seed_buffer.size() >= options_.min_samples_in_radius_) {
-                ++cluster_label;
-
-                while (!seed_buffer.empty()) {
-                    std::size_t nn_index = seed_buffer.pop_and_get_index();
-
-                    // set the current sample query as the current cluster label
-                    predictions[nn_index] = cluster_label;
-
-                    // then find its own neighbors (itself included)
-                    auto nn_neighbors_buffer =
-                        indexer.radius_search_around_query_sample(samples_first + nn_index * n_features,
-                                                                  samples_first + nn_index * n_features + n_features,
-                                                                  options_.radius_);
-
-                    if (nn_neighbors_buffer.size() >= options_.min_samples_in_radius_) {
-                        // iterate over the neighbors of the current sample
-                        while (!nn_neighbors_buffer.empty()) {
-                            const auto [nn_neighbors_index, nn_neighbors_distance] =
-                                nn_neighbors_buffer.pop_and_get_index_distance_pair();
-                            // enter the condition if it hasnt been already assigned to a cluster
-                            if (predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::unknown) ||
-                                predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::noise)) {
-                                // insert the neighbor to the seed set if it isnt already labelled
-                                if (predictions[nn_neighbors_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-                                    seed_buffer.emplace_back(std::make_pair(nn_neighbors_index, nn_neighbors_distance));
-                                }
-                                // label it
-                                predictions[nn_neighbors_index] = cluster_label;
-                            }
-                        }
-                    }
-                }
-            } else {
-                // set the current sample query as noise if it doesnt have enough neighbors
-                predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
-            }
-        }
-    }
-    return predictions;
-}
-*/
-
-/*
-template <typename T>
-template <typename SamplesIterator, typename Indexer>
-auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
-                        const SamplesIterator& samples_last,
-                        const Indexer&         indexer) const {
-    const std::size_t n_features = indexer.n_features();
-    const std::size_t n_samples  = common::utils::get_n_samples(samples_first, samples_last, n_features);
-
-    // vector keeping track of the cluster label for each index specified by the global index range
-    auto predictions = std::vector<LabelType>(n_samples);
-
-    // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
-    LabelType cluster_label = static_cast<LabelType>(SampleStatus::unknown);
+    std::vector<std::size_t> initial_neighbors_indices;
 
     // global_index means that it pertains to the entire dataset that has been indexed by the indexer
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
         // process the current sample only if it's not visited
-        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-            // mark the current sample as visited
-            // predictions[global_index] = static_cast<LabelType>(SampleStatus::visited);
-
+        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise)) {
             // the indices of the neighbors in the global dataset with their corresponding distances
             // the query sample is not included
             auto initial_neighbors_buffer = indexer.radius_search_around_query_index(global_index, options_.radius_);
 
-            if (initial_neighbors_buffer.size() + 1 < options_.min_samples_in_radius_) {
-                predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
-
-            } else {
+            if (initial_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
                 ++cluster_label;
 
                 predictions[global_index] = cluster_label;
 
-                while (!initial_neighbors_buffer.empty()) {
-                    std::size_t neighbor_index = initial_neighbors_buffer.pop_and_get_index();
-
-                    if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-                        // mark the current sample as visited
-                        // predictions[neighbor_index] = static_cast<LabelType>(SampleStatus::visited);
-                        predictions[neighbor_index] = cluster_label;
-
-                        auto current_neighbors_buffer =
-                            indexer.radius_search_around_query_index(neighbor_index, options_.radius_);
-
-                        if (current_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
-                            initial_neighbors_buffer.add(std::move(current_neighbors_buffer));
-
-                            // for (const auto& inner_neighbor_index : current_neighbors_buffer.extract_indices()) {
-                            // predictions[inner_neighbor_index] = cluster_label;
-                            // }
-                        }
-                    }
-                    // if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::unknown) ||
-                    // predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
-                    // predictions[neighbor_index] = cluster_label;
-                    // }
-                }
-            }
-        }
-    }
-    return predictions;
-}
-*/
-
-template <typename T>
-template <typename SamplesIterator, typename Indexer>
-auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
-                        const SamplesIterator& samples_last,
-                        const Indexer&         indexer) const {
-    const std::size_t n_features = indexer.n_features();
-    const std::size_t n_samples  = common::utils::get_n_samples(samples_first, samples_last, n_features);
-
-    // vector keeping track of the cluster label for each index specified by the global index range
-    auto predictions = std::vector<LabelType>(n_samples);
-
-    // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
-    LabelType cluster_label = static_cast<LabelType>(SampleStatus::unknown);
-
-    // global_index means that it pertains to the entire dataset that has been indexed by the indexer
-    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
-        // process the current sample only if it's not visited
-        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::unknown)) {
-            // mark the current sample as visited
-            // predictions[global_index] = static_cast<LabelType>(SampleStatus::visited);
-
-            // the indices of the neighbors in the global dataset with their corresponding distances
-            // the query sample is not included
-            auto initial_neighbors_buffer = indexer.radius_search_around_query_index(global_index, options_.radius_);
-
-            if (initial_neighbors_buffer.size() + 1 < options_.min_samples_in_radius_) {
-                predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
-
-            } else {
-                ++cluster_label;
-
-                predictions[global_index] = cluster_label;
-
-                auto initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
+                initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
 
                 // iterate over the samples that are assigned to the current cluster
                 for (std::size_t cluster_sample_index = 0; cluster_sample_index < initial_neighbors_indices.size();
                      ++cluster_sample_index) {
                     const auto neighbor_index = initial_neighbors_indices[cluster_sample_index];
-                    if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::unknown)) {
+                    if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
                         predictions[neighbor_index] = cluster_label;
 
                         auto current_neighbors_buffer =
@@ -268,6 +128,60 @@ auto DBSCAN<T>::predict(const SamplesIterator& samples_first,
                     }
                 }
             }
+        }
+    }
+    return predictions;
+}
+
+template <typename T>
+template <typename Indexer>
+auto DBSCAN<T>::predict_with_buffers(const Indexer& indexer) const {
+    const std::size_t n_samples = indexer.n_samples();
+
+    // vector keeping track of the cluster label for each index specified by the global index range
+    auto predictions = std::vector<LabelType>(n_samples);
+
+    // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
+    LabelType cluster_label = static_cast<LabelType>(1);
+
+    // maps each sample to its nearest neighbors w.r.t. radius and min samples in radius options
+    auto precomputed_neighborhood = std::vector<std::vector<std::size_t>>(n_samples);
+    // booloean that assesses whether the current sample is core or non core
+    auto precomputed_is_core = std::vector<bool>(n_samples);
+
+    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
+        auto current_neighborhood_indices =
+            indexer.radius_search_around_query_index(global_index, options_.radius_).extract_indices();
+
+        precomputed_is_core[global_index] = current_neighborhood_indices.size() + 1 >= options_.min_samples_in_radius_;
+
+        precomputed_neighborhood[global_index] = std::move(current_neighborhood_indices);
+    }
+
+    auto neighbors_stack = std::vector<std::size_t>();
+
+    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
+        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise) &&
+            precomputed_is_core[global_index]) {
+            while (true) {
+                if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise)) {
+                    predictions[global_index] = cluster_label;
+
+                    if (precomputed_is_core[global_index]) {
+                        for (const auto& neighbor_index : precomputed_neighborhood[global_index]) {
+                            if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
+                                neighbors_stack.emplace_back(neighbor_index);
+                            }
+                        }
+                    }
+                }
+                if (neighbors_stack.empty()) {
+                    break;
+                }
+                global_index = neighbors_stack.back();
+                neighbors_stack.pop_back();
+            }
+            ++cluster_label;
         }
     }
     return predictions;
