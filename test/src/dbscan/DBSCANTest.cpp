@@ -145,33 +145,34 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  n_features,
-                                                  OptionsType()
-                                                      .bucket_size(std::sqrt(n_samples))
-                                                      .max_depth(std::log2(n_samples))
-                                                      .axis_selection_policy(AxisSelectionPolicyType())
-                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>();
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(2).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples_in_radius(5));
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(kdtree);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
 
     timer.print_elapsed_seconds(9);
 
@@ -191,33 +192,34 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  n_features,
-                                                  OptionsType()
-                                                      .bucket_size(std::sqrt(n_samples))
-                                                      .max_depth(std::log2(n_samples))
-                                                      .axis_selection_policy(AxisSelectionPolicyType())
-                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>();
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(5));
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(kdtree);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
 
     timer.print_elapsed_seconds(9);
 
@@ -237,33 +239,34 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  n_features,
-                                                  OptionsType()
-                                                      .bucket_size(std::sqrt(n_samples))
-                                                      .max_depth(std::log2(n_samples))
-                                                      .axis_selection_policy(AxisSelectionPolicyType())
-                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>();
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(3));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(3));
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(kdtree);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
 
     timer.print_elapsed_seconds(9);
 
@@ -283,33 +286,34 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  n_features,
-                                                  OptionsType()
-                                                      .bucket_size(std::sqrt(n_samples))
-                                                      .max_depth(std::log2(n_samples))
-                                                      .axis_selection_policy(AxisSelectionPolicyType())
-                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>();
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1.2).min_samples_in_radius(10));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1.2).min_samples_in_radius(10));
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(kdtree);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1.2);
 
     timer.print_elapsed_seconds(9);
 
@@ -329,33 +333,34 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  n_features,
-                                                  OptionsType()
-                                                      .bucket_size(std::sqrt(n_samples))
-                                                      .max_depth(std::log2(n_samples))
-                                                      .axis_selection_policy(AxisSelectionPolicyType())
-                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>();
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(10));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(10));
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(kdtree);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
 
     timer.print_elapsed_seconds(9);
 
@@ -375,33 +380,34 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  n_features,
-                                                  OptionsType()
-                                                      .bucket_size(std::sqrt(n_samples))
-                                                      .max_depth(std::log2(n_samples))
-                                                      .axis_selection_policy(AxisSelectionPolicyType())
-                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>();
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(1).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(5));
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(kdtree);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
 
     timer.print_elapsed_seconds(9);
 
@@ -421,33 +427,34 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
-                                                  indices.end(),
-                                                  data.begin(),
-                                                  data.end(),
-                                                  n_features,
-                                                  OptionsType()
-                                                      .bucket_size(std::sqrt(n_samples))
-                                                      .max_depth(std::log2(n_samples))
-                                                      .axis_selection_policy(AxisSelectionPolicyType())
-                                                      .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 
-    auto dbscan = ffcl::DBSCAN<dType>();
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<dType>::Options().radius(2).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples_in_radius(5));
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(kdtree);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
 
     timer.print_elapsed_seconds(9);
 

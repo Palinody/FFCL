@@ -4,15 +4,19 @@
 #include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <tuple>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace ffcl {
-template <typename T>
-class DBSCAN {
-    static_assert(std::is_floating_point<T>::value, "DBSCAN only allows floating point types.");
 
+template <typename Indexer>
+class DBSCAN {
   public:
+    using DataType = typename Indexer::DataType;
+    static_assert(std::is_floating_point<DataType>::value, "DBSCAN only allows floating point types.");
     using LabelType = ssize_t;
 
     struct Options {
@@ -21,7 +25,7 @@ class DBSCAN {
             return *this;
         }
 
-        Options& radius(const T& radius) {
+        Options& radius(const DataType& radius) {
             radius_ = radius;
             return *this;
         }
@@ -33,7 +37,7 @@ class DBSCAN {
         }
 
         std::size_t min_samples_in_radius_ = 5;
-        T           radius_                = 0.1;
+        DataType    radius_                = 0.1;
     };
 
   public:
@@ -43,7 +47,7 @@ class DBSCAN {
 
     DBSCAN(const DBSCAN&) = delete;
 
-    DBSCAN<T>& set_options(const Options& options);
+    DBSCAN<Indexer>& set_options(const Options& options);
 
     /**
      * @brief Predicts the cluster label of a range of indices in a global dataset.
@@ -53,15 +57,15 @@ class DBSCAN {
      * the dataset to cluster, which can range from the empty set to [index.begin(), index.end()] or any variation in
      * between.
      *
-     * @tparam Indexer can be a KDTreeIndexed or any other indexer (currently only KDTreeIndexed)
      * @param indexer the indexer that was used to index the dataset and rearranged the index
      * @return auto std::vector<LabelType> that has the same length as the input index range:
      * std::distance(global_index_first, global_index_last)
      */
-    template <typename Indexer>
+    template <typename IndexerFunction, typename... Args>
+    auto predict(const Indexer& indexer, IndexerFunction&& func, Args&&... args) const;
+
     auto predict(const Indexer& indexer) const;
 
-    template <typename Indexer>
     auto predict_with_buffers(const Indexer& indexer) const;
 
   private:
@@ -70,19 +74,19 @@ class DBSCAN {
     Options options_;
 };
 
-template <typename T>
-DBSCAN<T>::DBSCAN(const Options& options)
+template <typename Indexer>
+DBSCAN<Indexer>::DBSCAN(const Options& options)
   : options_{options} {}
 
-template <typename T>
-DBSCAN<T>& DBSCAN<T>::set_options(const Options& options) {
+template <typename Indexer>
+DBSCAN<Indexer>& DBSCAN<Indexer>::set_options(const Options& options) {
     options_ = options;
     return *this;
 }
 
-template <typename T>
 template <typename Indexer>
-auto DBSCAN<T>::predict(const Indexer& indexer) const {
+template <typename IndexerFunction, typename... Args>
+auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Args&&... args) const {
     const std::size_t n_samples = indexer.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
@@ -91,7 +95,10 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
     // initialize the initial cluster counter that's in [0, n_samples)
     LabelType cluster_label = static_cast<LabelType>(SampleStatus::noise);
 
-    std::vector<std::size_t> initial_neighbors_indices;
+    auto query_function = [indexer = std::ref(indexer), func = std::forward<IndexerFunction>(func)](
+                              std::size_t index, auto&&... funcArgs) mutable {
+        return std::invoke(func, indexer.get(), index, std::forward<decltype(funcArgs)>(funcArgs)...);
+    };
 
     // global_index means that it pertains to the entire dataset that has been indexed by the indexer
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
@@ -99,14 +106,15 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
         if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise)) {
             // the indices of the neighbors in the global dataset with their corresponding distances
             // the query sample is not included
-            auto initial_neighbors_buffer = indexer.radius_search_around_query_index(global_index, options_.radius_);
+            // auto initial_neighbors_buffer = indexer.radius_search_around_query_index(global_index, options_.radius_);
+            auto initial_neighbors_buffer = query_function(global_index, std::forward<Args>(args)...);
 
             if (initial_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
                 ++cluster_label;
 
                 predictions[global_index] = cluster_label;
 
-                initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
+                auto initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
 
                 // iterate over the samples that are assigned to the current cluster
                 for (std::size_t cluster_sample_index = 0; cluster_sample_index < initial_neighbors_indices.size();
@@ -115,8 +123,9 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
                     if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
                         predictions[neighbor_index] = cluster_label;
 
-                        auto current_neighbors_buffer =
-                            indexer.radius_search_around_query_index(neighbor_index, options_.radius_);
+                        // auto current_neighbors_buffer =
+                        // indexer.radius_search_around_query_index(neighbor_index, options_.radius_);
+                        auto current_neighbors_buffer = query_function(neighbor_index, std::forward<Args>(args)...);
 
                         if (current_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
                             auto current_neighbors_indices = current_neighbors_buffer.extract_indices();
@@ -133,9 +142,13 @@ auto DBSCAN<T>::predict(const Indexer& indexer) const {
     return predictions;
 }
 
-template <typename T>
 template <typename Indexer>
-auto DBSCAN<T>::predict_with_buffers(const Indexer& indexer) const {
+auto DBSCAN<Indexer>::predict(const Indexer& indexer) const {
+    return predict(indexer, &Indexer::radius_search_around_query_index, options_.radius_);
+}
+
+template <typename Indexer>
+auto DBSCAN<Indexer>::predict_with_buffers(const Indexer& indexer) const {
     const std::size_t n_samples = indexer.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
