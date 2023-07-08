@@ -168,11 +168,60 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples(5));
 
     timer.reset();
 
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(DBSCANErrorsTest, NoisyCirclesBoundingBoxTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "noisy_circles.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
+
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples(2));
+
+    timer.reset();
+
+    const auto predictions = dbscan.predict(indexer,
+                                            &IndexerType::range_search_around_query_index,
+                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -215,7 +264,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(5));
 
     timer.reset();
 
@@ -262,7 +311,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(3));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(3));
 
     timer.reset();
 
@@ -309,7 +358,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1.2).min_samples_in_radius(10));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1.2).min_samples(10));
 
     timer.reset();
 
@@ -356,7 +405,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(10));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(10));
 
     timer.reset();
 
@@ -403,7 +452,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(5));
 
     timer.reset();
 
@@ -450,7 +499,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples_in_radius(5));
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples(5));
 
     timer.reset();
 

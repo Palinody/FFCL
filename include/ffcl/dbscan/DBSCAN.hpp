@@ -20,8 +20,8 @@ class DBSCAN {
     using LabelType = ssize_t;
 
     struct Options {
-        Options& min_samples_in_radius(std::size_t min_samples_in_radius) {
-            min_samples_in_radius_ = min_samples_in_radius;
+        Options& min_samples(std::size_t min_samples) {
+            min_samples_ = min_samples;
             return *this;
         }
 
@@ -31,13 +31,13 @@ class DBSCAN {
         }
 
         Options& operator=(const Options& options) {
-            min_samples_in_radius_ = options.min_samples_in_radius_;
-            radius_                = options.radius_;
+            min_samples_ = options.min_samples_;
+            radius_      = options.radius_;
             return *this;
         }
 
-        std::size_t min_samples_in_radius_ = 5;
-        DataType    radius_                = 0.1;
+        std::size_t min_samples_ = 5;
+        DataType    radius_      = 0.1;
     };
 
   public:
@@ -108,7 +108,7 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
             // the query sample is not included
             auto initial_neighbors_buffer = query_function(global_index, std::forward<Args>(args)...);
 
-            if (initial_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
+            if (initial_neighbors_buffer.size() + 1 >= options_.min_samples_) {
                 ++cluster_label;
 
                 predictions[global_index] = cluster_label;
@@ -124,7 +124,7 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
 
                         auto current_neighbors_buffer = query_function(neighbor_index, std::forward<Args>(args)...);
 
-                        if (current_neighbors_buffer.size() + 1 >= options_.min_samples_in_radius_) {
+                        if (current_neighbors_buffer.size() + 1 >= options_.min_samples_) {
                             auto current_neighbors_indices = current_neighbors_buffer.extract_indices();
 
                             initial_neighbors_indices.insert(initial_neighbors_indices.end(),
@@ -163,7 +163,7 @@ auto DBSCAN<Indexer>::predict_with_buffers(const Indexer& indexer) const {
         auto current_neighborhood_indices =
             indexer.radius_search_around_query_index(global_index, options_.radius_).extract_indices();
 
-        precomputed_is_core[global_index] = current_neighborhood_indices.size() + 1 >= options_.min_samples_in_radius_;
+        precomputed_is_core[global_index] = current_neighborhood_indices.size() + 1 >= options_.min_samples_;
 
         precomputed_neighborhood[global_index] = std::move(current_neighborhood_indices);
     }
