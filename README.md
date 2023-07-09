@@ -12,33 +12,23 @@ It'll stay that way for now for practicality.
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
 
-## New features \& Updates
+## TODO | New features | Updates
 
-- `ffcl::containers::KDTree`
-  **update (old to recent)**: the build strategy seems to be faster than FLANN on mnist with variance build (10% sampling) and also with 2D datasets with the bounding box axis selection policy. The nearest neighbor search seems to be faster than FLANN on all the datasets. Nearest neighbor search is much more effective with kdtrees when n_features is relatively small and n_samples large. The speed is slightly worse with kdtree on MNIST (curiously not bad at all). The tests were made with a `bucket_size=40`.
-    - kdtree build only with custom options: depth, bucket size, axis selection and split policies
-    - multiple axis selection policies (client can make its own policies)
-    - quickselect (handles duplicate data) splitting rule policy (client can make its own rules)
-    - (single) nearest neighbor index with `KDTreeIndexed` (bug fixed) and `KDTree`. The nearest neighbor is an already existing point in the dataset that is designated by index. The function returns a remapped index that can be passed to the original unswapped dataset (for `KDTreeIndexed`) to retreive the neighbor sample. The same function has been implemented for `KDTree`. The nearest neighbor retrieval seems much faster in practice (both kdtrees) than FLANN but no in depth study has been made to guarantee that this is true, only quick tests by choosing various realistic hyperparameters. I also made the tests with FLANN using `result = flann.nn_index(query_point, k=1)`. I removed the queried sample from the original dataset to not call it since the nearest neighbor finds itself when querying an already existing point (see `BenchmarkKDTree.py`).
-    - K-nearest neighbors indices for KDTreeIndexed and KDTree. The function outputs a pair of vectors containing the indices of the nearest neighbors according to the general index as well as the corresponding distances to the sample query index. The data is stored in reverse order (furthest to closest) because the nearest neighbors were stored in a priority queue with the furthest neighbor at the top of the queue. The data was "unrolled" from the top to the bottom of the queue sequentially at the very end of the k_nearest_neighbors function call. **The function ignores the query itself as a nearest neighbor. Meaning that a distance to the query cannot be zero, UNLESS another sample is at the exact same position as the query.** K-nearest neighbors has an overhead compared to the single neighbor version so the single version should be prefered if performance is important and a single nearest neighbor is needed.
-    - `radius_count_around_query_index`. Counts the number of neighbors that are withing a given radius from a query sample index. **(Not tested enough)**: needs at least to be compared to the sequential algorithm.
-    - `radius_search_around_query_index`. Finds the nearest neighbors inside of a radius centered at a query index. **(Not tested enough)**: needs at least to be compared to the sequential algorithm.
-    - `nearest_neighbor_around_query_sample`, `k_nearest_neighbors_around_query_sample`, `radius_count_around_query_sample` and `radius_search_around_query_sample` are the same functions as the ones previously mentioned that work with an index query. They run faster since they dont have the overhead of checking whether the current iteration sample is the query but keep in mind that they will return the query itself as a first neighbor if its part of the dataset. So in this case for example `nearest_neighbor_around_query_sample` would be useless and `k_nearest_neighbors_around_query_sample` would also return the query. `radius_count_around_query_sample` would need to be subtracted by `1` and `radius_search_around_query_sample` would be subject to the same "issue" as `k_nearest_neighbors_around_query_sample`.
-    - All the core functions have been implemented for `KDTreeIndexed`. I might consider dropping `KDTree` support because there doesnt seem to be any performance gain and it would simplify the library a bit. Here's an exhaustive list of the current core functions that `KDTreeIndexed` supports: (using an index pointing to one of the samples of the input dataset) `nearest_neighbor_around_query_index`, `k_nearest_neighbors_around_query_index`, `radius_count_around_query_index`, `radius_search_around_query_index`, `range_count_around_query_index`, `range_search_around_query_index`, (using a range pointing to the beginning and end of a new sample query that may not exist in input dataset) `nearest_neighbor_around_query_sample`, `k_nearest_neighbors_around_query_sample`, `radius_count_around_query_sample`, `radius_search_around_query_sample`, `range_count_around_query_sample`, `range_search_around_query_sample`
-    - `feature_mask({0, 1, ...})` for `KDTreeIndexed`. The feature_mask feature in `KDTreeIndexed` allows you to construct the KD-tree by specifying a sequence of feature indices. These selected features will be used during the axis selection process of the build procedure. This feature enables you to index your entry dataset based only on the features that are of interest to you. For example, if you have a point cloud data structure like `pcl::PointXYZIR`, you can use feature_mask to specify that the build and search operations should only consider the relevant `XYZ` points, without the need to copy the first three dimensions of each `pcl::PointXYZIR` into a new `pcl::PointXYZ` structure. By using feature_mask, you can optimize the KD-tree construction and search process by focusing on the specific features that are important to your application, saving memory and improving performance.
-    - **Next**: Some optimization for the nearest neighbors computations of KMeans and KMedoids. I might enable KDTree acceleration but its not beneficial unless a large number of centroids/medoids is needed. Its not a priority for now.
-    - **Next**: Return `NearestNeighborsBuffer` instead of converting it to a sequence of {index, distance} pairs since the premature convertion leads to useless allocation and conversions in some applicaitons (such as `DBSCAN`'s algorithm).
-- Proper unit testing (**update**: all the generic code is now unit tested)
-- DBSCAN
-  - **NEW**: first version of DBSCAN using `KDTreeIndexed` has been implemented and the results visualized. The implementation is not optimized: a lot of vector allocation in the loops (see `KDTreeIndexed`'s next feature plan).
-- OPTICS
-- DENCLUE
+- **TODO**
+  - performance tests comaring `ffcl` to the most popular libraries
+  - Some optimization for the nearest neighbors computations of KMeans and KMedoids. I might enable KDTree acceleration but its not beneficial unless a large number of centroids/medoids is needed. Its not a priority for now.
+  - Proper unit testing (**update**: all the generic code is now unit tested)
+  - OPTICS
+  - DENCLUE
+
+- **New features**
+  - DBSCAN
 
 ## Current features
 
 - ### DBSCAN (kdtree)
 
-  - DBSCAN [paper](https://www2.cs.uh.edu/~ceick/7363/Papers/dbscan.pdf)
+  - DBSCAN [original paper](https://www2.cs.uh.edu/~ceick/7363/Papers/dbscan.pdf) | [used algorithm (sequential only)](https://arxiv.org/pdf/2103.05162.pdf)
 
 - ### KMedoids
 
