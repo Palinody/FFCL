@@ -15,7 +15,7 @@ It'll stay that way for now for practicality.
 ## TODO | New features | Updates
 
 - **TODO**
-  - [Faster DBSCAN](https://alexandria.tue.nl/extra1/afstversl/wsk-i/gunawan2013.pdf)
+  - [Faster DBSCAN](https://alexandria.tue.nl/extra1/afstversl/wsk-i/gunawan2013.pdf) | [DBSCAN++](https://arxiv.org/pdf/1810.13105.pdf)
   - performance tests comaring `ffcl` to the most popular libraries
   - Some optimization for the nearest neighbors computations of KMeans and KMedoids. I might enable KDTree acceleration but its not beneficial unless a large number of centroids/medoids is needed. Its not a priority for now.
   - Proper unit testing (**update**: all the generic code is now unit tested)
