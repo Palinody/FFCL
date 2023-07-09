@@ -21,6 +21,10 @@ class DBSCAN {
     using LabelType = ssize_t;
 
     struct Options {
+        Options() = default;
+
+        Options(const Options& other) = default;
+
         Options& min_samples(std::size_t min_samples) {
             min_samples_ = min_samples;
             return *this;
@@ -116,7 +120,7 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_
             // the query sample is not included
             auto initial_neighbors_buffer = query_function(global_index, std::forward<Args>(args)...);
 
-            if (initial_neighbors_buffer.size() + 1 >= options_.min_samples_) {
+            if (initial_neighbors_buffer.size() > options_.min_samples_) {
                 ++cluster_label;
 
                 predictions[global_index] = cluster_label;
@@ -134,7 +138,7 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_
 
                         auto current_neighbors_buffer = query_function(neighbor_index, std::forward<Args>(args)...);
 
-                        if (current_neighbors_buffer.size() + 1 >= options_.min_samples_) {
+                        if (current_neighbors_buffer.size() > options_.min_samples_) {
                             auto current_neighbors_indices = current_neighbors_buffer.extract_indices();
                             initial_neighbors_indices.insert(initial_neighbors_indices.end(),
                                                              std::make_move_iterator(current_neighbors_indices.begin()),
