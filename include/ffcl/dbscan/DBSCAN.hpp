@@ -5,9 +5,9 @@
 
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <tuple>
 #include <type_traits>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -87,11 +87,11 @@ DBSCAN<Indexer>& DBSCAN<Indexer>::set_options(const Options& options) {
 
 template <typename Indexer>
 template <typename IndexerFunction, typename... Args>
-auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Args&&... args) const {
+auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_function, Args&&... args) const {
     // the query function that should be a member of the indexer
-    auto query_function = [&indexer = static_cast<const Indexer&>(indexer), func = std::forward<IndexerFunction>(func)](
+    auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
                               std::size_t sample_index, auto&&... funcArgs) mutable {
-        return std::invoke(func, indexer, sample_index, std::forward<decltype(funcArgs)>(funcArgs)...);
+        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(funcArgs)>(funcArgs)...);
     };
 
     // the total number of samples that will be searched by index
@@ -104,7 +104,7 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
     LabelType cluster_label = static_cast<LabelType>(SampleStatus::noise);
 
     // boolean buffer that keep tracks of the samples that have been already visited
-    std::vector<bool> visited_indices(n_samples);
+    auto visited_indices = std::make_unique<bool[]>(n_samples);
 
     // global_index means that it pertains to the entire dataset that has been indexed by the indexer
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {

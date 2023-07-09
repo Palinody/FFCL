@@ -17,7 +17,7 @@ def read_dataset(filepath: str):
     return np.loadtxt(filepath, dtype=np.float32, delimiter=" ")
 
 def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
-    np.random.shuffle(points)
+    # np.random.shuffle(points)
 
     clustering = DBSCAN(eps=epsilon, 
                         min_samples=min_samples, 
@@ -78,9 +78,9 @@ def run_all():
         epsilon, min_samples = dataset_parameters
 
         print("---")
-        print(filename)
-        print(dataset.shape)
-        print(f"Epsilon: {epsilon}, MinSamples: {min_samples}")
+        print(f"Dataset name: '{filename}'")
+        print(f"Dataset shape: {dataset.shape}")
+        print(f"DBSCAN parameters: Epsilon: {epsilon}, MinSamples: {min_samples}")
 
         TestSkLearnDBSCAN(dataset, epsilon=epsilon, min_samples=min_samples)
 

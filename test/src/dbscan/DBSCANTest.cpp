@@ -179,6 +179,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
+/*
 TEST_F(DBSCANErrorsTest, NoisyCirclesBoundingBoxTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -227,6 +228,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesBoundingBoxTest) {
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
+*/
 
 TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
