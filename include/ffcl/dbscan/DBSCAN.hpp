@@ -7,6 +7,7 @@
 #include <functional>
 #include <tuple>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -87,6 +88,13 @@ DBSCAN<Indexer>& DBSCAN<Indexer>::set_options(const Options& options) {
 template <typename Indexer>
 template <typename IndexerFunction, typename... Args>
 auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Args&&... args) const {
+    // the query function that should be a member of the indexer
+    auto query_function = [&indexer = static_cast<const Indexer&>(indexer), func = std::forward<IndexerFunction>(func)](
+                              std::size_t sample_index, auto&&... funcArgs) mutable {
+        return std::invoke(func, indexer, sample_index, std::forward<decltype(funcArgs)>(funcArgs)...);
+    };
+
+    // the total number of samples that will be searched by index
     const std::size_t n_samples = indexer.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
@@ -95,15 +103,15 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
     // initialize the initial cluster counter that's in [0, n_samples)
     LabelType cluster_label = static_cast<LabelType>(SampleStatus::noise);
 
-    auto query_function = [&indexer = static_cast<const Indexer&>(indexer), func = std::forward<IndexerFunction>(func)](
-                              std::size_t index, auto&&... funcArgs) mutable {
-        return std::invoke(func, indexer, index, std::forward<decltype(funcArgs)>(funcArgs)...);
-    };
+    // boolean buffer that keep tracks of the samples that have been already visited
+    std::vector<bool> visited_indices(n_samples);
 
     // global_index means that it pertains to the entire dataset that has been indexed by the indexer
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
         // process the current sample only if it's not visited
-        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise)) {
+        if (!visited_indices[global_index]) {
+            // mark the current sample index as visited
+            visited_indices[global_index] = true;
             // the indices of the neighbors in the global dataset with their corresponding distances
             // the query sample is not included
             auto initial_neighbors_buffer = query_function(global_index, std::forward<Args>(args)...);
@@ -119,20 +127,27 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& func, Ar
                 for (std::size_t cluster_sample_index = 0; cluster_sample_index < initial_neighbors_indices.size();
                      ++cluster_sample_index) {
                     const auto neighbor_index = initial_neighbors_indices[cluster_sample_index];
-                    if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
-                        predictions[neighbor_index] = cluster_label;
+                    // enter the condition if the current neighbor index hasnt been visited
+                    if (!visited_indices[neighbor_index]) {
+                        // mark the current neighbor index as visited
+                        visited_indices[neighbor_index] = true;
 
                         auto current_neighbors_buffer = query_function(neighbor_index, std::forward<Args>(args)...);
 
                         if (current_neighbors_buffer.size() + 1 >= options_.min_samples_) {
                             auto current_neighbors_indices = current_neighbors_buffer.extract_indices();
-
                             initial_neighbors_indices.insert(initial_neighbors_indices.end(),
                                                              std::make_move_iterator(current_neighbors_indices.begin()),
                                                              std::make_move_iterator(current_neighbors_indices.end()));
                         }
                     }
+                    // assign neighbor_index to a cluster if its not already the case
+                    if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
+                        predictions[neighbor_index] = cluster_label;
+                    }
                 }
+            } else {
+                predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
             }
         }
     }
