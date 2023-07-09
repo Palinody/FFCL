@@ -44,6 +44,8 @@ import sys
 import math
 
 BUCKET_SIZE: int = 40
+RADIUS: int = 1
+N_NEIGHBORS: int = 5
 
 
 def read_dataset(filepath: str):
@@ -82,7 +84,7 @@ def TestSklearnKDTreeBuildTime(points: np.ndarray):
         "seconds",
     )
     # Find k nearest neighbors
-    k = 5
+    k = N_NEIGHBORS
     start_time = time.process_time()
 
     for query_point in points:
@@ -92,14 +94,14 @@ def TestSklearnKDTreeBuildTime(points: np.ndarray):
     print(f"Elapsed time for KDTree {k} nearest neighbor (scikit-learn):", end_time - start_time, "seconds")
 
     # Find points within a radius
-    radius = 0.1
+    radius = RADIUS
     start_time = time.process_time()
 
     for query_point in points:
         distances, indices = tree.query_radius([query_point], r=radius, return_distance=True, count_only=False)
 
     end_time = time.process_time()
-    print(f"Elapsed time for KDTree {k} radius count (scikit-learn):", end_time - start_time, "seconds")
+    print(f"Elapsed time for KDTree {radius} radius count (scikit-learn):", end_time - start_time, "seconds")
 
 
 def TestFlannKDTreeBuildTime(points: np.ndarray):
@@ -143,7 +145,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # flann.get_indexed_data()
     # print("FLANN build_index parameters:")
     # print(params)
-    k = 5
+    k = N_NEIGHBORS
 
     start_time = time.process_time()
 
@@ -156,10 +158,8 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
         end_time - start_time,
         "seconds",
     )
-    # print("result: ", result)
-    # print(f"Result: {result}, dist: {dists}")
     
-    radius = 0.1
+    radius = RADIUS
 
     start_time = time.process_time()
 
@@ -168,7 +168,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     
     end_time = time.process_time()
     print(
-        f"Elapsed time for KDTree {k} radius count (pyflann):",
+        f"Elapsed time for KDTree {radius} radius count (pyflann):",
         end_time - start_time,
         "seconds",
     )

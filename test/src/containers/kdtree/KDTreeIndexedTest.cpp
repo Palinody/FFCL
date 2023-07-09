@@ -105,6 +105,9 @@ class KDTreeIndexedErrorsTest : public ::testing::Test {
     const fs::path clustering_folder_root_ = fs::path("../bin/clustering");
     const fs::path inputs_folder_          = clustering_folder_root_ / fs::path("inputs");
     const fs::path targets_folder_         = clustering_folder_root_ / fs::path("targets");
+
+    const std::size_t n_neighbors_ = 5;
+    const dType       radius_      = 1;
 };
 
 std::vector<std::size_t> generate_indices(std::size_t n_samples) {
@@ -259,24 +262,23 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    std::vector<std::size_t> nn_indices;
-    std::vector<dType>       nn_distances;
+    const std::size_t n_neighbors = n_neighbors_;
 
-    const std::size_t n_neighbors = 5;
+    std::vector<std::size_t> nn_histogram(n_samples);
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         auto nearest_neighbors_buffer =
             kdtree.k_nearest_neighbors_around_query_index(indices[sample_index_query], n_neighbors);
-        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
+
+        nn_histogram[indices[sample_index_query]] = nearest_neighbors_buffer.size();
     }
     timer.print_elapsed_seconds(9);
 
     std::cout << "nearest_neighbor_around_query_index (index, distance): (" << nn_index << ", " << nn_distance << ")\n";
 
-    std::cout << "k_nearest_neighbors_around_query_index (indices, distances)\n";
-    print_data(nn_indices, nn_indices.size());
-    print_data(nn_distances, nn_distances.size());
+    std::cout << "k_nearest_neighbors_around_query_index (histogram)\n";
+    print_data(nn_histogram, n_samples);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
@@ -317,15 +319,22 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
     timer.print_elapsed_seconds(9);
 
     std::size_t radius_count = 0;
-    const dType radius       = 0.1;
+    const dType radius       = radius_;
+
+    std::vector<std::size_t> nn_histogram(n_samples);
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         radius_count = kdtree.radius_count_around_query_index(indices[sample_index_query], radius);
+
+        nn_histogram[indices[sample_index_query]] = radius_count;
     }
     timer.print_elapsed_seconds(9);
 
     std::cout << "radius_count: " << radius_count << ", radius: " << radius << "\n";
+
+    std::cout << "radius_count_around_query_index (histogram)\n";
+    print_data(nn_histogram, n_samples);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
@@ -364,26 +373,20 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
 
     timer.print_elapsed_seconds(9);
 
-    std::vector<std::size_t> nn_indices;
-    std::vector<dType>       nn_distances;
-    const dType              radius = 0.1;
+    const dType radius = radius_;
 
-    std::size_t total_neighbors = 0;
+    std::vector<std::size_t> nn_histogram(n_samples);
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         auto nearest_neighbors_buffer = kdtree.radius_search_around_query_index(indices[sample_index_query], radius);
-        std::tie(nn_indices, nn_distances) = nearest_neighbors_buffer.move_data_to_indices_distances_pair();
 
-        total_neighbors += nn_indices.size();
+        nn_histogram[indices[sample_index_query]] = nearest_neighbors_buffer.size();
     }
     timer.print_elapsed_seconds(9);
 
-    std::cout << "radius_search_around_query_index (indices, distances)\n";
-    print_data(nn_indices, nn_indices.size());
-    print_data(nn_distances, nn_distances.size());
-    std::cout << "Total neighbors number: " << total_neighbors
-              << ", average neighbors number: " << total_neighbors / float(n_samples) << "\n";
+    std::cout << "radius_search_around_query_index (histogram)\n";
+    print_data(nn_histogram, n_samples);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {
@@ -486,7 +489,7 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsSampleTest) {
 
     std::vector<std::size_t> nn_indices;
     std::vector<dType>       nn_distances;
-    dType                    n_neighbors = 5;
+    dType                    n_neighbors = n_neighbors_;
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -545,7 +548,7 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountSampleTest) {
     timer.print_elapsed_seconds(9);
 
     std::size_t radius_count = 0;
-    const dType radius       = 0.1;
+    const dType radius       = radius_;
 
     std::size_t total_neighbors = 0;
 
@@ -602,7 +605,7 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusSampleTest) {
 
     std::vector<std::size_t> nn_indices;
     std::vector<dType>       nn_distances;
-    const dType              radius = 0.1;
+    const dType              radius = radius_;
 
     std::size_t total_neighbors = 0;
 
