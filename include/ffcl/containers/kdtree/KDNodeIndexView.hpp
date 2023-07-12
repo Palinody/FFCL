@@ -15,12 +15,12 @@ namespace ffcl::containers {
 
 template <typename IndicesIterator, typename SamplesIterator>
 struct KDNodeIndexView {
-    KDNodeIndexView(IteratorPairType<IndicesIterator>         indices_iterator_pair,
-                    const BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
+    KDNodeIndexView(IteratorPairType<IndicesIterator>      indices_iterator_pair,
+                    const HyperRangeType<SamplesIterator>& kd_bounding_box);
 
-    KDNodeIndexView(IteratorPairType<IndicesIterator>         indices_iterator_pair,
-                    ssize_t                                   cut_feature_index,
-                    const BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
+    KDNodeIndexView(IteratorPairType<IndicesIterator>      indices_iterator_pair,
+                    ssize_t                                cut_feature_index,
+                    const HyperRangeType<SamplesIterator>& kd_bounding_box);
 
     KDNodeIndexView(const KDNodeIndexView&) = delete;
 
@@ -48,7 +48,7 @@ struct KDNodeIndexView {
     IteratorPairType<IndicesIterator> indices_iterator_pair_;
     ssize_t                           cut_feature_index_;
     // bounding box hyper rectangle (w.r.t. each dimension)
-    BoundingBoxKDType<SamplesIterator>                                 kd_bounding_box_;
+    HyperRangeType<SamplesIterator>                                    kd_bounding_box_;
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> left_;
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> right_;
     std::weak_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>   parent_;
@@ -56,17 +56,17 @@ struct KDNodeIndexView {
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
-    IteratorPairType<IndicesIterator>         indices_iterator_pair,
-    const BoundingBoxKDType<SamplesIterator>& kd_bounding_box)
+    IteratorPairType<IndicesIterator>      indices_iterator_pair,
+    const HyperRangeType<SamplesIterator>& kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
-    IteratorPairType<IndicesIterator>         indices_iterator_pair,
-    ssize_t                                   cut_feature_index,
-    const BoundingBoxKDType<SamplesIterator>& kd_bounding_box)
+    IteratorPairType<IndicesIterator>      indices_iterator_pair,
+    ssize_t                                cut_feature_index,
+    const HyperRangeType<SamplesIterator>& kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
   , cut_feature_index_{cut_feature_index}
   , kd_bounding_box_{kd_bounding_box} {}

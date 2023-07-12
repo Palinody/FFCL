@@ -220,7 +220,7 @@ TEST_F(DBSCANErrorsTest, NoStructureWithBoundingBoxTest) {
     const auto  predictions = get_neighbors(1,
                                            indexer,
                                            &IndexerType::range_search_around_query_index,
-                                           BoundingBoxKDType<SamplesIterator>({{-8, 8}, {-edge, edge}}));
+                                           HyperRangeType<SamplesIterator>({{-8, 8}, {-edge, edge}}));
     // */
     timer.print_elapsed_seconds(9);
 
@@ -271,7 +271,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
+                                            HyperRangeType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -321,7 +321,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
+                                            HyperRangeType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -371,7 +371,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
     // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
+                                            HyperRangeType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -421,7 +421,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
     // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1.2);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
+                                            HyperRangeType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -471,7 +471,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
     // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
+                                            HyperRangeType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -521,7 +521,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
     // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
+                                            HyperRangeType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -571,7 +571,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
+                                            HyperRangeType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 

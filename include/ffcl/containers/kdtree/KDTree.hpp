@@ -138,11 +138,11 @@ class KDTree {
     void serialize(const fs::path& filepath) const;
 
   private:
-    KDNodeViewPtr build(SamplesIterator                     samples_first,
-                        SamplesIterator                     samples_last,
-                        ssize_t                             cut_feature_index,
-                        ssize_t                             depth,
-                        BoundingBoxKDType<SamplesIterator>& kd_bounding_box);
+    KDNodeViewPtr build(SamplesIterator                  samples_first,
+                        SamplesIterator                  samples_last,
+                        ssize_t                          cut_feature_index,
+                        ssize_t                          depth,
+                        HyperRangeType<SamplesIterator>& kd_bounding_box);
     // (1)
     void nearest_neighbor_around_query_index(std::size_t   query_index,
                                              ssize_t&      current_nearest_neighbor_index,
@@ -210,7 +210,7 @@ class KDTree {
     std::size_t n_features_;
 
     // bounding box hyper rectangle (w.r.t. each dimension)
-    BoundingBoxKDType<SamplesIterator> kd_bounding_box_;
+    HyperRangeType<SamplesIterator> kd_bounding_box_;
 
     Options options_;
 
@@ -235,11 +235,11 @@ KDTree<SamplesIterator>::KDTree(SamplesIterator samples_first,
 
 template <typename SamplesIterator>
 typename KDTree<SamplesIterator>::KDNodeViewPtr KDTree<SamplesIterator>::build(
-    SamplesIterator                     samples_first,
-    SamplesIterator                     samples_last,
-    ssize_t                             cut_feature_index,
-    ssize_t                             depth,
-    BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
+    SamplesIterator                  samples_first,
+    SamplesIterator                  samples_last,
+    ssize_t                          cut_feature_index,
+    ssize_t                          depth,
+    HyperRangeType<SamplesIterator>& kd_bounding_box) {
     KDNodeViewPtr kdnode;
 
     // number of samples in the current node

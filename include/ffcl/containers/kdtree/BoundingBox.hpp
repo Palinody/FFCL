@@ -14,10 +14,10 @@ template <typename SamplesIterator>
 using DataType = typename SamplesIterator::value_type;
 
 template <typename SamplesIterator>
-using BoundingBox1DType = std::pair<DataType<SamplesIterator>, DataType<SamplesIterator>>;
+using RangeType = std::pair<DataType<SamplesIterator>, DataType<SamplesIterator>>;
 
 template <typename SamplesIterator>
-using BoundingBoxKDType = std::vector<BoundingBox1DType<SamplesIterator>>;
+using HyperRangeType = std::vector<RangeType<SamplesIterator>>;
 
 namespace kdtree {
 
@@ -30,8 +30,8 @@ auto make_1d_bounding_box(const SamplesIterator& samples_first,
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
-    auto bounding_box_1d = BoundingBox1DType<SamplesIterator>(std::numeric_limits<DataType>::max(),
-                                                              std::numeric_limits<DataType>::lowest());
+    auto bounding_box_1d =
+        RangeType<SamplesIterator>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest());
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // a candidate for being a min, max or min-max compared to the current min and max according to the current
@@ -61,8 +61,8 @@ auto make_1d_bounding_box(const RandomAccessIntIterator& index_first,
 
     const std::size_t n_samples = std::distance(index_first, index_last);
 
-    auto bounding_box_1d = BoundingBox1DType<SamplesIterator>(std::numeric_limits<DataType>::max(),
-                                                              std::numeric_limits<DataType>::lowest());
+    auto bounding_box_1d =
+        RangeType<SamplesIterator>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest());
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // a candidate for being a min, max or min-max compared to the current min and max according to the current
@@ -88,10 +88,9 @@ auto make_kd_bounding_box(const SamplesIterator& samples_first,
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
     // min max elements per feature vector
-    auto kd_bounding_box =
-        BoundingBoxKDType<SamplesIterator>(n_features,
-                                           BoundingBox1DType<SamplesIterator>(std::numeric_limits<DataType>::max(),
-                                                                              std::numeric_limits<DataType>::lowest()));
+    auto kd_bounding_box = HyperRangeType<SamplesIterator>(
+        n_features,
+        RangeType<SamplesIterator>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()));
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -123,10 +122,9 @@ auto make_kd_bounding_box(const RandomAccessIntIterator& index_first,
     const std::size_t n_samples = std::distance(index_first, index_last);
 
     // min max elements per feature vector
-    auto kd_bounding_box =
-        BoundingBoxKDType<SamplesIterator>(n_features,
-                                           BoundingBox1DType<SamplesIterator>(std::numeric_limits<DataType>::max(),
-                                                                              std::numeric_limits<DataType>::lowest()));
+    auto kd_bounding_box = HyperRangeType<SamplesIterator>(
+        n_features,
+        RangeType<SamplesIterator>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()));
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -147,9 +145,9 @@ auto make_kd_bounding_box(const RandomAccessIntIterator& index_first,
 }
 
 template <typename SamplesIterator>
-bool is_sample_in_kd_bounding_box(const SamplesIterator&                    feature_first,
-                                  const SamplesIterator&                    feature_last,
-                                  const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
+bool is_sample_in_kd_bounding_box(const SamplesIterator&                 feature_first,
+                                  const SamplesIterator&                 feature_last,
+                                  const HyperRangeType<SamplesIterator>& kd_bounding_box) {
     const std::size_t n_features = std::distance(feature_first, feature_last);
 
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -164,9 +162,9 @@ bool is_sample_in_kd_bounding_box(const SamplesIterator&                    feat
 
 template <typename SamplesIterator>
 auto relative_coordinates_sequence_to_range_bounding_box(
-    const SamplesIterator&                    feature_first,
-    const SamplesIterator&                    feature_last,
-    const BoundingBoxKDType<SamplesIterator>& relative_coordinates_sequence) {
+    const SamplesIterator&                 feature_first,
+    const SamplesIterator&                 feature_last,
+    const HyperRangeType<SamplesIterator>& relative_coordinates_sequence) {
     const std::size_t n_features = std::distance(feature_first, feature_last);
 
     // make a copy that will be the translated version

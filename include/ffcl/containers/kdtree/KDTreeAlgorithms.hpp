@@ -15,7 +15,7 @@
 namespace kdtree::algorithms {
 
 template <typename SamplesIterator>
-ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<SamplesIterator>& kd_bounding_box) {
+ssize_t select_axis_with_largest_bounding_box_difference(const HyperRangeType<SamplesIterator>& kd_bounding_box) {
     const auto cmp = [](const auto& lhs, const auto& rhs) {
         return common::utils::abs(lhs.first - lhs.second) < common::utils::abs(rhs.first - rhs.second);
     };
@@ -24,8 +24,8 @@ ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType
 }
 
 template <typename SamplesIterator>
-ssize_t select_axis_with_largest_bounding_box_difference(const BoundingBoxKDType<SamplesIterator>& kd_bounding_box,
-                                                         const std::vector<std::size_t>&           feature_mask) {
+ssize_t select_axis_with_largest_bounding_box_difference(const HyperRangeType<SamplesIterator>& kd_bounding_box,
+                                                         const std::vector<std::size_t>&        feature_mask) {
     using DataType = typename SamplesIterator::value_type;
 
     // feature index of the greatest range dimension in the kd bounding box at the indices of the feature_mask
