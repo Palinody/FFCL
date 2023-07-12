@@ -1080,9 +1080,13 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_t
         // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
         // hyperrectangle since the values that are equal to the pivot are put to the right
         bool visit_sibling = kdnode->is_left_child() ? common::utils::abs(pivot_split_value - query_split_value) <
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2
                                                      : common::utils::abs(pivot_split_value - query_split_value) <=
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second;
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -1207,9 +1211,13 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_t
         // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
         // hyperrectangle since the values that are equal to the pivot are put to the right
         bool visit_sibling = kdnode->is_left_child() ? common::utils::abs(pivot_split_value - query_split_value) <
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2
                                                      : common::utils::abs(pivot_split_value - query_split_value) <=
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second;
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -1862,9 +1870,13 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_t
         // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
         // hyperrectangle since the values that are equal to the pivot are put to the right
         bool visit_sibling = kdnode->is_left_child() ? common::utils::abs(pivot_split_value - query_split_value) <
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2
                                                      : common::utils::abs(pivot_split_value - query_split_value) <=
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second;
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -1998,9 +2010,13 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_t
         // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
         // hyperrectangle since the values that are equal to the pivot are put to the right
         bool visit_sibling = kdnode->is_left_child() ? common::utils::abs(pivot_split_value - query_split_value) <
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2
                                                      : common::utils::abs(pivot_split_value - query_split_value) <=
-                                                           kd_bounding_box[kdnode_parent->cut_feature_index_].second;
+                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
+                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
+                                                               2;
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {

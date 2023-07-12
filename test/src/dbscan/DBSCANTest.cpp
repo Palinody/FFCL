@@ -132,6 +132,102 @@ void print_data(const std::vector<Type>& data, std::size_t n_features) {
     }
 }
 
+template <typename Indexer, typename IndexerFunction, typename... Args>
+auto get_neighbors(std::size_t query_index, const Indexer& indexer, IndexerFunction&& func, Args&&... args) {
+    using LabelType = ssize_t;
+
+    const std::size_t n_samples = indexer.n_samples();
+
+    // vector keeping track of the cluster label for each index specified by the global index range
+    auto predictions = std::vector<LabelType>(n_samples);
+
+    // initialize the initial cluster counter that's in [0, n_samples)
+    LabelType cluster_label = static_cast<LabelType>(0);
+
+    auto query_function = [&indexer = static_cast<const Indexer&>(indexer), func = std::forward<IndexerFunction>(func)](
+                              std::size_t index, auto&&... funcArgs) mutable {
+        return std::invoke(func, indexer, index, std::forward<decltype(funcArgs)>(funcArgs)...);
+    };
+
+    // the indices of the neighbors in the global dataset with their corresponding distances
+    // the query sample is not included
+    auto initial_neighbors_buffer = query_function(query_index, std::forward<Args>(args)...);
+
+    ++cluster_label;
+
+    predictions[query_index] = cluster_label;
+
+    auto initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
+
+    // iterate over the samples that are assigned to the current cluster
+    for (std::size_t cluster_sample_index = 0; cluster_sample_index < initial_neighbors_indices.size();
+         ++cluster_sample_index) {
+        const auto neighbor_index   = initial_neighbors_indices[cluster_sample_index];
+        predictions[neighbor_index] = cluster_label;
+    }
+
+    predictions[query_index] = ++cluster_label;
+    return predictions;
+}
+
+TEST_F(DBSCANErrorsTest, NoStructureWithBoundingBoxTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "no_structure.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto dbscan = ffcl::DBSCAN<IndexerType>();
+
+    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples(5));
+
+    timer.reset();
+
+    const float radius = 2;
+    /*
+    const auto  predictions =
+        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
+    */
+    // /*
+    const float edge        = std::sqrt(2.0) * radius;
+    const auto  predictions = get_neighbors(1,
+                                           indexer,
+                                           &IndexerType::range_search_around_query_index,
+                                           BoundingBoxKDType<SamplesIterator>({{-8, 8}, {-edge, edge}}));
+    // */
+    timer.print_elapsed_seconds(9);
+
+    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+// /*
 TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -172,54 +268,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-/*
-TEST_F(DBSCANErrorsTest, NoisyCirclesBoundingBoxTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
-
-    fs::path filename = "noisy_circles.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples(2));
-
-    timer.reset();
-
+    // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
     const auto predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
@@ -228,7 +277,6 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesBoundingBoxTest) {
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
-*/
 
 TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
@@ -270,7 +318,10 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    const auto predictions = dbscan.predict(indexer,
+                                            &IndexerType::range_search_around_query_index,
+                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -317,7 +368,10 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    const auto predictions = dbscan.predict(indexer,
+                                            &IndexerType::range_search_around_query_index,
+                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -364,7 +418,10 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1.2);
+    // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1.2);
+    const auto predictions = dbscan.predict(indexer,
+                                            &IndexerType::range_search_around_query_index,
+                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -411,7 +468,10 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    const auto predictions = dbscan.predict(indexer,
+                                            &IndexerType::range_search_around_query_index,
+                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -458,7 +518,10 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 1);
+    const auto predictions = dbscan.predict(indexer,
+                                            &IndexerType::range_search_around_query_index,
+                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
@@ -505,12 +568,16 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
+    // const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, 2);
+    const auto predictions = dbscan.predict(indexer,
+                                            &IndexerType::range_search_around_query_index,
+                                            BoundingBoxKDType<SamplesIterator>({{-2.0, 2.0}, {-2.0, 2.0}}));
 
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
+// */
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
