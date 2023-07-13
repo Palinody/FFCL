@@ -153,7 +153,7 @@ class NearestNeighborsBuffer {
         }
     }
 
-  public:
+  private:
     std::size_t       max_elements_;
     PriorityQueueType priority_queue_;
 };
