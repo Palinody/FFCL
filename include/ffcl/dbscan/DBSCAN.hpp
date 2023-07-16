@@ -77,13 +77,17 @@ class DBSCAN {
     auto predict_with_buffers(const Indexer& indexer) const;
 
   private:
-    template <typename IndexerFunction, typename... Args>
-    void predict_inner(std::vector<std::size_t>& neighbors_indices,
-                       std::unique_ptr<bool[]>&  visited_indices,
-                       std::vector<LabelType>&   predictions,
-                       const LabelType&          cluster_label,
-                       const Indexer&            indexer,
-                       IndexerFunction&&         indexer_function,
+    template <typename NeighborsIndicesType,
+              typename VisitedIndicesType,
+              typename PredictionsType,
+              typename IndexerFunction,
+              typename... Args>
+    void predict_inner(NeighborsIndicesType& neighbors_indices,
+                       VisitedIndicesType&   visited_indices,
+                       PredictionsType&      predictions,
+                       const LabelType&      cluster_label,
+                       const Indexer&        indexer,
+                       IndexerFunction&&     indexer_function,
                        Args&&... args) const;
 
     enum class SampleStatus : LabelType {
@@ -157,13 +161,17 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_
 }
 
 template <typename Indexer>
-template <typename IndexerFunction, typename... Args>
-void DBSCAN<Indexer>::predict_inner(std::vector<std::size_t>& neighbors_indices,
-                                    std::unique_ptr<bool[]>&  visited_indices,
-                                    std::vector<LabelType>&   predictions,
-                                    const LabelType&          cluster_label,
-                                    const Indexer&            indexer,
-                                    IndexerFunction&&         indexer_function,
+template <typename NeighborsIndicesType,
+          typename VisitedIndicesType,
+          typename PredictionsType,
+          typename IndexerFunction,
+          typename... Args>
+void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType& neighbors_indices,
+                                    VisitedIndicesType&   visited_indices,
+                                    PredictionsType&      predictions,
+                                    const LabelType&      cluster_label,
+                                    const Indexer&        indexer,
+                                    IndexerFunction&&     indexer_function,
                                     Args&&... args) const {
     // the query function that should be a member of the indexer
     auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
