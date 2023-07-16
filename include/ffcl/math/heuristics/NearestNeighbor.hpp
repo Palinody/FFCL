@@ -12,29 +12,31 @@
 
 template <typename SamplesIterator>
 class NearestNeighborsBuffer {
-  public:
+  private:
     using IndexType       = std::size_t;
     using DistanceType    = typename SamplesIterator::value_type;
     using ElementDataType = typename std::tuple<IndexType, DistanceType>;
 
-  private:
-    static constexpr auto comparison_lambda = [](const ElementDataType& left_element,
-                                                 const ElementDataType& right_element) {
-        // the greatest element will appear at the top of the priority queue
-        return std::get<1>(left_element) < std::get<1>(right_element);
+    struct ComparisonFunctor {
+        bool operator()(const ElementDataType& left_element, const ElementDataType& right_element) const {
+            // the greatest element will appear at the top of the priority queue
+            return std::get<1>(left_element) < std::get<1>(right_element);
+        }
     };
 
+    static constexpr ComparisonFunctor comparison_functor{};
+
     using PriorityQueueType =
-        typename std::priority_queue<ElementDataType, std::vector<ElementDataType>, decltype(comparison_lambda)>;
+        typename std::priority_queue<ElementDataType, std::vector<ElementDataType>, ComparisonFunctor>;
 
   public:
     NearestNeighborsBuffer()
       : max_elements_{1}
-      , priority_queue_{comparison_lambda} {}
+      , priority_queue_{comparison_functor} {}
 
     NearestNeighborsBuffer(std::size_t max_elements)
       : max_elements_{max_elements}
-      , priority_queue_{comparison_lambda} {}
+      , priority_queue_{comparison_functor} {}
 
     std::size_t size() const {
         return priority_queue_.size();

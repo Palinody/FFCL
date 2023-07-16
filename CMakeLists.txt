@@ -55,7 +55,7 @@ include_directories(
 )
 
 add_definitions(-DTHREADS_ENABLED=true)
-add_definitions(-DVERBOSE=false)
+add_definitions(-DVERBOSE=true)
 
 # disable all assertions
 add_definitions(-DNDEBUG)
@@ -64,8 +64,9 @@ add_definitions(-DNDEBUG)
 if(MODE STREQUAL "benchmark")
     add_executable(
         ${PROJECT_NAME}
-        src/main.cpp
-        ${HEADER_FILES}
+        benchmark/main.cpp
+
+        # ${HEADER_FILES}
         ${SOURCE_FILES}
     )
     target_link_libraries(
