@@ -18,6 +18,10 @@ add_compile_options(
 )
 find_package(OpenMP REQUIRED)
 
+include_directories(
+    include
+)
+
 set(HEADER_FILES
     include/ffcl/kmeans/KMeans.hpp
     include/ffcl/kmeans/Lloyd.hpp
@@ -34,9 +38,17 @@ set(HEADER_FILES
     include/ffcl/math/random/Distributions.hpp
     include/ffcl/math/random/VosesAliasMethod.hpp
 
-    include/ffcl/containers/kdtree/KDTree.hpp
+    include/ffcl/containers/kdtree/policy/IndexedAxisSelectionPolicy.hpp
+    include/ffcl/containers/kdtree/policy/IndexedSplittingRulePolicy.hpp
+    include/ffcl/containers/kdtree/policy/AxisSelectionPolicy.hpp
+    include/ffcl/containers/kdtree/policy/SplittingRulePolicy.hpp
+    include/ffcl/containers/kdtree/BoundingBox.hpp
+    include/ffcl/containers/kdtree/KDNodeIndexView.hpp
     include/ffcl/containers/kdtree/KDNodeView.hpp
+    include/ffcl/containers/kdtree/KDTree.hpp
     include/ffcl/containers/kdtree/KDTreeAlgorithms.hpp
+    include/ffcl/containers/kdtree/KDTreeIndexed.hpp
+    include/ffcl/containers/FeatureMaskArray.hpp
     include/ffcl/containers/LowerTriangleMatrix.hpp
 
     include/ffcl/math/heuristics/Distances.hpp
@@ -50,12 +62,8 @@ set(HEADER_FILES
 set(SOURCE_FILES
 )
 
-include_directories(
-    include
-)
-
 add_definitions(-DTHREADS_ENABLED=true)
-add_definitions(-DVERBOSE=true)
+add_definitions(-DVERBOSE=false)
 
 # disable all assertions
 add_definitions(-DNDEBUG)
@@ -66,7 +74,7 @@ if(MODE STREQUAL "benchmark")
         ${PROJECT_NAME}
         benchmark/main.cpp
 
-        # ${HEADER_FILES}
+        ${HEADER_FILES}
         ${SOURCE_FILES}
     )
     target_link_libraries(
