@@ -1,7 +1,7 @@
-#include "./DBSCANBench.hpp"
-#include "./KDTreeBench.hpp"
-#include "./KMeansBench.hpp"
-#include "./KMedoidsBench.hpp"
+#include "DBSCANBench.hpp"
+#include "KDTreeBench.hpp"
+#include "KMeansBench.hpp"
+#include "KMedoidsBench.hpp"
 
 int main() {
     // kmeans::benchmark::mnist_bench();
