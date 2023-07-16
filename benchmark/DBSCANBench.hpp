@@ -14,7 +14,7 @@
 #include <iterator>
 #include <vector>
 
-namespace benchmark::dbscan {
+namespace dbscan::benchmark {
 
 std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     std::vector<std::size_t> elements(n_samples);
@@ -77,4 +77,4 @@ void noisy_circles_bench() {
     write_data<ssize_t>(predictions, 1, predictions_folder / fs::path(filename));
 }
 
-}  // namespace benchmark::dbscan
+}  // namespace dbscan::benchmark

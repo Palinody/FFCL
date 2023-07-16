@@ -7,7 +7,7 @@
 #include "ffcl/kmeans/KMeans.hpp"
 #include "ffcl/math/random/VosesAliasMethod.hpp"
 
-namespace benchmark::kmeans {
+namespace kmeans::benchmark {
 
 template <typename InputsIterator>
 void fit_once_kmeans(const InputsIterator& inputs_first,
@@ -46,4 +46,4 @@ void mnist_bench() {
     fit_once_kmeans(data.begin(), data.end(), n_centroids, n_features);
 }
 
-}  // namespace benchmark::kmeans
+}  // namespace kmeans::benchmark

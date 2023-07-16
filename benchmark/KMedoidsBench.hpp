@@ -8,7 +8,7 @@
 #include "ffcl/kmedoids/KMedoids.hpp"
 #include "ffcl/math/random/VosesAliasMethod.hpp"
 
-namespace benchmark::kmedoids {
+namespace kmedoids::benchmark {
 
 template <typename InputsIterator>
 void fit_once(const InputsIterator& inputs_first,
@@ -101,4 +101,4 @@ void mnist_bench() {
     fit_once_with_pairwise_distance_matrix(data.begin(), data.end(), n_medoids, n_features);
 }
 
-}  // namespace benchmark::kmedoids
+}  // namespace kmedoids::benchmark

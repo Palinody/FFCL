@@ -6,7 +6,7 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
 
-namespace benchmark::kdtree {
+namespace kdtree::benchmark {
 
 constexpr std::size_t n_neighbors = 5;
 constexpr dType       radius      = 1;
@@ -15,6 +15,21 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     std::vector<std::size_t> elements(n_samples);
     std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
     return elements;
+}
+
+template <typename Type>
+void print_data(const std::vector<Type>& data, std::size_t n_features) {
+    if (!n_features) {
+        return;
+    }
+    const std::size_t n_samples = data.size() / n_features;
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            std::cout << data[sample_index * n_features + feature_index] << " ";
+        }
+        std::cout << "\n";
+    }
 }
 
 void radius_search_around_query_index_varied_bench() {
@@ -60,7 +75,7 @@ void radius_search_around_query_index_varied_bench() {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        auto nearest_neighbors_buffer = kdtree.radius_search_around_query_index(indices[sample_index_query], radius);
+        auto nearest_neighbors_buffer = indexer.radius_search_around_query_index(indices[sample_index_query], radius);
 
         nn_histogram[indices[sample_index_query]] = nearest_neighbors_buffer.size();
     }
@@ -70,4 +85,4 @@ void radius_search_around_query_index_varied_bench() {
     print_data(nn_histogram, n_samples);
 }
 
-}  // namespace benchmark::kdtree
+}  // namespace kdtree::benchmark
