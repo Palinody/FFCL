@@ -67,9 +67,12 @@ class DBSCAN {
      * std::distance(global_index_first, global_index_last)
      */
     template <typename IndexerFunction, typename... Args>
-    auto predict(const Indexer& indexer, IndexerFunction&& func, Args&&... args) const;
+    auto predict(const Indexer& indexer, IndexerFunction&& indexer_function, Args&&... args) const;
 
     auto predict(const Indexer& indexer) const;
+
+    template <typename IndexerFunction, typename... Args>
+    auto predict_with_buffers(const Indexer& indexer, IndexerFunction&& indexer_function, Args&&... args) const;
 
     auto predict_with_buffers(const Indexer& indexer) const;
 
@@ -164,7 +167,16 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer) const {
 }
 
 template <typename Indexer>
-auto DBSCAN<Indexer>::predict_with_buffers(const Indexer& indexer) const {
+template <typename IndexerFunction, typename... Args>
+auto DBSCAN<Indexer>::predict_with_buffers(const Indexer&    indexer,
+                                           IndexerFunction&& indexer_function,
+                                           Args&&... args) const {
+    // the query function that should be a member of the indexer
+    auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
+                              std::size_t sample_index, auto&&... funcArgs) mutable {
+        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(funcArgs)>(funcArgs)...);
+    };
+
     const std::size_t n_samples = indexer.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
@@ -179,8 +191,7 @@ auto DBSCAN<Indexer>::predict_with_buffers(const Indexer& indexer) const {
     auto precomputed_is_core = std::vector<bool>(n_samples);
 
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
-        auto current_neighborhood_indices =
-            indexer.radius_search_around_query_index(global_index, options_.radius_).extract_indices();
+        auto current_neighborhood_indices = query_function(global_index, std::forward<Args>(args)...).extract_indices();
 
         precomputed_is_core[global_index] = current_neighborhood_indices.size() + 1 >= options_.min_samples_;
 
@@ -214,6 +225,11 @@ auto DBSCAN<Indexer>::predict_with_buffers(const Indexer& indexer) const {
         }
     }
     return predictions;
+}
+
+template <typename Indexer>
+auto DBSCAN<Indexer>::predict_with_buffers(const Indexer& indexer) const {
+    return predict_with_buffers(indexer, &Indexer::radius_search_around_query_index, options_.radius_);
 }
 
 }  // namespace ffcl

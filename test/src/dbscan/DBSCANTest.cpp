@@ -211,16 +211,15 @@ TEST_F(DBSCANErrorsTest, NoStructureWithBoundingBoxTest) {
     timer.reset();
 
     const float radius = 2;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-    // */
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
@@ -268,16 +267,15 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     timer.reset();
 
     const float radius = 2;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
@@ -324,16 +322,15 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     timer.reset();
 
     const float radius = 1;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
@@ -380,16 +377,15 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
     timer.reset();
 
     const float radius = 1;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
@@ -436,16 +432,15 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
     timer.reset();
 
     const float radius = 1.2;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
@@ -492,16 +487,15 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
     timer.reset();
 
     const float radius = 1;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
@@ -548,16 +542,15 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
     timer.reset();
 
     const float radius = 1;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
@@ -604,21 +597,19 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     timer.reset();
 
     const float radius = 2;
-    /*
-    const auto  predictions =
-        get_neighbors(n_samples / 2, indexer, &IndexerType::radius_search_around_query_index, radius);
-    */
     // /*
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    // */
+    /*
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
                                             HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
-
+    */
     timer.print_elapsed_seconds(9);
 
     write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
-// */
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
