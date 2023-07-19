@@ -5,6 +5,7 @@
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/math/random/Sampling.hpp"
 
 namespace kdtree::benchmark {
 
@@ -83,6 +84,34 @@ void radius_search_around_query_index_varied_bench() {
 
     std::cout << "radius_search_around_query_index (histogram)\n";
     print_data(nn_histogram, n_samples);
+}
+
+void test() {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    constexpr auto filenames_list = std::array<fs::path, 7>{/**/ "noisy_circles",
+                                                            /**/ "noisy_moons",
+                                                            /**/ "varied",
+                                                            /**/ "aniso",
+                                                            /**/ "blobs",
+                                                            /**/ "no_structure",
+                                                            /**/ "unbalanced_blobs"};
+
+    const auto n_samples_list = std::array<std::size_t, 2>{10, 20};
+
+    const auto n_samples_max = *std::max_element(n_samples_list.begin(), n_samples_list.end());
+
+    auto indices = generate_indices(n_samples);
+
+    for (const auto& filename : filenames_list) {
+        auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+        const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+
+        for (const auto& n_samples : n_samples_list) {
+            auto sampled_indices = math::random::select_from_range(n_samples, {0, n_samples_max});
+            //
+        }
+    }
 }
 
 }  // namespace kdtree::benchmark
