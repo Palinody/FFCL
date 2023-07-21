@@ -70,6 +70,16 @@ add_definitions(-DNDEBUG)
 
 # set(MODE "benchmarks")
 if(MODE STREQUAL "benchmark")
+    # Find PCL package
+    find_package(PCL REQUIRED)
+
+    # Include PCL headers
+    include_directories(${PCL_INCLUDE_DIRS})
+
+    # Link against PCL libraries
+    link_directories(${PCL_LIBRARY_DIRS})
+    add_definitions(${PCL_DEFINITIONS})
+
     add_executable(
         ${PROJECT_NAME}
         benchmark/main.cpp
@@ -79,6 +89,7 @@ if(MODE STREQUAL "benchmark")
     )
     target_link_libraries(
         ${PROJECT_NAME}
+        ${PCL_LIBRARIES}
         OpenMP::OpenMP_CXX
     )
 elseif(MODE STREQUAL "gtest")

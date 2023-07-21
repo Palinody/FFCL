@@ -186,7 +186,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
@@ -241,7 +241,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
@@ -296,7 +296,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
@@ -351,7 +351,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
@@ -406,7 +406,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
@@ -461,7 +461,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
@@ -516,7 +516,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     timer.reset();
