@@ -11,10 +11,20 @@
 #include <pcl/point_types.h>
 #include <pcl/search/kdtree.h>
 
+#include <flann/flann.hpp>
+
 namespace kdtree::benchmark {
 
 constexpr std::size_t n_neighbors = 5;
 constexpr dType       radius      = 1;
+
+struct DurationsSummary {
+    ssize_t       n_samples              = -1;
+    ssize_t       n_features             = -1;
+    std::uint64_t indexer_build_duration = 0;
+    std::uint64_t indexer_query_duration = 0;
+    std::uint64_t total_duration         = 0;
+};
 
 std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     std::vector<std::size_t> elements(n_samples);
@@ -37,13 +47,7 @@ void print_data(const std::vector<Type>& data, std::size_t n_features) {
     }
 }
 
-struct DurationsSummary {
-    ssize_t       n_samples              = -1;
-    ssize_t       n_features             = -1;
-    std::uint64_t indexer_build_duration = 0;
-    std::uint64_t indexer_query_duration = 0;
-    std::uint64_t total_duration         = 0;
-};
+namespace ffcl_ {
 
 DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filename = "varied.txt") {
     common::timer::Timer<common::timer::Nanoseconds> timer;
@@ -68,7 +72,7 @@ DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& f
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
@@ -92,20 +96,27 @@ DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& f
 
         auto nearest_neighbors_buffer = indexer.radius_search_around_query_index(indices[sample_index_query], radius);
 
+        // auto nearest_neighbors_buffer = indexer.radius_search_around_query_sample(
+        // data.begin() + indices[sample_index_query] * n_features,
+        // data.begin() + indices[sample_index_query] * n_features + n_features,
+        // radius);
+
         bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
 
         nn_histogram[indices[sample_index_query]] = nearest_neighbors_buffer.size();
     }
 
-    // std::cout << "radius_search_around_query_index (histogram)\n";
-    // print_data(nn_histogram, n_samples);
-
     bench_summary.total_duration = timer.elapsed();
+    // print_data(nn_histogram, n_samples);
 
     return bench_summary;
 }
 
-DurationsSummary pcl_radius_search_around_query_index_varied_bench(const fs::path& filename = "varied.txt") {
+}  // namespace ffcl_
+
+namespace pcl_ {
+
+DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filename = "varied.txt") {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     auto              data       = load_data<dType>(inputs_folder / filename, ' ');
@@ -152,12 +163,67 @@ DurationsSummary pcl_radius_search_around_query_index_varied_bench(const fs::pat
         nn_histogram[sample_index_query] = nearest_neighbors_buffer.size();
     }
 
+    bench_summary.total_duration = timer.elapsed();
     // std::cout << "radius_search_around_query_index (histogram)\n";
     // print_data(nn_histogram, n_samples);
-    bench_summary.total_duration = timer.elapsed();
 
     return bench_summary;
 }
+
+}  // namespace pcl_
+
+namespace flann_ {
+
+DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filename = "varied.txt") {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto              data       = load_data<dType>(inputs_folder / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    DurationsSummary bench_summary;
+
+    bench_summary.n_samples              = n_samples;
+    bench_summary.n_features             = n_features;
+    bench_summary.indexer_build_duration = 0;
+    bench_summary.indexer_query_duration = 0;
+    bench_summary.total_duration         = 0;
+
+    timer.reset();
+
+    flann::Matrix<float> dataset(data.data(), n_samples, n_features);
+    // build 1 kdtree
+    flann::Index<flann::L2<float>> index(dataset, flann::KDTreeSingleIndexParams(std::sqrt(n_samples)));
+    index.buildIndex();
+
+    bench_summary.indexer_build_duration = timer.elapsed();
+
+    std::vector<std::size_t> nn_histogram(n_samples);
+
+    std::vector<std::vector<int>>   indices;
+    std::vector<std::vector<float>> distances;
+
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        const auto elapsed_start = timer.elapsed();
+
+        flann::Matrix<float> query(&data[sample_index_query * n_features], 1, n_features);
+
+        // Perform radius search for each point in the cloud
+        index.radiusSearch(query, indices, distances, radius, flann::SearchParams{});
+
+        bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
+
+        nn_histogram[sample_index_query] = indices[0].size();
+    }
+
+    bench_summary.total_duration = timer.elapsed();
+    // std::cout << "radius_search_around_query_index (histogram)\n";
+    // print_data(nn_histogram, n_samples);
+
+    return bench_summary;
+}
+
+}  // namespace flann_
 
 void run_benchmarks() {
     common::timer::Timer<common::timer::Nanoseconds> timer;
