@@ -90,17 +90,17 @@ It'll stay that way for now for practicality.
 
 ### KDTree
 
-| KDTree library                         | build time (s)  | 10K queries time (s)| build + queries |
-|----------------------------------------|-----------------|---------------------|-----------------|
-| KDTree (FFCL) speed over 10000 queries | 0.000694        |          0.097632   |        0.098638 |
-| KDTree (PCL) speed over 10000 queries  | 0.001181        |          0.119764   |        0.121376 |
-| KDTree (FLANN) speed over 10000 queries| 0.000558        |          0.125653   |        0.126366 |
+| KDTree library                         | build time (s)  | 10K queries time (s)| build + queries (%) |
+|----------------------------------------|-----------------|---------------------|---------------------|
+| KDTree (FFCL) speed over 10000 queries | 0.000694        |          0.097632   |        0.098638     |
+| KDTree (PCL) speed over 10000 queries  | 0.001181        |          0.119764   |        0.121376     |
+| KDTree (FLANN) speed over 10000 queries| 0.000558        |          0.125653   |        0.126366     |
 
 
-| KDTree library speedup                 | build time (s)  | 10K queries time (s)| build + queries |
-|----------------------------------------|-----------------|---------------------|-----------------|
-| FFCL speedup over PCL                  | 41.235          |          18.480     |        18.733   |
-| FFCL speedup over FLANN                | -24.326         |          22.300     |        21.943   |
+| KDTree library speedup                 | build time (%)  | 10K queries time (%)| build + queries (%) |
+|----------------------------------------|-----------------|---------------------|---------------------|
+| FFCL speedup over PCL                  | 41.235          |          18.480     |        18.733       |
+| FFCL speedup over FLANN                | -24.326         |          22.300     |        21.943       |
 
 
 ### KMedoids algorithms
