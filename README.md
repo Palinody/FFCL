@@ -97,10 +97,10 @@ It'll stay that way for now for practicality.
 | KDTree (FLANN) speed over 10000 queries| 0.000558        |          0.125653   |        0.126366     |
 
 
-| KDTree library speedup                 | build time (%)  | 10K queries time (%)| build + queries (%) |
-|----------------------------------------|-----------------|---------------------|---------------------|
-| FFCL speedup over PCL                  | 41.235          |          18.480     |        18.733       |
-| FFCL speedup over FLANN                | -24.326         |          22.300     |        21.943       |
+| KDTree library speedup                 | build speedup (%)  | 10K queries speedup (%)| build + queries (%) |
+|----------------------------------------|--------------------|------------------------|---------------------|
+| FFCL speedup over PCL                  | 41.235             |          18.480        |        18.733       |
+| FFCL speedup over FLANN                | -24.326            |          22.300        |        21.943       |
 
 
 ### KMedoids algorithms
