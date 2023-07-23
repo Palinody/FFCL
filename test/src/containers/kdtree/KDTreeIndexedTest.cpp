@@ -277,8 +277,8 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
 
     std::cout << "nearest_neighbor_around_query_index (index, distance): (" << nn_index << ", " << nn_distance << ")\n";
 
-    std::cout << "k_nearest_neighbors_around_query_index (histogram)\n";
-    print_data(nn_histogram, n_samples);
+    // std::cout << "k_nearest_neighbors_around_query_index (histogram)\n";
+    // print_data(nn_histogram, n_samples);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
@@ -333,8 +333,8 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
 
     std::cout << "radius_count: " << radius_count << ", radius: " << radius << "\n";
 
-    std::cout << "radius_count_around_query_index (histogram)\n";
-    print_data(nn_histogram, n_samples);
+    // std::cout << "radius_count_around_query_index (histogram)\n";
+    // print_data(nn_histogram, n_samples);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
@@ -385,8 +385,8 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
     }
     timer.print_elapsed_seconds(9);
 
-    std::cout << "radius_search_around_query_index (histogram)\n";
-    print_data(nn_histogram, n_samples);
+    // std::cout << "radius_search_around_query_index (histogram)\n";
+    // print_data(nn_histogram, n_samples);
 }
 
 TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {

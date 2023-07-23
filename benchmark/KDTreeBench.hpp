@@ -97,9 +97,9 @@ DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& f
         auto nearest_neighbors_buffer = indexer.radius_search_around_query_index(indices[sample_index_query], radius);
 
         // auto nearest_neighbors_buffer = indexer.radius_search_around_query_sample(
-        // data.begin() + indices[sample_index_query] * n_features,
-        // data.begin() + indices[sample_index_query] * n_features + n_features,
-        // radius);
+        //     data.begin() + indices[sample_index_query] * n_features,
+        //     data.begin() + indices[sample_index_query] * n_features + n_features,
+        //     radius);
 
         bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
 
@@ -226,8 +226,6 @@ DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& f
 }  // namespace flann_
 
 void run_benchmarks() {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
-
     const auto filenames_list = std::array<fs::path, 7>{/**/ "noisy_circles",
                                                         /**/ "noisy_moons",
                                                         /**/ "varied",
@@ -236,20 +234,8 @@ void run_benchmarks() {
                                                         /**/ "no_structure",
                                                         /**/ "unbalanced_blobs"};
 
-    const auto n_samples_list = std::array<std::size_t, 2>{10, 20};
-
-    const auto n_samples_max = *std::max_element(n_samples_list.begin(), n_samples_list.end());
-
-    auto indices = generate_indices(n_samples_max);
-
     for (const auto& filename : filenames_list) {
-        auto              data       = load_data<dType>(inputs_folder / filename, ' ');
-        const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
-
-        for (const auto& n_samples : n_samples_list) {
-            auto sampled_indices = math::random::select_from_range(n_samples, {0, n_samples_max});
-            common::utils::ignore_parameters(data, n_features, n_samples, sampled_indices);
-        }
+        common::utils::ignore_parameters(filename);
     }
 }
 

@@ -8,11 +8,11 @@
 
 namespace ffcl::algorithms {
 
-template <typename RandomAccessIterator>
-std::size_t median_index_of_three_ranges(RandomAccessIterator first,
-                                         RandomAccessIterator last,
-                                         std::size_t          n_features,
-                                         std::size_t          feature_index) {
+template <typename SamplesIterator>
+std::size_t median_index_of_three_ranges(SamplesIterator first,
+                                         SamplesIterator last,
+                                         std::size_t     n_features,
+                                         std::size_t     feature_index) {
     const std::size_t n_samples    = common::utils::get_n_samples(first, last, n_features);
     std::size_t       middle_index = n_samples / 2;
 
@@ -34,13 +34,13 @@ std::size_t median_index_of_three_ranges(RandomAccessIterator first,
     return right_index;
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t median_index_of_three_indexed_ranges(RandomAccessIntIterator index_first,
-                                                 RandomAccessIntIterator index_last,
-                                                 RandomAccessIterator    first,
-                                                 RandomAccessIterator    last,
-                                                 std::size_t             n_features,
-                                                 std::size_t             feature_index) {
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t median_index_of_three_indexed_ranges(IndicesIterator index_first,
+                                                 IndicesIterator index_last,
+                                                 SamplesIterator first,
+                                                 SamplesIterator last,
+                                                 std::size_t     n_features,
+                                                 std::size_t     feature_index) {
     common::utils::ignore_parameters(last);
 
     const std::size_t n_samples    = std::distance(index_first, index_last);
@@ -67,24 +67,23 @@ std::size_t median_index_of_three_indexed_ranges(RandomAccessIntIterator index_f
     return right_index;
 }
 
-template <typename RandomAccessIterator>
-std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_three_ranges(RandomAccessIterator first,
-                                                                                          RandomAccessIterator last,
-                                                                                          std::size_t n_features,
-                                                                                          std::size_t feature_index) {
+template <typename SamplesIterator>
+std::pair<SamplesIterator, SamplesIterator> median_values_range_of_three_ranges(SamplesIterator first,
+                                                                                SamplesIterator last,
+                                                                                std::size_t     n_features,
+                                                                                std::size_t     feature_index) {
     const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, feature_index);
 
     return {first + median_index * n_features, first + median_index * n_features + n_features};
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_three_indexed_ranges(
-    RandomAccessIntIterator index_first,
-    RandomAccessIntIterator index_last,
-    RandomAccessIterator    first,
-    RandomAccessIterator    last,
-    std::size_t             n_features,
-    std::size_t             feature_index) {
+template <typename IndicesIterator, typename SamplesIterator>
+std::pair<SamplesIterator, SamplesIterator> median_values_range_of_three_indexed_ranges(IndicesIterator index_first,
+                                                                                        IndicesIterator index_last,
+                                                                                        SamplesIterator first,
+                                                                                        SamplesIterator last,
+                                                                                        std::size_t     n_features,
+                                                                                        std::size_t     feature_index) {
     const std::size_t median_index =
         median_index_of_three_indexed_ranges(index_first, index_last, first, last, n_features, feature_index);
 
@@ -92,25 +91,25 @@ std::pair<RandomAccessIterator, RandomAccessIterator> median_values_range_of_thr
             first + index_first[median_index] * n_features + n_features};
 }
 
-template <typename RandomAccessIterator>
-std::pair<std::size_t, std::pair<RandomAccessIterator, RandomAccessIterator>>
-median_index_and_values_range_of_three_ranges(RandomAccessIterator first,
-                                              RandomAccessIterator last,
-                                              std::size_t          n_features,
-                                              std::size_t          feature_index) {
+template <typename SamplesIterator>
+std::pair<std::size_t, std::pair<SamplesIterator, SamplesIterator>> median_index_and_values_range_of_three_ranges(
+    SamplesIterator first,
+    SamplesIterator last,
+    std::size_t     n_features,
+    std::size_t     feature_index) {
     const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, feature_index);
 
     return {median_index, {first + median_index * n_features, first + median_index * n_features + n_features}};
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::pair<std::size_t, std::pair<RandomAccessIterator, RandomAccessIterator>>
-median_index_and_values_range_of_three_indexed_ranges(RandomAccessIntIterator index_first,
-                                                      RandomAccessIntIterator index_last,
-                                                      RandomAccessIterator    first,
-                                                      RandomAccessIterator    last,
-                                                      std::size_t             n_features,
-                                                      std::size_t             feature_index) {
+template <typename IndicesIterator, typename SamplesIterator>
+std::pair<std::size_t, std::pair<SamplesIterator, SamplesIterator>>
+median_index_and_values_range_of_three_indexed_ranges(IndicesIterator index_first,
+                                                      IndicesIterator index_last,
+                                                      SamplesIterator first,
+                                                      SamplesIterator last,
+                                                      std::size_t     n_features,
+                                                      std::size_t     feature_index) {
     const std::size_t median_index =
         median_index_of_three_indexed_ranges(index_first, index_last, first, last, n_features, feature_index);
 
@@ -122,12 +121,12 @@ median_index_and_values_range_of_three_indexed_ranges(RandomAccessIntIterator in
 /**
  * @brief Wiki (Dutch national flag problem): https://en.wikipedia.org/wiki/Dutch_national_flag_problem
  */
-template <typename RandomAccessIterator>
-std::pair<std::size_t, std::size_t> three_way_partition_around_nth_range(RandomAccessIterator first,
-                                                                         RandomAccessIterator last,
-                                                                         std::size_t          n_features,
-                                                                         std::size_t          pivot_index,
-                                                                         std::size_t          feature_index) {
+template <typename SamplesIterator>
+std::pair<std::size_t, std::size_t> three_way_partition_around_nth_range(SamplesIterator first,
+                                                                         SamplesIterator last,
+                                                                         std::size_t     n_features,
+                                                                         std::size_t     pivot_index,
+                                                                         std::size_t     feature_index) {
     // values less than pivot: [0, i)
     std::size_t i = 0;
     // values equal to pivot: [i, j)
@@ -158,12 +157,12 @@ std::pair<std::size_t, std::size_t> three_way_partition_around_nth_range(RandomA
 /**
  * @brief Hoare partition scheme algorithm that also handles duplicated values.
  */
-template <typename RandomAccessIterator>
-std::size_t partition_around_nth_range(RandomAccessIterator first,
-                                       RandomAccessIterator last,
-                                       std::size_t          n_features,
-                                       std::size_t          pivot_index,
-                                       std::size_t          feature_index) {
+template <typename SamplesIterator>
+std::size_t partition_around_nth_range(SamplesIterator first,
+                                       SamplesIterator last,
+                                       std::size_t     n_features,
+                                       std::size_t     pivot_index,
+                                       std::size_t     feature_index) {
     const std::size_t n_samples = common::utils::get_n_samples(first, last, n_features);
     // no op if the input contains only one feature vector
     if (n_samples == 1) {
@@ -238,15 +237,15 @@ std::size_t partition_around_nth_range(RandomAccessIterator first,
     return pivot_index;
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_first,
-                                               RandomAccessIntIterator index_last,
-                                               RandomAccessIterator    first,
-                                               RandomAccessIterator    last,
-                                               std::size_t             n_features,
-                                               std::size_t             pivot_index,
-                                               std::size_t             feature_index) {
-    static_assert(std::is_integral_v<typename RandomAccessIntIterator::value_type>, "Index input should be integral.");
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t partition_around_nth_indexed_range(IndicesIterator index_first,
+                                               IndicesIterator index_last,
+                                               SamplesIterator first,
+                                               SamplesIterator last,
+                                               std::size_t     n_features,
+                                               std::size_t     pivot_index,
+                                               std::size_t     feature_index) {
+    static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Index input should be integral.");
 
     common::utils::ignore_parameters(last);
 
@@ -276,6 +275,22 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
         if (left_index >= right_index) {
             break;
         }
+        /*
+        std::iter_swap(index_first + left_index, index_first + right_index);
+        // if the pivot has been swapped (because it was equal to one of the swapped ranges),
+        // assign the pivot_index to the (left/right)_index its been swapped with
+        if (pivot_index == static_cast<std::size_t>(left_index)) {
+            pivot_index = right_index;
+            // shift the right index by one so that it doesnt cross-over past the left of the now swapped pivot
+            ++right_index;
+
+        } else if (pivot_index == static_cast<std::size_t>(right_index)) {
+            pivot_index = left_index;
+            // shift the left index by one so that it doesnt cross-over past the right of the now swapped pivot
+            --left_index;
+        }
+        */
+        // /*
         // if the values at the pivot and at the right index are not equal
         if (common::utils::inequality(pivot_value, first[index_first[right_index] * n_features + feature_index])) {
             // swap the ranges at the left index and right index
@@ -313,6 +328,7 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
             // either swapped with the pivot range or left_index is equal to pivot_index
             --left_index;
         }
+        // */
     }
     return pivot_index;
 }
@@ -320,12 +336,12 @@ std::size_t partition_around_nth_indexed_range(RandomAccessIntIterator index_fir
 /**
  * @brief A quickselect implementation https://en.wikipedia.org/wiki/Quickselect
  */
-template <typename RandomAccessIterator>
-std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAccessIterator first,
-                                                                        RandomAccessIterator last,
-                                                                        std::size_t          n_features,
-                                                                        std::size_t          kth_smallest,
-                                                                        std::size_t          feature_index) {
+template <typename SamplesIterator>
+std::pair<SamplesIterator, SamplesIterator> quickselect_range(SamplesIterator first,
+                                                              SamplesIterator last,
+                                                              std::size_t     n_features,
+                                                              std::size_t     kth_smallest,
+                                                              std::size_t     feature_index) {
     std::size_t left_index  = 0;
     std::size_t right_index = common::utils::get_n_samples(first, last, n_features) - 1;
 
@@ -356,15 +372,14 @@ std::pair<RandomAccessIterator, RandomAccessIterator> quickselect_range(RandomAc
     }
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::pair<RandomAccessIntIterator, RandomAccessIntIterator> quickselect_indexed_range(
-    RandomAccessIntIterator index_first,
-    RandomAccessIntIterator index_last,
-    RandomAccessIterator    first,
-    RandomAccessIterator    last,
-    std::size_t             n_features,
-    std::size_t             kth_smallest,
-    std::size_t             feature_index) {
+template <typename IndicesIterator, typename SamplesIterator>
+std::pair<IndicesIterator, IndicesIterator> quickselect_indexed_range(IndicesIterator index_first,
+                                                                      IndicesIterator index_last,
+                                                                      SamplesIterator first,
+                                                                      SamplesIterator last,
+                                                                      std::size_t     n_features,
+                                                                      std::size_t     kth_smallest,
+                                                                      std::size_t     feature_index) {
     std::size_t left_index  = 0;
     std::size_t right_index = std::distance(index_first, index_last) - 1;
 
@@ -400,12 +415,12 @@ std::pair<RandomAccessIntIterator, RandomAccessIntIterator> quickselect_indexed_
 /**
  * @brief A quicksort implementation https://en.wikipedia.org/wiki/Quicksort#Algorithm
  */
-template <typename RandomAccessIterator>
-std::size_t quicksort_range(RandomAccessIterator first,
-                            RandomAccessIterator last,
-                            std::size_t          n_features,
-                            std::size_t          initial_pivot_index,
-                            std::size_t          feature_index) {
+template <typename SamplesIterator>
+std::size_t quicksort_range(SamplesIterator first,
+                            SamplesIterator last,
+                            std::size_t     n_features,
+                            std::size_t     initial_pivot_index,
+                            std::size_t     feature_index) {
     const std::size_t n_samples = common::utils::get_n_samples(first, last, n_features);
 
     // the pivot index is already correct if the number of samples is 0 or 1
@@ -441,14 +456,14 @@ std::size_t quicksort_range(RandomAccessIterator first,
     return new_pivot_index;
 }
 
-template <typename RandomAccessIntIterator, typename RandomAccessIterator>
-std::size_t quicksort_indexed_range(RandomAccessIntIterator index_first,
-                                    RandomAccessIntIterator index_last,
-                                    RandomAccessIterator    first,
-                                    RandomAccessIterator    last,
-                                    std::size_t             n_features,
-                                    std::size_t             initial_pivot_index,
-                                    std::size_t             feature_index) {
+template <typename IndicesIterator, typename SamplesIterator>
+std::size_t quicksort_indexed_range(IndicesIterator index_first,
+                                    IndicesIterator index_last,
+                                    SamplesIterator first,
+                                    SamplesIterator last,
+                                    std::size_t     n_features,
+                                    std::size_t     initial_pivot_index,
+                                    std::size_t     feature_index) {
     const std::size_t n_samples = std::distance(index_first, index_last);
 
     // the pivot index is already correct if the number of samples is 0 or 1
