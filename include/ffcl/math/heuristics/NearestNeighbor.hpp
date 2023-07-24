@@ -3,15 +3,181 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/containers/kdtree/BoundingBox.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
+#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <functional>
 #include <iostream>
+#include <map>
 #include <queue>
 #include <tuple>
 #include <vector>
 
 template <typename SamplesIterator>
+class NearestNeighborsBufferV1 {
+  private:
+    using IndexType    = std::size_t;
+    using DistanceType = typename SamplesIterator::value_type;
+
+  public:
+    NearestNeighborsBufferV1(/*std::vector<IndexType>& indices, std::vector<DistanceType>& distances*/)
+      : /*indices_{indices}
+      , distances_{distances}
+      , */
+      max_capacity_{1} {
+        // assert(indices.size() <= 1 && distances.size() <= 1);
+    }
+
+    NearestNeighborsBufferV1(/*std::vector<IndexType>&    indices,
+                           std::vector<DistanceType>& distances,*/
+                             std::size_t max_capacity)
+      : /*indices_{indices}
+      , distances_{distances}
+      , */
+      max_capacity_{max_capacity} {
+        // assert(indices.size() <= max_capacity_ && distances.size() <= max_capacity_);
+    }
+
+    inline std::size_t size() const {
+        return indices_.size();
+    }
+
+    inline bool empty() const {
+        return indices_.empty();
+    }
+
+    inline IndexType furthest_k_nearest_neighbor_index() const {
+        return indices_.back();
+    }
+
+    inline DistanceType furthest_k_nearest_neighbor_distance() const {
+        return distances_.back();
+    }
+
+    inline auto indices() const {
+        return indices_;
+    }
+
+    inline auto distances() const {
+        return distances_;
+    }
+
+    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        auto distances_it = std::lower_bound(distances_.begin(), distances_.end(), distance_candidate);
+
+        // populate at the right index if the max capacity isnt reached
+        if (indices_.size() < max_capacity_) {
+            const std::size_t insertion_index = std::distance(distances_.begin(), distances_it);
+            indices_.insert(indices_.begin() + insertion_index, index_candidate);
+            distances_.insert(distances_it, distance_candidate);
+
+        }
+        // populate at the right index if the max capacity reached but the candidate has a closer distance
+        else if (distances_it != distances_.end()) {
+            const std::size_t insertion_index = std::distance(distances_.begin(), distances_it);
+            indices_.insert(indices_.begin() + insertion_index, index_candidate);
+            distances_.insert(distances_it, distance_candidate);
+            // remove the last element now that the vectors overflow the max capacity
+            indices_.pop_back();
+            distances_.pop_back();
+        }
+    }
+
+    void print() const {
+        for (std::size_t index = 0; index < std::min(indices_.size(), distances_.size()); ++index) {
+            std::cout << "(" << indices_[index] << ", " << distances_[index] << ")\n";
+        }
+    }
+
+  private:
+    std::vector<IndexType>    indices_;
+    std::vector<DistanceType> distances_;
+    std::size_t               max_capacity_;
+};
+
+template <typename SamplesIterator>
 class NearestNeighborsBuffer {
+  private:
+    using IndexType    = std::size_t;
+    using DistanceType = typename SamplesIterator::value_type;
+
+  public:
+    NearestNeighborsBuffer(std::size_t max_capacity = 1)
+      : furthest_buffer_index_{0}
+      , furthest_k_nearest_neighbor_distance_{0}
+      , max_capacity_{max_capacity} {
+        // assert(indices.size() <= max_capacity_ && distances.size() <= max_capacity_);
+    }
+
+    inline std::size_t size() const {
+        return indices_.size();
+    }
+
+    inline bool empty() const {
+        return indices_.empty();
+    }
+    /*
+    inline IndexType furthest_k_nearest_neighbor_index() const {
+        return indices_[furthest_buffer_index_];
+    }
+    */
+
+    inline DistanceType furthest_k_nearest_neighbor_distance() const {
+        return furthest_k_nearest_neighbor_distance_;
+    }
+
+    inline auto indices() const {
+        return indices_;
+    }
+
+    inline auto move_indices() {
+        return std::move(indices_);
+    }
+
+    inline auto move_data_to_indices_distances_pair() {
+        return std::make_tuple(std::move(indices_), std::move(distances_));
+    }
+
+    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        // always populate if the max capacity isnt reached
+        if (indices_.size() < max_capacity_) {
+            indices_.emplace_back(index_candidate);
+            distances_.emplace_back(distance_candidate);
+            if (distance_candidate > furthest_k_nearest_neighbor_distance_) {
+                // update the new index position of the furthest in the buffer
+                furthest_buffer_index_                = indices_.size() - 1;
+                furthest_k_nearest_neighbor_distance_ = distance_candidate;
+            }
+        }
+        // populate if the max capacity is reached and the candidate has a closer distance
+        else if (distance_candidate < furthest_k_nearest_neighbor_distance_) {
+            // remove the previous greatest distance now that the vectors overflow the max capacity
+            indices_.erase(indices_.begin() + furthest_buffer_index_);
+            distances_.erase(distances_.begin() + furthest_buffer_index_);
+            // add the candidate anywhere before we find the new furthest neighbor because its a valid candidate
+            indices_.emplace_back(index_candidate);
+            distances_.emplace_back(distance_candidate);
+            // find the new furthest neighbor and update the cache accordingly
+            std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+        }
+    }
+
+    void print() const {
+        for (std::size_t index = 0; index < std::min(indices_.size(), distances_.size()); ++index) {
+            std::cout << "(" << indices_[index] << ", " << distances_[index] << ")\n";
+        }
+    }
+
+  private:
+    std::vector<IndexType>    indices_;
+    std::vector<DistanceType> distances_;
+    ssize_t                   furthest_buffer_index_;
+    DistanceType              furthest_k_nearest_neighbor_distance_;
+    std::size_t               max_capacity_;
+};
+
+template <typename SamplesIterator>
+class NearestNeighborsBufferOld {
   private:
     using IndexType       = std::size_t;
     using DistanceType    = typename SamplesIterator::value_type;
@@ -30,63 +196,59 @@ class NearestNeighborsBuffer {
         typename std::priority_queue<ElementDataType, std::vector<ElementDataType>, ComparisonFunctor>;
 
   public:
-    NearestNeighborsBuffer()
+    NearestNeighborsBufferOld()
       : max_elements_{1}
       , priority_queue_{comparison_functor} {}
 
-    NearestNeighborsBuffer(std::size_t max_elements)
+    NearestNeighborsBufferOld(std::size_t max_elements)
       : max_elements_{max_elements}
       , priority_queue_{comparison_functor} {}
 
-    std::size_t size() const {
+    inline std::size_t size() const {
         return priority_queue_.size();
     }
 
-    bool empty() const {
+    inline bool empty() const {
         return priority_queue_.empty();
     }
 
-    IndexType furthest_k_nearest_neighbor_index() const {
+    inline IndexType furthest_k_nearest_neighbor_index() const {
         return std::get<0>(priority_queue_.top());
     }
 
-    DistanceType furthest_k_nearest_neighbor_distance() const {
+    inline DistanceType furthest_k_nearest_neighbor_distance() const {
         return std::get<1>(priority_queue_.top());
     }
 
-    auto extract_indices() {
+    inline auto extract_indices() {
         std::vector<IndexType> extracted_indices;
         extracted_indices.reserve(priority_queue_.size());
 
         while (!priority_queue_.empty()) {
-            const auto& index_distance_pair = priority_queue_.top();
-
-            extracted_indices.push_back(std::get<0>(index_distance_pair));
-
-            priority_queue_.pop();
+            extracted_indices.emplace_back(this->pop_and_get_index());
         }
         return extracted_indices;
     }
 
-    auto pop_and_get_index() {
+    inline auto pop_and_get_index() {
         const auto last_value_index = std::get<0>(priority_queue_.top());
         priority_queue_.pop();
         return last_value_index;
     }
 
-    auto pop_and_get_distance() {
+    inline auto pop_and_get_distance() {
         const auto last_value_distance = std::get<1>(priority_queue_.top());
         priority_queue_.pop();
         return last_value_distance;
     }
 
-    auto pop_and_get_index_distance_pair() {
+    inline auto pop_and_get_index_distance_pair() {
         const auto index_distance_pair = priority_queue_.top();
         priority_queue_.pop();
         return index_distance_pair;
     }
 
-    auto move_data_to_indices_distances_pair() {
+    inline auto move_data_to_indices_distances_pair() {
         std::vector<IndexType> indices;
         indices.reserve(this->size());
         std::vector<DistanceType> distances;
@@ -101,7 +263,7 @@ class NearestNeighborsBuffer {
         return std::make_tuple(std::move(indices), std::move(distances));
     }
 
-    auto copy_data_to_indices_distances_pair() const {
+    inline auto copy_data_to_indices_distances_pair() const {
         PriorityQueueType priority_queue_cpy = priority_queue_;
 
         std::vector<IndexType> indices;
@@ -118,31 +280,28 @@ class NearestNeighborsBuffer {
         return std::make_tuple(std::move(indices), std::move(distances));
     }
 
-    void emplace_back(ElementDataType&& index_distance_pair) {
+    inline void emplace_back(ElementDataType&& index_distance_pair) {
         priority_queue_.emplace(std::move(index_distance_pair));
         ++max_elements_;
     }
 
-    void add(NearestNeighborsBuffer&& nearest_neighbors_buffer) {
+    inline void add(NearestNeighborsBufferOld&& nearest_neighbors_buffer) {
         while (!nearest_neighbors_buffer.empty()) {
             this->emplace_back(std::move(nearest_neighbors_buffer.pop_and_get_index_distance_pair()));
         }
     }
 
-    bool update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // populate the priority queue if theres still empty space
         if (priority_queue_.size() < max_elements_) {
             priority_queue_.emplace(std::make_tuple(index_candidate, distance_candidate));
-            return true;
 
-        } else if (distance_candidate < std::get<1>(priority_queue_.top())) {
+        } else if (distance_candidate < this->furthest_k_nearest_neighbor_distance()) {
             // pop the element at the top of the priority queue if the candidate is smaller
             priority_queue_.pop();
             // then place the candidate index-distance pair accordingly
             priority_queue_.emplace(std::make_tuple(index_candidate, distance_candidate));
-            return true;
         }
-        return false;
     }
 
     void print() const {

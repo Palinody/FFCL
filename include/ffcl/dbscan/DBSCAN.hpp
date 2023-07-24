@@ -128,22 +128,23 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_
     // boolean buffer that keep tracks of the samples that have been already visited
     auto visited_indices = std::make_unique<bool[]>(n_samples);
 
-    // global_index means that it pertains to the entire dataset that has been indexed by the indexer
-    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
+    // entry_point_candidate_index is the first sample index that is a candidate to initiate a cluster
+    for (std::size_t entry_point_candidate_index = 0; entry_point_candidate_index < n_samples;
+         ++entry_point_candidate_index) {
         // process the current sample only if it's not visited
-        if (!visited_indices[global_index]) {
+        if (!visited_indices[entry_point_candidate_index]) {
             // mark the current sample index as visited
-            visited_indices[global_index] = true;
+            visited_indices[entry_point_candidate_index] = true;
             // the indices of the neighbors in the global dataset with their corresponding distances
             // the query sample is not included
-            auto neighbors_buffer = query_function(global_index, std::forward<Args>(args)...);
+            auto neighbors_buffer = query_function(entry_point_candidate_index, std::forward<Args>(args)...);
 
             if (neighbors_buffer.size() > options_.min_samples_) {
                 ++cluster_label;
 
-                predictions[global_index] = cluster_label;
+                predictions[entry_point_candidate_index] = cluster_label;
 
-                auto neighbors_indices = neighbors_buffer.extract_indices();
+                auto neighbors_indices = neighbors_buffer.move_indices();
 
                 predict_inner(neighbors_indices,
                               visited_indices,
@@ -153,7 +154,7 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_
                               indexer_function,
                               std::forward<Args>(args)...);
             } else {
-                predictions[global_index] = static_cast<LabelType>(SampleStatus::noise);
+                predictions[entry_point_candidate_index] = static_cast<LabelType>(SampleStatus::noise);
             }
         }
     }
@@ -192,7 +193,7 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType& neighbors_indices,
             auto inner_neighbors_buffer = query_function(neighbor_index, std::forward<Args>(args)...);
 
             if (inner_neighbors_buffer.size() > options_.min_samples_) {
-                auto inner_neighbors_indices = inner_neighbors_buffer.extract_indices();
+                auto inner_neighbors_indices = inner_neighbors_buffer.move_indices();
 
                 // iterate over each neighbor's neighbors and add them to the neighbors to visit only if
                 // they havent been visited already
@@ -306,7 +307,7 @@ auto DBSCAN<Indexer>::predict_with_buffers(const Indexer&    indexer,
     auto precomputed_is_core = std::vector<bool>(n_samples);
 
     for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
-        auto current_neighborhood_indices = query_function(global_index, std::forward<Args>(args)...).extract_indices();
+        auto current_neighborhood_indices = query_function(global_index, std::forward<Args>(args)...).move_indices();
 
         precomputed_is_core[global_index] = current_neighborhood_indices.size() + 1 >= options_.min_samples_;
 
