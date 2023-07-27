@@ -17,6 +17,7 @@ const fs::path inputs_folder      = folder_root / fs::path("inputs");
 const fs::path targets_folder     = folder_root / fs::path("targets");
 const fs::path predictions_folder = folder_root / fs::path("predictions");
 const fs::path centroids_folder   = folder_root / fs::path("centroids");
+const fs::path conversions_folder = folder_root / fs::path("conversions");
 
 ssize_t get_num_features_in_file(const fs::path& filepath, char delimiter = ' ') {
     std::ifstream file(filepath);
@@ -98,4 +99,20 @@ void write_data(const std::vector<T>& data, std::size_t n_features, const fs::pa
             }
         }
     }
+}
+
+auto get_files_names_at_path(const fs::path& directory_path) {
+    std::vector<fs::path> file_names;
+
+    try {
+        for (const auto& entry : fs::directory_iterator(directory_path)) {
+            if (fs::is_regular_file(entry)) {
+                file_names.emplace_back(entry.path().filename());
+            }
+        }
+    } catch (const fs::filesystem_error& ex) {
+        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+        return std::vector<fs::path>{};
+    }
+    return file_names;
 }

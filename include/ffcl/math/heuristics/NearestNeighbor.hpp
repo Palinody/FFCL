@@ -115,11 +115,10 @@ class NearestNeighborsBuffer {
     inline bool empty() const {
         return indices_.empty();
     }
-    /*
+
     inline IndexType furthest_k_nearest_neighbor_index() const {
         return indices_[furthest_buffer_index_];
     }
-    */
 
     inline DistanceType furthest_k_nearest_neighbor_distance() const {
         return furthest_k_nearest_neighbor_distance_;
@@ -150,12 +149,9 @@ class NearestNeighborsBuffer {
         }
         // populate if the max capacity is reached and the candidate has a closer distance
         else if (distance_candidate < furthest_k_nearest_neighbor_distance_) {
-            // remove the previous greatest distance now that the vectors overflow the max capacity
-            indices_.erase(indices_.begin() + furthest_buffer_index_);
-            distances_.erase(distances_.begin() + furthest_buffer_index_);
-            // add the candidate anywhere before we find the new furthest neighbor because its a valid candidate
-            indices_.emplace_back(index_candidate);
-            distances_.emplace_back(distance_candidate);
+            // replace the previous greatest distance now that the vectors overflow the max capacity
+            indices_[furthest_buffer_index_]   = index_candidate;
+            distances_[furthest_buffer_index_] = distance_candidate;
             // find the new furthest neighbor and update the cache accordingly
             std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
                 math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
@@ -171,7 +167,7 @@ class NearestNeighborsBuffer {
   private:
     std::vector<IndexType>    indices_;
     std::vector<DistanceType> distances_;
-    ssize_t                   furthest_buffer_index_;
+    IndexType                 furthest_buffer_index_;
     DistanceType              furthest_k_nearest_neighbor_distance_;
     std::size_t               max_capacity_;
 };

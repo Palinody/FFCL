@@ -37,7 +37,7 @@ def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
     )
 
     start_time = time.process_time()
-    clustering.fit(points)
+    labels = clustering.fit(points)
     end_time = time.process_time()
     # print the elapsed time
     print(

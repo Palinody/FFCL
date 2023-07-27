@@ -45,7 +45,10 @@ for dataset_name in (
     for label, color in zip(unique_predictions, colors):
         if label > 0:
             cluster_points_label = np_data[np_labels == label]
-            plt.scatter(cluster_points_label[:, 0], cluster_points_label[:, 1], color=color, label=f'Cluster {label}')
+            plt.scatter(cluster_points_label[:, 0], 
+                        cluster_points_label[:, 1], 
+                        color=color, 
+                        label=f'Cluster {label}')
 
     # Set plot title and predictions
     plt.title(dataset_name)
