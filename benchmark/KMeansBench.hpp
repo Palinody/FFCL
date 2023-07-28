@@ -38,8 +38,8 @@ void fit_once_kmeans(const InputsIterator& inputs_first,
 void mnist_bench() {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = load_data<dType>(inputs_folder / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder / filename);
+    const auto        data       = bench::io::txt::load_data<dType>(inputs_folder / filename, ' ');
+    const std::size_t n_features = bench::io::txt::get_num_features_in_file(inputs_folder / filename);
 
     std::cout << data.size() << " | " << n_features << "\n\n";
     const auto n_centroids = 10;

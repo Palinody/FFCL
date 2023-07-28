@@ -26,8 +26,8 @@ namespace ffcl_ {
 utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = load_data<dType>(filepath, ' ');
-    const std::size_t n_features = get_num_features_in_file(filepath);
+    auto              data       = bench::io::txt::load_data<dType>(filepath, ' ');
+    const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     utils::DurationsSummary bench_summary;
@@ -93,8 +93,8 @@ namespace pcl_ {
 utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = load_data<dType>(filepath, ' ');
-    const std::size_t n_features = get_num_features_in_file(filepath);
+    auto              data       = bench::io::txt::load_data<dType>(filepath, ' ');
+    const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     utils::DurationsSummary bench_summary;
@@ -155,8 +155,8 @@ namespace flann_ {
 utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = load_data<dType>(filepath, ' ');
-    const std::size_t n_features = get_num_features_in_file(filepath);
+    auto              data       = bench::io::txt::load_data<dType>(filepath, ' ');
+    const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     utils::DurationsSummary bench_summary;
@@ -287,7 +287,7 @@ void run_toy_datasets_benchmarks() {
 void run_pointclouds_benchmarks() {
     // the path to the files from the inputs_folder
     const auto relative_path = fs::path("pointclouds_sequences/1");
-    const auto filenames     = get_files_names_at_path(inputs_folder / relative_path);
+    const auto filenames     = bench::io::get_files_names_at_path(inputs_folder / relative_path);
 
     for (const auto& filename : filenames) {
         run_benchmarks(inputs_folder / relative_path / filename);
