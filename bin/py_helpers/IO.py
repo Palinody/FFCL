@@ -28,8 +28,8 @@ def encode(data, filepath, dtype=np.float32):
     data_array.tofile(filepath)
 
 def example():
-  inputs_fn = r"/home/lucas/Programming/lucas_ws/src/github/cpp_clustering/bin/clustering/inputs/pointclouds_sequences/0000/000000.bin"
-  prediction_fn = r"/home/lucas/Programming/lucas_ws/src/github/cpp_clustering/bin/clustering/predictions/pointclouds_sequences/0000/000000.bin"
+  inputs_fn = r"/input/file.bin"
+  prediction_fn = r"/predictions/file.bin"
 
   input = decode_bin(4, inputs_fn)
   predictions = decode_bin(1, prediction_fn, np.uint64)
