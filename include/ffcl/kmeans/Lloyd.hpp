@@ -27,7 +27,7 @@ class Lloyd {
 
     Lloyd(const Lloyd&) = delete;
 
-    DataType total_deviation();
+    DataType total_deviation() const;
 
     std::vector<DataType> step();
 
@@ -85,7 +85,7 @@ Lloyd<Iterator>::Lloyd(const DatasetDescriptorType& dataset_descriptor,
   , loss_{loss} {}
 
 template <typename Iterator>
-typename Lloyd<Iterator>::DataType Lloyd<Iterator>::total_deviation() {
+typename Lloyd<Iterator>::DataType Lloyd<Iterator>::total_deviation() const {
     return loss_;
 }
 

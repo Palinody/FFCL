@@ -112,7 +112,7 @@ class KMeansErrorsTest : public ::testing::Test {
         std::size_t           n_features,
         std::size_t           n_iterations = 1) {
         using KMeans = ffcl::KMeans<dType>;
-        // using PAM = ffcl::FasterMSC;
+        // using PAM = ffcl::Lloyd;
 
         auto kmeans = KMeans(n_centroids, n_features);
 
