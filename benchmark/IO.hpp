@@ -162,6 +162,8 @@ std::tuple<std::vector<ElementsType>, std::size_t, std::size_t> decode(std::size
 
 template <typename ElementsType>
 void encode(const std::vector<ElementsType>& data, const fs::path& filepath) {
+    static_assert(std::is_trivial<ElementsType>::value, "ElementType must be a trivially copyable type");
+
     auto fp = make_unique_fp(filepath.c_str(), "wb");
     if (!fwrite(data.data(), sizeof(ElementsType), data.size(), fp.get())) {
         std::cout << "Could not write data to file at: " << filepath << std::endl;

@@ -26,9 +26,11 @@ static constexpr std::size_t min_samples = 10;
 utils::DurationsSummary run_dbscan(const fs::path& filepath, const std::optional<fs::path>& predictions_filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = bench::io::txt::load_data<dType>(filepath, ' ');
-    const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    // auto data = bench::io::txt::load_data<dType>(filepath, ' ');
+    // const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
+    // const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto [data, n_samples, n_features] = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     utils::DurationsSummary bench_summary;
 
@@ -57,7 +59,7 @@ utils::DurationsSummary run_dbscan(const fs::path& filepath, const std::optional
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .axis_selection_policy(AxisSelectionPolicyType().feature_mask({0, 1, 2}))
                                    .splitting_rule_policy(SplittingRulePolicyType()));
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -83,14 +85,15 @@ utils::DurationsSummary run_dbscan(const fs::path& filepath, const std::optional
     bench_summary.total_duration = bench_summary.indexer_build_duration + bench_summary.indexer_query_duration;
 
     if (predictions_filepath.has_value()) {
-        bench::io::txt::write_data<ssize_t>(predictions, 1, predictions_filepath.value());
+        // bench::io::txt::write_data<std::size_t>(predictions, 1, predictions_filepath.value());
+        bench::io::bin::encode(predictions, predictions_filepath.value());
     }
     return bench_summary;
 }
 
 void run_pointclouds_benchmarks() {
     // the path to the files from the inputs_folder
-    const auto relative_path = fs::path("pointclouds_sequences/1");
+    const auto relative_path = fs::path("pointclouds_sequences/0000");
     const auto filenames     = bench::io::get_files_names_at_path(inputs_folder / relative_path);
 
     // Conversion factor for nanoseconds to seconds
