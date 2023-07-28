@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IO.hpp"
+#include "Utils.hpp"
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"

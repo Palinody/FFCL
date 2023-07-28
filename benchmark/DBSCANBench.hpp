@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IO.hpp"
+#include "Utils.hpp"
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
@@ -17,43 +18,26 @@
 #include <optional>
 #include <vector>
 
-#include <cmath>
-
 namespace dbscan::benchmark {
 
 static constexpr float       radius      = 0.4;
 static constexpr std::size_t min_samples = 10;
 
-template <typename SamplesIterator>
-void inplace_cartesian_to_polar(const SamplesIterator& samples_first,
-                                const SamplesIterator& samples_last,
-                                std::size_t            n_features) {
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        const auto x = samples_first[sample_index * n_features];
-        const auto y = samples_first[sample_index * n_features + 1];
-        // to radius
-        samples_first[sample_index * n_features] = std::sqrt(x * x + y * y);
-        // to angle
-        samples_first[sample_index * n_features + 1] = std::atan2(y, x);
-    }
-}
-
-std::vector<std::size_t> generate_indices(std::size_t n_samples) {
-    std::vector<std::size_t> elements(n_samples);
-    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
-    return elements;
-}
-
-void run_dbscan(const fs::path& filepath, const std::optional<fs::path>& predictions_filepath = {}) {
+utils::DurationsSummary run_dbscan(const fs::path& filepath, const std::optional<fs::path>& predictions_filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     auto              data       = load_data<dType>(filepath, ' ');
     const std::size_t n_features = get_num_features_in_file(filepath);
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
-    auto indices = generate_indices(n_samples);
+    utils::DurationsSummary bench_summary;
+
+    bench_summary.n_samples  = n_samples;
+    bench_summary.n_features = n_features;
+
+    timer.reset();
+
+    auto indices = utils::generate_indices(n_samples);
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
@@ -76,7 +60,7 @@ void run_dbscan(const fs::path& filepath, const std::optional<fs::path>& predict
                                    .axis_selection_policy(AxisSelectionPolicyType())
                                    .splitting_rule_policy(SplittingRulePolicyType()));
 
-    timer.print_elapsed_seconds(9);
+    bench_summary.indexer_build_duration = timer.elapsed();
 
     auto dbscan = ffcl::DBSCAN<IndexerType>();
 
@@ -93,11 +77,15 @@ void run_dbscan(const fs::path& filepath, const std::optional<fs::path>& predict
                        &IndexerType::range_search_around_query_index,
                        HyperRangeType<SamplesIterator>({{-0.25, 0.25}, {-0.25, 0.25}, {-0.5, 0.5}}));
     */
-    timer.print_elapsed_seconds(9);
+
+    bench_summary.indexer_query_duration = timer.elapsed();
+
+    bench_summary.total_duration = bench_summary.indexer_build_duration + bench_summary.indexer_query_duration;
 
     if (predictions_filepath.has_value()) {
         write_data<ssize_t>(predictions, 1, predictions_filepath.value());
     }
+    return bench_summary;
 }
 
 void run_pointclouds_benchmarks() {
@@ -105,9 +93,53 @@ void run_pointclouds_benchmarks() {
     const auto relative_path = fs::path("pointclouds_sequences/1");
     const auto filenames     = get_files_names_at_path(inputs_folder / relative_path);
 
-    for (const auto& filename : filenames) {
-        run_dbscan(inputs_folder / relative_path / filename, predictions_folder / relative_path / filename);
+    // Conversion factor for nanoseconds to seconds
+    long double to_seconds = 1e-9;
+
+    // the sequence object that will be used to compute the variance
+    std::vector<utils::DurationsSummary> bench_summary_vector;
+    bench_summary_vector.reserve(filenames.size());
+    // the object that will be used to compute the mean
+    utils::DurationsSummary bench_summary_mean;
+
+    for (std::size_t file_index = 0; file_index < filenames.size(); ++file_index) {
+        const auto& filename = filenames[file_index];
+
+        auto bench_summary =
+            run_dbscan(inputs_folder / relative_path / filename, predictions_folder / relative_path / filename);
+
+        bench_summary.apply_timer_multiplier(to_seconds);
+
+        bench_summary_mean += bench_summary;
+
+        bench_summary_vector.emplace_back(std::move(bench_summary));
+
+        utils::print_progress_bar(file_index, filenames.size());
     }
+    bench_summary_mean /= filenames.size();
+
+    utils::DurationsSummary bench_summary_variance;
+
+    for (auto& bench_summary : bench_summary_vector) {
+        bench_summary -= bench_summary_mean;
+        bench_summary *= bench_summary;
+        bench_summary_variance += bench_summary;
+    }
+    bench_summary_variance /= filenames.size();
+
+    printf("DBSCAN (FFCL) computation time average ± variance (n_samples/queries: %.2Lf ± %.2Lf | n_features: %ld):"
+           "\n\tbuild: %.12Lf ± %.12Lf"
+           "\n\tpredictions: %.12Lf ± %.12Lf"
+           "\n\ttotal: %.12Lf ± %.12Lf\n",
+           bench_summary_mean.n_samples,
+           bench_summary_variance.n_samples,
+           static_cast<std::size_t>(bench_summary_mean.n_features),
+           bench_summary_mean.indexer_build_duration,
+           bench_summary_variance.indexer_build_duration,
+           bench_summary_mean.indexer_query_duration,
+           bench_summary_variance.indexer_query_duration,
+           bench_summary_mean.total_duration,
+           bench_summary_variance.total_duration);
 }
 
 }  // namespace dbscan::benchmark

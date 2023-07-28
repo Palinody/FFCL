@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IO.hpp"
+#include "Utils.hpp"
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
@@ -20,45 +21,16 @@ namespace kdtree::benchmark {
 constexpr std::size_t n_neighbors = 5;
 constexpr dType       radius      = 0.5;
 
-struct DurationsSummary {
-    ssize_t       n_samples              = -1;
-    ssize_t       n_features             = -1;
-    std::uint64_t indexer_build_duration = 0;
-    std::uint64_t indexer_query_duration = 0;
-    std::uint64_t total_duration         = 0;
-};
-
-std::vector<std::size_t> generate_indices(std::size_t n_samples) {
-    std::vector<std::size_t> elements(n_samples);
-    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
-    return elements;
-}
-
-template <typename Type>
-void print_data(const std::vector<Type>& data, std::size_t n_features) {
-    if (!n_features) {
-        return;
-    }
-    const std::size_t n_samples = data.size() / n_features;
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            std::cout << data[sample_index * n_features + feature_index] << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
 namespace ffcl_ {
 
-DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
+utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     auto              data       = load_data<dType>(filepath, ' ');
     const std::size_t n_features = get_num_features_in_file(filepath);
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     bench_summary.n_samples              = n_samples;
     bench_summary.n_features             = n_features;
@@ -68,7 +40,7 @@ DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& f
 
     timer.reset();
 
-    auto indices = generate_indices(n_samples);
+    auto indices = utils::generate_indices(n_samples);
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
@@ -118,14 +90,14 @@ DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& f
 
 namespace pcl_ {
 
-DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
+utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     auto              data       = load_data<dType>(filepath, ' ');
     const std::size_t n_features = get_num_features_in_file(filepath);
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     bench_summary.n_samples              = n_samples;
     bench_summary.n_features             = n_features;
@@ -180,14 +152,14 @@ DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& f
 
 namespace flann_ {
 
-DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
+utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     auto              data       = load_data<dType>(filepath, ' ');
     const std::size_t n_features = get_num_features_in_file(filepath);
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     bench_summary.n_samples              = n_samples;
     bench_summary.n_features             = n_features;
@@ -242,7 +214,8 @@ void run_benchmarks(const fs::path& filepath) {
     auto pcl_durations_summary   = pcl_::radius_search_around_query_index_varied_bench(filepath);
     auto flann_durations_summary = flann_::radius_search_around_query_index_varied_bench(filepath);
 
-    double to_seconds = 1e-9;  // Conversion factor for nanoseconds to seconds
+    // Conversion factor for nanoseconds to seconds
+    double to_seconds = 1e-9;
 
     // Duration Summary 1 (Original Time)
     double ffcl_build = ffcl_durations_summary.indexer_build_duration * to_seconds;
@@ -260,19 +233,19 @@ void run_benchmarks(const fs::path& filepath) {
     double flann_total = flann_durations_summary.total_duration * to_seconds;
 
     printf("KDTree (FFCL) speed over %ld queries\n\tbuild: %.6f | queries: %.6f | total: %.6f\n",
-           ffcl_durations_summary.n_samples,
+           static_cast<std::size_t>(ffcl_durations_summary.n_samples),
            ffcl_build,
            ffcl_query,
            ffcl_total);
 
     printf("KDTree (PCL) speed over %ld queries\n\tbuild: %.6f | queries: %.6f | total: %.6f\n",
-           pcl_durations_summary.n_samples,
+           static_cast<std::size_t>(pcl_durations_summary.n_samples),
            pcl_build,
            pcl_query,
            pcl_total);
 
     printf("KDTree (FLANN) speed over %ld queries\n\tbuild: %.6f | queries: %.6f | total: %.6f\n",
-           flann_durations_summary.n_samples,
+           static_cast<std::size_t>(flann_durations_summary.n_samples),
            flann_build,
            flann_query,
            flann_total);
