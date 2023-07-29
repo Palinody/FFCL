@@ -105,7 +105,7 @@ utils::DurationsSummary run_dbscan(const fs::path& filepath, const std::optional
 
 void run_pointclouds_benchmarks() {
     // the path to the files from the inputs_folder
-    const auto relative_path = fs::path("pointclouds_sequences/1");
+    const auto relative_path = fs::path("pointclouds_sequences/0000");
     const auto filenames     = bench::io::get_files_names_at_path(inputs_folder / relative_path);
 
     // Conversion factor for nanoseconds to seconds
