@@ -11,12 +11,12 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "mayavi"])
     from mayavi import mlab
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plot
 from matplotlib.colors import ListedColormap
 
 def generate_colors(num_colors):
     # Generate a colormap with `num_colors` distinct colors
-    colors = plt.cm.tab20(np.linspace(0, 1, num_colors))
+    colors = plot.cm.tab20(np.linspace(0, 1, num_colors))
     return ListedColormap(colors)
 
 def color_from_labels(labels):
@@ -48,7 +48,7 @@ def animate_point_clouds_from_txt_files(root_folder, file_list, labels_folder, i
 
     # create empty visualization
     # colors: https://docs.enthought.com/mayavi/mayavi/mlab_changing_object_looks.html
-    plt = mlab.points3d(0, 0, 0, mode="point", colormap="gist_rainbow")
+    plot = mlab.points3d(0, 0, 0, mode="point", colormap="gist_rainbow")
 
     @mlab.show
     @mlab.animate(delay=interval)
@@ -67,13 +67,13 @@ def animate_point_clouds_from_txt_files(root_folder, file_list, labels_folder, i
             filtered_point_cloud = point_cloud[labels > 0]
             labels_filtered = labels[labels > 0]
 
-            plt.mlab_source.reset(x=filtered_point_cloud[:, 0], 
-                                  y=filtered_point_cloud[:, 1], 
-                                  z=filtered_point_cloud[:, 2],
-                                  scalars=labels_filtered / np.max(labels_filtered)
-                                  )
+            plot.mlab_source.reset(x=filtered_point_cloud[:, 0], 
+                                   y=filtered_point_cloud[:, 1], 
+                                   z=filtered_point_cloud[:, 2], 
+                                   scalars=labels_filtered / np.max(labels_filtered))
             yield
     anim()
+
 
 def animate_point_clouds_from_bin_files(root_folder, file_list, labels_folder, interval=1000):
     mlab.figure(bgcolor=(0, 0, 0))
@@ -82,7 +82,7 @@ def animate_point_clouds_from_bin_files(root_folder, file_list, labels_folder, i
 
     # create empty visualization
     # colors: https://docs.enthought.com/mayavi/mayavi/mlab_changing_object_looks.html
-    plt = mlab.points3d(0, 0, 0, mode="point", colormap="gist_rainbow")
+    plot = mlab.points3d(0, 0, 0, mode="point", colormap="gist_rainbow")
 
     @mlab.show
     @mlab.animate(delay=interval)
@@ -100,10 +100,10 @@ def animate_point_clouds_from_bin_files(root_folder, file_list, labels_folder, i
             print(labels.shape)
 
             # point cloud without the pointsd that have been classified as noise
-            filtered_point_cloud = point_cloud[labels > 0]
-            labels_filtered = labels[labels > 0]
+            filtered_point_cloud = point_cloud[labels >= 0]
+            labels_filtered = labels[labels >= 0]
 
-            plt.mlab_source.reset(x=filtered_point_cloud[:, 0], 
+            plot.mlab_source.reset(x=filtered_point_cloud[:, 0], 
                                   y=filtered_point_cloud[:, 1], 
                                   z=filtered_point_cloud[:, 2],
                                   scalars=labels_filtered / np.max(labels_filtered)
@@ -112,22 +112,23 @@ def animate_point_clouds_from_bin_files(root_folder, file_list, labels_folder, i
     anim()
 
 def main():
+    folder_name = "0001"
     # conversions, inputs
     point_clouds_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
-                                       "clustering/inputs/pointclouds_sequences/1")
+                                       "clustering/inputs/pointclouds_sequences/" + folder_name)
     point_cloud_file_names = os.listdir(point_clouds_folder)
 
-    point_cloud_file_names = sorted(point_cloud_file_names, key=lambda x: int(x.split("_")[1].split(".txt")[0]))
-    # point_cloud_file_names = sorted(point_cloud_file_names, key=lambda x: int(x.split(".bin")[0]))
+    # point_cloud_file_names = sorted(point_cloud_file_names, key=lambda x: int(x.split("_")[1].split(".txt")[0]))
+    point_cloud_file_names = sorted(point_cloud_file_names, key=lambda x: int(x.split(".bin")[0]))
 
     labels_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
-                                 "clustering/predictions/pointclouds_sequences/1")
+                                 "clustering/predictions/pointclouds_sequences/" + folder_name)
 
     # Set the interval (in milliseconds) for displaying each point cloud (1 second in this case)
-    display_rate = 500  # 1 second per point cloud
+    display_rate = 250  # 1 second per point cloud
 
     # Animate the sequence of point clouds
-    animate_point_clouds_from_txt_files(point_clouds_folder, 
+    animate_point_clouds_from_bin_files(point_clouds_folder, 
                                         point_cloud_file_names, 
                                         labels_folder=labels_folder, 
                                         interval=display_rate)

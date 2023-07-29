@@ -16,21 +16,33 @@
 #include <iostream>
 #include <iterator>
 #include <optional>
+#include <tuple>
 #include <vector>
 
 namespace dbscan::benchmark {
 
-static constexpr float       radius      = 0.4;
+static constexpr float       radius      = 0.5;
 static constexpr std::size_t min_samples = 10;
 
 utils::DurationsSummary run_dbscan(const fs::path& filepath, const std::optional<fs::path>& predictions_filepath) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    // auto data = bench::io::txt::load_data<dType>(filepath, ' ');
-    // const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
-    // const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    std::vector<dType> data;
+    std::size_t        n_samples, n_features;
 
-    auto [data, n_samples, n_features] = bench::io::bin::decode(/*n_features=*/4, filepath);
+    if (filepath.extension().string() == ".bin") {
+        std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
+
+    } else if (filepath.extension().string() == ".txt") {
+        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        n_features = bench::io::txt::get_num_features_in_file(filepath);
+        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    } else {
+        char message[100];
+        std::sprintf(message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+        throw std::runtime_error(message);
+    }
 
     utils::DurationsSummary bench_summary;
 
@@ -93,7 +105,7 @@ utils::DurationsSummary run_dbscan(const fs::path& filepath, const std::optional
 
 void run_pointclouds_benchmarks() {
     // the path to the files from the inputs_folder
-    const auto relative_path = fs::path("pointclouds_sequences/0000");
+    const auto relative_path = fs::path("pointclouds_sequences/1");
     const auto filenames     = bench::io::get_files_names_at_path(inputs_folder / relative_path);
 
     // Conversion factor for nanoseconds to seconds

@@ -3,6 +3,11 @@ import numpy as np
 
 import numpy as np
 
+def n_features_in_txt_file(filename: str, delimiter: str=" ") -> int:
+    with open(filename, "r") as file:
+        first_line = file.readline()
+        return len(first_line.split(delimiter))
+
 def decode_txt(filepath, dtype=np.float32):
     data = np.loadtxt(filepath, dtype=dtype)
     return data
