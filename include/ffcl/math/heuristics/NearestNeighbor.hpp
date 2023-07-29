@@ -12,30 +12,26 @@
 #include <tuple>
 #include <vector>
 
+/**
+ * @brief A sorted version of NearestNeighborsBuffer using std::lower_bound
+ * A few approaches are possible (not exheustive):
+ *      - Using std::lower_bound
+ *      - using an unsorted method that sorts the neighbors only once queried.
+ *      An additional binary tag could be useful to avoid sorting unnecessarily.
+ * The second approach would seem less useful than the first one because the client could easily sort the queried
+ * nearest neighbors array himself. Which version would be better in which circumstances is unknown yet. To be tested.
+ *
+ * @tparam SamplesIterator
+ */
 template <typename SamplesIterator>
-class NearestNeighborsBufferV1 {
+class NearestNeighborsBufferSorted {
   private:
     using IndexType    = std::size_t;
     using DistanceType = typename SamplesIterator::value_type;
 
   public:
-    NearestNeighborsBufferV1(/*std::vector<IndexType>& indices, std::vector<DistanceType>& distances*/)
-      : /*indices_{indices}
-      , distances_{distances}
-      , */
-      max_capacity_{1} {
-        // assert(indices.size() <= 1 && distances.size() <= 1);
-    }
-
-    NearestNeighborsBufferV1(/*std::vector<IndexType>&    indices,
-                           std::vector<DistanceType>& distances,*/
-                             std::size_t max_capacity)
-      : /*indices_{indices}
-      , distances_{distances}
-      , */
-      max_capacity_{max_capacity} {
-        // assert(indices.size() <= max_capacity_ && distances.size() <= max_capacity_);
-    }
+    NearestNeighborsBufferV1(std::size_t max_capacity = 1)
+      : max_capacity_{max_capacity} {}
 
     inline std::size_t size() const {
         return indices_.size();
