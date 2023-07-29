@@ -30,7 +30,7 @@ class NearestNeighborsBufferSorted {
     using DistanceType = typename SamplesIterator::value_type;
 
   public:
-    NearestNeighborsBufferV1(std::size_t max_capacity = 1)
+    NearestNeighborsBufferSorted(std::size_t max_capacity = 1)
       : max_capacity_{max_capacity} {}
 
     inline std::size_t size() const {
