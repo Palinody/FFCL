@@ -14,7 +14,7 @@
 
 /**
  * @brief A sorted version of NearestNeighborsBuffer using std::lower_bound
- * A few approaches are possible (not exheustive):
+ * A few approaches are possible (not exhaustive):
  *      - Using std::lower_bound
  *      - using an unsorted method that sorts the neighbors only once queried.
  *      An additional binary tag could be useful to avoid sorting unnecessarily.
