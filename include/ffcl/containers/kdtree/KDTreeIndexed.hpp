@@ -120,9 +120,9 @@ class KDTreeIndexed {
 
     // existing samples
 
-    auto k_mutual_reachability_distance(std::size_t k_nearest_neighbors,
-                                        std::size_t query_index1,
-                                        std::size_t query_index2) const;
+    auto k_mutual_reachability_distance(std::size_t query_index1,
+                                        std::size_t query_index2,
+                                        std::size_t k_nearest_neighbors) const;
     // (1)
     auto nearest_neighbor_around_query_index(std::size_t query_index) const;
     // (2)
@@ -501,9 +501,10 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator          
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-auto KDTreeIndexed<IndicesIterator, SamplesIterator>::k_mutual_reachability_distance(std::size_t k_nearest_neighbors,
-                                                                                     std::size_t query_index1,
-                                                                                     std::size_t query_index2) const {
+auto KDTreeIndexed<IndicesIterator, SamplesIterator>::k_mutual_reachability_distance(
+    std::size_t query_index1,
+    std::size_t query_index2,
+    std::size_t k_nearest_neighbors) const {
     if (query_index1 != query_index2) {
         const auto nn_buffer1 = this->k_nearest_neighbors_around_query_index(query_index1, k_nearest_neighbors);
         const auto furthest_nn_distance1 = nn_buffer1.furthest_k_nearest_neighbor_distance();

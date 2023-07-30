@@ -398,6 +398,23 @@ elseif(MODE STREQUAL "gtest")
         KDTreeIndexedTest
     )
 
+    add_executable(
+        BoruvkasAlgorithmTest
+
+        # ---
+        test/src/containers/spanning_tree/BoruvkasAlgorithmTest.cpp
+    )
+    target_link_libraries(
+        BoruvkasAlgorithmTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        BoruvkasAlgorithmTest
+        BoruvkasAlgorithmTest
+    )
+
     set_tests_properties(SortingTest DistributionsTest PROPERTIES
         LABELS "DistributionTests"
     )
