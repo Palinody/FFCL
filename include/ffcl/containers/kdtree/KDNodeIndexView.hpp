@@ -47,7 +47,7 @@ struct KDNodeIndexView {
 
     IteratorPairType<IndicesIterator> indices_iterator_pair_;
     ssize_t                           cut_feature_index_;
-    // bounding box hyper rectangle (w.r.t. each dimension)
+    // bounding box range (w.r.t. the cut dimension)
     RangeType<SamplesIterator>                                         kd_bounding_box_;
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> left_;
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> right_;
