@@ -158,7 +158,10 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
     timer.reset();
 
     const auto minimum_spanning_tree =
-        boruvkas_algorithm.make_tree(indexer, &IndexerType::k_mutual_reachability_distance, /*k_nearest_neighbors*/ 3);
+        boruvkas_algorithm.make_tree(indexer,
+                                     &IndexerType::k_nearest_neighbors_around_query_index,
+                                     &IndexerType::k_mutual_reachability_distance,
+                                     /*placeholder value*/ 3);
 
     common::utils::ignore_parameters(minimum_spanning_tree);
 
