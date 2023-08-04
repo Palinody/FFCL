@@ -18,25 +18,34 @@
 
 namespace kdtree::benchmark {
 
-constexpr std::size_t n_neighbors = 5;
-constexpr dType       radius      = 0.5;
-
 namespace ffcl_ {
 
-utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
+utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = bench::io::txt::load_data<dType>(filepath, ' ');
-    const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    std::vector<dType> data;
+    std::size_t        n_samples, n_features;
+
+    if (filepath.extension().string() == ".bin") {
+        std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
+
+    } else if (filepath.extension().string() == ".txt") {
+        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        n_features = bench::io::txt::get_num_features_in_file(filepath);
+        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    } else {
+        char message[100];
+        std::sprintf(message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+        throw std::runtime_error(message);
+    }
 
     utils::DurationsSummary bench_summary;
 
-    bench_summary.n_samples              = n_samples;
-    bench_summary.n_features             = n_features;
-    bench_summary.indexer_build_duration = 0;
-    bench_summary.indexer_query_duration = 0;
-    bench_summary.total_duration         = 0;
+    n_features = 3;
+
+    bench_summary.n_samples  = n_samples;
+    bench_summary.n_features = n_features;
 
     timer.reset();
 
@@ -58,7 +67,7 @@ utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .axis_selection_policy(AxisSelectionPolicyType().feature_mask({0, 1, 2}))
                                    .splitting_rule_policy(SplittingRulePolicyType()));
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -86,37 +95,127 @@ utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::
     return bench_summary;
 }
 
+utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
+                                                                            std::size_t     k_nearest_neighbors) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    std::vector<dType> data;
+    std::size_t        n_samples, n_features;
+
+    if (filepath.extension().string() == ".bin") {
+        std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
+
+    } else if (filepath.extension().string() == ".txt") {
+        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        n_features = bench::io::txt::get_num_features_in_file(filepath);
+        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    } else {
+        char message[100];
+        std::sprintf(message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+        throw std::runtime_error(message);
+    }
+
+    utils::DurationsSummary bench_summary;
+
+    n_features = 3;
+
+    bench_summary.n_samples  = n_samples;
+    bench_summary.n_features = n_features;
+
+    timer.reset();
+
+    auto indices = utils::generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType().feature_mask({0, 1, 2}))
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    bench_summary.indexer_build_duration = timer.elapsed();
+
+    std::vector<std::size_t> nn_histogram(n_samples);
+
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        const auto elapsed_start = timer.elapsed();
+
+        auto nearest_neighbors_buffer =
+            indexer.k_nearest_neighbors_around_query_index(indices[sample_index_query], k_nearest_neighbors);
+
+        // auto nearest_neighbors_buffer = indexer.k_nearest_neighbors_around_query_sample(
+        // data.begin() + indices[sample_index_query] * n_features,
+        // data.begin() + indices[sample_index_query] * n_features + n_features,
+        // k_nearest_neighbors );
+
+        nn_histogram[indices[sample_index_query]] = nearest_neighbors_buffer.move_indices().size();
+
+        bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
+    }
+
+    bench_summary.total_duration = timer.elapsed();
+    // print_data(nn_histogram, n_samples);
+
+    return bench_summary;
+}
+
 }  // namespace ffcl_
 
 namespace pcl_ {
 
-utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
+utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = bench::io::txt::load_data<dType>(filepath, ' ');
-    const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    std::vector<dType> data;
+    std::size_t        n_samples, n_features;
+
+    if (filepath.extension().string() == ".bin") {
+        std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
+
+    } else if (filepath.extension().string() == ".txt") {
+        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        n_features = bench::io::txt::get_num_features_in_file(filepath);
+        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    } else {
+        char message[100];
+        std::sprintf(message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+        throw std::runtime_error(message);
+    }
 
     utils::DurationsSummary bench_summary;
 
-    bench_summary.n_samples              = n_samples;
-    bench_summary.n_features             = n_features;
-    bench_summary.indexer_build_duration = 0;
-    bench_summary.indexer_query_duration = 0;
-    bench_summary.total_duration         = 0;
+    n_features = 3;
 
-    pcl::PointCloud<pcl::PointXY>::Ptr cloud(new pcl::PointCloud<pcl::PointXY>);
+    bench_summary.n_samples  = n_samples;
+    bench_summary.n_features = n_features;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     cloud->resize(n_samples);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
         cloud->points[sample_index].x = data[sample_index * n_features];
         cloud->points[sample_index].y = data[sample_index * n_features + 1];
+        cloud->points[sample_index].z = data[sample_index * n_features + 2];
     }
     timer.reset();
 
-    pcl::search::FlannSearch<pcl::PointXY> kd_tree(
-        new pcl::search::FlannSearch<pcl::PointXY>::KdTreeIndexCreator(/*max_leaf_size=*/std::sqrt(n_samples)));
+    pcl::search::FlannSearch<pcl::PointXYZ> kd_tree(
+        new pcl::search::FlannSearch<pcl::PointXYZ>::KdTreeIndexCreator(/*max_leaf_size=*/std::sqrt(n_samples)));
     kd_tree.setInputCloud(cloud);
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -129,9 +228,10 @@ utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::
         pcl::Indices       indices;
         std::vector<float> distances;
 
-        pcl::PointXY searchPoint;
+        pcl::PointXYZ searchPoint;
         searchPoint.x = data[sample_index_query * n_features];
         searchPoint.y = data[sample_index_query * n_features + 1];
+        searchPoint.z = data[sample_index_query * n_features + 2];
 
         // Perform radius search for each point in the cloud
         kd_tree.radiusSearch(searchPoint, radius, indices, distances);
@@ -148,31 +248,123 @@ utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::
     return bench_summary;
 }
 
+utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
+                                                                            std::size_t     k_nearest_neighbors) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    std::vector<dType> data;
+    std::size_t        n_samples, n_features;
+
+    if (filepath.extension().string() == ".bin") {
+        std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
+
+    } else if (filepath.extension().string() == ".txt") {
+        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        n_features = bench::io::txt::get_num_features_in_file(filepath);
+        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    } else {
+        char message[100];
+        std::sprintf(message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+        throw std::runtime_error(message);
+    }
+
+    utils::DurationsSummary bench_summary;
+
+    n_features = 3;
+
+    bench_summary.n_samples  = n_samples;
+    bench_summary.n_features = n_features;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    cloud->resize(n_samples);
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        // Each point represents one row of the 2D matrix (n_features-dimensional point)
+        cloud->points[sample_index].x = data[sample_index * n_features];
+        cloud->points[sample_index].y = data[sample_index * n_features + 1];
+        cloud->points[sample_index].z = data[sample_index * n_features + 2];
+    }
+    timer.reset();
+
+    pcl::search::FlannSearch<pcl::PointXYZ> kd_tree(
+        new pcl::search::FlannSearch<pcl::PointXYZ>::KdTreeIndexCreator(/*max_leaf_size=*/std::sqrt(n_samples)));
+    kd_tree.setInputCloud(cloud);
+
+    bench_summary.indexer_build_duration = timer.elapsed();
+
+    std::vector<std::size_t> nn_histogram(n_samples);
+
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        const auto elapsed_start = timer.elapsed();
+
+        pcl::Indices       indices;
+        std::vector<float> distances;
+
+        pcl::PointXYZ searchPoint;
+        searchPoint.x = data[sample_index_query * n_features];
+        searchPoint.y = data[sample_index_query * n_features + 1];
+        searchPoint.z = data[sample_index_query * n_features + 2];
+
+        // Perform k_nearest_neighbors search for each point in the cloud
+        kd_tree.nearestKSearch(searchPoint, k_nearest_neighbors, indices, distances);
+
+        nn_histogram[sample_index_query] = indices.size();
+
+        bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
+    }
+
+    bench_summary.total_duration = timer.elapsed();
+
+    return bench_summary;
+}
+
 }  // namespace pcl_
 
 namespace flann_ {
 
-utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::path& filepath) {
+utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = bench::io::txt::load_data<dType>(filepath, ' ');
-    const std::size_t n_features = bench::io::txt::get_num_features_in_file(filepath);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    std::vector<dType> data;
+    std::size_t        n_samples, n_features;
+
+    if (filepath.extension().string() == ".bin") {
+        std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
+
+    } else if (filepath.extension().string() == ".txt") {
+        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        n_features = bench::io::txt::get_num_features_in_file(filepath);
+        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    } else {
+        char message[100];
+        std::sprintf(message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+        throw std::runtime_error(message);
+    }
 
     utils::DurationsSummary bench_summary;
 
-    bench_summary.n_samples              = n_samples;
-    bench_summary.n_features             = n_features;
-    bench_summary.indexer_build_duration = 0;
-    bench_summary.indexer_query_duration = 0;
-    bench_summary.total_duration         = 0;
+    n_features = 3;
+
+    bench_summary.n_samples  = n_samples;
+    bench_summary.n_features = n_features;
+
+    auto data_xyz = std::vector<dType>(n_samples * n_features);
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        // Each point represents one row of the 2D matrix (n_features-dimensional point)
+        data_xyz[sample_index * n_features]     = data[sample_index * n_features];
+        data_xyz[sample_index * n_features + 1] = data[sample_index * n_features + 1];
+        data_xyz[sample_index * n_features + 2] = data[sample_index * n_features + 2];
+    }
 
     timer.reset();
 
-    flann::Matrix<dType> dataset(data.data(), n_samples, n_features);
+    flann::Matrix<dType> dataset(data_xyz.data(), n_samples, n_features);
     // build 1 kdtree
     flann::Index<flann::L2<dType>> index(
-        dataset, flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/false));
+        dataset, flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
     index.buildIndex();
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -182,13 +374,10 @@ utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         const auto elapsed_start = timer.elapsed();
 
-        // flann::Matrix<std::size_t> indices;
-        // flann::Matrix<dType>       distances;
-
         std::vector<std::vector<std::size_t>> indices;
         std::vector<std::vector<dType>>       distances;
 
-        flann::Matrix<dType> query(&data[sample_index_query * n_features], 1, n_features);
+        flann::Matrix<dType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
 
         // Perform radius search for each point in the cloud
         index.radiusSearch(query, indices, distances, radius, flann::SearchParams{});
@@ -205,14 +394,84 @@ utils::DurationsSummary radius_search_around_query_index_varied_bench(const fs::
     return bench_summary;
 }
 
+utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
+                                                                            std::size_t     k_nearest_neighbors) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    std::vector<dType> data;
+    std::size_t        n_samples, n_features;
+
+    if (filepath.extension().string() == ".bin") {
+        std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
+
+    } else if (filepath.extension().string() == ".txt") {
+        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        n_features = bench::io::txt::get_num_features_in_file(filepath);
+        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    } else {
+        char message[100];
+        std::sprintf(message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+        throw std::runtime_error(message);
+    }
+
+    utils::DurationsSummary bench_summary;
+
+    n_features = 3;
+
+    bench_summary.n_samples  = n_samples;
+    bench_summary.n_features = n_features;
+
+    auto data_xyz = std::vector<dType>(n_samples * n_features);
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        // Each point represents one row of the 2D matrix (n_features-dimensional point)
+        data_xyz[sample_index * n_features]     = data[sample_index * n_features];
+        data_xyz[sample_index * n_features + 1] = data[sample_index * n_features + 1];
+        data_xyz[sample_index * n_features + 2] = data[sample_index * n_features + 2];
+    }
+
+    timer.reset();
+
+    flann::Matrix<dType> dataset(data_xyz.data(), n_samples, n_features);
+    // build 1 kdtree
+    flann::Index<flann::L2<dType>> index(
+        dataset, flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
+    index.buildIndex();
+
+    bench_summary.indexer_build_duration = timer.elapsed();
+
+    std::vector<std::size_t> nn_histogram(n_samples);
+
+    for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
+        const auto elapsed_start = timer.elapsed();
+
+        std::vector<std::vector<std::size_t>> indices;
+        std::vector<std::vector<dType>>       distances;
+
+        flann::Matrix<dType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
+
+        // Perform radius search for each point in the cloud
+        index.knnSearch(query, indices, distances, k_nearest_neighbors, flann::SearchParams{});
+
+        nn_histogram[sample_index_query] = indices[0].size();
+
+        bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
+    }
+
+    bench_summary.total_duration = timer.elapsed();
+
+    return bench_summary;
+}
+
 }  // namespace flann_
 
-void run_benchmarks(const fs::path& filepath) {
+void run_benchmarks(const fs::path& filepath, float radius) {
     printf("\n\t--- %s ---\n", filepath.filename().c_str());
 
-    auto ffcl_durations_summary  = ffcl_::radius_search_around_query_index_varied_bench(filepath);
-    auto pcl_durations_summary   = pcl_::radius_search_around_query_index_varied_bench(filepath);
-    auto flann_durations_summary = flann_::radius_search_around_query_index_varied_bench(filepath);
+    auto ffcl_durations_summary  = ffcl_::radius_search_around_query_index_bench(filepath, radius);
+    auto pcl_durations_summary   = pcl_::radius_search_around_query_index_bench(filepath, radius);
+    auto flann_durations_summary = flann_::radius_search_around_query_index_bench(filepath, radius);
 
     // Conversion factor for nanoseconds to seconds
     double to_seconds = 1e-9;
@@ -279,8 +538,11 @@ void run_toy_datasets_benchmarks() {
                                                  /**/ "blobs.txt",
                                                  /**/ "no_structure.txt",
                                                  /**/ "unbalanced_blobs.txt"};
+
+    const dType radius = 0.5;
+
     for (const auto& filename : filenames) {
-        run_benchmarks(inputs_folder / filename);
+        run_benchmarks(inputs_folder / filename, radius);
     }
 }
 
@@ -289,8 +551,146 @@ void run_pointclouds_benchmarks() {
     const auto relative_path = fs::path("pointclouds_sequences/1");
     const auto filenames     = bench::io::get_files_names_at_path(inputs_folder / relative_path);
 
+    const dType radius = 0.5;
+
     for (const auto& filename : filenames) {
-        run_benchmarks(inputs_folder / relative_path / filename);
+        run_benchmarks(inputs_folder / relative_path / filename, radius);
+    }
+}
+
+template <typename Function, typename... Args>
+void run_pointclouds_sequences_benchmark(const Function&    function,
+                                         const fs::path&    relative_path,
+                                         const std::string& library_name,
+                                         Args&&... args) {
+    // the path to the files from the inputs_folder
+    // const auto relative_path = fs::path("pointclouds_sequences/2");
+    const auto filenames = bench::io::get_files_names_at_path(inputs_folder / relative_path);
+
+    // Conversion factor for nanoseconds to seconds
+    long double to_seconds = 1e-9;
+
+    // the sequence object that will be used to compute the variance
+    std::vector<utils::DurationsSummary> bench_summary_vector;
+    bench_summary_vector.reserve(filenames.size());
+    // the object that will be used to compute the mean
+    utils::DurationsSummary bench_summary_mean;
+
+    for (std::size_t file_index = 0; file_index < filenames.size(); ++file_index) {
+        const auto& filename = filenames[file_index];
+
+        auto bench_summary = function(inputs_folder / relative_path / filename, std::forward<Args>(args)...);
+
+        bench_summary.apply_timer_multiplier(to_seconds);
+
+        bench_summary_mean += bench_summary;
+
+        bench_summary_vector.emplace_back(std::move(bench_summary));
+
+        utils::print_progress_bar(file_index, filenames.size());
+    }
+    bench_summary_mean /= filenames.size();
+
+    utils::DurationsSummary bench_summary_variance;
+
+    for (auto& bench_summary : bench_summary_vector) {
+        bench_summary -= bench_summary_mean;
+        bench_summary *= bench_summary;
+        bench_summary_variance += bench_summary;
+    }
+    bench_summary_variance /= filenames.size();
+
+    printf("%s computation time average ± variance (n_samples/queries: %.2Lf ± %.2Lf | n_features: %ld):"
+           "\n\tbuild: %.12Lf ± %.12Lf"
+           "\n\tqueries: %.12Lf ± %.12Lf"
+           "\n\ttotal: %.12Lf ± %.12Lf\n",
+           library_name.c_str(),
+           bench_summary_mean.n_samples,
+           bench_summary_variance.n_samples,
+           static_cast<std::size_t>(bench_summary_mean.n_features),
+           bench_summary_mean.indexer_build_duration,
+           bench_summary_variance.indexer_build_duration,
+           bench_summary_mean.indexer_query_duration,
+           bench_summary_variance.indexer_query_duration,
+           bench_summary_mean.total_duration,
+           bench_summary_variance.total_duration);
+}
+
+void run_radius_search_benchmarks_on_point_cloud_sequences() {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    const std::vector<dType> radiuses = {1.0, 0.5, 0.3, 0.1};
+
+    const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
+                                                  fs::path("pointclouds_sequences/2"),
+                                                  fs::path("pointclouds_sequences/0000"),
+                                                  fs::path("pointclouds_sequences/0001")};
+
+    for (const auto& radius : radiuses) {
+        std::cout << "Running benchmarks with radius: " << radius << "\n";
+        for (const auto& relative_path : relative_paths) {
+            std::cout << "---\nSequence in folder: " << relative_path.c_str() << "\n\n";
+            timer.reset();
+            run_pointclouds_sequences_benchmark(
+                &ffcl_::radius_search_around_query_index_bench, relative_path, "FFCL", radius);
+            timer.print_elapsed_seconds();
+
+            std::cout << "---\n";
+
+            timer.reset();
+            run_pointclouds_sequences_benchmark(
+                &flann_::radius_search_around_query_index_bench, relative_path, "FLANN", radius);
+            timer.print_elapsed_seconds();
+
+            std::cout << "---\n";
+
+            timer.reset();
+            run_pointclouds_sequences_benchmark(
+                &pcl_::radius_search_around_query_index_bench, relative_path, "PCL", radius);
+            timer.print_elapsed_seconds();
+
+            std::cout << "\n---\n";
+        }
+    }
+}
+
+void run_k_nearest_neighbors_search_benchmarks_on_point_cloud_sequences() {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    const std::vector<std::size_t> n_neighbors_choices = {10, 5, 3};
+
+    const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
+                                                  fs::path("pointclouds_sequences/2"),
+                                                  fs::path("pointclouds_sequences/0000"),
+                                                  fs::path("pointclouds_sequences/0001")};
+
+    for (const auto& n_neighbors : n_neighbors_choices) {
+        std::cout << "Running benchmarks with n_neighbors: " << n_neighbors << "\n";
+        for (const auto& relative_path : relative_paths) {
+            std::cout << "---\nSequence in folder: " << relative_path.c_str() << "\n\n";
+            timer.reset();
+            run_pointclouds_sequences_benchmark(
+                &ffcl_::k_nearest_neighbors_search_around_query_index_bench, relative_path, "FFCL", n_neighbors);
+            timer.print_elapsed_seconds();
+
+            std::cout << "---\n";
+
+            timer.reset();
+            // n_neighbors + 1 because flann also returns the query
+            run_pointclouds_sequences_benchmark(
+                &flann_::k_nearest_neighbors_search_around_query_index_bench, relative_path, "FLANN", n_neighbors + 1);
+            timer.print_elapsed_seconds();
+
+            std::cout << "---\n";
+
+            timer.reset();
+            // n_neighbors + 1 because pcl also returns the query
+            run_pointclouds_sequences_benchmark(
+                &pcl_::k_nearest_neighbors_search_around_query_index_bench, relative_path, "PCL", n_neighbors + 1);
+            timer.print_elapsed_seconds();
+
+            std::cout << "\n---\n";
+        }
     }
 }
 

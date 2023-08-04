@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -112,8 +111,8 @@ template <typename IndexerFunction, typename... Args>
 auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_function, Args&&... args) const {
     // the query function that should be a member of the indexer
     auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
-                              std::size_t sample_index, auto&&... funcArgs) mutable {
-        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(funcArgs)>(funcArgs)...);
+                              std::size_t sample_index, auto&&... func_args) mutable {
+        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(func_args)>(func_args)...);
     };
 
     // the total number of samples that will be searched by index
@@ -176,8 +175,8 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType& neighbors_indices,
                                     Args&&... args) const {
     // the query function that should be a member of the indexer
     auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
-                              std::size_t sample_index, auto&&... funcArgs) mutable {
-        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(funcArgs)>(funcArgs)...);
+                              std::size_t sample_index, auto&&... func_args) mutable {
+        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(func_args)>(func_args)...);
     };
 
     // iterate over the samples that are assigned to the current cluster
@@ -224,8 +223,8 @@ auto DBSCAN<Indexer>::predict_with_buffers(const Indexer&    indexer,
                                            Args&&... args) const {
     // the query function that should be a member of the indexer
     auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
-                              std::size_t sample_index, auto&&... funcArgs) mutable {
-        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(funcArgs)>(funcArgs)...);
+                              std::size_t sample_index, auto&&... func_args) mutable {
+        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(func_args)>(func_args)...);
     };
 
     const std::size_t n_samples = indexer.n_samples();
