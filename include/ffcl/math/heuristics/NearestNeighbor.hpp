@@ -9,8 +9,41 @@
 #include <iostream>
 #include <map>
 #include <queue>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
+
+template <typename SamplesIterator>
+class NearestNeighborsBufferBase {
+  public:
+    virtual ~NearestNeighborsBufferBase() {}
+
+    using IndexType    = std::size_t;
+    using DistanceType = typename SamplesIterator::value_type;
+
+    using IndicesType   = std::vector<IndexType>;
+    using DistancesType = std::vector<DistanceType>;
+
+    virtual std::size_t size() const = 0;
+
+    virtual bool empty() const = 0;
+
+    virtual IndexType furthest_k_nearest_neighbor_index() const = 0;
+
+    virtual DistanceType furthest_k_nearest_neighbor_distance() const = 0;
+
+    virtual IndicesType indices() const = 0;
+
+    virtual DistancesType distances() const = 0;
+
+    virtual IndicesType move_indices() = 0;
+
+    virtual DistancesType move_distances() = 0;
+
+    virtual void update(const IndexType& index_candidate, const DistanceType& distance_candidate) = 0;
+
+    virtual void print() const = 0;
+};
 
 /**
  * @brief A sorted version of NearestNeighborsBuffer using std::lower_bound
@@ -24,13 +57,16 @@
  * @tparam SamplesIterator
  */
 template <typename SamplesIterator>
-class NearestNeighborsBufferSorted {
+class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<SamplesIterator> {
   private:
-    using IndexType    = std::size_t;
-    using DistanceType = typename SamplesIterator::value_type;
+    using IndexType    = typename NearestNeighborsBufferBase<SamplesIterator>::IndexType;
+    using DistanceType = typename NearestNeighborsBufferBase<SamplesIterator>::DistanceType;
+
+    using IndicesType   = typename NearestNeighborsBufferBase<SamplesIterator>::IndicesType;
+    using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
 
   public:
-    NearestNeighborsBufferSorted(std::size_t max_capacity = 1)
+    NearestNeighborsBufferSorted(std::size_t max_capacity = common::utils::infinity<IndexType>())
       : max_capacity_{max_capacity} {}
 
     inline std::size_t size() const {
@@ -49,12 +85,20 @@ class NearestNeighborsBufferSorted {
         return distances_.back();
     }
 
-    inline auto indices() const {
+    inline IndicesType indices() const {
         return indices_;
     }
 
-    inline auto distances() const {
+    inline DistancesType distances() const {
         return distances_;
+    }
+
+    inline IndicesType move_indices() {
+        return std::move(indices_);
+    }
+
+    inline DistancesType move_distances() {
+        return std::move(distances_);
     }
 
     inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
@@ -85,23 +129,41 @@ class NearestNeighborsBufferSorted {
     }
 
   private:
-    std::vector<IndexType>    indices_;
-    std::vector<DistanceType> distances_;
-    std::size_t               max_capacity_;
+    IndicesType   indices_;
+    DistancesType distances_;
+    std::size_t   max_capacity_;
 };
 
 template <typename SamplesIterator>
-class NearestNeighborsBuffer {
+class NearestNeighborsBuffer : public NearestNeighborsBufferBase<SamplesIterator> {
   private:
-    using IndexType    = std::size_t;
-    using DistanceType = typename SamplesIterator::value_type;
+    using IndexType    = typename NearestNeighborsBufferBase<SamplesIterator>::IndexType;
+    using DistanceType = typename NearestNeighborsBufferBase<SamplesIterator>::DistanceType;
+
+    using IndicesType   = typename NearestNeighborsBufferBase<SamplesIterator>::IndicesType;
+    using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
 
   public:
-    NearestNeighborsBuffer(std::size_t max_capacity = 1)
-      : furthest_buffer_index_{0}
+    NearestNeighborsBuffer(std::size_t max_capacity = common::utils::infinity<IndexType>())
+      : NearestNeighborsBuffer({}, {}, max_capacity) {}
+
+    NearestNeighborsBuffer(const std::vector<IndexType>&    init_neighbors_indices,
+                           const std::vector<DistanceType>& init_neighbors_distances,
+                           std::size_t                      max_capacity = common::utils::infinity<IndexType>())
+      : indices_{init_neighbors_indices}
+      , distances_{init_neighbors_distances}
+      , furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
-      , max_capacity_{max_capacity} {
-        // assert(indices.size() <= max_capacity_ && distances.size() <= max_capacity_);
+      , max_capacity_{max_capacity > init_neighbors_indices.size() ? max_capacity : init_neighbors_indices.size()} {
+        if (indices_.size()) {
+            if (indices_.size() == distances_.size()) {
+                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                    math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+
+            } else {
+                throw std::runtime_error("Indices and distances buffers sizes do not match.");
+            }
+        }
     }
 
     inline std::size_t size() const {
@@ -120,12 +182,20 @@ class NearestNeighborsBuffer {
         return furthest_k_nearest_neighbor_distance_;
     }
 
-    inline auto indices() const {
+    inline IndicesType indices() const {
         return indices_;
     }
 
-    inline auto move_indices() {
+    inline DistancesType distances() const {
+        return distances_;
+    }
+
+    inline IndicesType move_indices() {
         return std::move(indices_);
+    }
+
+    inline DistancesType move_distances() {
+        return std::move(distances_);
     }
 
     inline auto move_data_to_indices_distances_pair() {
@@ -166,6 +236,119 @@ class NearestNeighborsBuffer {
     IndexType                 furthest_buffer_index_;
     DistanceType              furthest_k_nearest_neighbor_distance_;
     std::size_t               max_capacity_;
+};
+
+template <typename SamplesIterator>
+class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<SamplesIterator> {
+  private:
+    using IndexType    = typename NearestNeighborsBufferBase<SamplesIterator>::IndexType;
+    using DistanceType = typename NearestNeighborsBufferBase<SamplesIterator>::DistanceType;
+
+    using IndicesType   = typename NearestNeighborsBufferBase<SamplesIterator>::IndicesType;
+    using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
+
+  public:
+    NearestNeighborsBufferWithMemory(std::size_t max_capacity = common::utils::infinity<IndexType>())
+      : furthest_buffer_index_{0}
+      , furthest_k_nearest_neighbor_distance_{0}
+      , max_capacity_{max_capacity} {}
+
+    NearestNeighborsBufferWithMemory(const std::vector<IndexType>&    init_neighbors_indices,
+                                     const std::vector<DistanceType>& init_neighbors_distances,
+                                     std::size_t max_capacity = common::utils::infinity<IndexType>())
+      : indices_{init_neighbors_indices}
+      , distances_{init_neighbors_distances}
+      , furthest_buffer_index_{0}
+      , furthest_k_nearest_neighbor_distance_{0}
+      , max_capacity_{max_capacity > init_neighbors_indices.size() ? max_capacity : init_neighbors_indices.size()}
+      , visited_indices_{init_neighbors_indices.begin(), init_neighbors_indices.end()} {
+        if (indices_.size()) {
+            if (indices_.size() == distances_.size()) {
+                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                    math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+
+            } else {
+                throw std::runtime_error("Indices and distances buffers sizes do not match.");
+            }
+        }
+    }
+
+    inline std::size_t size() const {
+        return indices_.size();
+    }
+
+    inline bool empty() const {
+        return indices_.empty();
+    }
+
+    inline IndexType furthest_k_nearest_neighbor_index() const {
+        return indices_[furthest_buffer_index_];
+    }
+
+    inline DistanceType furthest_k_nearest_neighbor_distance() const {
+        return furthest_k_nearest_neighbor_distance_;
+    }
+
+    inline IndicesType indices() const {
+        return indices_;
+    }
+
+    inline DistancesType distances() const {
+        return distances_;
+    }
+
+    inline IndicesType move_indices() {
+        return std::move(indices_);
+    }
+
+    inline DistancesType move_distances() {
+        return std::move(distances_);
+    }
+
+    inline auto move_data_to_indices_distances_pair() {
+        return std::make_tuple(std::move(indices_), std::move(distances_));
+    }
+
+    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        // consider an update only if the index hasnt been visited
+        if (visited_indices_.find(index_candidate) == visited_indices_.end()) {
+            // always populate if the max capacity isnt reached
+            if (indices_.size() < max_capacity_) {
+                indices_.emplace_back(index_candidate);
+                distances_.emplace_back(distance_candidate);
+                if (distance_candidate > furthest_k_nearest_neighbor_distance_) {
+                    // update the new index position of the furthest in the buffer
+                    furthest_buffer_index_                = indices_.size() - 1;
+                    furthest_k_nearest_neighbor_distance_ = distance_candidate;
+                }
+            }
+            // populate if the max capacity is reached and the candidate has a closer distance
+            else if (distance_candidate < furthest_k_nearest_neighbor_distance_) {
+                // replace the previous greatest distance now that the vectors overflow the max capacity
+                indices_[furthest_buffer_index_]   = index_candidate;
+                distances_[furthest_buffer_index_] = distance_candidate;
+                // find the new furthest neighbor and update the cache accordingly
+                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                    math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+            }
+            // add the candidate to the set of visited indices
+            visited_indices_.insert(index_candidate);
+        }
+    }
+
+    void print() const {
+        for (std::size_t index = 0; index < std::min(indices_.size(), distances_.size()); ++index) {
+            std::cout << "(" << indices_[index] << ", " << distances_[index] << ")\n";
+        }
+    }
+
+  private:
+    std::vector<IndexType>        indices_;
+    std::vector<DistanceType>     distances_;
+    IndexType                     furthest_buffer_index_;
+    DistanceType                  furthest_k_nearest_neighbor_distance_;
+    std::size_t                   max_capacity_;
+    std::unordered_set<IndexType> visited_indices_;
 };
 
 template <typename SamplesIterator>
@@ -348,13 +531,13 @@ void nearest_neighbor_range(const SamplesIterator&                subrange_sampl
 }
 
 template <typename SamplesIterator>
-void k_nearest_neighbors_range(const SamplesIterator&                   subrange_samples_first,
-                               const SamplesIterator&                   subrange_samples_last,
-                               const SamplesIterator&                   dataset_samples_first,
-                               const SamplesIterator&                   dataset_samples_last,
-                               std::size_t                              n_features,
-                               std::size_t                              sample_index_query,
-                               NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer) {
+void k_nearest_neighbors_range(const SamplesIterator&                       subrange_samples_first,
+                               const SamplesIterator&                       subrange_samples_last,
+                               const SamplesIterator&                       dataset_samples_first,
+                               const SamplesIterator&                       dataset_samples_last,
+                               std::size_t                                  n_features,
+                               std::size_t                                  sample_index_query,
+                               NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     // number of samples in the subrange
@@ -412,14 +595,14 @@ void increment_neighbors_count_in_radius_range(const SamplesIterator&           
 }
 
 template <typename SamplesIterator>
-void k_nearest_neighbors_in_radius_range(const SamplesIterator&                      subrange_samples_first,
-                                         const SamplesIterator&                      subrange_samples_last,
-                                         const SamplesIterator&                      dataset_samples_first,
-                                         const SamplesIterator&                      dataset_samples_last,
-                                         std::size_t                                 n_features,
-                                         std::size_t                                 sample_index_query,
-                                         const typename SamplesIterator::value_type& radius,
-                                         NearestNeighborsBuffer<SamplesIterator>&    nearest_neighbors_buffer) {
+void k_nearest_neighbors_in_radius_range(const SamplesIterator&                       subrange_samples_first,
+                                         const SamplesIterator&                       subrange_samples_last,
+                                         const SamplesIterator&                       dataset_samples_first,
+                                         const SamplesIterator&                       dataset_samples_last,
+                                         std::size_t                                  n_features,
+                                         std::size_t                                  sample_index_query,
+                                         const typename SamplesIterator::value_type&  radius,
+                                         NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     // number of samples in the subrange
@@ -505,13 +688,13 @@ void nearest_neighbor_indexed_range(const IndicesIterator&                subran
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void k_nearest_neighbors_indexed_range(const IndicesIterator&                   subrange_index_first,
-                                       const IndicesIterator&                   subrange_index_last,
-                                       const SamplesIterator&                   dataset_samples_first,
-                                       const SamplesIterator&                   dataset_samples_last,
-                                       std::size_t                              n_features,
-                                       std::size_t                              sample_index_query,
-                                       NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer) {
+void k_nearest_neighbors_indexed_range(const IndicesIterator&                       subrange_index_first,
+                                       const IndicesIterator&                       subrange_index_last,
+                                       const SamplesIterator&                       dataset_samples_first,
+                                       const SamplesIterator&                       dataset_samples_last,
+                                       std::size_t                                  n_features,
+                                       std::size_t                                  sample_index_query,
+                                       NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
@@ -531,14 +714,14 @@ void k_nearest_neighbors_indexed_range(const IndicesIterator&                   
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void k_nearest_neighbors_indexed_range(const IndicesIterator&                   subrange_index_first,
-                                       const IndicesIterator&                   subrange_index_last,
-                                       const SamplesIterator&                   dataset_samples_first,
-                                       const SamplesIterator&                   dataset_samples_last,
-                                       std::size_t                              n_features,
-                                       const SamplesIterator&                   sample_feature_query_first,
-                                       const SamplesIterator&                   sample_feature_query_last,
-                                       NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer) {
+void k_nearest_neighbors_indexed_range(const IndicesIterator&                       subrange_index_first,
+                                       const IndicesIterator&                       subrange_index_last,
+                                       const SamplesIterator&                       dataset_samples_first,
+                                       const SamplesIterator&                       dataset_samples_last,
+                                       std::size_t                                  n_features,
+                                       const SamplesIterator&                       sample_feature_query_first,
+                                       const SamplesIterator&                       sample_feature_query_last,
+                                       NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
@@ -665,14 +848,15 @@ void increment_neighbors_count_in_kd_bounding_box_indexed_range(const IndicesIte
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void k_nearest_neighbors_in_radius_indexed_range(const IndicesIterator&                      subrange_index_first,
-                                                 const IndicesIterator&                      subrange_index_last,
-                                                 const SamplesIterator&                      dataset_samples_first,
-                                                 const SamplesIterator&                      dataset_samples_last,
-                                                 std::size_t                                 n_features,
-                                                 std::size_t                                 sample_index_query,
-                                                 const typename SamplesIterator::value_type& radius,
-                                                 NearestNeighborsBuffer<SamplesIterator>&    nearest_neighbors_buffer) {
+void k_nearest_neighbors_in_radius_indexed_range(
+    const IndicesIterator&                       subrange_index_first,
+    const IndicesIterator&                       subrange_index_last,
+    const SamplesIterator&                       dataset_samples_first,
+    const SamplesIterator&                       dataset_samples_last,
+    std::size_t                                  n_features,
+    std::size_t                                  sample_index_query,
+    const typename SamplesIterator::value_type&  radius,
+    NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
@@ -694,15 +878,16 @@ void k_nearest_neighbors_in_radius_indexed_range(const IndicesIterator&         
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void k_nearest_neighbors_in_radius_indexed_range(const IndicesIterator&                      subrange_index_first,
-                                                 const IndicesIterator&                      subrange_index_last,
-                                                 const SamplesIterator&                      dataset_samples_first,
-                                                 const SamplesIterator&                      dataset_samples_last,
-                                                 std::size_t                                 n_features,
-                                                 const SamplesIterator&                      sample_feature_query_first,
-                                                 const SamplesIterator&                      sample_feature_query_last,
-                                                 const typename SamplesIterator::value_type& radius,
-                                                 NearestNeighborsBuffer<SamplesIterator>&    nearest_neighbors_buffer) {
+void k_nearest_neighbors_in_radius_indexed_range(
+    const IndicesIterator&                       subrange_index_first,
+    const IndicesIterator&                       subrange_index_last,
+    const SamplesIterator&                       dataset_samples_first,
+    const SamplesIterator&                       dataset_samples_last,
+    std::size_t                                  n_features,
+    const SamplesIterator&                       sample_feature_query_first,
+    const SamplesIterator&                       sample_feature_query_last,
+    const typename SamplesIterator::value_type&  radius,
+    NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
@@ -723,14 +908,14 @@ void k_nearest_neighbors_in_radius_indexed_range(const IndicesIterator&         
 
 template <typename IndicesIterator, typename SamplesIterator>
 void k_nearest_neighbors_in_kd_bounding_box_indexed_range(
-    const IndicesIterator&                   subrange_index_first,
-    const IndicesIterator&                   subrange_index_last,
-    const SamplesIterator&                   dataset_samples_first,
-    const SamplesIterator&                   dataset_samples_last,
-    std::size_t                              n_features,
-    std::size_t                              sample_index_query,
-    const HyperRangeType<SamplesIterator>&   kd_bounding_box,
-    NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer) {
+    const IndicesIterator&                       subrange_index_first,
+    const IndicesIterator&                       subrange_index_last,
+    const SamplesIterator&                       dataset_samples_first,
+    const SamplesIterator&                       dataset_samples_last,
+    std::size_t                                  n_features,
+    std::size_t                                  sample_index_query,
+    const HyperRangeType<SamplesIterator>&       kd_bounding_box,
+    NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
@@ -755,15 +940,15 @@ void k_nearest_neighbors_in_kd_bounding_box_indexed_range(
 
 template <typename IndicesIterator, typename SamplesIterator>
 void k_nearest_neighbors_in_kd_bounding_box_indexed_range(
-    const IndicesIterator&                   subrange_index_first,
-    const IndicesIterator&                   subrange_index_last,
-    const SamplesIterator&                   dataset_samples_first,
-    const SamplesIterator&                   dataset_samples_last,
-    std::size_t                              n_features,
-    const SamplesIterator&                   sample_feature_query_first,
-    const SamplesIterator&                   sample_feature_query_last,
-    const HyperRangeType<SamplesIterator>&   kd_bounding_box,
-    NearestNeighborsBuffer<SamplesIterator>& nearest_neighbors_buffer) {
+    const IndicesIterator&                       subrange_index_first,
+    const IndicesIterator&                       subrange_index_last,
+    const SamplesIterator&                       dataset_samples_first,
+    const SamplesIterator&                       dataset_samples_last,
+    std::size_t                                  n_features,
+    const SamplesIterator&                       sample_feature_query_first,
+    const SamplesIterator&                       sample_feature_query_last,
+    const HyperRangeType<SamplesIterator>&       kd_bounding_box,
+    NearestNeighborsBufferBase<SamplesIterator>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(dataset_samples_last);
 
     const std::size_t n_samples = std::distance(subrange_index_first, subrange_index_last);
