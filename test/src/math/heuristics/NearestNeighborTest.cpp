@@ -72,9 +72,21 @@ TYPED_TEST(NearestNeighborTestFixture, UpdateNearestNeighborIndicesBufferTest) {
 TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
     using DataType = TypeParam;
 
-    std::vector<DataType> data               = {0, 1, 2, 3, 1, 4, 8, 9, 2, 4, 3};
-    std::size_t           n_features         = 1;
-    std::size_t           sample_index_query = 4;
+    std::vector<DataType> data = {/*0*/ 0,
+                                  /*1*/ 1,
+                                  /*2*/ 2,
+                                  /*3*/ 3,
+                                  /*4*/ 1,
+                                  /*5*/ 4,
+                                  /*6*/ 8,
+                                  /*7*/ 9,
+                                  /*8*/ 2,
+                                  /*9*/ 4,
+                                  /*10*/ 3};
+
+    std::size_t n_features         = 1;
+    std::size_t sample_index_query = 4;
+    std::size_t n_neighbors        = 2;
 
     using SamplesIterator = typename std::vector<DataType>::iterator;
 
@@ -90,7 +102,9 @@ TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
     printf("Distances:\n");
     this->print_data(nn_distances, 1);
 
-    NearestNeighborsBufferWithMemory<SamplesIterator> nn_buffer(nn_indices, nn_distances, 5);
+    NearestNeighborsBufferWithMemory<SamplesIterator> nn_buffer(nn_indices, nn_distances, n_neighbors);
+
+    auto new_nn_buffer = nn_buffer;
 
     for (std::size_t i = 0; i < 5; ++i) {
         math::heuristics::k_nearest_neighbors_range(
@@ -100,9 +114,9 @@ TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
             /**/ data.end(),
             /**/ n_features,
             /**/ sample_index_query,
-            /**/ nn_buffer);
+            /**/ new_nn_buffer);
     }
-    nn_buffer.print();
+    new_nn_buffer.print();
 }
 
 int main(int argc, char** argv) {

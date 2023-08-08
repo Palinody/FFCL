@@ -3,6 +3,8 @@
 #include "IO.hpp"
 #include "Utils.hpp"
 
+#include "indexer/BaseIndexer.hpp"
+#include "indexer/FFCLIndexer.hpp"
 #include "indexer/PCLIndexer.hpp"
 
 #include "ffcl/common/Timer.hpp"
@@ -66,26 +68,13 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     auto indices = utils::generate_indices(n_samples);
 
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data_xyz)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    // using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data_xyz)::iterator;
+    using IndexerType     = indexer::FFCLIndexer<decltype(indices), SamplesIterator>;
 
     timer.reset();
 
-    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data_xyz.begin(),
-                               data_xyz.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = IndexerType(indices.begin(), indices.end(), data_xyz.begin(), data_xyz.end(), n_features);
 
     bench_summary.indexer_build_duration = timer.elapsed();
 
@@ -96,7 +85,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     timer.reset();
 
     // /*
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radiusSearch, radius);
     // */
     /*
     const auto predictions =
@@ -170,7 +159,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     timer.reset();
 
     using SamplesIterator = decltype(data_xyz)::iterator;
-    using IndexerType     = pcl_index::PCLFLANNIndexer<pcl::Indices, SamplesIterator>;
+    using IndexerType     = indexer::PCLFLANNIndexer<pcl::Indices, SamplesIterator>;
 
     auto indexer = IndexerType(data_xyz.begin(), data_xyz.end(), n_features, std::sqrt(n_samples));
 
@@ -249,7 +238,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     timer.reset();
 
     using SamplesIterator = decltype(data_xyz)::iterator;
-    using IndexerType     = pcl_index::PCLIndexer<pcl::Indices, SamplesIterator>;
+    using IndexerType     = indexer::PCLIndexer<pcl::Indices, SamplesIterator>;
 
     auto indexer = IndexerType(data_xyz.begin(), data_xyz.end(), n_features);
 

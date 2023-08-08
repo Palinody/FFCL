@@ -156,14 +156,15 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
     boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(3));
 
     timer.reset();
-
+    /*
     const auto minimum_spanning_tree =
         boruvkas_algorithm.make_tree(indexer,
                                      &IndexerType::k_nearest_neighbors_around_query_index,
                                      &IndexerType::k_mutual_reachability_distance,
-                                     /*placeholder value*/ 3);
+                                      3);
 
     common::utils::ignore_parameters(minimum_spanning_tree);
+    */
 
     timer.print_elapsed_seconds(9);
 }

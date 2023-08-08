@@ -11,6 +11,7 @@
 #include <queue>
 #include <stdexcept>
 #include <tuple>
+#include <unordered_set>
 #include <vector>
 
 template <typename SamplesIterator>
@@ -40,6 +41,8 @@ class NearestNeighborsBufferBase {
 
     virtual DistancesType move_distances() = 0;
 
+    virtual std::tuple<IndicesType, DistancesType> move_data_to_indices_distances_pair() = 0;
+
     virtual void update(const IndexType& index_candidate, const DistanceType& distance_candidate) = 0;
 
     virtual void print() const = 0;
@@ -66,42 +69,42 @@ class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<SamplesIt
     using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
 
   public:
-    NearestNeighborsBufferSorted(std::size_t max_capacity = common::utils::infinity<IndexType>())
+    explicit NearestNeighborsBufferSorted(std::size_t max_capacity = common::utils::infinity<IndexType>())
       : max_capacity_{max_capacity} {}
 
-    inline std::size_t size() const {
+    std::size_t size() const {
         return indices_.size();
     }
 
-    inline bool empty() const {
+    bool empty() const {
         return indices_.empty();
     }
 
-    inline IndexType furthest_k_nearest_neighbor_index() const {
+    IndexType furthest_k_nearest_neighbor_index() const {
         return indices_.back();
     }
 
-    inline DistanceType furthest_k_nearest_neighbor_distance() const {
+    DistanceType furthest_k_nearest_neighbor_distance() const {
         return distances_.back();
     }
 
-    inline IndicesType indices() const {
+    IndicesType indices() const {
         return indices_;
     }
 
-    inline DistancesType distances() const {
+    DistancesType distances() const {
         return distances_;
     }
 
-    inline IndicesType move_indices() {
+    IndicesType move_indices() {
         return std::move(indices_);
     }
 
-    inline DistancesType move_distances() {
+    DistancesType move_distances() {
         return std::move(distances_);
     }
 
-    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         auto distances_it = std::lower_bound(distances_.begin(), distances_.end(), distance_candidate);
 
         // populate at the right index if the max capacity isnt reached
@@ -144,12 +147,12 @@ class NearestNeighborsBuffer : public NearestNeighborsBufferBase<SamplesIterator
     using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
 
   public:
-    NearestNeighborsBuffer(std::size_t max_capacity = common::utils::infinity<IndexType>())
+    explicit NearestNeighborsBuffer(std::size_t max_capacity = common::utils::infinity<IndexType>())
       : NearestNeighborsBuffer({}, {}, max_capacity) {}
 
-    NearestNeighborsBuffer(const std::vector<IndexType>&    init_neighbors_indices,
-                           const std::vector<DistanceType>& init_neighbors_distances,
-                           std::size_t                      max_capacity = common::utils::infinity<IndexType>())
+    explicit NearestNeighborsBuffer(const std::vector<IndexType>&    init_neighbors_indices,
+                                    const std::vector<DistanceType>& init_neighbors_distances,
+                                    std::size_t max_capacity = common::utils::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
       , furthest_buffer_index_{0}
@@ -166,43 +169,43 @@ class NearestNeighborsBuffer : public NearestNeighborsBufferBase<SamplesIterator
         }
     }
 
-    inline std::size_t size() const {
+    std::size_t size() const {
         return indices_.size();
     }
 
-    inline bool empty() const {
+    bool empty() const {
         return indices_.empty();
     }
 
-    inline IndexType furthest_k_nearest_neighbor_index() const {
+    IndexType furthest_k_nearest_neighbor_index() const {
         return indices_[furthest_buffer_index_];
     }
 
-    inline DistanceType furthest_k_nearest_neighbor_distance() const {
+    DistanceType furthest_k_nearest_neighbor_distance() const {
         return furthest_k_nearest_neighbor_distance_;
     }
 
-    inline IndicesType indices() const {
+    IndicesType indices() const {
         return indices_;
     }
 
-    inline DistancesType distances() const {
+    DistancesType distances() const {
         return distances_;
     }
 
-    inline IndicesType move_indices() {
+    IndicesType move_indices() {
         return std::move(indices_);
     }
 
-    inline DistancesType move_distances() {
+    DistancesType move_distances() {
         return std::move(distances_);
     }
 
-    inline auto move_data_to_indices_distances_pair() {
+    std::tuple<IndicesType, DistancesType> move_data_to_indices_distances_pair() {
         return std::make_tuple(std::move(indices_), std::move(distances_));
     }
 
-    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // always populate if the max capacity isnt reached
         if (indices_.size() < max_capacity_) {
             indices_.emplace_back(index_candidate);
@@ -248,14 +251,14 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
     using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
 
   public:
-    NearestNeighborsBufferWithMemory(std::size_t max_capacity = common::utils::infinity<IndexType>())
+    explicit NearestNeighborsBufferWithMemory(std::size_t max_capacity = common::utils::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity} {}
 
-    NearestNeighborsBufferWithMemory(const std::vector<IndexType>&    init_neighbors_indices,
-                                     const std::vector<DistanceType>& init_neighbors_distances,
-                                     std::size_t max_capacity = common::utils::infinity<IndexType>())
+    explicit NearestNeighborsBufferWithMemory(const std::vector<IndexType>&    init_neighbors_indices,
+                                              const std::vector<DistanceType>& init_neighbors_distances,
+                                              std::size_t max_capacity = common::utils::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
       , furthest_buffer_index_{0}
@@ -273,43 +276,43 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
         }
     }
 
-    inline std::size_t size() const {
+    std::size_t size() const {
         return indices_.size();
     }
 
-    inline bool empty() const {
+    bool empty() const {
         return indices_.empty();
     }
 
-    inline IndexType furthest_k_nearest_neighbor_index() const {
+    IndexType furthest_k_nearest_neighbor_index() const {
         return indices_[furthest_buffer_index_];
     }
 
-    inline DistanceType furthest_k_nearest_neighbor_distance() const {
+    DistanceType furthest_k_nearest_neighbor_distance() const {
         return furthest_k_nearest_neighbor_distance_;
     }
 
-    inline IndicesType indices() const {
+    IndicesType indices() const {
         return indices_;
     }
 
-    inline DistancesType distances() const {
+    DistancesType distances() const {
         return distances_;
     }
 
-    inline IndicesType move_indices() {
+    IndicesType move_indices() {
         return std::move(indices_);
     }
 
-    inline DistancesType move_distances() {
+    DistancesType move_distances() {
         return std::move(distances_);
     }
 
-    inline auto move_data_to_indices_distances_pair() {
+    std::tuple<IndicesType, DistancesType> move_data_to_indices_distances_pair() {
         return std::make_tuple(std::move(indices_), std::move(distances_));
     }
 
-    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the index hasnt been visited
         if (visited_indices_.find(index_candidate) == visited_indices_.end()) {
             // always populate if the max capacity isnt reached
@@ -371,31 +374,31 @@ class NearestNeighborsBufferOld {
         typename std::priority_queue<ElementDataType, std::vector<ElementDataType>, ComparisonFunctor>;
 
   public:
-    NearestNeighborsBufferOld()
+    explicit NearestNeighborsBufferOld()
       : max_elements_{1}
       , priority_queue_{comparison_functor} {}
 
-    NearestNeighborsBufferOld(std::size_t max_elements)
+    explicit NearestNeighborsBufferOld(std::size_t max_elements)
       : max_elements_{max_elements}
       , priority_queue_{comparison_functor} {}
 
-    inline std::size_t size() const {
+    std::size_t size() const {
         return priority_queue_.size();
     }
 
-    inline bool empty() const {
+    bool empty() const {
         return priority_queue_.empty();
     }
 
-    inline IndexType furthest_k_nearest_neighbor_index() const {
+    IndexType furthest_k_nearest_neighbor_index() const {
         return std::get<0>(priority_queue_.top());
     }
 
-    inline DistanceType furthest_k_nearest_neighbor_distance() const {
+    DistanceType furthest_k_nearest_neighbor_distance() const {
         return std::get<1>(priority_queue_.top());
     }
 
-    inline auto extract_indices() {
+    auto extract_indices() {
         std::vector<IndexType> extracted_indices;
         extracted_indices.reserve(priority_queue_.size());
 
@@ -405,25 +408,25 @@ class NearestNeighborsBufferOld {
         return extracted_indices;
     }
 
-    inline auto pop_and_get_index() {
+    auto pop_and_get_index() {
         const auto last_value_index = std::get<0>(priority_queue_.top());
         priority_queue_.pop();
         return last_value_index;
     }
 
-    inline auto pop_and_get_distance() {
+    auto pop_and_get_distance() {
         const auto last_value_distance = std::get<1>(priority_queue_.top());
         priority_queue_.pop();
         return last_value_distance;
     }
 
-    inline auto pop_and_get_index_distance_pair() {
+    auto pop_and_get_index_distance_pair() {
         const auto index_distance_pair = priority_queue_.top();
         priority_queue_.pop();
         return index_distance_pair;
     }
 
-    inline auto move_data_to_indices_distances_pair() {
+    auto move_data_to_indices_distances_pair() {
         std::vector<IndexType> indices;
         indices.reserve(this->size());
         std::vector<DistanceType> distances;
@@ -438,7 +441,7 @@ class NearestNeighborsBufferOld {
         return std::make_tuple(std::move(indices), std::move(distances));
     }
 
-    inline auto copy_data_to_indices_distances_pair() const {
+    auto copy_data_to_indices_distances_pair() const {
         PriorityQueueType priority_queue_cpy = priority_queue_;
 
         std::vector<IndexType> indices;
@@ -455,18 +458,18 @@ class NearestNeighborsBufferOld {
         return std::make_tuple(std::move(indices), std::move(distances));
     }
 
-    inline void emplace_back(ElementDataType&& index_distance_pair) {
+    void emplace_back(ElementDataType&& index_distance_pair) {
         priority_queue_.emplace(std::move(index_distance_pair));
         ++max_elements_;
     }
 
-    inline void add(NearestNeighborsBufferOld&& nearest_neighbors_buffer) {
+    void add(NearestNeighborsBufferOld&& nearest_neighbors_buffer) {
         while (!nearest_neighbors_buffer.empty()) {
             this->emplace_back(std::move(nearest_neighbors_buffer.pop_and_get_index_distance_pair()));
         }
     }
 
-    inline void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // populate the priority queue if theres still empty space
         if (priority_queue_.size() < max_elements_) {
             priority_queue_.emplace(std::make_tuple(index_candidate, distance_candidate));

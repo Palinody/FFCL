@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BaseIndexer.hpp"
 #include "ffcl/common/Utils.hpp"
 
 #include <pcl/point_cloud.h>
@@ -8,53 +9,14 @@
 #include <pcl/search/kdtree.h>        // for pcl::search::KdTree
 #include <pcl/search/impl/flann_search.hpp>
 
-namespace pcl_index {
-
-template <typename IndexContainer, typename SamplesIterator>
-class BaseIndexer {
-  public:
-    using DataType = typename SamplesIterator::value_type;
-
-    class NearestNeighborsBuffer {
-      public:
-        NearestNeighborsBuffer(IndexContainer&& indices, std::vector<DataType>&& distances) noexcept
-          : indices_{std::move(indices)}
-          , distances_{std::move(distances)} {}
-
-        std::size_t size() const {
-            return indices_.size();
-        }
-
-        IndexContainer indices() const {
-            return indices_;
-        }
-
-        IndexContainer move_indices() {
-            return std::move(indices_);
-        }
-
-      private:
-        IndexContainer        indices_;
-        std::vector<DataType> distances_;
-    };
-
-    virtual ~BaseIndexer() = default;
-
-    virtual std::size_t n_samples() const = 0;
-
-    virtual std::size_t n_features() const = 0;
-
-    virtual NearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const = 0;
-
-    virtual NearestNeighborsBuffer nearestKSearch(std::size_t sample_index_query,
-                                                  std::size_t k_nearest_neighbors) const = 0;
-};
+namespace indexer {
 
 template <typename IndexContainer, typename SamplesIterator>
 class PCLFLANNIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
   public:
-    using DataType               = typename BaseIndexer<IndexContainer, SamplesIterator>::DataType;
-    using NearestNeighborsBuffer = typename BaseIndexer<IndexContainer, SamplesIterator>::NearestNeighborsBuffer;
+    using DataType = typename BaseIndexer<IndexContainer, SamplesIterator>::DataType;
+    using BaseNearestNeighborsBuffer =
+        typename BaseIndexer<IndexContainer, SamplesIterator>::BaseNearestNeighborsBuffer;
 
     PCLFLANNIndexer(SamplesIterator data_first,
                     SamplesIterator data_last,
@@ -87,23 +49,23 @@ class PCLFLANNIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
         return n_features_;
     }
 
-    NearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const override {
+    BaseNearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const override {
         IndexContainer        indices;
         std::vector<DataType> distances_squared;
 
         kd_tree_.radiusSearch(cloud_->points[sample_index_query], radius, indices, distances_squared);
 
-        return NearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
+        return BaseNearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
     }
 
-    NearestNeighborsBuffer nearestKSearch(std::size_t sample_index_query,
-                                          std::size_t k_nearest_neighbors) const override {
+    BaseNearestNeighborsBuffer nearestKSearch(std::size_t sample_index_query,
+                                              std::size_t k_nearest_neighbors) const override {
         IndexContainer        indices;
         std::vector<DataType> distances_squared;
 
         kd_tree_.nearestKSearch(cloud_->points[sample_index_query], k_nearest_neighbors, indices, distances_squared);
 
-        return NearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
+        return BaseNearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
     }
 
   private:
@@ -118,8 +80,9 @@ class PCLFLANNIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
 template <typename IndexContainer, typename SamplesIterator>
 class PCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
   public:
-    using DataType               = typename BaseIndexer<IndexContainer, SamplesIterator>::DataType;
-    using NearestNeighborsBuffer = typename BaseIndexer<IndexContainer, SamplesIterator>::NearestNeighborsBuffer;
+    using DataType = typename BaseIndexer<IndexContainer, SamplesIterator>::DataType;
+    using BaseNearestNeighborsBuffer =
+        typename BaseIndexer<IndexContainer, SamplesIterator>::BaseNearestNeighborsBuffer;
 
     PCLIndexer(SamplesIterator data_first, SamplesIterator data_last, std::size_t n_features)
       : data_first_{data_first}
@@ -147,23 +110,23 @@ class PCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
         return n_features_;
     }
 
-    NearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const override {
+    BaseNearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const override {
         IndexContainer        indices;
         std::vector<DataType> distances_squared;
 
         kd_tree_.radiusSearch(cloud_->points[sample_index_query], radius, indices, distances_squared);
 
-        return NearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
+        return BaseNearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
     }
 
-    NearestNeighborsBuffer nearestKSearch(std::size_t sample_index_query,
-                                          std::size_t k_nearest_neighbors) const override {
+    BaseNearestNeighborsBuffer nearestKSearch(std::size_t sample_index_query,
+                                              std::size_t k_nearest_neighbors) const override {
         IndexContainer        indices;
         std::vector<DataType> distances_squared;
 
         kd_tree_.nearestKSearch(sample_index_query, k_nearest_neighbors, indices, distances_squared);
 
-        return NearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
+        return BaseNearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
     }
 
   private:
@@ -174,4 +137,4 @@ class PCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
     pcl::search::KdTree<pcl::PointXYZ>  kd_tree_;
 };
 
-}  // namespace pcl_index
+}  // namespace indexer

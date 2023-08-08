@@ -185,7 +185,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
+    using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
@@ -211,7 +211,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 
     timer.reset();
 
-    const float radius = 2;
+    const dType radius = 2;
     // /*
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
     // */
@@ -240,7 +240,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
+    using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
@@ -266,7 +266,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 
     timer.reset();
 
-    const float radius = 1;
+    const dType radius = 1;
     // /*
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
     // */
@@ -295,7 +295,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
+    using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
@@ -321,7 +321,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 
     timer.reset();
 
-    const float radius = 1;
+    const dType radius = 1;
     // /*
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
     // */
@@ -350,7 +350,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
+    using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
@@ -376,7 +376,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 
     timer.reset();
 
-    const float radius = 1.2;
+    const dType radius = 1.2;
     // /*
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
     // */
@@ -405,7 +405,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
+    using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
@@ -431,7 +431,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 
     timer.reset();
 
-    const float radius = 1;
+    const dType radius = 1;
     // /*
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
     // */
@@ -460,7 +460,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
+    using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
@@ -486,7 +486,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     timer.reset();
 
-    const float radius = 1;
+    const dType radius = 1;
     // /*
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
     // */
@@ -515,7 +515,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
     using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
+    using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
@@ -541,7 +541,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
 
     timer.reset();
 
-    const float radius = 2;
+    const dType radius = 2;
     // /*
     const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search_around_query_index, radius);
     // */
