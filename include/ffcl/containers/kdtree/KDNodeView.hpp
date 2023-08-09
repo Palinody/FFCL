@@ -15,14 +15,14 @@ namespace ffcl::containers {
 
 template <typename Iterator>
 struct KDNodeView {
-    KDNodeView(IteratorPairType<Iterator>      iterator_pair,
-               std::size_t                     n_features,
-               const HyperRangeType<Iterator>& kd_bounding_box);
+    KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
+               std::size_t                           n_features,
+               const bbox::HyperRangeType<Iterator>& kd_bounding_box);
 
-    KDNodeView(IteratorPairType<Iterator>      iterator_pair,
-               std::size_t                     n_features,
-               ssize_t                         cut_feature_index,
-               const HyperRangeType<Iterator>& kd_bounding_box);
+    KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
+               std::size_t                           n_features,
+               ssize_t                               cut_feature_index,
+               const bbox::HyperRangeType<Iterator>& kd_bounding_box);
 
     KDNodeView(const KDNodeView&) = delete;
 
@@ -45,30 +45,30 @@ struct KDNodeView {
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     // might contain [0, bucket_size] samples if the node is leaf, else only 1
-    IteratorPairType<Iterator> samples_iterator_pair_;
-    std::size_t                n_features_;
-    ssize_t                    cut_feature_index_;
+    bbox::IteratorPairType<Iterator> samples_iterator_pair_;
+    std::size_t                      n_features_;
+    ssize_t                          cut_feature_index_;
     // bounding box hyper rectangle (w.r.t. each dimension)
-    HyperRangeType<Iterator>              kd_bounding_box_;
+    bbox::HyperRangeType<Iterator>        kd_bounding_box_;
     std::shared_ptr<KDNodeView<Iterator>> left_;
     std::shared_ptr<KDNodeView<Iterator>> right_;
     std::weak_ptr<KDNodeView<Iterator>>   parent_;
 };
 
 template <typename Iterator>
-KDNodeView<Iterator>::KDNodeView(IteratorPairType<Iterator>      iterator_pair,
-                                 std::size_t                     n_features,
-                                 const HyperRangeType<Iterator>& kd_bounding_box)
+KDNodeView<Iterator>::KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
+                                 std::size_t                           n_features,
+                                 const bbox::HyperRangeType<Iterator>& kd_bounding_box)
   : samples_iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename Iterator>
-KDNodeView<Iterator>::KDNodeView(IteratorPairType<Iterator>      iterator_pair,
-                                 std::size_t                     n_features,
-                                 ssize_t                         cut_feature_index,
-                                 const HyperRangeType<Iterator>& kd_bounding_box)
+KDNodeView<Iterator>::KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
+                                 std::size_t                           n_features,
+                                 ssize_t                               cut_feature_index,
+                                 const bbox::HyperRangeType<Iterator>& kd_bounding_box)
   : samples_iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , cut_feature_index_{cut_feature_index}

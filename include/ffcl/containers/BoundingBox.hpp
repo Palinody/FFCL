@@ -7,6 +7,8 @@
 #include <limits>
 #include <vector>
 
+namespace bbox {
+
 template <typename SamplesIterator>
 using IteratorPairType = std::pair<SamplesIterator, SamplesIterator>;
 
@@ -18,8 +20,6 @@ using RangeType = std::pair<DataType<SamplesIterator>, DataType<SamplesIterator>
 
 template <typename SamplesIterator>
 using HyperRangeType = std::vector<RangeType<SamplesIterator>>;
-
-namespace kdtree {
 
 template <typename SamplesIterator>
 auto make_1d_bounding_box(const SamplesIterator& samples_first,
@@ -180,4 +180,4 @@ auto relative_coordinates_sequence_to_range_bounding_box(
     return range_bounding_box;
 }
 
-}  // namespace kdtree
+}  // namespace bbox

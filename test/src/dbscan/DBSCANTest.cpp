@@ -219,7 +219,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
+                                            bbox::HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
     */
     timer.print_elapsed_seconds(9);
 
@@ -274,7 +274,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
+                                            bbox::HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
     */
     timer.print_elapsed_seconds(9);
 
@@ -329,7 +329,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
+                                            bbox::HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
     */
     timer.print_elapsed_seconds(9);
 
@@ -384,7 +384,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
+                                            bbox::HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
     */
     timer.print_elapsed_seconds(9);
 
@@ -439,7 +439,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
+                                            bbox::HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
     */
     timer.print_elapsed_seconds(9);
 
@@ -494,7 +494,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
+                                            bbox::HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
     */
     timer.print_elapsed_seconds(9);
 
@@ -549,7 +549,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     const float edge        = std::sqrt(2.0) * radius;
     const auto  predictions = dbscan.predict(indexer,
                                             &IndexerType::range_search_around_query_index,
-                                            HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
+                                            bbox::HyperRangeType<SamplesIterator>({{-edge, edge}, {-edge, edge}}));
     */
     timer.print_elapsed_seconds(9);
 

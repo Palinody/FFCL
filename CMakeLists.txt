@@ -42,14 +42,15 @@ set(HEADER_FILES
     include/ffcl/containers/kdtree/policy/IndexedSplittingRulePolicy.hpp
     include/ffcl/containers/kdtree/policy/AxisSelectionPolicy.hpp
     include/ffcl/containers/kdtree/policy/SplittingRulePolicy.hpp
-    include/ffcl/containers/kdtree/BoundingBox.hpp
     include/ffcl/containers/kdtree/KDNodeIndexView.hpp
     include/ffcl/containers/kdtree/KDNodeView.hpp
     include/ffcl/containers/kdtree/KDTree.hpp
     include/ffcl/containers/kdtree/KDTreeAlgorithms.hpp
     include/ffcl/containers/kdtree/KDTreeIndexed.hpp
+
     include/ffcl/containers/FeatureMaskArray.hpp
     include/ffcl/containers/LowerTriangleMatrix.hpp
+    include/ffcl/containers/BoundingBox.hpp
 
     include/ffcl/math/heuristics/Distances.hpp
     include/ffcl/math/heuristics/SilhouetteMethod.hpp

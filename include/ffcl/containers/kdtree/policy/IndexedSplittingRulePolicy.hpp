@@ -9,9 +9,9 @@ struct IndexedSplittingRulePolicy {
     IndexedSplittingRulePolicy() = default;
 
     inline virtual std::tuple<std::size_t,
-                              IteratorPairType<RandomAccessIntIterator>,
-                              IteratorPairType<RandomAccessIntIterator>,
-                              IteratorPairType<RandomAccessIntIterator>>
+                              bbox::IteratorPairType<RandomAccessIntIterator>,
+                              bbox::IteratorPairType<RandomAccessIntIterator>,
+                              bbox::IteratorPairType<RandomAccessIntIterator>>
     operator()(RandomAccessIntIterator index_first,
                RandomAccessIntIterator index_last,
                RandomAccessIterator    samples_first,
@@ -24,9 +24,9 @@ template <typename RandomAccessIntIterator, typename RandomAccessIterator>
 struct IndexedQuickselectMedianRange
   : public IndexedSplittingRulePolicy<RandomAccessIntIterator, RandomAccessIterator> {
     inline std::tuple<std::size_t,
-                      IteratorPairType<RandomAccessIntIterator>,
-                      IteratorPairType<RandomAccessIntIterator>,
-                      IteratorPairType<RandomAccessIntIterator>>
+                      bbox::IteratorPairType<RandomAccessIntIterator>,
+                      bbox::IteratorPairType<RandomAccessIntIterator>,
+                      bbox::IteratorPairType<RandomAccessIntIterator>>
     operator()(RandomAccessIntIterator index_first,
                RandomAccessIntIterator index_last,
                RandomAccessIterator    samples_first,
@@ -41,9 +41,9 @@ namespace kdtree::policy {
 
 template <typename RandomAccessIntIterator, typename RandomAccessIterator>
 std::tuple<std::size_t,
-           IteratorPairType<RandomAccessIntIterator>,
-           IteratorPairType<RandomAccessIntIterator>,
-           IteratorPairType<RandomAccessIntIterator>>
+           bbox::IteratorPairType<RandomAccessIntIterator>,
+           bbox::IteratorPairType<RandomAccessIntIterator>,
+           bbox::IteratorPairType<RandomAccessIntIterator>>
 IndexedQuickselectMedianRange<RandomAccessIntIterator, RandomAccessIterator>::operator()(
     RandomAccessIntIterator index_first,
     RandomAccessIntIterator index_last,
