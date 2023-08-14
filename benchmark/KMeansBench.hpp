@@ -15,7 +15,7 @@ void fit_once_kmeans(const InputsIterator& inputs_first,
                      const InputsIterator& inputs_last,
                      std::size_t           n_centroids,
                      std::size_t           n_features) {
-    using KMeans = ffcl::KMeans<dType>;
+    using KMeans = ffcl::KMeans<bench::io::DataType>;
 
     auto kmeans = KMeans(n_centroids, n_features);
 
@@ -38,7 +38,7 @@ void fit_once_kmeans(const InputsIterator& inputs_first,
 void mnist_bench() {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = bench::io::txt::load_data<dType>(inputs_folder / filename, ' ');
+    const auto        data       = bench::io::txt::load_data<bench::io::DataType>(inputs_folder / filename, ' ');
     const std::size_t n_features = bench::io::txt::get_num_features_in_file(inputs_folder / filename);
 
     std::cout << data.size() << " | " << n_features << "\n\n";

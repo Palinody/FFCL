@@ -33,14 +33,14 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
                                    float                          radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -57,7 +57,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
-    auto data_xyz = std::vector<dType>(n_samples * n_features);
+    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
@@ -123,14 +123,14 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
                                    float                          radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -147,7 +147,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
-    auto data_xyz = std::vector<dType>(n_samples * n_features);
+    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
@@ -202,14 +202,14 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
                                    float                          radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -226,7 +226,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
-    auto data_xyz = std::vector<dType>(n_samples * n_features);
+    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
@@ -339,8 +339,8 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 void run_dbscan_benchmarks_on_point_cloud_sequences() {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    const std::vector<std::size_t> min_samples_choices = {3, 5, 10};
-    const std::vector<dType>       radiuses            = {0.1, 0.3, 0.5, 1.0};
+    const std::vector<std::size_t>         min_samples_choices = {3, 5, 10};
+    const std::vector<bench::io::DataType> radiuses            = {0.1, 0.3, 0.5, 1.0};
 
     const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
                                                   fs::path("pointclouds_sequences/2")/*,

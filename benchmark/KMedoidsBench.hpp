@@ -16,7 +16,7 @@ void fit_once(const InputsIterator& inputs_first,
               const InputsIterator& inputs_last,
               std::size_t           n_medoids,
               std::size_t           n_features) {
-    using KMedoids = ffcl::KMedoids<dType, true>;
+    using KMedoids = ffcl::KMedoids<bench::io::DataType, true>;
     // using PAM = ffcl::FasterMSC;
 
     auto kmedoids = KMedoids(n_medoids, n_features);
@@ -42,7 +42,7 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
                                             const InputsIterator& inputs_last,
                                             std::size_t           n_medoids,
                                             std::size_t           n_features) {
-    using KMedoids = ffcl::KMedoids<dType, true>;
+    using KMedoids = ffcl::KMedoids<bench::io::DataType, true>;
     // using PAM = ffcl::FasterMSC;
 
     auto kmedoids = KMedoids(n_medoids, n_features);
@@ -76,7 +76,7 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
 void distance_matrix_benchmark() {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = bench::io::txt::load_data<dType>(inputs_folder / filename, ' ');
+    const auto        data       = bench::io::txt::load_data<bench::io::DataType>(inputs_folder / filename, ' ');
     const std::size_t n_features = bench::io::txt::get_num_features_in_file(inputs_folder / filename);
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
@@ -91,7 +91,7 @@ void distance_matrix_benchmark() {
 void mnist_bench() {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = bench::io::txt::load_data<dType>(inputs_folder / filename, ' ');
+    const auto        data       = bench::io::txt::load_data<bench::io::DataType>(inputs_folder / filename, ' ');
     const std::size_t n_features = bench::io::txt::get_num_features_in_file(inputs_folder / filename);
 
     std::cout << data.size() << " | " << n_features << "\n\n";

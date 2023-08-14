@@ -23,14 +23,14 @@ namespace ffcl_ {
 utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -99,14 +99,14 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
                                                                             std::size_t     k_nearest_neighbors) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -179,14 +179,14 @@ namespace pcl_ {
 utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -252,14 +252,14 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
                                                                             std::size_t     k_nearest_neighbors) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -326,14 +326,14 @@ namespace flann_ {
 utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -350,7 +350,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
-    auto data_xyz = std::vector<dType>(n_samples * n_features);
+    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
@@ -361,9 +361,9 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
 
     timer.reset();
 
-    flann::Matrix<dType> dataset(data_xyz.data(), n_samples, n_features);
+    flann::Matrix<bench::io::DataType> dataset(data_xyz.data(), n_samples, n_features);
     // build 1 kdtree
-    flann::Index<flann::L2<dType>> index(
+    flann::Index<flann::L2<bench::io::DataType>> index(
         dataset, flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
     index.buildIndex();
 
@@ -374,10 +374,10 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         const auto elapsed_start = timer.elapsed();
 
-        std::vector<std::vector<std::size_t>> indices;
-        std::vector<std::vector<dType>>       distances;
+        std::vector<std::vector<std::size_t>>         indices;
+        std::vector<std::vector<bench::io::DataType>> distances;
 
-        flann::Matrix<dType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
+        flann::Matrix<bench::io::DataType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
 
         // Perform radius search for each point in the cloud
         index.radiusSearch(query, indices, distances, radius, flann::SearchParams{});
@@ -398,14 +398,14 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
                                                                             std::size_t     k_nearest_neighbors) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    std::vector<dType> data;
-    std::size_t        n_samples, n_features;
+    std::vector<bench::io::DataType> data;
+    std::size_t                      n_samples, n_features;
 
     if (filepath.extension().string() == ".bin") {
         std::tie(data, n_samples, n_features) = bench::io::bin::decode(/*n_features=*/4, filepath);
 
     } else if (filepath.extension().string() == ".txt") {
-        data       = bench::io::txt::load_data<dType>(filepath, ' ');
+        data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
         n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -422,7 +422,7 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
-    auto data_xyz = std::vector<dType>(n_samples * n_features);
+    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
@@ -433,9 +433,9 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
 
     timer.reset();
 
-    flann::Matrix<dType> dataset(data_xyz.data(), n_samples, n_features);
+    flann::Matrix<bench::io::DataType> dataset(data_xyz.data(), n_samples, n_features);
     // build 1 kdtree
-    flann::Index<flann::L2<dType>> index(
+    flann::Index<flann::L2<bench::io::DataType>> index(
         dataset, flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
     index.buildIndex();
 
@@ -446,10 +446,10 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         const auto elapsed_start = timer.elapsed();
 
-        std::vector<std::vector<std::size_t>> indices;
-        std::vector<std::vector<dType>>       distances;
+        std::vector<std::vector<std::size_t>>         indices;
+        std::vector<std::vector<bench::io::DataType>> distances;
 
-        flann::Matrix<dType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
+        flann::Matrix<bench::io::DataType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
 
         // Perform radius search for each point in the cloud
         index.knnSearch(query, indices, distances, k_nearest_neighbors, flann::SearchParams{});
@@ -539,7 +539,7 @@ void run_toy_datasets_benchmarks() {
                                                  /**/ "no_structure.txt",
                                                  /**/ "unbalanced_blobs.txt"};
 
-    const dType radius = 0.5;
+    const bench::io::DataType radius = 0.5;
 
     for (const auto& filename : filenames) {
         run_benchmarks(inputs_folder / filename, radius);
@@ -551,7 +551,7 @@ void run_pointclouds_benchmarks() {
     const auto relative_path = fs::path("pointclouds_sequences/1");
     const auto filenames     = bench::io::get_files_names_at_path(inputs_folder / relative_path);
 
-    const dType radius = 0.5;
+    const bench::io::DataType radius = 0.5;
 
     for (const auto& filename : filenames) {
         run_benchmarks(inputs_folder / relative_path / filename, radius);
@@ -619,7 +619,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 void run_radius_search_benchmarks_on_point_cloud_sequences() {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    const std::vector<dType> radiuses = {1.0, 0.5, 0.3, 0.1};
+    const std::vector<bench::io::DataType> radiuses = {1.0, 0.5, 0.3, 0.1};
 
     const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
                                                   fs::path("pointclouds_sequences/2"),
