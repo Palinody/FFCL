@@ -12,16 +12,16 @@
 
 namespace fs = std::filesystem;
 
+namespace bench::io {
+
+using DataType = float;
+
 const fs::path folder_root        = fs::path("../bin/clustering");
 const fs::path inputs_folder      = folder_root / fs::path("inputs");
 const fs::path targets_folder     = folder_root / fs::path("targets");
 const fs::path predictions_folder = folder_root / fs::path("predictions");
 const fs::path centroids_folder   = folder_root / fs::path("centroids");
 const fs::path conversions_folder = folder_root / fs::path("conversions");
-
-namespace bench::io {
-
-using DataType = float;
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE*)> unique_fp;
 

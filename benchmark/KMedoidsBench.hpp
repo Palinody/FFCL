@@ -76,8 +76,8 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
 void distance_matrix_benchmark() {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = bench::io::txt::load_data<bench::io::DataType>(inputs_folder / filename, ' ');
-    const std::size_t n_features = bench::io::txt::get_num_features_in_file(inputs_folder / filename);
+    const auto        data = bench::io::txt::load_data<bench::io::DataType>(bench::io::inputs_folder / filename, ' ');
+    const std::size_t n_features = bench::io::txt::get_num_features_in_file(bench::io::inputs_folder / filename);
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -91,8 +91,8 @@ void distance_matrix_benchmark() {
 void mnist_bench() {
     fs::path filename = "mnist.txt";
 
-    const auto        data       = bench::io::txt::load_data<bench::io::DataType>(inputs_folder / filename, ' ');
-    const std::size_t n_features = bench::io::txt::get_num_features_in_file(inputs_folder / filename);
+    const auto        data = bench::io::txt::load_data<bench::io::DataType>(bench::io::inputs_folder / filename, ' ');
+    const std::size_t n_features = bench::io::txt::get_num_features_in_file(bench::io::inputs_folder / filename);
 
     std::cout << data.size() << " | " << n_features << "\n\n";
     const auto n_medoids = 10;

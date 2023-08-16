@@ -281,7 +281,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
                                          Args&&... args) {
     // the path to the files from the inputs_folder
     // const auto relative_path = fs::path("pointclouds_sequences/2");
-    const auto filenames = bench::io::get_files_names_at_path(inputs_folder / relative_path);
+    const auto filenames = bench::io::get_files_names_at_path(bench::io::inputs_folder / relative_path);
 
     // Conversion factor for nanoseconds to seconds
     long double to_seconds = 1e-9;
@@ -295,9 +295,9 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
     for (std::size_t file_index = 0; file_index < filenames.size(); ++file_index) {
         const auto& filename = filenames[file_index];
 
-        auto bench_summary = function(inputs_folder / relative_path / filename,
+        auto bench_summary = function(bench::io::inputs_folder / relative_path / filename,
                                       write_predictions ? static_cast<std::optional<std::filesystem::path>>(
-                                                              predictions_folder / relative_path / filename)
+                                                              bench::io::predictions_folder / relative_path / filename)
                                                         : std::nullopt,
                                       std::forward<Args>(args)...);
 
