@@ -28,30 +28,27 @@ class FFCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
                 SamplesIterator data_last,
                 std::size_t     n_features,
                 std::size_t     max_leaf_size = 0)
-      : data_first_{data_first}
-      , data_last_{data_last}
-      , n_samples_{static_cast<std::size_t>(std::distance(indices_first, indices_last))}
-      , n_features_{n_features}
-      , max_leaf_size_{max_leaf_size ? max_leaf_size : static_cast<std::size_t>(std::sqrt(n_samples_))}
+      : BaseIndexer<IndexContainer, SamplesIterator>(data_first, data_last, n_features)
+      , max_leaf_size_{max_leaf_size ? max_leaf_size : static_cast<std::size_t>(std::sqrt(this->n_samples_))}
       , indices_{IndexContainer(indices_first, indices_last)}
       , kd_tree_{ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>(
             indices_.begin(),
             indices_.end(),
-            data_first_,
-            data_last_,
-            n_features_,
+            this->data_first_,
+            this->data_last_,
+            this->n_features_,
             OptionsType()
                 .bucket_size(max_leaf_size_)
-                .max_depth(std::log2(n_samples_))
+                .max_depth(std::log2(this->n_samples_))
                 .axis_selection_policy(AxisSelectionPolicyType())
                 .splitting_rule_policy(SplittingRulePolicyType()))} {}
 
     std::size_t n_samples() const override {
-        return n_samples_;
+        return this->n_samples_;
     }
 
     std::size_t n_features() const override {
-        return n_features_;
+        return this->n_features_;
     }
 
     BaseNearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const override {
@@ -71,9 +68,7 @@ class FFCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
     }
 
   private:
-    SamplesIterator data_first_, data_last_;
-    std::size_t     n_samples_, n_features_;
-    std::size_t     max_leaf_size_;
+    std::size_t max_leaf_size_;
 
     IndexContainer indices_;
     IndexerType    kd_tree_;

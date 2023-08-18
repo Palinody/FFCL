@@ -5,6 +5,7 @@
 
 #include "indexer/BaseIndexer.hpp"
 #include "indexer/FFCLIndexer.hpp"
+#include "indexer/PCLFLANNIndexer.hpp"
 #include "indexer/PCLIndexer.hpp"
 
 #include "ffcl/common/Timer.hpp"

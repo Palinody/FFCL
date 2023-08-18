@@ -4,21 +4,26 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/search/kdtree.h>  // for pcl::search::KdTree
+#include <pcl/search/flann_search.h>  // for pcl::search::FlannSearch
+#include <pcl/search/impl/flann_search.hpp>
 
 namespace indexer {
 
 template <typename IndexContainer, typename SamplesIterator>
-class PCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
+class PCLFLANNIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
   public:
     using DataType = typename BaseIndexer<IndexContainer, SamplesIterator>::DataType;
     using BaseNearestNeighborsBuffer =
         typename BaseIndexer<IndexContainer, SamplesIterator>::BaseNearestNeighborsBuffer;
 
-    PCLIndexer(SamplesIterator data_first, SamplesIterator data_last, std::size_t n_features)
+    PCLFLANNIndexer(SamplesIterator data_first,
+                    SamplesIterator data_last,
+                    std::size_t     n_features,
+                    std::size_t     max_leaf_size)
       : BaseIndexer<IndexContainer, SamplesIterator>(data_first, data_last, n_features)
+      , max_leaf_size_{max_leaf_size}
       , cloud_{new pcl::PointCloud<pcl::PointXYZ>}
-      , kd_tree_{pcl::search::KdTree<pcl::PointXYZ, pcl::KdTreeFLANN<pcl::PointXYZ>>(false)} {
+      , kd_tree_{new pcl::search::FlannSearch<pcl::PointXYZ>::KdTreeIndexCreator(/*max_leaf_size=*/max_leaf_size_)} {
         cloud_->resize(this->n_samples_);
 
         for (std::size_t sample_index = 0; sample_index < this->n_samples_; ++sample_index) {
@@ -27,6 +32,7 @@ class PCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
             cloud_->points[sample_index].y = this->data_first_[sample_index * this->n_features_ + 1];
             cloud_->points[sample_index].z = this->data_first_[sample_index * this->n_features_ + 2];
         }
+
         kd_tree_.setInputCloud(cloud_);
     }
 
@@ -52,14 +58,16 @@ class PCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
         IndexContainer        indices;
         std::vector<DataType> distances_squared;
 
-        kd_tree_.nearestKSearch(sample_index_query, k_nearest_neighbors, indices, distances_squared);
+        kd_tree_.nearestKSearch(cloud_->points[sample_index_query], k_nearest_neighbors, indices, distances_squared);
 
         return BaseNearestNeighborsBuffer(std::move(indices), std::move(distances_squared));
     }
 
   private:
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_;
-    pcl::search::KdTree<pcl::PointXYZ>  kd_tree_;
+    std::size_t max_leaf_size_;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr     cloud_;
+    pcl::search::FlannSearch<pcl::PointXYZ> kd_tree_;
 };
 
 }  // namespace indexer
