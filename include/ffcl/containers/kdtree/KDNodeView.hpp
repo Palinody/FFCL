@@ -132,7 +132,7 @@ std::shared_ptr<KDNodeView<Iterator>> KDNodeView<Iterator>::get_sibling_node() c
 
 template <typename Iterator>
 void KDNodeView<Iterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
-    using DataType = DataType<Iterator>;
+    using DataType = bbox::DataType<Iterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdnode serialization");
