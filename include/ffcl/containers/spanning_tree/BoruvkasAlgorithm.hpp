@@ -2,9 +2,13 @@
 
 #include "ffcl/common/Utils.hpp"
 
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <memory>
+#include <numeric>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -13,7 +17,14 @@ namespace ffcl {
 template <typename Indexer>
 class BoruvkasAlgorithm {
   public:
-    using DataType = typename Indexer::DataType;
+    using SampleIndexType = std::size_t;
+    using SampleValueType = typename Indexer::DataType;
+
+    using ComponentType = std::vector<SampleIndexType>;
+    using ForestType    = std::vector<ComponentType>;
+
+    using EdgeType                = std::tuple<SampleIndexType, SampleIndexType, SampleValueType>;
+    using MinimumSpanningTreeType = std::vector<EdgeType>;
 
     struct Options {
         Options() = default;
@@ -33,6 +44,176 @@ class BoruvkasAlgorithm {
         std::size_t k_nearest_neighbors_ = 3;
     };
 
+    class UnionFind {
+      public:
+        UnionFind(std::size_t n_samples)
+          : parents_{std::make_unique<SampleIndexType[]>(n_samples)}
+          , ranks_{std::make_unique<SampleIndexType[]>(n_samples)} {
+            std::iota(parents_.get(), parents_.get() + n_samples, static_cast<SampleIndexType>(0));
+        }
+
+        SampleIndexType find(SampleIndexType index) const {
+            while (index != parents_[index]) {
+                index = parents_[index];
+            }
+            return index;
+        }
+
+        bool merge(const SampleIndexType& index_1, const SampleIndexType& index_2) {
+            const auto parent_1 = find(index_1);
+            const auto parent_2 = find(index_2);
+
+            if (parent_1 == parent_2) {
+                return false;
+            }
+            if (ranks_[parent_1] < ranks_[parent_2]) {
+                parents_[parent_1] = parent_2;
+
+            } else if (ranks_[parent_1] > ranks_[parent_2]) {
+                parents_[parent_2] = parent_1;
+
+            } else {
+                parents_[parent_2] = parent_1;
+                ++ranks_[parent_1];
+            }
+            return true;
+        }
+
+      private:
+        std::unique_ptr<SampleIndexType[]> parents_;
+        std::unique_ptr<SampleIndexType[]> ranks_;
+    };
+
+    class ForestPartition {
+      public:
+        ForestPartition(std::size_t n_samples)
+          : n_samples_{n_samples}
+          , component_labels_{std::vector<SampleIndexType>(n_samples)}
+          , sample_indices_{std::vector<SampleIndexType>(n_samples)}
+          , component_sizes_{std::vector<SampleIndexType>(n_samples, 1)}
+          , component_offsets_{std::vector<SampleIndexType>(n_samples, 0)}
+          , sorting_state_{true} {
+            std::iota(component_labels_.begin(), component_labels_.end(), static_cast<SampleIndexType>(0));
+
+            std::iota(sample_indices_.begin(), sample_indices_.end(), static_cast<SampleIndexType>(0));
+
+            update_component_offsets();
+        }
+
+        SampleIndexType n_components() const {
+            return component_sizes_.size();
+        }
+
+        auto component_sizes() const {
+            return component_sizes_;
+        }
+
+        auto component_indices_range(const SampleIndexType& component_index) const {
+            return std::make_pair(
+                sample_indices_.begin() + component_offsets_[component_index],
+                sample_indices_.begin() + component_offsets_[component_index] + component_sizes_[component_index]);
+        }
+
+        void update_sample_index_to_component_label(const SampleIndexType& sample_index,
+                                                    const SampleIndexType& new_component_label) {
+            // decrement the number of samples in the previous component that sample_index was mapped with
+            --component_sizes_[component_labels_[sample_index]];
+            // remap the sample index to the new component label
+            component_labels_[sample_index] = new_component_label;
+            // increment the number of samples in the new component that sample_index is now mapped with
+            ++component_sizes_[component_labels_[sample_index]];
+            // sorting_state is now wrong
+            sorting_state_ = false;
+        }
+
+        void update() {
+            group_sample_indices_by_component();
+            update_components();
+        }
+
+        void print() const {
+            std::cout << "component_label:\n";
+            for (const auto& component_label : component_labels_) {
+                std::cout << component_label << ", ";
+            }
+            std::cout << "\n";
+
+            std::cout << "sample_index:\n";
+            for (const auto& sample_index : sample_indices_) {
+                std::cout << sample_index << ", ";
+            }
+            std::cout << "\n";
+
+            std::cout << "component_size:\n";
+            for (const auto& component_size : component_sizes_) {
+                std::cout << component_size << ", ";
+            }
+            std::cout << "\n";
+
+            std::cout << "component_offset:\n";
+            for (const auto& component_offset : component_offsets_) {
+                std::cout << component_offset << ", ";
+            }
+            std::cout << "\n";
+        }
+
+      private:
+        void group_sample_indices_by_component() {
+            std::vector<SampleIndexType> indices(n_samples_);
+            std::iota(indices.begin(), indices.end(), static_cast<SampleIndexType>(0));
+
+            auto comparator = [this](const auto& index_1, const auto& index_2) {
+                return component_labels_[index_1] < component_labels_[index_2];
+            };
+
+            std::sort(indices.begin(), indices.end(), comparator);
+
+            auto sorted_component_labels = std::vector<SampleIndexType>(n_samples_);
+            auto sorted_sample_indices   = std::vector<SampleIndexType>(n_samples_);
+
+            for (std::size_t index = 0; index < n_samples_; ++index) {
+                sorted_component_labels[index] = component_labels_[indices[index]];
+                sorted_sample_indices[index]   = sample_indices_[indices[index]];
+            }
+
+            component_labels_ = std::move(sorted_component_labels);
+            sample_indices_   = std::move(sorted_sample_indices);
+        }
+
+        void prune_component_sizes() {
+            component_sizes_.erase(std::remove_if(component_sizes_.begin(),
+                                                  component_sizes_.end(),
+                                                  [](const auto& component_size) { return !component_size; }),
+                                   component_sizes_.end());
+        }
+
+        void update_component_offsets() {
+            if (component_offsets_.size() != component_sizes_.size()) {
+                // reset the vector to a default vector with the new number of elements
+                component_offsets_ = decltype(component_offsets_)(component_sizes_.size());
+            }
+            // recompute the offsets
+            std::exclusive_scan(component_sizes_.begin(), component_sizes_.end(), component_offsets_.begin(), 0);
+        }
+
+        void update_components() {
+            prune_component_sizes();
+            update_component_offsets();
+        }
+
+        std::size_t n_samples_;
+        // the component class/label that can range in [0, n_samples) that partitions the sample indices
+        std::vector<SampleIndexType> component_labels_;
+        // the sample indices that will be rearranged based on the component labels order
+        std::vector<SampleIndexType> sample_indices_;
+        // the component size for each label that can range in [0, n_samples)
+        std::vector<SampleIndexType> component_sizes_;
+        // the cumulated sum of the components sizes to retrieve the beginning of each sequence of component
+        std::vector<SampleIndexType> component_offsets_;
+        // whether the sample indices are sorted w.r.t. the sorted component indices
+        bool sorting_state_;
+    };
+
   public:
     BoruvkasAlgorithm() = default;
 
@@ -48,16 +229,10 @@ class BoruvkasAlgorithm {
                    DistanceFunction&&        indexer_pairwise_distance,
                    Args&&... args) const;
 
-    template <typename NearestNeighborFunction, typename DistanceFunction, typename... Args>
-    auto make_tree_v1(const Indexer&            indexer,
-                      NearestNeighborFunction&& indexer_k_nearest_neighbors,
-                      DistanceFunction&&        indexer_pairwise_distance,
-                      Args&&... args) const;
-
   private:
     Options options_;
 
-    std::vector<std::vector<DataType>> graph_;
+    std::vector<std::vector<SampleValueType>> graph_;
 };
 
 template <typename Indexer>
@@ -99,162 +274,55 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer&            indexer,
                                /**/ k_nearest_neighbors);
         };
 
-    using IndexType  = std::size_t;
-    using WeightType = DataType;
-    // an edge is represented by the connection between two vertices and their distance
-    using EdgeType = std::tuple<IndexType, WeightType>;
-    // each node component of the minimum spanning tree. The index of the node in the mst represents the source node and
-    // the elements of the node the branches/vertices
-    using NodeType                = std::vector<EdgeType>;
-    using MinimumSpanningTreeType = std::vector<NodeType>;
-    MinimumSpanningTreeType mst(indexer.n_samples());
+    common::utils::ignore_parameters(k_nearest_neighbors_lambda, pairwise_distance_lambda, args...);
 
-    // a tree/component is the set of all vertices that form a cluster
-    using ComponentType = std::vector<IndexType>;
-    // a forest is the set of all trees/components
-    using ForestType = std::vector<ComponentType>;
-    ForestType forest;
-    forest.reserve(indexer.n_samples());
+    ForestPartition forest(indexer.n_samples());
 
-    // populate the forest where each sample is its own cluster
+    // the minimum spanning tree starts with no edge
+    MinimumSpanningTreeType mst;
+    mst.reserve(indexer.n_samples() - 1);
+
+    // populate the forest with the initial components
     for (std::size_t sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
-        // each initial cluster starts with the first edge containing a vertex and itself as a parent.
-        // Its distance with itself is obviously zero.
+        // each initial component starts as a singleton containing a sample index
         forest.emplace_back(ComponentType{sample_index});
     }
 
-    // Query each point for its nearest neighbor that is not within the component
-    // for each component, add the smallest edge
-    std::size_t counter = 0;
+    auto sample_index_to_component_index = std::make_unique<SampleIndexType[]>(indexer.n_samples());
+
+    // ForestPartition forest_partition(indexer.n_samples());
+
     while (forest.size() > 1) {
-        // iterate over each components and find the best {Vi ∈ Si, Vj ∈ Sj} pair to connect the components
+        std::cout << forest.size() << "\n";
+        // keeps track of the shortest edge thats been found w.r.t. each component
+        auto closest_edges = std::make_unique<EdgeType[]>(forest.size());
+        // for each component (tree) in the graph (forest), find the closest edge
         for (std::size_t component_index = 0; component_index < forest.size(); ++component_index) {
-            // the vertex of the current component that resulted to the closest distance with the best other vertex
-            std::size_t best_vertex_index = 0;
-            // the component that was found to be the closest to the current vertex outside of its own component
-            std::size_t best_other_component_index = 0;
-            // the best vertex index found in the other component
-            std::size_t best_other_vertex_index = 0;
-            // initial distance set to infinity to allow the closest neighbor from another component to be updated
-            auto closest_distance = common::utils::infinity<DataType>();
+            const auto& component = forest[component_index];
+            // initialize the closest edge from the current comonent to infinity
+            closest_edges[component_index] = EdgeType{0, 0, common::utils::infinity<SampleValueType>()};
+            // for each vertex of the current component, find its nearest neighbor thats not part of the same component
+            for (const auto& sample_index : component) {
+                // update the component index of the current sample index query
+                sample_index_to_component_index[sample_index] = component_index;
 
-            // iterate over each vertices from a component
-            for (std::size_t vertex_index = 0; vertex_index < forest[component_index].size(); ++vertex_index) {
-                // select the current vertex from the current component
-                const auto sample_index_query = forest[component_index][vertex_index];
+                auto nn_buffer_with_memory =
+                    NearestNeighborsBufferWithMemory<typename std::vector<SampleValueType>::iterator>(component, 1);
 
-                // iterate over each other components
-                for (std::size_t other_component_index = 0; other_component_index < forest.size();
-                     ++other_component_index) {
-                    if (component_index != other_component_index) {
-                        // visit all the vertices from the other component
-                        for (std::size_t other_vertex_index = 0;
-                             other_vertex_index < forest[other_component_index].size();
-                             ++other_vertex_index) {
-                            const auto sample_index_candidate = forest[other_component_index][other_vertex_index];
+                // get a buffer of k nearest neighbors that are not part of the same component as the query
+                indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer_with_memory);
 
-                            const auto pairwise_distance = pairwise_distance_lambda(
-                                sample_index_query, sample_index_candidate, options_.k_nearest_neighbors_);
+                const auto nearest_neighbor_index    = nn_buffer_with_memory.furthest_k_nearest_neighbor_index();
+                const auto nearest_neighbor_distance = nn_buffer_with_memory.furthest_k_nearest_neighbor_distance();
 
-                            if (pairwise_distance < closest_distance) {
-                                best_vertex_index          = vertex_index;
-                                best_other_component_index = other_component_index;
-                                best_other_vertex_index    = other_vertex_index;
-                                closest_distance           = pairwise_distance;
-                            }
-                        }
-                    }
+                if (nearest_neighbor_distance < std::get<2>(closest_edges[component_index])) {
+                    closest_edges[component_index] =
+                        EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
                 }
             }
-
-            // WEVE DONE ONLY ONE COMPONENT SO FAR
-
-            // add the edge representing:
-            // 1) the best sample index in the current version of the component
-            // 2) the best sample index in the current version of the other component where the nearest neighbor was
-            // found
-            // 3) the weight value that was computed between both values: closest_distance
-
-            // 1)
-            const auto best_sample_index = forest[component_index][best_vertex_index];
-            // 2)
-            const auto best_other_sample_index = forest[best_other_component_index][best_other_vertex_index];
-            mst[best_sample_index].emplace_back(EdgeType{best_other_sample_index, closest_distance});
-
-            // merge the components
-            std::move(forest[best_other_component_index].begin(),
-                      forest[best_other_component_index].end(),
-                      std::back_inserter(forest[component_index]));
-            // erase the original location of the other best component
-            forest.erase(forest.begin() + best_other_component_index);
-            std::cout << forest.size() << ", ";
         }
-        std::cout << "\n" << counter++ << "\n";
     }
-    // TODO:
-    // dst.insert(dst.end(), std::make_move_iterator(src.begin()), std::make_move_iterator(src.end()));
-    // or:
-    // std::move(src.begin(), src.end(), std::back_inserter(dst));
-    common::utils::ignore_parameters(k_nearest_neighbors_lambda, args...);
-
     return mst;
-}
-
-template <typename Indexer>
-template <typename NearestNeighborFunction, typename DistanceFunction, typename... Args>
-auto BoruvkasAlgorithm<Indexer>::make_tree_v1(const Indexer&            indexer,
-                                              NearestNeighborFunction&& indexer_k_nearest_neighbors,
-                                              DistanceFunction&&        indexer_pairwise_distance,
-                                              Args&&... args) const {
-    // the indexer's function used to find the nearest vertex of a vertex query
-    auto k_nearest_neighbors_lambda =
-        [&indexer, indexer_k_nearest_neighbors = std::forward<NearestNeighborFunction>(indexer_k_nearest_neighbors)](
-            std::size_t vertex_index, std::size_t n_neighbors = 1) mutable {
-            return std::invoke(/**/ indexer_k_nearest_neighbors,
-                               /**/ indexer,
-                               /**/ vertex_index,
-                               /**/ n_neighbors);
-        };
-
-    // the indexer's function used to evaluate the edge value (distance) between 2 vertices
-    auto pairwise_distance_lambda =
-        [&indexer, indexer_pairwise_distance = std::forward<DistanceFunction>(indexer_pairwise_distance)](
-            /**/ std::size_t vertex_index1,
-            /**/ std::size_t vertex_index2,
-            /**/ std::size_t k_nearest_neighbors) mutable {
-            return std::invoke(/**/ indexer_pairwise_distance,
-                               /**/ indexer,
-                               /**/ vertex_index1,
-                               /**/ vertex_index2,
-                               /**/ k_nearest_neighbors);
-        };
-
-    common::utils::ignore_parameters(k_nearest_neighbors_lambda, pairwise_distance_lambda, args...);
-
-    using SampleIndexType = std::size_t;
-    using LinkType        = std::pair<SampleIndexType, SampleIndexType>;
-    using ComponentType   = std::vector<LinkType>;
-    using ForestType      = std::vector<ComponentType>;
-    ForestType forest;
-    forest.reserve(indexer.n_samples());
-
-    // the set of each vertex connected to other vertices with their respective distance
-    // the algorithm starts with no edge
-    std::map<SampleIndexType, std::vector<std::pair<SampleIndexType, DataType>>> edges_set;
-
-    // populate the forest with each sample as its own cluster
-    for (std::size_t sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
-        // each initial cluster starts with the first edge containing a vertex linked with itself.
-        // Its distance with itself is obviously zero.
-        forest.emplace_back(ComponentType{LinkType{sample_index, sample_index}});
-    }
-
-    while (forest.size() > 1) {
-        for (std::size_t component_index = 0; component_index < forest.size(); ++component_index) {
-            //
-        }
-    }
-    return edges_set;
 }
 
 }  // namespace ffcl

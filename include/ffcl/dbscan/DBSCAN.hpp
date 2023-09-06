@@ -17,7 +17,7 @@ class DBSCAN {
   public:
     using DataType = typename Indexer::DataType;
     static_assert(std::is_floating_point<DataType>::value, "DBSCAN only allows floating point types.");
-    using LabelType = ssize_t;
+    using LabelType = std::size_t;
 
     struct Options {
         Options() = default;
@@ -89,9 +89,7 @@ class DBSCAN {
                        IndexerFunction&&     indexer_function,
                        Args&&... args) const;
 
-    enum class SampleStatus : LabelType {
-        noise = 0 /*, unknown = 0 */
-    };
+    enum class SampleStatus : LabelType { noise = 0 };
 
     Options options_;
 };

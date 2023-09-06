@@ -256,6 +256,22 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity} {}
 
+    explicit NearestNeighborsBufferWithMemory(const std::vector<IndexType>& visited_indices,
+                                              std::size_t max_capacity = common::utils::infinity<IndexType>())
+      : furthest_buffer_index_{0}
+      , furthest_k_nearest_neighbor_distance_{0}
+      , max_capacity_{max_capacity}
+      , visited_indices_{visited_indices.begin(), visited_indices.end()} {}
+
+    template <typename VisitedIndicesIterator>
+    explicit NearestNeighborsBufferWithMemory(const VisitedIndicesIterator& visited_indices_first,
+                                              const VisitedIndicesIterator& visited_indices_last,
+                                              std::size_t max_capacity = common::utils::infinity<IndexType>())
+      : furthest_buffer_index_{0}
+      , furthest_k_nearest_neighbor_distance_{0}
+      , max_capacity_{max_capacity}
+      , visited_indices_{visited_indices_first, visited_indices_last} {}
+
     explicit NearestNeighborsBufferWithMemory(const std::vector<IndexType>&    init_neighbors_indices,
                                               const std::vector<DistanceType>& init_neighbors_distances,
                                               std::size_t max_capacity = common::utils::infinity<IndexType>())
@@ -274,6 +290,36 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
                 throw std::runtime_error("Indices and distances buffers sizes do not match.");
             }
         }
+    }
+
+    NearestNeighborsBufferWithMemory(const NearestNeighborsBufferWithMemory& other)
+      : indices_{other.indices_}
+      , distances_{other.distances_}
+      , furthest_buffer_index_{other.furthest_buffer_index_}
+      , furthest_k_nearest_neighbor_distance_{other.furthest_k_nearest_neighbor_distance_}
+      , max_capacity_{other.max_capacity_}
+      , visited_indices_{other.visited_indices_} {}
+
+    NearestNeighborsBufferWithMemory(NearestNeighborsBufferWithMemory&& other) noexcept
+      : indices_{std::move(other.indices_)}
+      , distances_{std::move(other.distances_)}
+      , furthest_buffer_index_{std::move(other.furthest_buffer_index_)}
+      , furthest_k_nearest_neighbor_distance_{std::move(other.furthest_k_nearest_neighbor_distance_)}
+      , max_capacity_{std::move(other.max_capacity_)}
+      , visited_indices_{std::move(other.visited_indices_)} {}
+
+    NearestNeighborsBufferWithMemory& operator=(const NearestNeighborsBufferWithMemory& other) {
+        if (this == &other) {
+            return *this;
+        }
+        indices_                              = other.indices_;
+        distances_                            = other.distances_;
+        furthest_buffer_index_                = other.furthest_buffer_index_;
+        furthest_k_nearest_neighbor_distance_ = other.furthest_k_nearest_neighbor_distance_;
+        max_capacity_                         = other.max_capacity_;
+        visited_indices_                      = other.visited_indices_;
+
+        return *this;
     }
 
     std::size_t size() const {

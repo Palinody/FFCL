@@ -223,7 +223,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     */
     timer.print_elapsed_seconds(9);
 
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
@@ -278,7 +278,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
     */
     timer.print_elapsed_seconds(9);
 
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(DBSCANErrorsTest, VariedTest) {
@@ -333,7 +333,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
     */
     timer.print_elapsed_seconds(9);
 
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(DBSCANErrorsTest, AnisoTest) {
@@ -388,7 +388,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
     */
     timer.print_elapsed_seconds(9);
 
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(DBSCANErrorsTest, BlobsTest) {
@@ -443,7 +443,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
     */
     timer.print_elapsed_seconds(9);
 
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(DBSCANErrorsTest, NoStructureTest) {
@@ -498,7 +498,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
     */
     timer.print_elapsed_seconds(9);
 
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
@@ -553,7 +553,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
     */
     timer.print_elapsed_seconds(9);
 
-    write_data<ssize_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 int main(int argc, char** argv) {
