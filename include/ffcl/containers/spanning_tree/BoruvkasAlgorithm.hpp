@@ -69,16 +69,12 @@ class BoruvkasAlgorithm {
             return valid_component_indices_.size();
         }
 
-        const auto& components_indices() const {
+        const auto& valid_component_indices() const {
             return valid_component_indices_;
         }
 
-        auto component_indices_range(const SampleIndexType& component_index) const {
+        auto component_range(const SampleIndexType& component_index) const {
             return std::make_pair(components_[component_index].begin(), components_[component_index].end());
-        }
-
-        auto get_sample_index_component(const SampleIndexType& sample_index) const {
-            return component_labels_[sample_index];
         }
 
         auto minimum_spanning_tree() const {
@@ -98,13 +94,13 @@ class BoruvkasAlgorithm {
             if (component_label_1 == component_label_2) {
                 return;
             }
-            // theres nothing to move if one of the components is empty
+            // theres nothing to merge if one of the components is empty
             if (components_[component_label_1].empty() || components_[component_label_2].empty()) {
                 return;
             }
             // calculate the sizes of the two components
-            std::size_t component_size_1 = components_[component_label_1].size();
-            std::size_t component_size_2 = components_[component_label_2].size();
+            const auto component_size_1 = components_[component_label_1].size();
+            const auto component_size_2 = components_[component_label_2].size();
 
             // select the final component that will merge both components in order to move the least amount of data
             const auto [final_component, discarded_component] =
@@ -171,7 +167,7 @@ class BoruvkasAlgorithm {
         std::vector<ComponentType> components_;
         // the component class/label that can range in [0, n_samples) each sample indices is mapped to
         std::vector<SampleIndexType> component_labels_;
-        // the components_indices that still contain data
+        // the valid_component_indices that still contain data
         std::unordered_set<SampleIndexType> valid_component_indices_;
     };
 
@@ -204,24 +200,23 @@ template <typename Indexer>
 auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
     ComponentsPartition forest(indexer.n_samples());
 
-    // forest.print();
-
     while (forest.n_components() > 1) {
-        std::cout << "forest.n_components(): " << forest.n_components() << "\n";
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
         // same component
         std::map<SampleIndexType, EdgeType> closest_edges;
 
-        for (const auto& component_index : forest.components_indices()) {
+        for (const auto& component_index : forest.valid_component_indices()) {
             // get the iterator to the first element of the current component and the last
-            const auto [component_range_first, component_range_last] = forest.component_indices_range(component_index);
+            const auto [component_range_first, component_range_last] = forest.component_range(component_index);
 
             auto nn_buffer_with_memory =
                 NearestNeighborsBufferWithMemory<typename std::vector<SampleValueType>::iterator>(
                     component_range_first, component_range_last, 1);
 
             // initialize the closest edge from the current comonent to infinity
-            closest_edges[component_index] = EdgeType{0, 0, common::utils::infinity<SampleValueType>()};
+            closest_edges[component_index] = EdgeType{common::utils::infinity<SampleIndexType>(),
+                                                      common::utils::infinity<SampleIndexType>(),
+                                                      common::utils::infinity<SampleValueType>()};
 
             for (auto component_range_it = component_range_first; component_range_it != component_range_last;
                  ++component_range_it) {
@@ -244,9 +239,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
             common::utils::ignore_parameters(component_index);
             forest.merge_components(edge);
         }
-        // forest.print();
     }
-    // forest.print();
     return forest.minimum_spanning_tree();
 }
 

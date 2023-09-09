@@ -103,6 +103,49 @@ class BoruvkasAlgorithmErrorsTest : public ::testing::Test {
         }
     }
 
+    template <typename MinimumSpanningTreeType>
+    void write_minimum_spanning_tree(const MinimumSpanningTreeType& mst, const fs::path& filename) {
+        const auto parent_path = filename.parent_path();
+
+        const std::size_t n_features = 3;
+
+        make_directories(parent_path);
+
+        std::ofstream filestream(filename);
+
+        if (filestream.is_open()) {
+            std::size_t iter{};
+
+            for (const auto& elem : mst) {
+                filestream << elem;
+
+                ++iter;
+
+                if (iter % n_features == 0 && iter != 0) {
+                    filestream << '\n';
+
+                } else {
+                    filestream << ' ';
+                }
+            }
+        }
+    }
+
+    template <typename MinimumSpanningTreeType>
+    void write_mst(const MinimumSpanningTreeType& mst, const fs::path& filename) {
+        std::ofstream filestream(filename);
+
+        if (!filestream.is_open()) {
+            std::cerr << "Error: Failed to open the file for writing." << std::endl;
+            return;
+        }
+        for (const auto& [vertex_1, vertex2, distance] : mst) {
+            // rite the elements to the file separated by spaces
+            filestream << vertex_1 << " " << vertex2 << " " << distance << std::endl;
+        }
+        filestream.close();
+    }
+
     static constexpr std::size_t n_iterations_global = 100;
     static constexpr std::size_t n_centroids_global  = 4;
 
@@ -118,7 +161,6 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
-// /*
 TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
@@ -163,54 +205,44 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+
     timer.print_elapsed_seconds(9);
 }
-// */
 
-template <typename Type>
-void print_data(const std::vector<Type>& data, std::size_t n_features) {
-    const std::size_t n_samples = data.size() / n_features;
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            std::cout << data[sample_index * n_features + feature_index] << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
-#include <cstddef>  // For size_t
-#include <iomanip>  // For setw and fixed
-#include <iostream>
-
-template <typename Matrix>
-void print_matrix(const Matrix& matrix) {
-    static constexpr std::size_t integral_cout_width = 3;
-    static constexpr std::size_t decimal_cout_width  = 3;
-
-    for (std::size_t sample_index = 0; sample_index < matrix.n_samples(); ++sample_index) {
-        for (std::size_t other_sample_index = 0; other_sample_index < matrix.n_samples(); ++other_sample_index) {
-            // Set the output format
-            std::cout << std::setw(integral_cout_width + decimal_cout_width + 1) << std::fixed
-                      << std::setprecision(decimal_cout_width) << matrix(sample_index, other_sample_index) << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
-/*
-TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = std::vector<float>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
-    const std::size_t n_features = 2;
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
-    auto              distance_matrix = ffcl::containers::LowerTriangleMatrix(data.begin(), data.end(), n_features);
+    fs::path filename = "noisy_moons.txt";
 
-    print_data(data, n_features);
-    std::cout << "---\n";
-    print_matrix(distance_matrix);
-    std::cout << "---\n";
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
@@ -218,15 +250,304 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
 
     timer.reset();
 
-    const auto minimum_spanning_tree =
-        boruvkas_algorithm.make_tree(indexer,
-                                     &IndexerType::buffered_k_nearest_neighbors_around_query_index,
-                                     &IndexerType::k_mutual_reachability_distance,
-                                     3);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 
     timer.print_elapsed_seconds(9);
 }
-*/
+
+TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(3));
+
+    timer.reset();
+
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+
+    timer.print_elapsed_seconds(9);
+}
+
+TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "aniso.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(3));
+
+    timer.reset();
+
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+
+    timer.print_elapsed_seconds(9);
+}
+
+TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "blobs.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(3));
+
+    timer.reset();
+
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+
+    timer.print_elapsed_seconds(9);
+}
+
+TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "no_structure.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(3));
+
+    timer.reset();
+
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+
+    timer.print_elapsed_seconds(9);
+}
+
+TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "unbalanced_blobs.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(3));
+
+    timer.reset();
+
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+
+    timer.print_elapsed_seconds(9);
+}
+
+TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    auto              data       = std::vector<float>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
+    const std::size_t n_features = 2;
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(3));
+
+    timer.reset();
+
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    timer.print_elapsed_seconds(9);
+}
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

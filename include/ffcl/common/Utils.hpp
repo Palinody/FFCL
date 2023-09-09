@@ -5,10 +5,13 @@
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
 #include <cassert>
+#include <cstddef>  // std::size_t
 #include <limits>
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
+
+#include <iostream>
 
 namespace common::utils {
 
@@ -109,7 +112,6 @@ bool are_containers_equal(
                 return false;
             }
         } else {
-            // Unsupported type
             static_assert(std::is_integral_v<InputType> || std::is_floating_point_v<InputType>, "Unsupported type");
         }
         ++first1;
@@ -274,6 +276,18 @@ std::vector<DataType> generate_values(const DataType& value_first, const DataTyp
     // construct the range
     std::iota(elements.begin(), elements.end(), value_first);
     return elements;
+}
+
+template <typename Type>
+void print_flattened_vector_as_matrix(const std::vector<Type>& data, std::size_t n_features) {
+    const std::size_t n_samples = data.size() / n_features;
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            std::cout << data[sample_index * n_features + feature_index] << " ";
+        }
+        std::cout << "\n";
+    }
 }
 
 }  // namespace common::utils

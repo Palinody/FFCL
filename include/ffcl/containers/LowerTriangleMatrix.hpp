@@ -6,6 +6,10 @@
 #include <stdexcept>
 #include <vector>
 
+#include <cstddef>  // std::size_t
+#include <iomanip>  // std::setw, std::fixed
+#include <iostream>
+
 #if defined(_OPENMP) && THREADS_ENABLED == true
 #include <omp.h>
 #endif
@@ -157,6 +161,21 @@ typename LowerTriangleMatrixDynamic<Iterator>::ValueType LowerTriangleMatrixDyna
 template <typename Iterator>
 std::size_t LowerTriangleMatrixDynamic<Iterator>::n_samples() const {
     return common::utils::get_n_samples(samples_first_, samples_last_, n_features_);
+}
+
+template <typename Matrix>
+void print_matrix(const Matrix& matrix) {
+    static constexpr std::size_t integral_cout_width = 3;
+    static constexpr std::size_t decimal_cout_width  = 3;
+
+    for (std::size_t sample_index = 0; sample_index < matrix.n_samples(); ++sample_index) {
+        for (std::size_t other_sample_index = 0; other_sample_index < matrix.n_samples(); ++other_sample_index) {
+            // Set the output format
+            std::cout << std::setw(integral_cout_width + decimal_cout_width + 1) << std::fixed
+                      << std::setprecision(decimal_cout_width) << matrix(sample_index, other_sample_index) << " ";
+        }
+        std::cout << "\n";
+    }
 }
 
 }  // namespace ffcl::containers
