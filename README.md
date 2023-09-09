@@ -24,7 +24,7 @@ It'll stay that way for now for practicality.
 
 - **Last features**
   - DBSCAN
-  - Minimum Spanning Tree (MST) with Boruvka's algorithm: issue found during what appears to be the last iteration. The components don't seem to link with the vertices that are the closest to each other.
+  - Minimum Spanning Tree (MST) with Boruvka's algorithm: issue found during what appears to be the last iteration. The components don't seem to link with the vertices that are the closest to each other. **Fixed**: corrected by disabling `visited_indices_.insert(index_candidate);` in the update function of `NearestNeighborsBufferWithMemory` class that was used. The algorithm is now even faster than before (~10%).
 
 ## Current features
 
