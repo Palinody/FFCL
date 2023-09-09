@@ -22,8 +22,9 @@ It'll stay that way for now for practicality.
   - OPTICS
   - DENCLUE
 
-- **New features**
+- **Last features**
   - DBSCAN
+  - Minimum Spanning Tree (MST) with Boruvka's algorithm: issue found during what appears to be the last iteration. The components don't seem to link with the vertices that are the closest to each other.
 
 ## Current features
 
