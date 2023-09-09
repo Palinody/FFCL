@@ -170,42 +170,44 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
 }
 */
 
-using SampleIndexType = std::size_t;
-using SampleValueType = float;
-using EdgeType        = std::tuple<SampleIndexType, SampleIndexType, SampleValueType>;
+using SampleIndexType         = std::size_t;
+using SampleValueType         = float;
+using ComponentType           = std::vector<SampleIndexType>;
+using EdgeType                = std::tuple<SampleIndexType, SampleIndexType, SampleValueType>;
+using MinimumSpanningTreeType = std::vector<EdgeType>;
 
-class ForestPartition {
+class ComponentsPartition {
   public:
-    ForestPartition(std::size_t n_samples)
+    ComponentsPartition(std::size_t n_samples)
       : n_samples_{n_samples}
-      , component_labels_{std::vector<SampleIndexType>(n_samples)}
-      , sample_indices_{std::vector<SampleIndexType>(n_samples)}
-      , component_sizes_{std::vector<SampleIndexType>(n_samples, 1)}
-      , component_offsets_{std::vector<SampleIndexType>(n_samples, 0)}
-      , sorting_state_{true} {
+      , minimum_spanning_tree_{}
+      , components_{std::vector<std::vector<SampleIndexType>>(n_samples)}
+      , component_labels_{std::vector<SampleIndexType>(n_samples)} {
+        minimum_spanning_tree_.reserve(n_samples_ - 1);
+
+        SampleIndexType sample_index = 0;
+        for (auto& component : components_) {
+            component = std::vector<SampleIndexType>(1, sample_index++);
+        }
         std::iota(component_labels_.begin(), component_labels_.end(), static_cast<SampleIndexType>(0));
 
-        std::iota(sample_indices_.begin(), sample_indices_.end(), static_cast<SampleIndexType>(0));
-
-        update_component_offsets();
+        valid_component_indices_ = std::unordered_set(component_labels_.begin(), component_labels_.end());
     }
 
-    std::size_t n_elements() const {
+    auto n_elements() const {
         return n_samples_;
     }
 
-    SampleIndexType n_components() const {
-        return component_sizes_.size();
+    auto n_components() const {
+        return valid_component_indices_.size();
     }
 
-    auto component_sizes() const {
-        return component_sizes_;
+    const auto& components_indices() const {
+        return valid_component_indices_;
     }
 
     auto component_indices_range(const SampleIndexType& component_index) const {
-        return std::make_pair(
-            sample_indices_.begin() + component_offsets_[component_index],
-            sample_indices_.begin() + component_offsets_[component_index] + component_sizes_[component_index]);
+        return std::make_pair(components_[component_index].begin(), components_[component_index].end());
     }
 
     auto get_sample_index_component(const SampleIndexType& sample_index) const {
@@ -213,61 +215,46 @@ class ForestPartition {
     }
 
     void merge_components(const EdgeType& edge) {
+        // get the indices of the samples that form an edge
         const auto sample_index_1 = std::get<0>(edge);
         const auto sample_index_2 = std::get<1>(edge);
-        const auto component_1    = component_labels_[sample_index_1];
-        const auto component_2    = component_labels_[sample_index_2];
 
-        if (component_1 == component_2) {
+        // get which components they belong to
+        const auto component_label_1 = component_labels_[sample_index_1];
+        const auto component_label_2 = component_labels_[sample_index_2];
+
+        // return if both samples belong to the same component
+        if (component_label_1 == component_label_2) {
             return;
         }
-        // range of labels from the first component
-        const auto component_range_1_first = component_labels_.begin() + component_offsets_[component_1];
-        const auto component_range_1_last =
-            component_labels_.begin() + component_offsets_[component_1] + component_sizes_[component_1];
-        // range of labels from the second component
-        const auto component_range_2_first = component_labels_.begin() + component_offsets_[component_2];
-        const auto component_range_2_last =
-            component_labels_.begin() + component_offsets_[component_2] + component_sizes_[component_2];
-
-        const auto component_1_size = std::distance(component_range_1_first, component_range_1_last);
-        const auto component_2_size = std::distance(component_range_2_first, component_range_2_last);
-
-        // the final component label that will unite the parent components
-        const auto new_component = (component_1_size > component_2_size) ? component_1 : component_2;
-        // update the labels of the shortest component with the label of the longest one
-        // then decrement the size of the component that havent been chosen
-        // and increment the size of the component that has been chosent accordingly
-        if (new_component == component_1) {
-            std::fill(component_range_2_first, component_range_2_last, new_component);
-            component_sizes_[component_2] -= component_2_size;
-            component_sizes_[component_1] += component_1_size;
+        // theres nothing to move if one of the components is empty
+        if (components_[component_label_1].empty() || components_[component_label_2].empty()) {
+            return;
         }
-        if (new_component == component_2) {
-            std::fill(component_range_1_first, component_range_1_last, new_component);
-            component_sizes_[component_1] -= component_1_size;
-            component_sizes_[component_2] += component_2_size;
-        }
+        // calculate the sizes of the two components
+        std::size_t component_size_1 = components_[component_label_1].size();
+        std::size_t component_size_2 = components_[component_label_2].size();
 
-        // update();
-    }
-    /*
-    void update_sample_index_to_component_label(const SampleIndexType& sample_index,
-                                                const SampleIndexType& new_component_label) {
-        // decrement the number of samples in the previous component that sample_index was mapped with
-        --component_sizes_[component_labels_[sample_index]];
-        // remap the sample index to the new component label
-        component_labels_[sample_index] = new_component_label;
-        // increment the number of samples in the new component that sample_index is now mapped with
-        ++component_sizes_[component_labels_[sample_index]];
-        // sorting_state is now wrong
-        sorting_state_ = false;
-    }
-    */
+        // select the final component that will merge both components in order to move the least amount of data
+        const auto [final_component, discarded_component] = (component_size_1 > component_size_2)
+                                                                ? std::make_pair(component_label_1, component_label_2)
+                                                                : std::make_pair(component_label_2, component_label_1);
 
-    void update() {
-        group_sample_indices_by_component();
-        update_components();
+        components_[final_component].insert(components_[final_component].end(),
+                                            std::make_move_iterator(components_[discarded_component].begin()),
+                                            std::make_move_iterator(components_[discarded_component].end()));
+
+        // update the label of each moved sample index
+        assign_sample_index_to_component(discarded_component, final_component);
+
+        // now that the old component has been merged with the final one, clear it
+        components_[discarded_component].clear();
+
+        // remove the cleared component from the valid components buffer
+        valid_component_indices_.erase(discarded_component);
+
+        // update the minimum spanning tree
+        minimum_spanning_tree_.emplace_back(edge);
     }
 
     void print() const {
@@ -277,80 +264,42 @@ class ForestPartition {
         }
         std::cout << "\n";
 
-        std::cout << "sample_index:\n";
-        for (const auto& sample_index : sample_indices_) {
-            std::cout << sample_index << ", ";
+        std::cout << "components:\n";
+        for (std::size_t component_index = 0; component_index < components_.size(); ++component_index) {
+            std::cout << component_index << ": ";
+
+            for (const auto& sample_index : components_[component_index]) {
+                std::cout << sample_index << ", ";
+            }
+            std::cout << "\n";
         }
         std::cout << "\n";
 
-        std::cout << "component_size:\n";
-        for (const auto& component_size : component_sizes_) {
-            std::cout << component_size << ", ";
-        }
-        std::cout << "\n";
-
-        std::cout << "component_offset:\n";
-        for (const auto& component_offset : component_offsets_) {
-            std::cout << component_offset << ", ";
+        std::cout << "Minimum Spanning Tree (MST):\n";
+        for (const auto& edge : minimum_spanning_tree_) {
+            std::cout << "(" << std::get<0>(edge) << ", " << std::get<1>(edge) << ", " << std::get<2>(edge) << "), \n";
         }
         std::cout << "\n";
     }
 
   private:
-    void group_sample_indices_by_component() {
-        std::vector<SampleIndexType> indices(n_samples_);
-        std::iota(indices.begin(), indices.end(), static_cast<SampleIndexType>(0));
-
-        auto comparator = [this](const auto& index_1, const auto& index_2) {
-            return component_labels_[index_1] < component_labels_[index_2];
-        };
-
-        std::sort(indices.begin(), indices.end(), comparator);
-
-        auto sorted_component_labels = std::vector<SampleIndexType>(n_samples_);
-        auto sorted_sample_indices   = std::vector<SampleIndexType>(n_samples_);
-
-        for (std::size_t index = 0; index < n_samples_; ++index) {
-            sorted_component_labels[index] = component_labels_[indices[index]];
-            sorted_sample_indices[index]   = sample_indices_[indices[index]];
+    void assign_sample_index_to_component(const SampleIndexType& prev_component, const SampleIndexType& new_component) {
+        // iterate over the component that contains the sample indices that should be updated
+        for (const auto& sample_index : components_[prev_component]) {
+            // update the corresponding label with the new one
+            component_labels_[sample_index] = new_component;
         }
-
-        component_labels_ = std::move(sorted_component_labels);
-        sample_indices_   = std::move(sorted_sample_indices);
-    }
-
-    void prune_component_sizes() {
-        component_sizes_.erase(std::remove_if(component_sizes_.begin(),
-                                              component_sizes_.end(),
-                                              [](const auto& component_size) { return !component_size; }),
-                               component_sizes_.end());
-    }
-
-    void update_component_offsets() {
-        if (component_offsets_.size() != component_sizes_.size()) {
-            // reset the vector to a default vector with the new number of elements
-            component_offsets_ = decltype(component_offsets_)(component_sizes_.size());
-        }
-        // recompute the offsets
-        std::exclusive_scan(component_sizes_.begin(), component_sizes_.end(), component_offsets_.begin(), 0);
-    }
-
-    void update_components() {
-        // prune_component_sizes();
-        update_component_offsets();
     }
 
     std::size_t n_samples_;
-    // the component class/label that can range in [0, n_samples) that partitions the sample indices
+    // the container that accumulates the edges for the minimum spanning tree
+    MinimumSpanningTreeType minimum_spanning_tree_;
+    // the vector containing each components, represented as vectors of indices
+    std::vector<ComponentType> components_;
+    // the component class/label that can range in [0, n_samples) each sample indices is mapped to
     std::vector<SampleIndexType> component_labels_;
-    // the sample indices that will be rearranged based on the component labels order
-    std::vector<SampleIndexType> sample_indices_;
-    // the component size for each label that can range in [0, n_samples)
-    std::vector<SampleIndexType> component_sizes_;
-    // the cumulated sum of the components sizes to retrieve the beginning of each sequence of component
-    std::vector<SampleIndexType> component_offsets_;
-    // whether the sample indices are sorted w.r.t. the sorted component indices
-    bool sorting_state_;
+    // the components_indices that still contain data
+    std::unordered_set<SampleIndexType> valid_component_indices_;
 };
 
 template <typename Type>
@@ -402,20 +351,23 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
 
     timer.reset();
 
-    ForestPartition forest(indices.size());
+    ComponentsPartition forest(indices.size());
 
     forest.print();
 
-    {
-        const auto components_sizes = forest.component_sizes();
-
+    while (forest.n_components() > 1) {
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
         // same component
-        auto closest_edges = std::vector<EdgeType>(forest.n_components());
+        std::map<SampleIndexType, EdgeType> closest_edges;
 
-        for (SampleIndexType component_index = 0; component_index < forest.n_components(); ++component_index) {
+        for (const auto& component_index : forest.components_indices()) {
             // get the iterator to the first element of the current component and the last
             const auto [component_range_first, component_range_last] = forest.component_indices_range(component_index);
+
+            if (std::distance(component_range_first, component_range_last) == 0) {
+                std::cout << "Component " << component_index << " is empty\n";
+                continue;
+            }
 
             std::cout << "Component " << component_index << "\nIndices: ";
             print_data(std::vector<SampleIndexType>(component_range_first, component_range_last), 1);
@@ -455,11 +407,12 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
         // merge components
         std::cout << "---\n\n";
 
-        for (const auto& edge : closest_edges) {
+        for (const auto& [component_index, edge] : closest_edges) {
+            common::utils::ignore_parameters(component_index);
             forest.merge_components(edge);
         }
+        forest.print();
     }
-    forest.print();
 
     timer.print_elapsed_seconds(9);
 }
