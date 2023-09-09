@@ -203,7 +203,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
     while (forest.n_components() > 1) {
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
         // same component
-        std::map<SampleIndexType, EdgeType> closest_edges;
+        auto closest_edges = std::map<SampleIndexType, EdgeType>();
 
         for (const auto& component_index : forest.valid_component_indices()) {
             // get the iterator to the first element of the current component and the last

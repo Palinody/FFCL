@@ -381,7 +381,7 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
                     math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
             }
             // add the candidate to the set of visited indices
-            visited_indices_.insert(index_candidate);
+            // visited_indices_.insert(index_candidate);
         }
     }
 
