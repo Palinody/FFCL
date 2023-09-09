@@ -326,16 +326,16 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
         return indices_.size();
     }
 
-    bool empty() const {
-        return indices_.empty();
-    }
-
     IndexType furthest_k_nearest_neighbor_index() const {
         return indices_[furthest_buffer_index_];
     }
 
     DistanceType furthest_k_nearest_neighbor_distance() const {
         return furthest_k_nearest_neighbor_distance_;
+    }
+
+    bool empty() const {
+        return indices_.empty();
     }
 
     IndicesType indices() const {
