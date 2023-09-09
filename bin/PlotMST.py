@@ -29,6 +29,16 @@ def plot_mst(dataset, mst):
         # Assign color based on distance
         color = cmap(norm(distance))
         ax.plot([sample_1[0], sample_2[0]], [sample_1[1], sample_2[1]], color=color)
+    
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])  # We don't need data for the colorbar
+    cbar = plt.colorbar(sm, label='Edge Distance')
+    # Add labels and a legend
+    ax.set_xlabel('X-axis')
+    ax.set_ylabel('Y-axis')
+    ax.set_title('Minimum Spanning Tree with Edge Distance Gradient')
+    ax.legend()
+    plt.show()
 
 
 for dataset_name in (
@@ -46,5 +56,3 @@ for dataset_name in (
                                  n_features=3)
     
     plot_mst(dataset=data, mst=predictions)
-
-    plt.show()
