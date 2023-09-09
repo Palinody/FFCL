@@ -171,6 +171,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
 */
 
 using SampleIndexType = std::size_t;
+using SampleValueType = float;
+using EdgeType        = std::tuple<SampleIndexType, SampleIndexType, SampleValueType>;
 
 class ForestPartition {
   public:
@@ -206,6 +208,50 @@ class ForestPartition {
             sample_indices_.begin() + component_offsets_[component_index] + component_sizes_[component_index]);
     }
 
+    auto get_sample_index_component(const SampleIndexType& sample_index) const {
+        return component_labels_[sample_index];
+    }
+
+    void merge_components(const EdgeType& edge) {
+        const auto sample_index_1 = std::get<0>(edge);
+        const auto sample_index_2 = std::get<1>(edge);
+        const auto component_1    = component_labels_[sample_index_1];
+        const auto component_2    = component_labels_[sample_index_2];
+
+        if (component_1 == component_2) {
+            return;
+        }
+        // range of labels from the first component
+        const auto component_range_1_first = component_labels_.begin() + component_offsets_[component_1];
+        const auto component_range_1_last =
+            component_labels_.begin() + component_offsets_[component_1] + component_sizes_[component_1];
+        // range of labels from the second component
+        const auto component_range_2_first = component_labels_.begin() + component_offsets_[component_2];
+        const auto component_range_2_last =
+            component_labels_.begin() + component_offsets_[component_2] + component_sizes_[component_2];
+
+        const auto component_1_size = std::distance(component_range_1_first, component_range_1_last);
+        const auto component_2_size = std::distance(component_range_2_first, component_range_2_last);
+
+        // the final component label that will unite the parent components
+        const auto new_component = (component_1_size > component_2_size) ? component_1 : component_2;
+        // update the labels of the shortest component with the label of the longest one
+        // then decrement the size of the component that havent been chosen
+        // and increment the size of the component that has been chosent accordingly
+        if (new_component == component_1) {
+            std::fill(component_range_2_first, component_range_2_last, new_component);
+            component_sizes_[component_2] -= component_2_size;
+            component_sizes_[component_1] += component_1_size;
+        }
+        if (new_component == component_2) {
+            std::fill(component_range_1_first, component_range_1_last, new_component);
+            component_sizes_[component_1] -= component_1_size;
+            component_sizes_[component_2] += component_2_size;
+        }
+
+        // update();
+    }
+    /*
     void update_sample_index_to_component_label(const SampleIndexType& sample_index,
                                                 const SampleIndexType& new_component_label) {
         // decrement the number of samples in the previous component that sample_index was mapped with
@@ -217,6 +263,7 @@ class ForestPartition {
         // sorting_state is now wrong
         sorting_state_ = false;
     }
+    */
 
     void update() {
         group_sample_indices_by_component();
@@ -289,7 +336,7 @@ class ForestPartition {
     }
 
     void update_components() {
-        prune_component_sizes();
+        // prune_component_sizes();
         update_component_offsets();
     }
 
@@ -340,11 +387,9 @@ void print_matrix(const Matrix& matrix) {
 TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    using SampleValueType = float;
-
-    auto              data       = std::vector<SampleValueType>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2});
-    const std::size_t n_features = 2;
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    auto data = std::vector<SampleValueType>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
+    const std::size_t n_features      = 2;
+    const std::size_t n_samples       = common::utils::get_n_samples(data.begin(), data.end(), n_features);
     auto              distance_matrix = ffcl::containers::LowerTriangleMatrix(data.begin(), data.end(), n_features);
 
     auto nearest_neirbors_index_map = std::vector<SampleIndexType>({});
@@ -364,38 +409,58 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
     {
         const auto components_sizes = forest.component_sizes();
 
+        // keep track of the shortest edge from a component's sample index to a sample index thats not within the
+        // same component
+        auto closest_edges = std::vector<EdgeType>(forest.n_components());
+
         for (SampleIndexType component_index = 0; component_index < forest.n_components(); ++component_index) {
             // get the iterator to the first element of the current component and the last
-            const auto [component_index_sequence_first, component_index_sequence_last] =
-                forest.component_indices_range(component_index);
+            const auto [component_range_first, component_range_last] = forest.component_indices_range(component_index);
 
-            std::cout << "Component " << component_index << "\n";
-            print_data(std::vector<SampleIndexType>(component_index_sequence_first, component_index_sequence_last), 1);
+            std::cout << "Component " << component_index << "\nIndices: ";
+            print_data(std::vector<SampleIndexType>(component_range_first, component_range_last), 1);
 
             auto nn_buffer_with_memory =
                 NearestNeighborsBufferWithMemory<typename std::vector<SampleValueType>::iterator>(
-                    component_index_sequence_first, component_index_sequence_last, 1);
+                    component_range_first, component_range_last, 1);
 
-            for (auto in_component_sample_index_it = component_index_sequence_first;
-                 in_component_sample_index_it != component_index_sequence_last;
-                 ++in_component_sample_index_it) {
+            // initialize the closest edge from the current comonent to infinity
+            closest_edges[component_index] = EdgeType{0, 0, common::utils::infinity<SampleValueType>()};
+
+            for (auto component_range_it = component_range_first; component_range_it != component_range_last;
+                 ++component_range_it) {
                 math::heuristics::k_nearest_neighbors_range(data.begin(),
                                                             data.end(),
                                                             data.begin(),
                                                             data.end(),
                                                             n_features,
-                                                            *in_component_sample_index_it,
+                                                            *component_range_it,
                                                             nn_buffer_with_memory);
 
                 const auto nearest_neighbor_index    = nn_buffer_with_memory.furthest_k_nearest_neighbor_index();
                 const auto nearest_neighbor_distance = nn_buffer_with_memory.furthest_k_nearest_neighbor_distance();
 
-                std::cout << "query: " << *in_component_sample_index_it << ", nn_index: " << nearest_neighbor_index
+                if (nearest_neighbor_distance < std::get<2>(closest_edges[component_index])) {
+                    closest_edges[component_index] =
+                        EdgeType{*component_range_it, nearest_neighbor_index, nearest_neighbor_distance};
+                }
+
+                std::cout << "query: " << *component_range_it << ", nn_index: " << nearest_neighbor_index
                           << ", nn_distance: " << nearest_neighbor_distance << "\n";
+                std::cout << "from component: " << forest.get_sample_index_component(*component_range_it)
+                          << " to component: " << forest.get_sample_index_component(nearest_neighbor_index) << "\n";
             }
+            std::cout << "\n";
         }
         // merge components
+        std::cout << "---\n\n";
+
+        for (const auto& edge : closest_edges) {
+            forest.merge_components(edge);
+        }
     }
+    forest.print();
+
     timer.print_elapsed_seconds(9);
 }
 
