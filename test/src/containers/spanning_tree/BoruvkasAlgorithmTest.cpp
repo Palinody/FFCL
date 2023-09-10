@@ -205,9 +205,9 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-
     timer.print_elapsed_seconds(9);
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
@@ -254,9 +254,9 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-
     timer.print_elapsed_seconds(9);
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
@@ -303,9 +303,9 @@ TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-
     timer.print_elapsed_seconds(9);
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
@@ -352,9 +352,9 @@ TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-
     timer.print_elapsed_seconds(9);
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
@@ -401,9 +401,9 @@ TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-
     timer.print_elapsed_seconds(9);
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
@@ -450,9 +450,9 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-
     timer.print_elapsed_seconds(9);
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
@@ -499,9 +499,9 @@ TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-
     timer.print_elapsed_seconds(9);
+
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
 TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
