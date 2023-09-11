@@ -230,6 +230,8 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
             for (const auto& sample_index : component) {
                 indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer_with_memory);
 
+                // the nearest neighbor buffer with memory might not find any nearest neighbor if all the candidates are
+                // already within the same component
                 if (!nn_buffer_with_memory.empty()) {
                     const auto nearest_neighbor_index    = nn_buffer_with_memory.furthest_k_nearest_neighbor_index();
                     const auto nearest_neighbor_distance = nn_buffer_with_memory.furthest_k_nearest_neighbor_distance();

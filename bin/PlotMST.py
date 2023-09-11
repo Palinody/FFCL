@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch
 import MakeClusteringDatasets
 from py_helpers import IO
 
@@ -28,7 +29,10 @@ def plot_mst(dataset, mst):
         distance = mst_distances[index]
         # Assign color based on distance
         color = cmap(norm(distance))
-        ax.plot([sample_1[0], sample_2[0]], [sample_1[1], sample_2[1]], color=color)
+        # ax.plot([sample_1[0], sample_2[0]], [sample_1[1], sample_2[1]], color=color)
+        arrowprops = dict(arrowstyle='-|>', mutation_scale=10, color=color)
+        arrow = FancyArrowPatch(sample_1, sample_2, **arrowprops)
+        ax.add_patch(arrow)
     
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])  # We don't need data for the colorbar
