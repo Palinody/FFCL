@@ -121,9 +121,13 @@ class KDTreeIndexed {
 
     // existing samples
 
-    auto k_mutual_reachability_distance(std::size_t query_index1,
-                                        std::size_t query_index2,
+    auto k_mutual_reachability_distance(std::size_t query_index_1,
+                                        std::size_t query_index_2,
                                         std::size_t k_nearest_neighbors) const;
+
+    auto buffered_k_mutual_reachability_distance(std::size_t                        query_index_1,
+                                                 std::size_t                        query_index_2,
+                                                 const std::shared_ptr<DataType[]>& core_distances) const;
     // (1)
     auto nearest_neighbor_around_query_index(std::size_t query_index) const;
 
@@ -553,22 +557,41 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator index_fir
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTreeIndexed<IndicesIterator, SamplesIterator>::k_mutual_reachability_distance(
-    std::size_t query_index1,
-    std::size_t query_index2,
+    std::size_t query_index_1,
+    std::size_t query_index_2,
     std::size_t k_nearest_neighbors) const {
-    if (query_index1 != query_index2) {
-        const auto nn_buffer1 = this->k_nearest_neighbors_around_query_index(query_index1, k_nearest_neighbors);
-        const auto furthest_nn_distance1 = nn_buffer1.furthest_k_nearest_neighbor_distance();
+    if (query_index_1 != query_index_2) {
+        const auto furthest_nn_distance_1 =
+            this->k_nearest_neighbors_around_query_index(query_index_1, k_nearest_neighbors)
+                .furthest_k_nearest_neighbor_distance();
 
-        const auto nn_buffer2 = this->k_nearest_neighbors_around_query_index(query_index2, k_nearest_neighbors);
-        const auto furthest_nn_distance2 = nn_buffer2.furthest_k_nearest_neighbor_distance();
+        const auto furthest_nn_distance_2 =
+            this->k_nearest_neighbors_around_query_index(query_index_2, k_nearest_neighbors)
+                .furthest_k_nearest_neighbor_distance();
 
         const auto queries_distance =
-            math::heuristics::auto_distance(samples_first_ + query_index1 * n_features_,
-                                            samples_first_ + query_index1 * n_features_ + n_features_,
-                                            samples_first_ + query_index2 * n_features_);
+            math::heuristics::auto_distance(samples_first_ + query_index_1 * n_features_,
+                                            samples_first_ + query_index_1 * n_features_ + n_features_,
+                                            samples_first_ + query_index_2 * n_features_);
 
-        return std::max({furthest_nn_distance1, furthest_nn_distance2, queries_distance});
+        return std::max({furthest_nn_distance_1, furthest_nn_distance_2, queries_distance});
+    } else {
+        return static_cast<DataType>(0);
+    }
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+auto KDTreeIndexed<IndicesIterator, SamplesIterator>::buffered_k_mutual_reachability_distance(
+    std::size_t                        query_index_1,
+    std::size_t                        query_index_2,
+    const std::shared_ptr<DataType[]>& core_distances) const {
+    if (query_index_1 != query_index_2) {
+        const auto queries_distance =
+            math::heuristics::auto_distance(samples_first_ + query_index_1 * n_features_,
+                                            samples_first_ + query_index_1 * n_features_ + n_features_,
+                                            samples_first_ + query_index_2 * n_features_);
+
+        return std::max({core_distances[query_index_1], core_distances[query_index_2], queries_distance});
     } else {
         return static_cast<DataType>(0);
     }

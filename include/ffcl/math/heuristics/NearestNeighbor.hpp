@@ -358,6 +358,22 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
         return std::make_tuple(std::move(indices_), std::move(distances_));
     }
 
+    auto closest_neighbor_index_distance_pair() {
+        const auto [closest_buffer_index, closest_nearest_neighbor_distance] =
+            math::statistics::get_min_index_value_pair(distances_.begin(), distances_.end());
+
+        return std::make_pair(indices_[closest_buffer_index], closest_nearest_neighbor_distance);
+    }
+
+    void reset_buffers_except_memory() {
+        // reset all the buffers to default values
+        // max_capacity_ and visited_indices_ remain unchanged
+        indices_.clear();
+        distances_.clear();
+        furthest_buffer_index_                = 0;
+        furthest_k_nearest_neighbor_distance_ = 0;
+    }
+
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the index hasnt been visited
         if (visited_indices_.find(index_candidate) == visited_indices_.end()) {

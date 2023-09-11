@@ -19,7 +19,7 @@ def plot_mst(dataset, mst):
 
     fig, ax = plt.subplots()
 
-    ax.scatter(dataset[:, 0], dataset[:, 1], color='blue', label='Dataset Points')
+    ax.scatter(dataset[:, 0], dataset[:, 1], color='black', alpha=0.4, label='Dataset Points')
 
     # Plot the MST edges with color gradient based on distances
     for index, edge in enumerate(mst_data):
@@ -30,7 +30,7 @@ def plot_mst(dataset, mst):
         # Assign color based on distance
         color = cmap(norm(distance))
         # ax.plot([sample_1[0], sample_2[0]], [sample_1[1], sample_2[1]], color=color)
-        arrowprops = dict(arrowstyle='-|>', mutation_scale=10, color=color)
+        arrowprops = dict(arrowstyle='<|-|>', mutation_scale=20, color=color, shrinkA=0)
         arrow = FancyArrowPatch(sample_1, sample_2, **arrowprops)
         ax.add_patch(arrow)
     

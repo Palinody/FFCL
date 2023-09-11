@@ -195,6 +195,8 @@ class BoruvkasAlgorithm {
     auto make_tree(const Indexer& indexer) const;
 
   private:
+    auto make_core_distances(const Indexer& indexer, std::size_t k_nearest_neighbors) const;
+
     Options options_;
 };
 
@@ -209,8 +211,25 @@ BoruvkasAlgorithm<Indexer>& BoruvkasAlgorithm<Indexer>::set_options(const Option
 }
 
 template <typename Indexer>
+auto BoruvkasAlgorithm<Indexer>::make_core_distances(const Indexer& indexer, std::size_t k_nearest_neighbors) const {
+    auto core_distances = std::make_unique<SampleValueType[]>(indexer.n_samples());
+
+    for (SampleIndexType sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
+        core_distances[sample_index] = indexer.k_nearest_neighbors_around_query_index(sample_index, k_nearest_neighbors)
+                                           .furthest_k_nearest_neighbor_distance();
+    }
+    return core_distances;
+}
+
+template <typename Indexer>
 auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
     Forest forest(indexer.n_samples());
+
+    const bool compute_k_nearest_reachability_distance = options_.k_nearest_neighbors_ > 1;
+
+    // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
+    const auto core_distances =
+        compute_k_nearest_reachability_distance ? make_core_distances(indexer, options_.k_nearest_neighbors_) : nullptr;
 
     while (forest.n_components() > 1) {
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
@@ -230,16 +249,25 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
             for (const auto& sample_index : component) {
                 indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer_with_memory);
 
-                // the nearest neighbor buffer with memory might not find any nearest neighbor if all the candidates are
-                // already within the same component
+                // the nearest neighbor buffer with memory might not find any nearest neighbor if all the candidates
+                // are already within the same component
                 if (!nn_buffer_with_memory.empty()) {
+                    // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
                     const auto nearest_neighbor_index    = nn_buffer_with_memory.furthest_k_nearest_neighbor_index();
                     const auto nearest_neighbor_distance = nn_buffer_with_memory.furthest_k_nearest_neighbor_distance();
 
-                    if (nearest_neighbor_distance < std::get<2>(closest_edges[component_index])) {
-                        closest_edges[component_index] =
-                            EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
+                    const auto distance =
+                        compute_k_nearest_reachability_distance
+                            ? std::max(std::max(core_distances[sample_index], core_distances[nearest_neighbor_index]),
+                                       nearest_neighbor_distance)
+                            : nearest_neighbor_distance;
+
+                    if (distance < std::get<2>(closest_edges[component_index])) {
+                        closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
                     }
+                }
+                if (compute_k_nearest_reachability_distance) {
+                    nn_buffer_with_memory.reset_buffers_except_memory();
                 }
             }
         }
