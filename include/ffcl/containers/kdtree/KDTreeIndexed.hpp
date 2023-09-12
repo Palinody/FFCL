@@ -439,14 +439,18 @@ class KDTreeIndexed {
                                                                NearestNeighborsBufferType& nearest_neighbors_buffer,
                                                                KDNodeIndexViewPtr          kdnode) const;
 
+    // Iterator pointing to the first element of the dataset.
     SamplesIterator samples_first_;
+    // Iterator pointing to the last element of the dataset.
     SamplesIterator samples_last_;
-    std::size_t     n_features_;
-    // bounding box hyper rectangle (w.r.t. each dimension)
+    // The number of features in the dataset, used to represent data as a vectorized 2D array.
+    std::size_t n_features_;
+    // A hyperrectangle (bounding box) specifying the value bounds of the subset of data represented by the index array
+    // from the entire dataset. This hyperrectangle is defined with respect to each dimension.
     HyperRangeType kd_bounding_box_;
-
+    // Options used to configure the indexing structure.
     Options options_;
-
+    // The root node of the indexing structure.
     KDNodeIndexViewPtr root_;
 };
 

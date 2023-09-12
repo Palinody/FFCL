@@ -45,13 +45,23 @@ struct KDNodeIndexView {
                    SamplesIterator                             samples_last,
                    std::size_t                                 n_features) const;
 
+    // A pair of iterators representing a window in the index array, referring to samples in the dataset.
+    // This window can represent various ranges: empty, a 1 value range for pivot, or 1+ values range for a leaf node.
     bbox::IteratorPairType<IndicesIterator> indices_iterator_pair_;
-    ssize_t                                 cut_feature_index_;
-    // bounding box range (w.r.t. the cut dimension)
-    bbox::RangeType<SamplesIterator>                                   kd_bounding_box_;
+    // The index of the feature dimension selected for cutting the dataset at this node. -1 means no cut (leaf node)
+    ssize_t cut_feature_index_;
+    // A 1D bounding box window that stores the actual dataset values referred to by the indices_iterator_pair_.
+    // The first value in this range represents the minimum value, while the second value represents the maximum value
+    // within the dataset along the chosen dimension for this node.
+    bbox::RangeType<SamplesIterator> kd_bounding_box_;
+    // A child node representing the left partition of the dataset concerning the chosen cut dimension.
+    // This child node may be empty if no further partitioning occurs.
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> left_;
+    // A child node representing the right partition of the dataset concerning the chosen cut dimension.
+    // This child node may be empty if no further partitioning occurs.
     std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> right_;
-    std::weak_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>   parent_;
+    // A weak pointer to the unique parent node of this node. It allows traversal up the tree hierarchy.
+    std::weak_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> parent_;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
