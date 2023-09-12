@@ -53,13 +53,13 @@ class BoruvkasAlgorithm {
           : n_samples_{n_samples}
           , minimum_spanning_tree_{}
           , components_{}
-          , component_labels_{std::vector<SampleIndexType>(n_samples)} {
+          , component_labels_{std::make_unique<SampleIndexType[]>(n_samples)} {
             minimum_spanning_tree_.reserve(n_samples_ - 1);
 
             for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
                 components_[sample_index] = ComponentType(1, sample_index);
             }
-            std::iota(component_labels_.begin(), component_labels_.end(), static_cast<SampleIndexType>(0));
+            std::iota(component_labels_.get(), component_labels_.get() + n_samples_, static_cast<SampleIndexType>(0));
         }
 
         auto n_elements() const {
@@ -140,8 +140,8 @@ class BoruvkasAlgorithm {
 
         void print() const {
             std::cout << "component_label:\n";
-            for (const auto& component_label : component_labels_) {
-                std::cout << component_label << ", ";
+            for (std::size_t component_label_index = 0; component_label_index < n_samples_; ++component_label_index) {
+                std::cout << component_labels_[component_label_index] << ", ";
             }
             std::cout << "\n";
 
@@ -180,7 +180,7 @@ class BoruvkasAlgorithm {
         // the vector containing each components, represented as vectors of indices
         ForestType components_;
         // the component class/label that can range in [0, n_samples) each sample indices is mapped to
-        std::vector<SampleIndexType> component_labels_;
+        std::unique_ptr<SampleIndexType[]> component_labels_;
     };
 
   public:
@@ -225,11 +225,11 @@ template <typename Indexer>
 auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
     Forest forest(indexer.n_samples());
 
-    const bool compute_k_nearest_reachability_distance = options_.k_nearest_neighbors_ > 1;
+    const bool compute_knn_reachability_distance = options_.k_nearest_neighbors_ > 1;
 
     // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
     const auto core_distances =
-        compute_k_nearest_reachability_distance ? make_core_distances(indexer, options_.k_nearest_neighbors_) : nullptr;
+        compute_knn_reachability_distance ? make_core_distances(indexer, options_.k_nearest_neighbors_) : nullptr;
 
     while (forest.n_components() > 1) {
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
@@ -257,7 +257,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
                     const auto nearest_neighbor_distance = nn_buffer_with_memory.furthest_k_nearest_neighbor_distance();
 
                     const auto distance =
-                        compute_k_nearest_reachability_distance
+                        compute_knn_reachability_distance
                             ? std::max(std::max(core_distances[sample_index], core_distances[nearest_neighbor_index]),
                                        nearest_neighbor_distance)
                             : nearest_neighbor_distance;
@@ -266,7 +266,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
                         closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
                     }
                 }
-                if (compute_k_nearest_reachability_distance) {
+                if (compute_knn_reachability_distance) {
                     nn_buffer_with_memory.reset_buffers_except_memory();
                 }
             }
