@@ -54,7 +54,7 @@ set(HEADER_FILES
 
     include/ffcl/containers/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
 
-    include/ffcl/containers/spanning_tree/BoruvkasAlgorithmTest.hpp
+    include/ffcl/containers/spanning_tree/BoruvkasAlgorithm.hpp
 
     include/ffcl/math/heuristics/Distances.hpp
     include/ffcl/math/heuristics/SilhouetteMethod.hpp
