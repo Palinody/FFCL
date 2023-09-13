@@ -2,6 +2,8 @@
 
 #include "ffcl/common/Utils.hpp"
 
+#include "ffcl/containers/spanning_tree/MinimumSpanningTree.hpp"
+
 #include <cassert>
 #include <cstddef>
 #include <functional>
@@ -23,8 +25,8 @@ class BoruvkasAlgorithm {
     using ComponentType = std::vector<SampleIndexType>;
     using ForestType    = std::map<SampleIndexType, ComponentType>;
 
-    using EdgeType                = std::tuple<SampleIndexType, SampleIndexType, SampleValueType>;
-    using MinimumSpanningTreeType = std::vector<EdgeType>;
+    using EdgeType                = mst::EdgeType<SampleIndexType, SampleValueType>;
+    using MinimumSpanningTreeType = mst::MinimumSpanningTreeType<SampleIndexType, SampleValueType>;
 
     struct Options {
         Options() = default;

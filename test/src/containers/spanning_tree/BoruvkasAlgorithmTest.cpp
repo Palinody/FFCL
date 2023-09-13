@@ -542,9 +542,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    ffcl::mst::print(ffcl::mst::sort(std::move(minimum_spanning_tree)));
 
     timer.print_elapsed_seconds(9);
 }

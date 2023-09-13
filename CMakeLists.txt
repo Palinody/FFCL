@@ -52,6 +52,10 @@ set(HEADER_FILES
     include/ffcl/containers/LowerTriangleMatrix.hpp
     include/ffcl/containers/BoundingBox.hpp
 
+    include/ffcl/containers/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
+
+    include/ffcl/containers/spanning_tree/BoruvkasAlgorithmTest.hpp
+
     include/ffcl/math/heuristics/Distances.hpp
     include/ffcl/math/heuristics/SilhouetteMethod.hpp
     include/ffcl/math/heuristics/NearestNeighbor.hpp
@@ -414,6 +418,23 @@ elseif(MODE STREQUAL "gtest")
     add_test(
         BoruvkasAlgorithmTest
         BoruvkasAlgorithmTest
+    )
+
+    add_executable(
+        SingleLinkageClusterTreeTest
+
+        # ---
+        test/src/containers/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
+    )
+    target_link_libraries(
+        SingleLinkageClusterTreeTest
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        SingleLinkageClusterTreeTest
+        SingleLinkageClusterTreeTest
     )
 
     set_tests_properties(SortingTest DistributionsTest PROPERTIES
