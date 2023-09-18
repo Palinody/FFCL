@@ -15,6 +15,9 @@ namespace ffcl::containers {
 
 template <typename IndicesIterator, typename SamplesIterator>
 struct KDNodeIndexView {
+    using KDNodeIndexViewType = KDNodeIndexView<IndicesIterator, SamplesIterator>;
+    using KDNodeIndexViewPtr  = std::shared_ptr<KDNodeIndexViewType>;
+
     KDNodeIndexView(bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
                     const bbox::RangeType<SamplesIterator>& kd_bounding_box);
 
@@ -38,7 +41,7 @@ struct KDNodeIndexView {
 
     bool has_children() const;
 
-    std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> get_sibling_node() const;
+    KDNodeIndexViewPtr get_sibling_node() const;
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
                    SamplesIterator                             samples_first,
@@ -56,12 +59,12 @@ struct KDNodeIndexView {
     bbox::RangeType<SamplesIterator> kd_bounding_box_;
     // A child node representing the left partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
-    std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> left_;
+    KDNodeIndexViewPtr left_;
     // A child node representing the right partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
-    std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> right_;
+    KDNodeIndexViewPtr right_;
     // A weak pointer to the unique parent node of this node. It allows traversal up the tree hierarchy.
-    std::weak_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>> parent_;
+    std::weak_ptr<KDNodeIndexViewType> parent_;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -123,7 +126,7 @@ bool KDNodeIndexView<IndicesIterator, SamplesIterator>::has_children() const {
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>
+typename KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr
 KDNodeIndexView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
     if (has_parent()) {
         auto parent_shared_ptr = parent_.lock();

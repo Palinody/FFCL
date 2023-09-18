@@ -161,10 +161,77 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
+TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "noisy_circles.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+}
+
 TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    auto              data       = std::vector<float>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
+    auto data = std::vector<float>({/**/ 1,
+                                    2,
+                                    /**/ 1.5,
+                                    2.2,
+                                    /**/ 2.5,
+                                    2.9,
+                                    /**/ 2,
+                                    3,
+                                    /**/ 4,
+                                    2,
+                                    /**/ 3,
+                                    3,
+                                    /**/ 3.5,
+                                    2.2,
+                                    /**/ 2.3,
+                                    2});
+
     const std::size_t n_features = 2;
     const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -195,7 +262,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     timer.reset();
 

@@ -31,9 +31,10 @@ namespace fs = std::filesystem;
 template <typename IndicesIterator, typename SamplesIterator>
 class KDTreeIndexed {
   public:
-    using DataType           = typename SamplesIterator::value_type;
-    using KDNodeIndexViewPtr = std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>;
-    using HyperRangeType     = bbox::HyperRangeType<SamplesIterator>;
+    using DataType            = typename SamplesIterator::value_type;
+    using KDNodeIndexViewType = typename KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexViewType;
+    using KDNodeIndexViewPtr  = typename KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr;
+    using HyperRangeType      = bbox::HyperRangeType<SamplesIterator>;
 
     struct Options {
         Options()
@@ -489,7 +490,7 @@ std::size_t KDTreeIndexed<IndicesIterator, SamplesIterator>::n_features() const 
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::shared_ptr<KDNodeIndexView<IndicesIterator, SamplesIterator>>
+typename KDTreeIndexed<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr
 KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator index_first,
                                                        IndicesIterator index_last,
                                                        ssize_t         cut_feature_index,
@@ -518,7 +519,7 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator index_fir
             /**/ n_features_,
             /**/ cut_feature_index);
 
-        kdnode = std::make_shared<KDNodeIndexView<IndicesIterator, SamplesIterator>>(
+        kdnode = std::make_shared<KDNodeIndexViewType>(
             cut_index_range, cut_feature_index, kd_bounding_box[cut_feature_index]);
 
         const auto cut_feature_value = samples_first_[*cut_index_range.first * n_features_ + cut_feature_index];
@@ -553,8 +554,8 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::build(IndicesIterator index_fir
             kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_.first;
         }
     } else {
-        kdnode = std::make_shared<KDNodeIndexView<IndicesIterator, SamplesIterator>>(
-            std::make_pair(index_first, index_last), kd_bounding_box[cut_feature_index]);
+        kdnode = std::make_shared<KDNodeIndexViewType>(std::make_pair(index_first, index_last),
+                                                       kd_bounding_box[cut_feature_index]);
     }
     return kdnode;
 }
