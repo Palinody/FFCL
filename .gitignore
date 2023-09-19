@@ -2,9 +2,10 @@
 build/
 bin/clustering/
 bin/kdtree/
-bin/__pycache__/
+bin/single_linkage_cluster_tree/
 Testing/
 .vscode/
 
-# Ignore all files with the extension ".o" in any directory
+# Ignore all files with the extension ".<ext>" in any directory
 *.o
+__pycache__/
