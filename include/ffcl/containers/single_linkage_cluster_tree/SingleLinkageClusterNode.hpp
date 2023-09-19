@@ -1,7 +1,6 @@
 #pragma once
 
-#include "ffcl/common/Utils.hpp"
-
+#include <cstdio>
 #include <memory>
 #include <numeric>
 
