@@ -19,14 +19,14 @@ namespace ffcl {
 template <typename Indexer>
 class BoruvkasAlgorithm {
   public:
-    using SampleIndexType = std::size_t;
-    using SampleValueType = typename Indexer::DataType;
+    using IndexType = std::size_t;
+    using ValueType = typename Indexer::DataType;
 
-    using ComponentType = std::vector<SampleIndexType>;
-    using ForestType    = std::map<SampleIndexType, ComponentType>;
+    using ComponentType = std::vector<IndexType>;
+    using ForestType    = std::map<IndexType, ComponentType>;
 
-    using EdgeType                = mst::EdgeType<SampleIndexType, SampleValueType>;
-    using MinimumSpanningTreeType = mst::MinimumSpanningTreeType<SampleIndexType, SampleValueType>;
+    using EdgeType                = mst::Edge<IndexType, ValueType>;
+    using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
 
     struct Options {
         Options() = default;
@@ -55,13 +55,13 @@ class BoruvkasAlgorithm {
           : n_samples_{n_samples}
           , minimum_spanning_tree_{}
           , components_{}
-          , component_labels_{std::make_unique<SampleIndexType[]>(n_samples)} {
+          , component_labels_{std::make_unique<IndexType[]>(n_samples)} {
             minimum_spanning_tree_.reserve(n_samples_ - 1);
 
             for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
                 components_[sample_index] = ComponentType(1, sample_index);
             }
-            std::iota(component_labels_.get(), component_labels_.get() + n_samples_, static_cast<SampleIndexType>(0));
+            std::iota(component_labels_.get(), component_labels_.get() + n_samples_, static_cast<IndexType>(0));
         }
 
         auto n_elements() const {
@@ -167,8 +167,7 @@ class BoruvkasAlgorithm {
         }
 
       private:
-        void assign_sample_index_to_component(const SampleIndexType& prev_component,
-                                              const SampleIndexType& new_component) {
+        void assign_sample_index_to_component(const IndexType& prev_component, const IndexType& new_component) {
             // iterate over the component that contains the sample indices that should be updated
             for (const auto& sample_index : components_[prev_component]) {
                 // update the corresponding label with the new one
@@ -182,7 +181,7 @@ class BoruvkasAlgorithm {
         // the vector containing each components, represented as vectors of indices
         ForestType components_;
         // the component class/label that can range in [0, n_samples) each sample indices is mapped to
-        std::unique_ptr<SampleIndexType[]> component_labels_;
+        std::unique_ptr<IndexType[]> component_labels_;
     };
 
   public:
@@ -214,9 +213,9 @@ BoruvkasAlgorithm<Indexer>& BoruvkasAlgorithm<Indexer>::set_options(const Option
 
 template <typename Indexer>
 auto BoruvkasAlgorithm<Indexer>::make_core_distances(const Indexer& indexer, std::size_t k_nearest_neighbors) const {
-    auto core_distances = std::make_unique<SampleValueType[]>(indexer.n_samples());
+    auto core_distances = std::make_unique<ValueType[]>(indexer.n_samples());
 
-    for (SampleIndexType sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
+    for (IndexType sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
         core_distances[sample_index] = indexer.k_nearest_neighbors_around_query_index(sample_index, k_nearest_neighbors)
                                            .furthest_k_nearest_neighbor_distance();
     }
@@ -236,17 +235,16 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
     while (forest.n_components() > 1) {
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
         // same component
-        auto closest_edges = std::map<SampleIndexType, EdgeType>();
+        auto closest_edges = std::map<IndexType, EdgeType>();
 
         for (const auto& [component_index, component] : forest) {
-            auto nn_buffer_with_memory =
-                NearestNeighborsBufferWithMemory<typename std::vector<SampleValueType>::iterator>(
-                    component.begin(), component.end(), 1);
+            auto nn_buffer_with_memory = NearestNeighborsBufferWithMemory<typename std::vector<ValueType>::iterator>(
+                component.begin(), component.end(), 1);
 
-            // initialize the closest edge from the current comonent to infinity
-            closest_edges[component_index] = EdgeType{common::utils::infinity<SampleIndexType>(),
-                                                      common::utils::infinity<SampleIndexType>(),
-                                                      common::utils::infinity<SampleValueType>()};
+            // initialize the closest edge from the current component to infinity
+            closest_edges[component_index] = EdgeType{common::utils::infinity<IndexType>(),
+                                                      common::utils::infinity<IndexType>(),
+                                                      common::utils::infinity<ValueType>()};
 
             for (const auto& sample_index : component) {
                 indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer_with_memory);
@@ -275,7 +273,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
         }
         // merge components based on the best edges found in each component so far
         for (const auto& [component_index, edge] : closest_edges) {
-            assert(std::get<2>(edge) < common::utils::infinity<SampleValueType>());
+            assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
             common::utils::ignore_parameters(component_index);
             forest.merge_components(edge);
         }

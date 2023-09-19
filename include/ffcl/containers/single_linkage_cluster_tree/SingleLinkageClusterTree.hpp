@@ -11,16 +11,16 @@
 
 namespace ffcl {
 
-template <typename SampleIndexType, typename SampleValueType>
+template <typename IndexType, typename ValueType>
 class SingleLinkageClusterTree {
   public:
-    using MinimumSpanningTreeType = mst::MinimumSpanningTreeType<SampleIndexType, SampleValueType>;
-    using UnionFindType           = UnionFind<SampleIndexType>;
+    using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
+    using UnionFindType           = UnionFind<IndexType>;
 
-    using NodeType = SingleLinkageClusterNode<SampleIndexType, SampleValueType>;
+    using NodeType = SingleLinkageClusterNode<IndexType, ValueType>;
     using NodePtr  = std::shared_ptr<NodeType>;
 
-    using ClusterIndexType = SampleIndexType;
+    using ClusterIndexType = IndexType;
 
     SingleLinkageClusterTree(const MinimumSpanningTreeType& mst);
 
@@ -38,23 +38,23 @@ class SingleLinkageClusterTree {
     NodePtr root_;
 };
 
-template <typename SampleIndexType, typename SampleValueType>
-SingleLinkageClusterTree<SampleIndexType, SampleValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst)
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst)
   : sorted_mst_{ffcl::mst::sort_copy(mst)}
   , root_{build()} {}
 
-template <typename SampleIndexType, typename SampleValueType>
-SingleLinkageClusterTree<SampleIndexType, SampleValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
   : sorted_mst_{ffcl::mst::sort(std::move(mst))}
   , root_{build()} {}
 
-template <typename SampleIndexType, typename SampleValueType>
-void SingleLinkageClusterTree<SampleIndexType, SampleValueType>::print() const {
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::print() const {
     print_node(root_);
 }
 
-template <typename SampleIndexType, typename SampleValueType>
-auto SingleLinkageClusterTree<SampleIndexType, SampleValueType>::build() {
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
     const std::size_t n_samples = sorted_mst_.size() + 1;
 
     // union find data structure to keep track of the cluster id
@@ -64,10 +64,9 @@ auto SingleLinkageClusterTree<SampleIndexType, SampleValueType>::build() {
     auto nodes = std::map<ClusterIndexType, NodePtr>{};
 
     // init each sample as its own cluster/component
-    for (std::size_t component_index = 0; component_index < n_samples; ++component_index) {
-        nodes[component_index] = std::make_shared<NodeType>(component_index);
+    for (std::size_t cluster_index = 0; cluster_index < n_samples; ++cluster_index) {
+        nodes[cluster_index] = std::make_shared<NodeType>(cluster_index);
     }
-
     for (const auto& [sample_index_1, sample_index_2, distance] : sorted_mst_) {
         // find in which cluster index the following samples are currently in
         const auto representative_1 = union_find.find(sample_index_1);
@@ -97,8 +96,8 @@ auto SingleLinkageClusterTree<SampleIndexType, SampleValueType>::build() {
     return nodes.begin()->second;
 }
 
-template <typename SampleIndexType, typename SampleValueType>
-void SingleLinkageClusterTree<SampleIndexType, SampleValueType>::print_node(const NodePtr& node) const {
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::print_node(const NodePtr& node) const {
     std::cout << "representative "
               << "(" << node->level_ << "): " << node->representative_ << "\n---\n";
 

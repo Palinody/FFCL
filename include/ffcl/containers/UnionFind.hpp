@@ -8,33 +8,33 @@
 
 namespace ffcl {
 
-template <typename SampleIndexType>
+template <typename IndexType>
 class UnionFind {
   public:
     UnionFind(std::size_t n_samples);
 
-    SampleIndexType find(SampleIndexType index);
+    IndexType find(IndexType index);
 
-    bool merge(const SampleIndexType& index_1, const SampleIndexType& index_2);
+    bool merge(const IndexType& index_1, const IndexType& index_2);
 
     void print() const;
 
   private:
-    std::size_t                        n_samples_;
-    std::unique_ptr<SampleIndexType[]> labels_;
-    std::unique_ptr<SampleIndexType[]> ranks_;
+    std::size_t                  n_samples_;
+    std::unique_ptr<IndexType[]> labels_;
+    std::unique_ptr<IndexType[]> ranks_;
 };
 
-template <typename SampleIndexType>
-UnionFind<SampleIndexType>::UnionFind(std::size_t n_samples)
+template <typename IndexType>
+UnionFind<IndexType>::UnionFind(std::size_t n_samples)
   : n_samples_{n_samples}
-  , labels_{std::make_unique<SampleIndexType[]>(n_samples)}
-  , ranks_{std::make_unique<SampleIndexType[]>(n_samples)} {
-    std::iota(labels_.get(), labels_.get() + n_samples, static_cast<SampleIndexType>(0));
+  , labels_{std::make_unique<IndexType[]>(n_samples)}
+  , ranks_{std::make_unique<IndexType[]>(n_samples)} {
+    std::iota(labels_.get(), labels_.get() + n_samples, static_cast<IndexType>(0));
 }
 
-template <typename SampleIndexType>
-SampleIndexType UnionFind<SampleIndexType>::find(SampleIndexType index) {
+template <typename IndexType>
+IndexType UnionFind<IndexType>::find(IndexType index) {
     while (index != labels_[index]) {
         // set the label of each examined node to the root
         const auto temp = labels_[index];
@@ -44,8 +44,8 @@ SampleIndexType UnionFind<SampleIndexType>::find(SampleIndexType index) {
     return index;
 }
 
-template <typename SampleIndexType>
-bool UnionFind<SampleIndexType>::merge(const SampleIndexType& index_1, const SampleIndexType& index_2) {
+template <typename IndexType>
+bool UnionFind<IndexType>::merge(const IndexType& index_1, const IndexType& index_2) {
     const auto representative_1 = find(index_1);
     const auto representative_2 = find(index_2);
 
@@ -63,8 +63,8 @@ bool UnionFind<SampleIndexType>::merge(const SampleIndexType& index_1, const Sam
     return true;
 }
 
-template <typename SampleIndexType>
-void UnionFind<SampleIndexType>::print() const {
+template <typename IndexType>
+void UnionFind<IndexType>::print() const {
     std::cout << "Indices:\n";
     for (std::size_t index = 0; index < n_samples_; ++index) {
         std::cout << index << " ";
