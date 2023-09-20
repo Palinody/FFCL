@@ -26,11 +26,7 @@ class SLINKTree:
         self.distances = np.ndarray
         self.cluster_sizes = np.ndarray
 
-        self.n_samples = None
-
         self.cluster_count = 0
-
-        self.write_at_index = None
 
         self.root = self.deserialize_slink_tree(input_path)
 
@@ -39,6 +35,9 @@ class SLINKTree:
 
         self.n_samples = data["root"]["cluster_size"]
 
+        # the index at which the data will be written in the children, distances, cluster_sizes buffers
+        # this ensures that the higher level clusters in the tree are placed at the end to comply with
+        # sklearn's dendrogram plotting input encoding
         self.write_at_index = self.n_samples - 2
         
         self.children = np.zeros((self.n_samples - 1, 2))
@@ -80,12 +79,6 @@ class SLINKTree:
         return slink_node
     
     def make_linkage_matrix(self) -> np.ndarray:
-        self.children = np.array(self.children)
-        self.distances = np.array(self.distances)
-        self.cluster_sizes = np.array(self.cluster_sizes)
-
-        # print(self.children, self.distances, self.cluster_sizes)
-
         linkage_matrix = np.column_stack([self.children, 
                                           self.distances, 
                                           self.cluster_sizes]).astype(np.float64)
@@ -105,6 +98,24 @@ class SLINKTree:
                 self.cluster_count += 1
 
         return sorted_linkage_matrix
+    
+    def show_dendrogram(self, title=None, x_axis_name=None, y_axis_name=None, axis=None, **kwargs):
+        if not axis:
+          fig, axis = plt.subplots(figsize=(12, 8))
+        
+        linkage_matrix = self.make_linkage_matrix()
+        dendrogram(linkage_matrix, orientation="top", truncate_mode="level", ax=axis)
+        
+        if title:
+            axis.set_title(title)
+        
+        if x_axis_name:
+            axis.set_xlabel(x_axis_name)
+        
+        if y_axis_name:
+            axis.set_ylabel(y_axis_name)
+        
+        plt.show()
 
 
 def main():
@@ -124,11 +135,7 @@ def main():
 
       stem = os.path.splitext(filename)[0]
       
-      linkage_matrix = slink_tree.make_linkage_matrix()
-      
-      dendrogram(linkage_matrix, orientation="right", truncate_mode="level")
-
-      plt.show()
+      slink_tree.show_dendrogram()
 
 if __name__ == "__main__":
     np.set_printoptions(threshold=np.inf)
