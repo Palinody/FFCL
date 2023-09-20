@@ -104,7 +104,7 @@ class SLINKTree:
           fig, axis = plt.subplots(figsize=(12, 8))
         
         linkage_matrix = self.make_linkage_matrix()
-        dendrogram(linkage_matrix, orientation="top", truncate_mode="level", ax=axis)
+        dendrogram(linkage_matrix, orientation="top", truncate_mode="level", ax=axis, **kwargs)
         
         if title:
             axis.set_title(title)
