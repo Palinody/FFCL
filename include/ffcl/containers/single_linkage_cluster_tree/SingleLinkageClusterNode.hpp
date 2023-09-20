@@ -23,12 +23,13 @@ struct SingleLinkageClusterNode {
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
+    // a sample index itself if the node is leaf or the sample's index used as a cluster index representative otherwise
     IndexType representative_;
-
+    // the distance that separates this node's left and right children and which represents its hight in the tree
     ValueType level_;
-
+    // the number of nodes that this node is an ancestor of (counting itself)
     std::size_t cluster_size_;
-
+    // parent pointer used to parse from the leaves to the root and the left/right ones for the opposite direction
     NodePtr parent_, left_, right_;
 };
 

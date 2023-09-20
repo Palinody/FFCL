@@ -68,7 +68,7 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
     // union find data structure to keep track of the cluster id
     UnionFindType union_find(n_samples);
 
-    // cluster indices mapped to their node
+    // cluster indices mapped to their node that may contain descendants
     auto nodes = std::map<ClusterIndexType, NodePtr>{};
 
     // init each sample as its own cluster/component
@@ -76,7 +76,7 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
         nodes[cluster_index] = std::make_shared<NodeType>(cluster_index);
     }
     for (const auto& [sample_index_1, sample_index_2, distance] : sorted_mst_) {
-        // find in which cluster index the following samples are currently in
+        // find in which cluster index the samples are currently in
         const auto representative_1 = union_find.find(sample_index_1);
         const auto representative_2 = union_find.find(sample_index_2);
 
