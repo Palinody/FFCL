@@ -15,16 +15,20 @@ It'll stay that way for now for practicality.
 ## TODO | New features | Updates
 
 - **TODO**
-  - [Faster DBSCAN](https://alexandria.tue.nl/extra1/afstversl/wsk-i/gunawan2013.pdf) | [DBSCAN++](https://arxiv.org/pdf/1810.13105.pdf)
-  - performance tests comaring `ffcl` to the most popular libraries
+  - performance tests comaring `ffcl` to the most popular libraries (done for kdtrees with PCA and FLANN and DBSCAN from sklearn)
   - Some optimization for the nearest neighbors computations of KMeans and KMedoids. I might enable KDTree acceleration but its not beneficial unless a large number of centroids/medoids is needed. Its not a priority for now.
   - Proper unit testing (**update**: all the generic code is now unit tested)
-  - OPTICS
-  - DENCLUE
+  - **OPTICS**: **might do** if it can be done very quickly. Otherwise I wont do since HDBSCAN* is supposed to be better.
+  - **HDBSCAN*** (**ongoing**):
+    - **MST** with **Boruvka's algorithm**: **done**, might just check some additional performance gain by using the UnionFind datastruct instead of copying the entire components into an unordered_set that prevents finding nearest neighbors that are in the same component at each query.
+    - **Single Linkage Cluster Tree**: **done**. **Dendrogram python** plots are also **done**
+    - **Condensed cluster tree**: **not done**.
+    - **HDBSCAN***: assembly of the aforementionned parts **not done**.
 
 - **Last features**
   - DBSCAN
-  - Minimum Spanning Tree (MST) with Boruvka's algorithm: issue found during what appears to be the last iteration. The components don't seem to link with the vertices that are the closest to each other. **Fixed**: corrected by disabling `visited_indices_.insert(index_candidate);` in the update function of `NearestNeighborsBufferWithMemory` class that was used. The algorithm is now even faster than before (~10%).
+  - Minimum Spanning Tree (MST) with Boruvka's algorithm
+  - Single Linkage Cluster Tree
 
 ## Current features
 
