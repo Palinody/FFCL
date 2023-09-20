@@ -149,10 +149,11 @@ class SingleLinkageClusterTreeErrorsTest : public ::testing::Test {
     static constexpr std::size_t n_iterations_global = 100;
     static constexpr std::size_t n_centroids_global  = 4;
 
-    const fs::path folder_root_        = fs::path("../bin/clustering");
-    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
-    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
+    const fs::path slink_folder_root_      = fs::path("../bin/single_linkage_cluster_tree");
+    const fs::path clustering_folder_root_ = fs::path("../bin/clustering");
+    const fs::path inputs_folder_          = clustering_folder_root_ / fs::path("inputs");
+    const fs::path targets_folder_         = clustering_folder_root_ / fs::path("targets");
+    const fs::path predictions_folder_     = clustering_folder_root_ / fs::path("predictions");
 };
 
 std::vector<std::size_t> generate_indices(std::size_t n_samples) {
@@ -210,6 +211,340 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
     ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
 
     timer.print_elapsed_seconds(9);
+
+    fs::path slink_filename = filename.stem().string() + ".json";
+
+    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
+}
+
+TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "noisy_moons.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    fs::path slink_filename = filename.stem().string() + ".json";
+
+    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
+}
+
+TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    fs::path slink_filename = filename.stem().string() + ".json";
+
+    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
+}
+
+TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "aniso.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    fs::path slink_filename = filename.stem().string() + ".json";
+
+    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
+}
+
+TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "blobs.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    fs::path slink_filename = filename.stem().string() + ".json";
+
+    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
+}
+
+TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "no_structure.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    fs::path slink_filename = filename.stem().string() + ".json";
+
+    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
+}
+
+TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "unbalanced_blobs.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    timer.reset();
+
+    // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    fs::path slink_filename = filename.stem().string() + ".json";
+
+    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {

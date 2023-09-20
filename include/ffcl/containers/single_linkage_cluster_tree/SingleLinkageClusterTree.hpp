@@ -9,7 +9,11 @@
 
 #include <iostream>
 
+#include "rapidjson/writer.h"
+
 namespace ffcl {
+
+namespace fs = std::filesystem;
 
 template <typename IndexType, typename ValueType>
 class SingleLinkageClusterTree {
@@ -28,7 +32,11 @@ class SingleLinkageClusterTree {
 
     void print() const;
 
+    void serialize(const fs::path& filepath) const;
+
   private:
+    void serialize(const NodePtr& node, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
+
     auto build();
 
     void print_node(const NodePtr& node) const;
@@ -76,7 +84,8 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
             const auto new_representative = union_find.find(sample_index_1);
 
             // create a new node, if we have reached a new level, that will agglomerate its children
-            auto cluster_node = std::make_shared<NodeType>(new_representative, distance);
+            auto cluster_node = std::make_shared<NodeType>(
+                new_representative, distance, nodes[representative_1]->size() + nodes[representative_2]->size());
 
             // link the nodes to their new parent node
             nodes[representative_1]->parent_ = nodes[new_representative];
@@ -105,6 +114,54 @@ void SingleLinkageClusterTree<IndexType, ValueType>::print_node(const NodePtr& n
         print_node(node->left_);
         print_node(node->right_);
     }
+}
+
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::serialize(
+    const NodePtr&                              node,
+    rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+    writer.StartObject();
+    {
+        node->serialize(writer);
+
+        // continue the recursion if the current node is not leaf
+        if (!node->is_leaf()) {
+            writer.String("left");
+            serialize(node->left_, writer);
+
+            writer.String("right");
+            serialize(node->right_, writer);
+        }
+    }
+    writer.EndObject();
+}
+
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::serialize(const fs::path& filepath) const {
+    rapidjson::Document document;
+
+    rapidjson::StringBuffer buffer;
+
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+    writer.StartObject();
+    {
+        writer.String("root");
+        serialize(root_, writer);
+    }
+    writer.EndObject();
+
+    document.Parse(buffer.GetString());
+
+    std::ofstream output_file(filepath);
+
+    rapidjson::OStreamWrapper output_stream_wrapper(output_file);
+
+    rapidjson::Writer<rapidjson::OStreamWrapper> filewriter(output_stream_wrapper);
+
+    document.Accept(filewriter);
+
+    output_file.close();
 }
 
 }  // namespace ffcl

@@ -1,12 +1,20 @@
 import os
-import numpy as np
-
+import json
 import numpy as np
 
 def n_features_in_txt_file(filename: str, delimiter: str=" ") -> int:
     with open(filename, "r") as file:
         first_line = file.readline()
         return len(first_line.split(delimiter))
+
+def load_json(input_path):
+    with open(input_path, "r") as f:
+        try:
+            return json.load(f)
+
+        except json.JSONDecodeError as e:
+            print(f"Error loading JSON file {input_path}: {e}")
+            return None
 
 def decode_txt(filepath, dtype=np.float32):
     data = np.loadtxt(filepath, dtype=dtype)

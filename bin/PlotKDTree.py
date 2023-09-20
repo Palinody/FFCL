@@ -5,22 +5,13 @@ import json
 import os
 import copy
 
+import py_helpers.IO as io
+
 from typing import List, Tuple, Dict, Any
 
 KDBoundingBoxType = List[List[Any]]
 FeatureVectorType = List[Any]
 DatasetType = List[FeatureVectorType]
-
-
-def load_json(input_path):
-    with open(input_path, "r") as f:
-        try:
-            return json.load(f)
-
-        except json.JSONDecodeError as e:
-            print(f"Error loading JSON file {input_path}: {e}")
-            return None
-
 
 class KDNode:
     def __init__(self) -> None:
@@ -46,7 +37,7 @@ class KDTree:
         self.root = self.deserialize_kdtree(input_path)
 
     def deserialize_kdtree(self, input_path: str) -> KDNode:
-        data = load_json(input_path)
+        data = io.load_json(input_path)
 
         n_features: int = data["n_features"]
         options: Dict[str, Any] = data["options"]
