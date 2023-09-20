@@ -15,14 +15,14 @@ namespace ffcl::containers {
 
 template <typename Iterator>
 struct KDNodeView {
-    KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
-               std::size_t                           n_features,
-               const bbox::HyperRangeType<Iterator>& kd_bounding_box);
+    KDNodeView(ffcl::bbox::IteratorPairType<Iterator>      iterator_pair,
+               std::size_t                                 n_features,
+               const ffcl::bbox::HyperRangeType<Iterator>& kd_bounding_box);
 
-    KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
-               std::size_t                           n_features,
-               ssize_t                               cut_feature_index,
-               const bbox::HyperRangeType<Iterator>& kd_bounding_box);
+    KDNodeView(ffcl::bbox::IteratorPairType<Iterator>      iterator_pair,
+               std::size_t                                 n_features,
+               ssize_t                                     cut_feature_index,
+               const ffcl::bbox::HyperRangeType<Iterator>& kd_bounding_box);
 
     KDNodeView(const KDNodeView&) = delete;
 
@@ -45,30 +45,30 @@ struct KDNodeView {
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     // might contain [0, bucket_size] samples if the node is leaf, else only 1
-    bbox::IteratorPairType<Iterator> samples_iterator_pair_;
-    std::size_t                      n_features_;
-    ssize_t                          cut_feature_index_;
+    ffcl::bbox::IteratorPairType<Iterator> samples_iterator_pair_;
+    std::size_t                            n_features_;
+    ssize_t                                cut_feature_index_;
     // bounding box hyper rectangle (w.r.t. each dimension)
-    bbox::HyperRangeType<Iterator>        kd_bounding_box_;
+    ffcl::bbox::HyperRangeType<Iterator>  kd_bounding_box_;
     std::shared_ptr<KDNodeView<Iterator>> left_;
     std::shared_ptr<KDNodeView<Iterator>> right_;
     std::weak_ptr<KDNodeView<Iterator>>   parent_;
 };
 
 template <typename Iterator>
-KDNodeView<Iterator>::KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
-                                 std::size_t                           n_features,
-                                 const bbox::HyperRangeType<Iterator>& kd_bounding_box)
+KDNodeView<Iterator>::KDNodeView(ffcl::bbox::IteratorPairType<Iterator>      iterator_pair,
+                                 std::size_t                                 n_features,
+                                 const ffcl::bbox::HyperRangeType<Iterator>& kd_bounding_box)
   : samples_iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename Iterator>
-KDNodeView<Iterator>::KDNodeView(bbox::IteratorPairType<Iterator>      iterator_pair,
-                                 std::size_t                           n_features,
-                                 ssize_t                               cut_feature_index,
-                                 const bbox::HyperRangeType<Iterator>& kd_bounding_box)
+KDNodeView<Iterator>::KDNodeView(ffcl::bbox::IteratorPairType<Iterator>      iterator_pair,
+                                 std::size_t                                 n_features,
+                                 ssize_t                                     cut_feature_index,
+                                 const ffcl::bbox::HyperRangeType<Iterator>& kd_bounding_box)
   : samples_iterator_pair_{iterator_pair}
   , n_features_{n_features}
   , cut_feature_index_{cut_feature_index}
@@ -132,7 +132,7 @@ std::shared_ptr<KDNodeView<Iterator>> KDNodeView<Iterator>::get_sibling_node() c
 
 template <typename Iterator>
 void KDNodeView<Iterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
-    using DataType = bbox::DataType<Iterator>;
+    using DataType = ffcl::bbox::DataType<Iterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdnode serialization");

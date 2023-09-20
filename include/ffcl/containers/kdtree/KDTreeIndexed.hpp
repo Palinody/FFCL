@@ -34,7 +34,7 @@ class KDTreeIndexed {
     using DataType            = typename SamplesIterator::value_type;
     using KDNodeIndexViewType = typename KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexViewType;
     using KDNodeIndexViewPtr  = typename KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr;
-    using HyperRangeType      = bbox::HyperRangeType<SamplesIterator>;
+    using HyperRangeType      = ffcl::bbox::HyperRangeType<SamplesIterator>;
 
     struct Options {
         Options()
@@ -465,7 +465,11 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::KDTreeIndexed(IndicesIterator i
   : samples_first_{samples_first}
   , samples_last_{samples_last}
   , n_features_{n_features}
-  , kd_bounding_box_{bbox::make_kd_bounding_box(index_first, index_last, samples_first_, samples_last_, n_features_)}
+  , kd_bounding_box_{ffcl::bbox::make_kd_bounding_box(index_first,
+                                                      index_last,
+                                                      samples_first_,
+                                                      samples_last_,
+                                                      n_features_)}
   , options_{options}
   , root_{build(index_first,
                 index_last,
@@ -1113,7 +1117,7 @@ std::size_t KDTreeIndexed<IndicesIterator, SamplesIterator>::range_count_around_
     const HyperRangeType& kd_bounding_box) const {
     std::size_t neighbors_count = 0;
 
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
         /**/ samples_first_ + query_index * n_features_,
         /**/ samples_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
@@ -1246,7 +1250,7 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::buffered_range_search_arou
     static_assert(std::is_base_of_v<NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
         /**/ samples_first_ + query_index * n_features_,
         /**/ samples_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
@@ -1258,7 +1262,7 @@ template <typename IndicesIterator, typename SamplesIterator>
 auto KDTreeIndexed<IndicesIterator, SamplesIterator>::range_search_around_query_index(
     std::size_t           query_index,
     const HyperRangeType& kd_bounding_box) const {
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
         /**/ samples_first_ + query_index * n_features_,
         /**/ samples_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
@@ -1945,7 +1949,7 @@ std::size_t KDTreeIndexed<IndicesIterator, SamplesIterator>::range_count_around_
     const HyperRangeType& kd_bounding_box) const {
     std::size_t neighbors_count = 0;
 
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
         query_feature_first, query_feature_last, kd_bounding_box);
 
     inner_range_count_around_query_sample(
@@ -2087,7 +2091,7 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::buffered_range_search_arou
     static_assert(std::is_base_of_v<NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
         query_feature_first, query_feature_last, kd_bounding_box);
 
     inner_range_search_around_query_sample(
@@ -2099,7 +2103,7 @@ auto KDTreeIndexed<IndicesIterator, SamplesIterator>::range_search_around_query_
     SamplesIterator       query_feature_first,
     SamplesIterator       query_feature_last,
     const HyperRangeType& kd_bounding_box) const {
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
         query_feature_first, query_feature_last, kd_bounding_box);
 
     NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer;

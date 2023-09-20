@@ -667,7 +667,7 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxCountIndexTest) {
     timer.print_elapsed_seconds(9);
 
     std::size_t radius_count    = 0;
-    const auto  kd_bounding_box = bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
+    const auto  kd_bounding_box = ffcl::bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
 
     std::size_t total_neighbors = 0;
 
@@ -723,7 +723,7 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxSearchIndexTest) {
     std::vector<std::size_t> nn_indices;
     std::vector<dType>       nn_distances;
 
-    const auto kd_bounding_box = bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
+    const auto kd_bounding_box = ffcl::bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
 
     std::size_t total_neighbors = 0;
 
@@ -783,7 +783,7 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxCountSampleTest) {
     timer.print_elapsed_seconds(9);
 
     std::size_t radius_count    = 0;
-    const auto  kd_bounding_box = bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
+    const auto  kd_bounding_box = ffcl::bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
 
     std::size_t total_neighbors = 0;
 
@@ -842,7 +842,7 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxSearchSampleTest) {
     std::vector<std::size_t> nn_indices;
     std::vector<dType>       nn_distances;
 
-    const auto kd_bounding_box = bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
+    const auto kd_bounding_box = ffcl::bbox::HyperRangeType<SamplesIterator>{{-0.1, 0.1}, {-0.1, 0.1}};
 
     std::size_t total_neighbors = 0;
 

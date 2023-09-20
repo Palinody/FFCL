@@ -18,12 +18,12 @@ struct KDNodeIndexView {
     using KDNodeIndexViewType = KDNodeIndexView<IndicesIterator, SamplesIterator>;
     using KDNodeIndexViewPtr  = std::shared_ptr<KDNodeIndexViewType>;
 
-    KDNodeIndexView(bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-                    const bbox::RangeType<SamplesIterator>& kd_bounding_box);
+    KDNodeIndexView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
+                    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
 
-    KDNodeIndexView(bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-                    ssize_t                                 cut_feature_index,
-                    const bbox::RangeType<SamplesIterator>& kd_bounding_box);
+    KDNodeIndexView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
+                    ssize_t                                       cut_feature_index,
+                    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
 
     KDNodeIndexView(const KDNodeIndexView&) = delete;
 
@@ -50,13 +50,13 @@ struct KDNodeIndexView {
 
     // A pair of iterators representing a window in the index array, referring to samples in the dataset.
     // This window can represent various ranges: empty, a 1 value range for pivot, or 1+ values range for a leaf node.
-    bbox::IteratorPairType<IndicesIterator> indices_iterator_pair_;
+    ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair_;
     // The index of the feature dimension selected for cutting the dataset at this node. -1 means no cut (leaf node)
     ssize_t cut_feature_index_;
     // A 1D bounding box window that stores the actual dataset values referred to by the indices_iterator_pair_.
     // The first value in this range represents the minimum value, while the second value represents the maximum value
     // within the dataset along the chosen dimension for this node.
-    bbox::RangeType<SamplesIterator> kd_bounding_box_;
+    ffcl::bbox::RangeType<SamplesIterator> kd_bounding_box_;
     // A child node representing the left partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
     KDNodeIndexViewPtr left_;
@@ -69,17 +69,17 @@ struct KDNodeIndexView {
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
-    bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-    const bbox::RangeType<SamplesIterator>& kd_bounding_box)
+    ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
+    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
-    bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-    ssize_t                                 cut_feature_index,
-    const bbox::RangeType<SamplesIterator>& kd_bounding_box)
+    ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
+    ssize_t                                       cut_feature_index,
+    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
   , cut_feature_index_{cut_feature_index}
   , kd_bounding_box_{kd_bounding_box} {}
@@ -146,7 +146,7 @@ void KDNodeIndexView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Wri
                                                                   SamplesIterator samples_first,
                                                                   SamplesIterator samples_last,
                                                                   std::size_t     n_features) const {
-    using DataType = bbox::DataType<SamplesIterator>;
+    using DataType = ffcl::bbox::DataType<SamplesIterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdnode serialization");

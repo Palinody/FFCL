@@ -9,9 +9,9 @@ struct SplittingRulePolicy {
     SplittingRulePolicy() = default;
 
     inline virtual std::tuple<std::size_t,
-                              bbox::IteratorPairType<RandomAccessIterator>,
-                              bbox::IteratorPairType<RandomAccessIterator>,
-                              bbox::IteratorPairType<RandomAccessIterator>>
+                              ffcl::bbox::IteratorPairType<RandomAccessIterator>,
+                              ffcl::bbox::IteratorPairType<RandomAccessIterator>,
+                              ffcl::bbox::IteratorPairType<RandomAccessIterator>>
     operator()(RandomAccessIterator samples_first,
                RandomAccessIterator samples_last,
                std::size_t          n_features,
@@ -21,9 +21,9 @@ struct SplittingRulePolicy {
 template <typename RandomAccessIterator>
 struct QuickselectMedianRange : public SplittingRulePolicy<RandomAccessIterator> {
     inline std::tuple<std::size_t,
-                      bbox::IteratorPairType<RandomAccessIterator>,
-                      bbox::IteratorPairType<RandomAccessIterator>,
-                      bbox::IteratorPairType<RandomAccessIterator>>
+                      ffcl::bbox::IteratorPairType<RandomAccessIterator>,
+                      ffcl::bbox::IteratorPairType<RandomAccessIterator>,
+                      ffcl::bbox::IteratorPairType<RandomAccessIterator>>
     operator()(RandomAccessIterator samples_first,
                RandomAccessIterator samples_last,
                std::size_t          n_features,
@@ -36,9 +36,9 @@ namespace kdtree::policy {
 
 template <typename RandomAccessIterator>
 std::tuple<std::size_t,
-           bbox::IteratorPairType<RandomAccessIterator>,
-           bbox::IteratorPairType<RandomAccessIterator>,
-           bbox::IteratorPairType<RandomAccessIterator>>
+           ffcl::bbox::IteratorPairType<RandomAccessIterator>,
+           ffcl::bbox::IteratorPairType<RandomAccessIterator>,
+           ffcl::bbox::IteratorPairType<RandomAccessIterator>>
 QuickselectMedianRange<RandomAccessIterator>::operator()(RandomAccessIterator samples_first,
                                                          RandomAccessIterator samples_last,
                                                          std::size_t          n_features,

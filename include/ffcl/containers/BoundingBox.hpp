@@ -7,7 +7,7 @@
 #include <limits>
 #include <vector>
 
-namespace bbox {
+namespace ffcl::bbox {
 
 template <typename SamplesIterator>
 using IteratorPairType = std::pair<SamplesIterator, SamplesIterator>;
@@ -180,4 +180,4 @@ auto relative_coordinates_sequence_to_range_bounding_box(
     return range_bounding_box;
 }
 
-}  // namespace bbox
+}  // namespace ffcl::bbox

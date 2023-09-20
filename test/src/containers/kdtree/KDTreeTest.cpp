@@ -134,7 +134,7 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxTest) {
 
     const auto n_features = 3;
 
-    const auto kd_bounding_box = bbox::make_kd_bounding_box(dataset.begin(), dataset.end(), n_features);
+    const auto kd_bounding_box = ffcl::bbox::make_kd_bounding_box(dataset.begin(), dataset.end(), n_features);
 
     print_kd_bounding_box<DataType>(kd_bounding_box, n_features);
 
