@@ -114,7 +114,7 @@ class SLINKTree:
         
         if y_axis_name:
             axis.set_ylabel(y_axis_name)
-        
+                        
         plt.show()
 
 
@@ -128,14 +128,16 @@ def main():
   for filename in file_names:
 
       input_path = root_folder + filename
-      
-      print(input_path)
 
       slink_tree = SLINKTree(input_path)
 
       stem = os.path.splitext(filename)[0]
       
-      slink_tree.show_dendrogram()
+      print(stem)
+
+      slink_tree.show_dendrogram(title=stem, 
+                                 x_axis_name="sample index", 
+                                 y_axis_name="k mutual reachability distance")
 
 if __name__ == "__main__":
     np.set_printoptions(threshold=np.inf)

@@ -484,18 +484,18 @@ std::size_t quicksort_indexed_range(IndicesIterator index_first,
 
     // the pivot range is included in the left subrange
 
-    quicksort_indexed_range(index_first,
-                            index_first + new_pivot_index,
-                            /*first iterator, left subrange*/ first,
-                            /*last iterator, left subrange*/ last,
+    quicksort_indexed_range(/*left subrange*/ index_first,
+                            /*left subrange*/ index_first + new_pivot_index,
+                            first,
+                            last,
                             n_features,
                             pivot_index_subrange_left,
                             feature_index);
 
-    quicksort_indexed_range(index_first + new_pivot_index + 1,
-                            index_last,
-                            /*first iterator, right subrange*/ first,
-                            /*last iterator, right subrange*/ last,
+    quicksort_indexed_range(/*right subrange*/ index_first + new_pivot_index + 1,
+                            /*right subrange*/ index_last,
+                            first,
+                            last,
                             n_features,
                             pivot_index_subrange_right,
                             feature_index);
