@@ -112,7 +112,7 @@ def animate_point_clouds_from_bin_files(root_folder, file_list, labels_folder, i
     anim()
 
 def main():
-    folder_name = "0001"
+    folder_name = "0000"
     # conversions, inputs
     point_clouds_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
                                        "clustering/inputs/pointclouds_sequences/" + folder_name)

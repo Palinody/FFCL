@@ -13,7 +13,7 @@ class UnionFind {
   public:
     UnionFind(std::size_t n_samples);
 
-    IndexType find(IndexType index);
+    IndexType find(IndexType index) const;
 
     bool merge(const IndexType& index_1, const IndexType& index_2);
 
@@ -34,7 +34,7 @@ UnionFind<IndexType>::UnionFind(std::size_t n_samples)
 }
 
 template <typename IndexType>
-IndexType UnionFind<IndexType>::find(IndexType index) {
+IndexType UnionFind<IndexType>::find(IndexType index) const {
     while (index != labels_[index]) {
         // set the label of each examined node to the root
         const auto temp = labels_[index];
