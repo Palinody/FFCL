@@ -16,6 +16,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include <algorithm>
+#include <execution>
+
 namespace ffcl {
 
 template <typename Indexer>
@@ -31,6 +34,12 @@ class BoruvkasAlgorithm {
     using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
 
     using UnionFindType = UnionFind<IndexType>;
+
+#if defined(_OPENMP) && THREADS_ENABLED == true
+    static constexpr auto execution_policy = std::execution::par;
+#else
+    static constexpr auto execution_policy = std::execution::seq;
+#endif
 
     struct Options {
         Options() = default;
@@ -59,14 +68,12 @@ class BoruvkasAlgorithm {
           : n_samples_{n_samples}
           , minimum_spanning_tree_{}
           , components_{}
-          , component_labels_{std::make_unique<IndexType[]>(n_samples)}
           , union_find_{UnionFindType(n_samples_)} {
             minimum_spanning_tree_.reserve(n_samples_ - 1);
 
             for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
                 components_[sample_index] = ComponentType{sample_index};
             }
-            std::iota(component_labels_.get(), component_labels_.get() + n_samples_, static_cast<IndexType>(0));
         }
 
         auto n_elements() const {
@@ -109,46 +116,6 @@ class BoruvkasAlgorithm {
             return minimum_spanning_tree_;
         }
 
-        void merge_components_deprecated(const EdgeType& edge) {
-            // get the indices of the samples that form an edge
-            const auto sample_index_1 = std::get<0>(edge);
-            const auto sample_index_2 = std::get<1>(edge);
-
-            // get which components they belong to
-            const auto component_label_1 = component_labels_[sample_index_1];
-            const auto component_label_2 = component_labels_[sample_index_2];
-
-            // return if both samples belong to the same component
-            if (component_label_1 == component_label_2) {
-                return;
-            }
-            // theres nothing to merge if one of the components is empty
-            if (components_[component_label_1].empty() || components_[component_label_2].empty()) {
-                return;
-            }
-            // calculate the sizes of the two components
-            const auto component_size_1 = components_[component_label_1].size();
-            const auto component_size_2 = components_[component_label_2].size();
-
-            // select the final component that will merge both components in order to move the least amount of data
-            const auto [final_component, discarded_component] =
-                (component_size_1 > component_size_2) ? std::make_pair(component_label_1, component_label_2)
-                                                      : std::make_pair(component_label_2, component_label_1);
-
-            // move the indices from the component that will be discarded to the final one
-            components_[final_component].insert(std::make_move_iterator(components_[discarded_component].begin()),
-                                                std::make_move_iterator(components_[discarded_component].end()));
-
-            // update the label of each moved sample index
-            assign_sample_index_to_component(discarded_component, final_component);
-
-            // now that the old component has been merged with the final one, clear it
-            components_.erase(discarded_component);
-
-            // update the minimum spanning tree
-            minimum_spanning_tree_.emplace_back(edge);
-        }
-
         void merge_components(const EdgeType& edge) {
             // get the indices of the samples that form an edge
             const auto sample_index_1 = std::get<0>(edge);
@@ -185,9 +152,6 @@ class BoruvkasAlgorithm {
             components_[final_component].insert(std::make_move_iterator(components_[discarded_component].begin()),
                                                 std::make_move_iterator(components_[discarded_component].end()));
 
-            // update the label of each moved sample index
-            // assign_sample_index_to_component(discarded_component, final_component);
-
             // now that the old component has been merged with the final one, clear it
             components_.erase(discarded_component);
 
@@ -196,12 +160,6 @@ class BoruvkasAlgorithm {
         }
 
         void print() const {
-            std::cout << "component_label:\n";
-            for (std::size_t component_label_index = 0; component_label_index < n_samples_; ++component_label_index) {
-                std::cout << component_labels_[component_label_index] << ", ";
-            }
-            std::cout << "\n";
-
             std::cout << "components:\n";
             for (const auto& [component_index, component] : components_) {
                 std::cout << component_index << ": ";
@@ -222,21 +180,11 @@ class BoruvkasAlgorithm {
         }
 
       private:
-        void assign_sample_index_to_component(const IndexType& prev_component, const IndexType& new_component) {
-            // iterate over the component that contains the sample indices that should be updated
-            for (const auto& sample_index : components_[prev_component]) {
-                // update the corresponding label with the new one
-                component_labels_[sample_index] = new_component;
-            }
-        }
-
         std::size_t n_samples_;
         // the container that accumulates the edges for the minimum spanning tree
         MinimumSpanningTreeType minimum_spanning_tree_;
         // the vector containing each components, represented as vectors of indices
         ForestType components_;
-        // the component class/label that can range in [0, n_samples) each sample indices is mapped to
-        std::unique_ptr<IndexType[]> component_labels_;
         // a union find data structure used to merge clusters based on sample indices from distinct clusters
         UnionFindType union_find_;
     };
@@ -253,8 +201,6 @@ class BoruvkasAlgorithm {
     auto make_tree(const Indexer& indexer) const;
 
   private:
-    auto make_tree_deprecated(const Indexer& indexer) const;
-
     auto make_core_distances(const Indexer& indexer, std::size_t k_nearest_neighbors) const;
 
     Options options_;
@@ -292,22 +238,24 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
         compute_knn_reachability_distance ? make_core_distances(indexer, options_.k_nearest_neighbors_) : nullptr;
 
     while (forest.n_components() > 1) {
+        // std::cout << "forest.n_components(): " << forest.n_components() << "\n";
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
         // same component
         auto closest_edges = std::map<IndexType, EdgeType>();
 
-        for (const auto& [component_index, component] : forest) {
+        std::for_each(execution_policy, forest.begin(), forest.end(), [&](const auto& forest_item) {
+            const auto& [component_index, component] = forest_item;
+
             // initialize the closest edge from the current component to infinity
             closest_edges[component_index] = EdgeType{common::utils::infinity<IndexType>(),
                                                       common::utils::infinity<IndexType>(),
                                                       common::utils::infinity<ValueType>()};
 
             for (const auto& sample_index : component) {
-                // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from other
-                // components using the UnionFind data structure
-                auto nn_buffer =
-                    NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator, UnionFindType>(
-                        forest.get_union_find_const_reference(), sample_index, 1);
+                // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
+                // other components using the UnionFind data structure
+                auto nn_buffer = NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
+                    forest.get_union_find_const_reference(), sample_index, 1);
 
                 indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer);
 
@@ -329,73 +277,15 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
                     }
                 }
             }
-        }
+        });
         // merge components based on the best edges found in each component so far
-        for (const auto& [component_index, edge] : closest_edges) {
-            assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
-            common::utils::ignore_parameters(component_index);
-            forest.merge_components(edge);
-        }
-    }
-    return forest.minimum_spanning_tree();
-}
-
-template <typename Indexer>
-auto BoruvkasAlgorithm<Indexer>::make_tree_deprecated(const Indexer& indexer) const {
-    Forest forest(indexer.n_samples());
-
-    const bool compute_knn_reachability_distance = options_.k_nearest_neighbors_ > 1;
-
-    // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
-    const auto core_distances =
-        compute_knn_reachability_distance ? make_core_distances(indexer, options_.k_nearest_neighbors_) : nullptr;
-
-    while (forest.n_components() > 1) {
-        // keep track of the shortest edge from a component's sample index to a sample index thats not within the
-        // same component
-        auto closest_edges = std::map<IndexType, EdgeType>();
-
-        for (const auto& [component_index, component] : forest) {
-            // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from other
-            // components using the current component being explored as a reference
-            auto nn_buffer_with_memory =
-                NearestNeighborsBufferWithMemory<typename std::vector<ValueType>::iterator>(component, 1);
-
-            // initialize the closest edge from the current component to infinity
-            closest_edges[component_index] = EdgeType{common::utils::infinity<IndexType>(),
-                                                      common::utils::infinity<IndexType>(),
-                                                      common::utils::infinity<ValueType>()};
-
-            for (const auto& sample_index : component) {
-                indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer_with_memory);
-
-                // the nearest neighbor buffer with memory might not find any nearest neighbor if all the candidates
-                // are already within the same component
-                if (!nn_buffer_with_memory.empty()) {
-                    // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-                    const auto nearest_neighbor_index    = nn_buffer_with_memory.furthest_k_nearest_neighbor_index();
-                    const auto nearest_neighbor_distance = nn_buffer_with_memory.furthest_k_nearest_neighbor_distance();
-
-                    const auto distance =
-                        compute_knn_reachability_distance
-                            ? std::max(std::max(core_distances[sample_index], core_distances[nearest_neighbor_index]),
-                                       nearest_neighbor_distance)
-                            : nearest_neighbor_distance;
-
-                    if (distance < std::get<2>(closest_edges[component_index])) {
-                        closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
-                    }
-                }
-                // reinitialize the buffers to get rid of data found w.r.t. sample_index from the previous iter
-                nn_buffer_with_memory.reset_buffers_except_memory();
-            }
-        }
-        // merge components based on the best edges found in each component so far
-        for (const auto& [component_index, edge] : closest_edges) {
-            assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
-            common::utils::ignore_parameters(component_index);
-            forest.merge_components(edge);
-        }
+        std::for_each(
+            execution_policy, closest_edges.begin(), closest_edges.end(), [&](const auto& closest_edges_item) {
+                const auto& [component_index, edge] = closest_edges_item;
+                assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
+                common::utils::ignore_parameters(component_index);
+                forest.merge_components(edge);
+            });
     }
     return forest.minimum_spanning_tree();
 }

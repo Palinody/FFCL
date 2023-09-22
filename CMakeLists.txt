@@ -17,6 +17,7 @@ add_compile_options(
     -fopenmp
 )
 find_package(OpenMP REQUIRED)
+find_package(TBB REQUIRED)
 
 include_directories(
     include
@@ -72,6 +73,15 @@ add_definitions(-DVERBOSE=false)
 
 # disable all assertions
 add_definitions(-DNDEBUG)
+
+execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} --version
+    OUTPUT_VARIABLE GPP_VERSION_OUTPUT
+)
+
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" GPP_VERSION "${GPP_VERSION_OUTPUT}")
+
+message("Using g++ Version: ${GPP_VERSION}")
 
 # set(MODE "benchmarks")
 if(MODE STREQUAL "benchmark")
@@ -175,8 +185,11 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         SortingTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+        OpenMP::OpenMP_CXX
     )
     add_test(
         SortingTest
@@ -191,8 +204,11 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         NearestNeighborTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+        OpenMP::OpenMP_CXX
     )
     add_test(
         NearestNeighborTest
@@ -207,6 +223,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         StatisticsTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -224,6 +242,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         TransposeTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -241,6 +261,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         DistributionsTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -258,6 +280,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         UtilsTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -275,6 +299,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KMedoidsTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -292,6 +318,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KMeansTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -309,6 +337,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         DBSCANTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -326,6 +356,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KDTreeAlgorithmsTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -343,6 +375,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         SplittingRulePolicyTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -360,6 +394,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         AxisSelectionPolicyTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -377,6 +413,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KDTreeTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -394,6 +432,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KDTreeIndexedTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -411,6 +451,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         BoruvkasAlgorithmTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -428,6 +470,8 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         SingleLinkageClusterTreeTest
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -462,6 +506,8 @@ else()
     )
     target_link_libraries(
         ${PROJECT_NAME}
+        PUBLIC
+        TBB::tbb
         OpenMP::OpenMP_CXX
     )
 endif()

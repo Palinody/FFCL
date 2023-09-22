@@ -128,7 +128,11 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
                                  dtype=np.float32, 
                                  n_features=3)
     
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=10, min_samples=5, gen_min_span_tree=True)
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=10, 
+                                min_samples=5, 
+                                gen_min_span_tree=True, 
+                                approx_min_span_tree=False, 
+                                core_dist_n_jobs=1)
     predictions = clusterer.fit_predict(data)
 
     # plots from the c++ generated data
