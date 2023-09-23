@@ -35,12 +35,6 @@ class BoruvkasAlgorithm {
 
     using UnionFindType = UnionFind<IndexType>;
 
-#if defined(_OPENMP) && THREADS_ENABLED == true
-    static constexpr auto execution_policy = std::execution::par;
-#else
-    static constexpr auto execution_policy = std::execution::seq;
-#endif
-
     struct Options {
         Options() = default;
 
@@ -238,13 +232,12 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
         compute_knn_reachability_distance ? make_core_distances(indexer, options_.k_nearest_neighbors_) : nullptr;
 
     while (forest.n_components() > 1) {
-        // std::cout << "forest.n_components(): " << forest.n_components() << "\n";
         // keep track of the shortest edge from a component's sample index to a sample index thats not within the
         // same component
         auto closest_edges = std::map<IndexType, EdgeType>();
 
-        std::for_each(execution_policy, forest.begin(), forest.end(), [&](const auto& forest_item) {
-            const auto& [component_index, component] = forest_item;
+        for (const auto& [component_index, component] : forest) {
+            // std::cout << "component.size(): " << component.size() << "\n";
 
             // initialize the closest edge from the current component to infinity
             closest_edges[component_index] = EdgeType{common::utils::infinity<IndexType>(),
@@ -277,15 +270,13 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
                     }
                 }
             }
-        });
+        }
         // merge components based on the best edges found in each component so far
-        std::for_each(
-            execution_policy, closest_edges.begin(), closest_edges.end(), [&](const auto& closest_edges_item) {
-                const auto& [component_index, edge] = closest_edges_item;
-                assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
-                common::utils::ignore_parameters(component_index);
-                forest.merge_components(edge);
-            });
+        for (const auto& [component_index, edge] : closest_edges) {
+            assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
+            common::utils::ignore_parameters(component_index);
+            forest.merge_components(edge);
+        }
     }
     return forest.minimum_spanning_tree();
 }
