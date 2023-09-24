@@ -13,6 +13,8 @@ KDBoundingBoxType = List[List[Any]]
 FeatureVectorType = List[Any]
 DatasetType = List[FeatureVectorType]
 
+VERBOSE = False
+
 class KDNode:
     def __init__(self) -> None:
         self.points: List[Tuple[float]]
@@ -43,9 +45,10 @@ class KDTree:
         options: Dict[str, Any] = data["options"]
         self.kd_bounding_box: KDBoundingBoxType = data["bounding_box"]
 
-        print(f"n_features: {n_features}")
-        print(f"options: {options}")
-        print(f"bounding_box: {self.kd_bounding_box}")
+        if VERBOSE:
+            print(f"n_features: {n_features}")
+            print(f"options: {options}")
+            print(f"bounding_box: {self.kd_bounding_box}")
 
         return self.deserialize_kdnode(data["root"], self.kd_bounding_box)
 
@@ -148,7 +151,7 @@ def main():
     """noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""
     root_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "kdtree/")
 
-    file_names = os.listdir(root_folder)
+    file_names = [f for f in os.listdir(root_folder) if os.path.isfile(os.path.join(root_folder, f))]
 
     for filename in file_names:
 
@@ -165,7 +168,6 @@ def main():
         stem = os.path.splitext(filename)[0]
         plt.title(stem)
         plt.grid(False)
-        plt.legend()
         plt.tight_layout()
         plt.show()
 

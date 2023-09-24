@@ -124,8 +124,8 @@ def main():
     labels_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
                                  "clustering/predictions/pointclouds_sequences/" + folder_name)
 
-    # Set the interval (in milliseconds) for displaying each point cloud (1 second in this case)
-    display_rate = 250  # 1 second per point cloud
+    # Set the interval (in milliseconds) for displaying each point cloud
+    display_rate = 250
 
     # Animate the sequence of point clouds
     animate_point_clouds_from_bin_files(point_clouds_folder, 

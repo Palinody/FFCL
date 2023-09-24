@@ -35,6 +35,9 @@ class BoruvkasAlgorithm {
 
     using UnionFindType = UnionFind<IndexType>;
 
+    using CoreDistancesArray    = std::unique_ptr<ValueType[]>;
+    using CoreDistancesArrayPtr = std::shared_ptr<CoreDistancesArray>;
+
     struct Options {
         Options() = default;
 
@@ -195,7 +198,9 @@ class BoruvkasAlgorithm {
     auto make_tree(const Indexer& indexer) const;
 
   private:
-    auto make_core_distances(const Indexer& indexer, std::size_t k_nearest_neighbors) const;
+    auto make_core_distances_ptr(const Indexer& indexer, std::size_t k_nearest_neighbors) const;
+
+    auto step(const Indexer& indexer, const CoreDistancesArrayPtr& core_distances, Forest& forest) const;
 
     Options options_;
 };
@@ -211,14 +216,66 @@ BoruvkasAlgorithm<Indexer>& BoruvkasAlgorithm<Indexer>::set_options(const Option
 }
 
 template <typename Indexer>
-auto BoruvkasAlgorithm<Indexer>::make_core_distances(const Indexer& indexer, std::size_t k_nearest_neighbors) const {
-    auto core_distances = std::make_unique<ValueType[]>(indexer.n_samples());
+auto BoruvkasAlgorithm<Indexer>::make_core_distances_ptr(const Indexer& indexer,
+                                                         std::size_t    k_nearest_neighbors) const {
+    auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::make_unique<ValueType[]>(indexer.n_samples()));
 
     for (IndexType sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
-        core_distances[sample_index] = indexer.k_nearest_neighbors_around_query_index(sample_index, k_nearest_neighbors)
-                                           .furthest_k_nearest_neighbor_distance();
+        (*core_distances_ptr)[sample_index] =
+            indexer.k_nearest_neighbors_around_query_index(sample_index, k_nearest_neighbors)
+                .furthest_k_nearest_neighbor_distance();
     }
-    return core_distances;
+    return core_distances_ptr;
+}
+
+template <typename Indexer>
+auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
+                                      const CoreDistancesArrayPtr& core_distances,
+                                      Forest&                      forest) const {
+    std::cout << "forest.n_components(): " << forest.n_components() << "\n";
+    // keep track of the shortest edge from a component's sample index to a sample index thats not within the
+    // same component
+    auto closest_edges = std::map<IndexType, EdgeType>();
+
+    for (const auto& [component_index, component] : forest) {
+        // initialize the closest edge from the current component to infinity
+        closest_edges[component_index] = EdgeType{common::utils::infinity<IndexType>(),
+                                                  common::utils::infinity<IndexType>(),
+                                                  common::utils::infinity<ValueType>()};
+
+        for (const auto& sample_index : component) {
+            // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
+            // other components using the UnionFind data structure
+            auto nn_buffer = NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
+                forest.get_union_find_const_reference(), sample_index, 1);
+
+            indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer);
+
+            // the nearest neighbor buffer with memory might not find any nearest neighbor if all the candidates
+            // are already within the same component
+            if (!nn_buffer.empty()) {
+                // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
+                const auto nearest_neighbor_index    = nn_buffer.furthest_k_nearest_neighbor_index();
+                const auto nearest_neighbor_distance = nn_buffer.furthest_k_nearest_neighbor_distance();
+
+                const auto distance =
+                    core_distances
+                        ? std::max(std::max((*core_distances)[sample_index], (*core_distances)[nearest_neighbor_index]),
+                                   nearest_neighbor_distance)
+                        : nearest_neighbor_distance;
+
+                if (distance < std::get<2>(closest_edges[component_index])) {
+                    closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
+                }
+            }
+        }
+    }
+    // merge components based on the best edges found in each component so far
+    for (const auto& [component_index, edge] : closest_edges) {
+        assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
+        common::utils::ignore_parameters(component_index);
+        forest.merge_components(edge);
+    }
 }
 
 template <typename Indexer>
@@ -229,54 +286,10 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(const Indexer& indexer) const {
 
     // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
     const auto core_distances =
-        compute_knn_reachability_distance ? make_core_distances(indexer, options_.k_nearest_neighbors_) : nullptr;
+        compute_knn_reachability_distance ? make_core_distances_ptr(indexer, options_.k_nearest_neighbors_) : nullptr;
 
     while (forest.n_components() > 1) {
-        // keep track of the shortest edge from a component's sample index to a sample index thats not within the
-        // same component
-        auto closest_edges = std::map<IndexType, EdgeType>();
-
-        for (const auto& [component_index, component] : forest) {
-            // std::cout << "component.size(): " << component.size() << "\n";
-
-            // initialize the closest edge from the current component to infinity
-            closest_edges[component_index] = EdgeType{common::utils::infinity<IndexType>(),
-                                                      common::utils::infinity<IndexType>(),
-                                                      common::utils::infinity<ValueType>()};
-
-            for (const auto& sample_index : component) {
-                // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
-                // other components using the UnionFind data structure
-                auto nn_buffer = NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
-                    forest.get_union_find_const_reference(), sample_index, 1);
-
-                indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer);
-
-                // the nearest neighbor buffer with memory might not find any nearest neighbor if all the candidates
-                // are already within the same component
-                if (!nn_buffer.empty()) {
-                    // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-                    const auto nearest_neighbor_index    = nn_buffer.furthest_k_nearest_neighbor_index();
-                    const auto nearest_neighbor_distance = nn_buffer.furthest_k_nearest_neighbor_distance();
-
-                    const auto distance =
-                        compute_knn_reachability_distance
-                            ? std::max(std::max(core_distances[sample_index], core_distances[nearest_neighbor_index]),
-                                       nearest_neighbor_distance)
-                            : nearest_neighbor_distance;
-
-                    if (distance < std::get<2>(closest_edges[component_index])) {
-                        closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
-                    }
-                }
-            }
-        }
-        // merge components based on the best edges found in each component so far
-        for (const auto& [component_index, edge] : closest_edges) {
-            assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
-            common::utils::ignore_parameters(component_index);
-            forest.merge_components(edge);
-        }
+        step(indexer, core_distances, forest);
     }
     return forest.minimum_spanning_tree();
 }
