@@ -251,27 +251,33 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
 
             indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer);
 
-            // the nearest neighbor buffer with memory might not find any nearest neighbor if all the candidates
-            // are already within the same component
-            if (!nn_buffer.empty()) {
-                // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-                const auto nearest_neighbor_index    = nn_buffer.furthest_k_nearest_neighbor_index();
-                const auto nearest_neighbor_distance = nn_buffer.furthest_k_nearest_neighbor_distance();
+            // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
+            const auto nearest_neighbor_index    = nn_buffer.furthest_k_nearest_neighbor_index();
+            const auto nearest_neighbor_distance = nn_buffer.furthest_k_nearest_neighbor_distance();
 
-                const auto current_min_edge_distance = std::get<2>(closest_edges[component_index]);
+            const auto current_closest_edge_distance = std::get<2>(closest_edges[component_index]);
 
-                // compmute the k mutual reachability distance only if the core_distance != nullptr
-                const auto distance = core_distances
-                                          ? (*core_distances)[sample_index] < current_min_edge_distance
-                                                ? std::max(std::max((*core_distances)[sample_index],
-                                                                    (*core_distances)[nearest_neighbor_index]),
-                                                           nearest_neighbor_distance)
-                                                : nearest_neighbor_distance
-                                          : nearest_neighbor_distance;
+            // consider computing the k mutual reachability distance only if the core_distance != nullptr
+            if (core_distances) {
+                // compute k_mutual_reachability_distance if the core distance is within the bounds of the current
+                // shortest edge
+                if ((*core_distances)[sample_index] < current_closest_edge_distance) {
+                    const auto k_mutual_reachability_distance =
+                        std::max(std::max((*core_distances)[sample_index], (*core_distances)[nearest_neighbor_index]),
+                                 nearest_neighbor_distance);
 
-                if (distance < current_min_edge_distance) {
-                    closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
+                    // then update the current shortest edge if the k_mutual_reachability_distance is indeed
+                    // shortest than the current shortest edge distance
+                    if (k_mutual_reachability_distance < current_closest_edge_distance) {
+                        closest_edges[component_index] =
+                            EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
+                    }
                 }
+            }
+            // otherwise just use the
+            else if (nearest_neighbor_distance < current_closest_edge_distance) {
+                closest_edges[component_index] =
+                    EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
             }
         }
     }
