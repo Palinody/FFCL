@@ -29,6 +29,8 @@ class NearestNeighborsBufferBase {
 
     virtual std::size_t size() const = 0;
 
+    virtual std::size_t n_free_slots() const = 0;
+
     virtual bool empty() const = 0;
 
     virtual IndexType furthest_k_nearest_neighbor_index() const = 0;
@@ -78,6 +80,10 @@ class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<SamplesIt
         return indices_.size();
     }
 
+    std::size_t n_free_slots() const {
+        return max_capacity_ - this->size();
+    }
+
     bool empty() const {
         return indices_.empty();
     }
@@ -110,7 +116,7 @@ class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<SamplesIt
         auto distances_it = std::lower_bound(distances_.begin(), distances_.end(), distance_candidate);
 
         // populate at the right index if the max capacity isnt reached
-        if (indices_.size() < max_capacity_) {
+        if (this->n_free_slots()) {
             const std::size_t insertion_index = std::distance(distances_.begin(), distances_it);
             indices_.insert(indices_.begin() + insertion_index, index_candidate);
             distances_.insert(distances_it, distance_candidate);
@@ -175,6 +181,10 @@ class NearestNeighborsBuffer : public NearestNeighborsBufferBase<SamplesIterator
         return indices_.size();
     }
 
+    std::size_t n_free_slots() const {
+        return max_capacity_ - this->size();
+    }
+
     bool empty() const {
         return indices_.empty();
     }
@@ -209,7 +219,7 @@ class NearestNeighborsBuffer : public NearestNeighborsBufferBase<SamplesIterator
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // always populate if the max capacity isnt reached
-        if (indices_.size() < max_capacity_) {
+        if (this->n_free_slots()) {
             indices_.emplace_back(index_candidate);
             distances_.emplace_back(distance_candidate);
             if (distance_candidate > furthest_k_nearest_neighbor_distance_) {
@@ -294,6 +304,10 @@ class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<Sa
         return indices_.size();
     }
 
+    std::size_t n_free_slots() const {
+        return max_capacity_ - this->size();
+    }
+
     bool empty() const {
         return indices_.empty();
     }
@@ -334,7 +348,7 @@ class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<Sa
 
         if (do_nearest_neighbor_buffer_update) {
             // always populate if the max capacity isnt reached
-            if (indices_.size() < max_capacity_) {
+            if (this->n_free_slots()) {
                 indices_.emplace_back(index_candidate);
                 distances_.emplace_back(distance_candidate);
                 if (distance_candidate > furthest_k_nearest_neighbor_distance_) {
@@ -437,6 +451,10 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
         return indices_.size();
     }
 
+    std::size_t n_free_slots() const {
+        return max_capacity_ - this->size();
+    }
+
     IndexType furthest_k_nearest_neighbor_index() const {
         return indices_[furthest_buffer_index_];
     }
@@ -489,7 +507,7 @@ class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<Sampl
         // consider an update only if the index hasnt been visited
         if (visited_indices_reference_.find(index_candidate) == visited_indices_reference_.end()) {
             // always populate if the max capacity isnt reached
-            if (indices_.size() < max_capacity_) {
+            if (this->n_free_slots()) {
                 indices_.emplace_back(index_candidate);
                 distances_.emplace_back(distance_candidate);
                 if (distance_candidate > furthest_k_nearest_neighbor_distance_) {

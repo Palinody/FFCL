@@ -23,7 +23,7 @@ struct SingleLinkageClusterNode {
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
-    // a sample index itself if the node is leaf or the sample's index used as a cluster index representative otherwise
+    // a node indexes itself if the node is leaf or the sample's index used as a cluster index representative otherwise
     IndexType representative_;
     // the distance that separates this node's left and right children and which represents its hight in the tree
     ValueType level_;

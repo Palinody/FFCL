@@ -258,14 +258,15 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
                 const auto nearest_neighbor_index    = nn_buffer.furthest_k_nearest_neighbor_index();
                 const auto nearest_neighbor_distance = nn_buffer.furthest_k_nearest_neighbor_distance();
 
-                const auto distance =
-                    core_distances
-                        ? std::max(std::max((*core_distances)[sample_index], (*core_distances)[nearest_neighbor_index]),
-                                   nearest_neighbor_distance)
-                        : nearest_neighbor_distance;
+                if ((*core_distances)[sample_index] < std::get<2>(closest_edges[component_index])) {
+                    const auto distance = core_distances ? std::max(std::max((*core_distances)[sample_index],
+                                                                             (*core_distances)[nearest_neighbor_index]),
+                                                                    nearest_neighbor_distance)
+                                                         : nearest_neighbor_distance;
 
-                if (distance < std::get<2>(closest_edges[component_index])) {
-                    closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
+                    if (distance < std::get<2>(closest_edges[component_index])) {
+                        closest_edges[component_index] = EdgeType{sample_index, nearest_neighbor_index, distance};
+                    }
                 }
             }
         }

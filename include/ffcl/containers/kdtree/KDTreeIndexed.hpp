@@ -833,10 +833,12 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_t
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
         bool visit_sibling = kdnode->is_left_child()
-                                 ? common::utils::abs(pivot_split_value - query_split_value) <
-                                       nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance()
-                                 : common::utils::abs(pivot_split_value - query_split_value) <=
-                                       nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance();
+                                 ? nearest_neighbors_buffer.n_free_slots() ||
+                                       common::utils::abs(pivot_split_value - query_split_value) <
+                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance()
+                                 : nearest_neighbors_buffer.n_free_slots() ||
+                                       common::utils::abs(pivot_split_value - query_split_value) <=
+                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance();
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -1643,10 +1645,12 @@ KDTreeIndexed<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_t
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
         bool visit_sibling = kdnode->is_left_child()
-                                 ? common::utils::abs(pivot_split_value - query_split_value) <
-                                       nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance()
-                                 : common::utils::abs(pivot_split_value - query_split_value) <=
-                                       nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance();
+                                 ? nearest_neighbors_buffer.n_free_slots() ||
+                                       common::utils::abs(pivot_split_value - query_split_value) <
+                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance()
+                                 : nearest_neighbors_buffer.n_free_slots() ||
+                                       common::utils::abs(pivot_split_value - query_split_value) <=
+                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance();
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
