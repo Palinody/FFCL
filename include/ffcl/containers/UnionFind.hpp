@@ -51,14 +51,16 @@ bool UnionFind<IndexType>::merge(const IndexType& index_1, const IndexType& inde
 
     if (representative_1 == representative_2) {
         return false;
-    }
-    if (ranks_[representative_1] < ranks_[representative_2]) {
-        labels_[representative_1] = representative_2;
-        ++ranks_[representative_2];
+
+    } else if (ranks_[representative_1] == ranks_[representative_2]) {
+        labels_[representative_2] = labels_[representative_1];
+        ++ranks_[representative_1];
+
+    } else if (ranks_[representative_1] > ranks_[representative_2]) {
+        labels_[representative_2] = representative_1;
 
     } else {
-        labels_[representative_2] = representative_1;
-        ++ranks_[representative_1];
+        labels_[representative_1] = representative_2;
     }
     return true;
 }
