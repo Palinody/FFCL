@@ -24,13 +24,14 @@ It'll stay that way for now for practicality.
     - **Single Linkage Cluster Tree**: **done**. **Dendrogram python** plots are also **done**
     - **Condensed cluster tree**: **not done**.
     - **HDBSCAN***: assembly of the aforementionned parts **not done**.
+    - The performance of HDBSCAN* can be improved by using a **Dual Tree Traversal** instead of the single one currently used to build the MST. The queries will be batched instead of feeding single queries sequentially to the tree uppon which is performed a nearest neighbors search. However some refactorization of KDTree will be welcomed first. The single and dual tree traversal will be organised similarly to the work of [MLPACK](https://ratml.org/pub/pdf/2015faster.pdf) library as described in this paper by providing general "pruning" and "action" functions. The goal is to use any tree datastructure and a wider set of search algorithms without the need to obfuscate the code. This is mostly done by using slightly different `recurse_to_closest_leaf_node` and `get_parent_node_after_sibling_traversal` functions for each search algorithm and still necessitate code duplication that could be avoided with a bit of work.
 
 - **Last features**
   - DBSCAN
   - Minimum Spanning Tree (MST) with Boruvka's algorithm
   - Single Linkage Cluster Tree
 
-## Current features
+## Current features (not up to date)
 
 - ### DBSCAN (kdtree)
 
