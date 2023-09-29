@@ -32,14 +32,14 @@ def TestHDBSCAN(points: np.ndarray, min_samples):
                                  min_samples=min_samples, 
                                  gen_min_span_tree=True, 
                                  approx_min_span_tree=True, 
-                                 core_dist_n_jobs=1)
+                                 core_dist_n_jobs=6)
 
     start_time = time.process_time()
     labels = clustering.fit_predict(points)
     end_time = time.process_time()
     # print the elapsed time
     print(
-        "Elapsed time for DBSCAN (sklearn):",
+        "Elapsed time for HDBSCAN (sklearn):",
         end_time - start_time,
         "seconds",
     )

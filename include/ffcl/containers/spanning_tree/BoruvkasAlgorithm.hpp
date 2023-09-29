@@ -235,27 +235,27 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
     std::cout << "forest.n_components(): " << forest.n_components() << "\n";
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
-    auto closest_edges = std::map<IndexType, EdgeType>();
+    auto components_closest_edge = std::map<IndexType, EdgeType>();
 
-    for (const auto& [component_index, component] : forest) {
+    for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
-        closest_edges[component_index] = EdgeType{common::utils::infinity<IndexType>(),
-                                                  common::utils::infinity<IndexType>(),
-                                                  common::utils::infinity<ValueType>()};
+        components_closest_edge[component_representative] = EdgeType{common::utils::infinity<IndexType>(),
+                                                                     common::utils::infinity<IndexType>(),
+                                                                     common::utils::infinity<ValueType>()};
+
+        // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
+        // other components using the UnionFind data structure
+        auto nn_buffer = NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
+            forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {
-            // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
-            // other components using the UnionFind data structure
-            auto nn_buffer = NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
-                forest.get_union_find_const_reference(), sample_index, 1);
-
             indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer);
 
             // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
             const auto nearest_neighbor_index    = nn_buffer.furthest_k_nearest_neighbor_index();
             const auto nearest_neighbor_distance = nn_buffer.furthest_k_nearest_neighbor_distance();
 
-            const auto current_closest_edge_distance = std::get<2>(closest_edges[component_index]);
+            const auto current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);
 
             // consider computing the k mutual reachability distance only if the core_distance != nullptr
             if (core_distances) {
@@ -269,22 +269,23 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
                     // then update the current shortest edge if the k_mutual_reachability_distance is indeed
                     // shortest than the current shortest edge distance
                     if (k_mutual_reachability_distance < current_closest_edge_distance) {
-                        closest_edges[component_index] =
+                        components_closest_edge[component_representative] =
                             EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
                     }
                 }
             }
-            // otherwise just use the
+            // otherwise just use the distance of the kth nearest neighbor
             else if (nearest_neighbor_distance < current_closest_edge_distance) {
-                closest_edges[component_index] =
+                components_closest_edge[component_representative] =
                     EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
             }
+            nn_buffer.reset_buffers_except_memory();
         }
     }
     // merge components based on the best edges found in each component so far
-    for (const auto& [component_index, edge] : closest_edges) {
+    for (const auto& [component_representative, edge] : components_closest_edge) {
         assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
-        common::utils::ignore_parameters(component_index);
+        common::utils::ignore_parameters(component_representative);
         forest.merge_components(edge);
     }
 }

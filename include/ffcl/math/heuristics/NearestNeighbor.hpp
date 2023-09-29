@@ -273,14 +273,14 @@ class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<Sa
 
   public:
     NearestNeighborsBufferWithUnionFind(const UnionFindType& union_find_ref,
-                                        const IndexType&     query_index,
+                                        const IndexType&     query_representative,
                                         const IndexType&     max_capacity = common::utils::infinity<IndexType>())
-      : NearestNeighborsBufferWithUnionFind({}, {}, union_find_ref, query_index, max_capacity) {}
+      : NearestNeighborsBufferWithUnionFind({}, {}, union_find_ref, query_representative, max_capacity) {}
 
     NearestNeighborsBufferWithUnionFind(const IndicesType&   init_neighbors_indices,
                                         const DistancesType& init_neighbors_distances,
                                         const UnionFindType& union_find_ref,
-                                        const IndexType&     query_index,
+                                        const IndexType&     query_representative,
                                         const IndexType&     max_capacity = common::utils::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
@@ -288,7 +288,7 @@ class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<Sa
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity > init_neighbors_indices.size() ? max_capacity : init_neighbors_indices.size()}
       , union_find_ref_{union_find_ref}
-      , query_index_{query_index} {
+      , query_representative_{query_representative} {
         if (indices_.size()) {
             if (indices_.size() == distances_.size()) {
                 std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
@@ -341,12 +341,11 @@ class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<Sa
     }
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        // consider an update only if there is at least one current nearest neighbor in the buffer and if there is at
-        // least one, the candidate index should not belong to the same component as the furthest nearest neighbor
-        const bool do_nearest_neighbor_buffer_update =
-            indices_.empty() ? true : union_find_ref_.find(query_index_) != union_find_ref_.find(index_candidate);
+        // consider an update only if the candidate is not in the same component as the representative of the component
+        const bool is_candidate_valid =
+            union_find_ref_.find(query_representative_) != union_find_ref_.find(index_candidate);
 
-        if (do_nearest_neighbor_buffer_update) {
+        if (is_candidate_valid) {
             // always populate if the max capacity isnt reached
             if (this->n_free_slots()) {
                 indices_.emplace_back(index_candidate);
@@ -392,7 +391,7 @@ class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<Sa
     IndexType                 max_capacity_;
 
     const UnionFindType& union_find_ref_;
-    IndexType            query_index_;
+    IndexType            query_representative_;
 };
 
 template <typename SamplesIterator, typename VisitedIndicesType = std::unordered_set<std::size_t>>
