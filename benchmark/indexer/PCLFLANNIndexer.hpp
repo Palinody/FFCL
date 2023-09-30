@@ -44,7 +44,7 @@ class PCLFLANNIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
         return this->n_features_;
     }
 
-    BaseNearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const override {
+    BaseNearestNeighborsBuffer radius_search(std::size_t sample_index_query, const DataType& radius) const override {
         IndexContainer        indices;
         std::vector<DataType> distances_squared;
 

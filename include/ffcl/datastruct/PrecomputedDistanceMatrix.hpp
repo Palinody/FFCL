@@ -14,7 +14,7 @@
 #include <omp.h>
 #endif
 
-namespace ffcl::containers {
+namespace ffcl::datastruct {
 
 template <typename Iterator>
 std::vector<std::vector<typename Iterator::value_type>> make_pairwise_low_triangle_distance_matrix(
@@ -56,14 +56,14 @@ std::vector<std::vector<typename Iterator::value_type>> make_pairwise_low_triang
 }
 
 template <typename Iterator>
-class LowerTriangleMatrix {
+class PrecomputedDistanceMatrix {
   public:
     using ValueType             = typename Iterator::value_type;
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    LowerTriangleMatrix(const Iterator& samples_first, const Iterator& samples_last, std::size_t n_features);
+    PrecomputedDistanceMatrix(const Iterator& samples_first, const Iterator& samples_last, std::size_t n_features);
 
-    LowerTriangleMatrix(const DatasetDescriptorType& dataset_descriptor);
+    PrecomputedDistanceMatrix(const DatasetDescriptorType& dataset_descriptor);
 
     ValueType& operator()(std::size_t sample_index, std::size_t feature_index);
 
@@ -78,17 +78,17 @@ class LowerTriangleMatrix {
 };
 
 template <typename Iterator>
-LowerTriangleMatrix<Iterator>::LowerTriangleMatrix(const Iterator& samples_first,
-                                                   const Iterator& samples_last,
-                                                   std::size_t     n_features)
+PrecomputedDistanceMatrix<Iterator>::PrecomputedDistanceMatrix(const Iterator& samples_first,
+                                                               const Iterator& samples_last,
+                                                               std::size_t     n_features)
   : data_{make_pairwise_low_triangle_distance_matrix(samples_first, samples_last, n_features)} {}
 
 template <typename Iterator>
-LowerTriangleMatrix<Iterator>::LowerTriangleMatrix(const DatasetDescriptorType& dataset_descriptor)
+PrecomputedDistanceMatrix<Iterator>::PrecomputedDistanceMatrix(const DatasetDescriptorType& dataset_descriptor)
   : data_{make_pairwise_low_triangle_distance_matrix(dataset_descriptor)} {}
 
 template <typename Iterator>
-typename LowerTriangleMatrix<Iterator>::ValueType& LowerTriangleMatrix<Iterator>::operator()(
+typename PrecomputedDistanceMatrix<Iterator>::ValueType& PrecomputedDistanceMatrix<Iterator>::operator()(
     std::size_t sample_index,
     std::size_t feature_index) {
     // swap the indices if an upper triangle (diagonal excluded) quiery is made
@@ -99,7 +99,7 @@ typename LowerTriangleMatrix<Iterator>::ValueType& LowerTriangleMatrix<Iterator>
 }
 
 template <typename Iterator>
-const typename LowerTriangleMatrix<Iterator>::ValueType& LowerTriangleMatrix<Iterator>::operator()(
+const typename PrecomputedDistanceMatrix<Iterator>::ValueType& PrecomputedDistanceMatrix<Iterator>::operator()(
     std::size_t sample_index,
     std::size_t feature_index) const {
     // swap the indices if an upper triangle (diagonal excluded) quiery is made
@@ -110,14 +110,16 @@ const typename LowerTriangleMatrix<Iterator>::ValueType& LowerTriangleMatrix<Ite
 }
 
 template <typename Iterator>
-class LowerTriangleMatrixDynamic {
+class PrecomputedDistanceMatrixDynamic {
   public:
     using ValueType             = typename Iterator::value_type;
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    LowerTriangleMatrixDynamic(const Iterator& samples_first, const Iterator& samples_last, std::size_t n_features);
+    PrecomputedDistanceMatrixDynamic(const Iterator& samples_first,
+                                     const Iterator& samples_last,
+                                     std::size_t     n_features);
 
-    LowerTriangleMatrixDynamic(const DatasetDescriptorType& dataset_descriptor);
+    PrecomputedDistanceMatrixDynamic(const DatasetDescriptorType& dataset_descriptor);
 
     ValueType operator()(std::size_t sample_index, std::size_t feature_index) const;
 
@@ -130,21 +132,22 @@ class LowerTriangleMatrixDynamic {
 };
 
 template <typename Iterator>
-LowerTriangleMatrixDynamic<Iterator>::LowerTriangleMatrixDynamic(const Iterator& samples_first,
-                                                                 const Iterator& samples_last,
-                                                                 std::size_t     n_features)
+PrecomputedDistanceMatrixDynamic<Iterator>::PrecomputedDistanceMatrixDynamic(const Iterator& samples_first,
+                                                                             const Iterator& samples_last,
+                                                                             std::size_t     n_features)
   : samples_first_{samples_first}
   , samples_last_{samples_last}
   , n_features_{n_features} {}
 
 template <typename Iterator>
-LowerTriangleMatrixDynamic<Iterator>::LowerTriangleMatrixDynamic(const DatasetDescriptorType& dataset_descriptor)
-  : LowerTriangleMatrixDynamic<Iterator>(std::get<0>(dataset_descriptor),
-                                         std::get<1>(dataset_descriptor),
-                                         std::get<2>(dataset_descriptor)) {}
+PrecomputedDistanceMatrixDynamic<Iterator>::PrecomputedDistanceMatrixDynamic(
+    const DatasetDescriptorType& dataset_descriptor)
+  : PrecomputedDistanceMatrixDynamic<Iterator>(std::get<0>(dataset_descriptor),
+                                               std::get<1>(dataset_descriptor),
+                                               std::get<2>(dataset_descriptor)) {}
 
 template <typename Iterator>
-typename LowerTriangleMatrixDynamic<Iterator>::ValueType LowerTriangleMatrixDynamic<Iterator>::operator()(
+typename PrecomputedDistanceMatrixDynamic<Iterator>::ValueType PrecomputedDistanceMatrixDynamic<Iterator>::operator()(
     std::size_t sample_index,
     std::size_t feature_index) const {
     // swap the indices if an upper triangle (diagonal excluded) quiery is made
@@ -159,7 +162,7 @@ typename LowerTriangleMatrixDynamic<Iterator>::ValueType LowerTriangleMatrixDyna
 }
 
 template <typename Iterator>
-std::size_t LowerTriangleMatrixDynamic<Iterator>::n_samples() const {
+std::size_t PrecomputedDistanceMatrixDynamic<Iterator>::n_samples() const {
     return common::utils::get_n_samples(samples_first_, samples_last_, n_features_);
 }
 
@@ -178,4 +181,4 @@ void print_matrix(const Matrix& matrix) {
     }
 }
 
-}  // namespace ffcl::containers
+}  // namespace ffcl::datastruct

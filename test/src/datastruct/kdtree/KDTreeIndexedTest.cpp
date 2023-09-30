@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "ffcl/common/Timer.hpp"
-#include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/datastruct/kdtree/KDTreeIndexed.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // std::ssize_t
@@ -191,13 +191,13 @@ TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -239,13 +239,13 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsIndexTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -304,13 +304,13 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountIndexTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -359,13 +359,13 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusIndexTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -412,13 +412,13 @@ TEST_F(KDTreeIndexedErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -462,13 +462,13 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsSampleTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -533,13 +533,13 @@ TEST_F(KDTreeIndexedErrorsTest, RadiusCountSampleTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -589,13 +589,13 @@ TEST_F(KDTreeIndexedErrorsTest, KNearestNeighborsInRadiusSampleTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -652,13 +652,13 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxCountIndexTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -706,13 +706,13 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxSearchIndexTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -768,13 +768,13 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxCountSampleTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -825,13 +825,13 @@ TEST_F(KDTreeIndexedErrorsTest, KDBoundingBoxSearchSampleTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -891,13 +891,13 @@ TEST_F(KDTreeIndexedErrorsTest, MNISTTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     // IndexedHighestVarianceBuild, IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(
@@ -930,13 +930,13 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyCirclesTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -973,13 +973,13 @@ TEST_F(KDTreeIndexedErrorsTest, NoisyMoonsTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -1016,13 +1016,13 @@ TEST_F(KDTreeIndexedErrorsTest, VariedTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -1059,13 +1059,13 @@ TEST_F(KDTreeIndexedErrorsTest, AnisoTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -1102,13 +1102,13 @@ TEST_F(KDTreeIndexedErrorsTest, BlobsTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -1145,13 +1145,13 @@ TEST_F(KDTreeIndexedErrorsTest, NoStructureTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())
@@ -1188,13 +1188,13 @@ TEST_F(KDTreeIndexedErrorsTest, UnbalancedBlobsTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
 
-    auto kdtree = ffcl::containers::KDTreeIndexed(
+    auto kdtree = ffcl::datastruct::KDTreeIndexed(
         indices.begin(),
         indices.end(),
         data.begin(),
         data.end(),
         n_features,
-        ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
+        ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options()
             .bucket_size(std::sqrt(n_samples))
             .max_depth(std::log2(n_samples))
             .axis_selection_policy(kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>())

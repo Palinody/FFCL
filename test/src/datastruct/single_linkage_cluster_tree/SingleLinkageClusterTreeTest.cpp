@@ -3,9 +3,9 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
-#include "ffcl/containers/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
-#include "ffcl/containers/spanning_tree/BoruvkasAlgorithm.hpp"
+#include "ffcl/datastruct/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
+#include "ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -175,7 +175,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -230,7 +230,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -285,7 +285,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -340,7 +340,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -395,7 +395,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -450,7 +450,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -505,7 +505,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -574,7 +574,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;

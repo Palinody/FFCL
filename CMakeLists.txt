@@ -39,23 +39,19 @@ set(HEADER_FILES
     include/ffcl/math/random/Distributions.hpp
     include/ffcl/math/random/VosesAliasMethod.hpp
 
-    include/ffcl/containers/kdtree/policy/IndexedAxisSelectionPolicy.hpp
-    include/ffcl/containers/kdtree/policy/IndexedSplittingRulePolicy.hpp
-    include/ffcl/containers/kdtree/policy/AxisSelectionPolicy.hpp
-    include/ffcl/containers/kdtree/policy/SplittingRulePolicy.hpp
-    include/ffcl/containers/kdtree/KDNodeIndexView.hpp
-    include/ffcl/containers/kdtree/KDNodeView.hpp
-    include/ffcl/containers/kdtree/KDTree.hpp
-    include/ffcl/containers/kdtree/KDTreeAlgorithms.hpp
-    include/ffcl/containers/kdtree/KDTreeIndexed.hpp
+    include/ffcl/datastruct/kdtree/policy/IndexedAxisSelectionPolicy.hpp
+    include/ffcl/datastruct/kdtree/policy/IndexedSplittingRulePolicy.hpp
+    include/ffcl/datastruct/kdtree/KDNodeIndexView.hpp
+    include/ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp
+    include/ffcl/datastruct/kdtree/KDTreeIndexed.hpp
 
-    include/ffcl/containers/FeatureMaskArray.hpp
-    include/ffcl/containers/LowerTriangleMatrix.hpp
-    include/ffcl/containers/BoundingBox.hpp
+    include/ffcl/datastruct/FeatureMaskArray.hpp
+    include/ffcl/datastruct/PrecomputedDistanceMatrix.hpp
+    include/ffcl/datastruct/BoundingBox.hpp
 
-    include/ffcl/containers/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
+    include/ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
 
-    include/ffcl/containers/spanning_tree/BoruvkasAlgorithm.hpp
+    include/ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp
 
     include/ffcl/math/heuristics/Distances.hpp
     include/ffcl/math/heuristics/SilhouetteMethod.hpp
@@ -352,7 +348,7 @@ elseif(MODE STREQUAL "gtest")
         KDTreeAlgorithmsTest
 
         # ---
-        test/src/containers/kdtree/KDTreeAlgorithmsTest.cpp
+        test/src/datastruct/kdtree/KDTreeAlgorithmsTest.cpp
     )
     target_link_libraries(
         KDTreeAlgorithmsTest
@@ -368,13 +364,13 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
-        SplittingRulePolicyTest
+        IndexedSplittingRulePolicyTest
 
         # ---
-        test/src/containers/kdtree/policy/SplittingRulePolicyTest.cpp
+        test/src/datastruct/kdtree/policy/IndexedSplittingRulePolicyTest.cpp
     )
     target_link_libraries(
-        SplittingRulePolicyTest
+        IndexedSplittingRulePolicyTest
         PUBLIC
         TBB::tbb
         GTest::gtest_main
@@ -382,18 +378,18 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        SplittingRulePolicyTest
-        SplittingRulePolicyTest
+        IndexedSplittingRulePolicyTest
+        IndexedSplittingRulePolicyTest
     )
 
     add_executable(
-        AxisSelectionPolicyTest
+        IndexedAxisSelectionPolicyTest
 
         # ---
-        test/src/containers/kdtree/policy/AxisSelectionPolicyTest.cpp
+        test/src/datastruct/kdtree/policy/IndexedAxisSelectionPolicyTest.cpp
     )
     target_link_libraries(
-        AxisSelectionPolicyTest
+        IndexedAxisSelectionPolicyTest
         PUBLIC
         TBB::tbb
         GTest::gtest_main
@@ -401,34 +397,15 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        AxisSelectionPolicyTest
-        AxisSelectionPolicyTest
-    )
-
-    add_executable(
-        KDTreeTest
-
-        # ---
-        test/src/containers/kdtree/KDTreeTest.cpp
-    )
-    target_link_libraries(
-        KDTreeTest
-        PUBLIC
-        TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        KDTreeTest
-        KDTreeTest
+        IndexedAxisSelectionPolicyTest
+        IndexedAxisSelectionPolicyTest
     )
 
     add_executable(
         KDTreeIndexedTest
 
         # ---
-        test/src/containers/kdtree/KDTreeIndexedTest.cpp
+        test/src/datastruct/kdtree/KDTreeIndexedTest.cpp
     )
     target_link_libraries(
         KDTreeIndexedTest
@@ -447,7 +424,7 @@ elseif(MODE STREQUAL "gtest")
         BoruvkasAlgorithmTest
 
         # ---
-        test/src/containers/spanning_tree/BoruvkasAlgorithmTest.cpp
+        test/src/datastruct/spanning_tree/BoruvkasAlgorithmTest.cpp
     )
     target_link_libraries(
         BoruvkasAlgorithmTest
@@ -466,7 +443,7 @@ elseif(MODE STREQUAL "gtest")
         SingleLinkageClusterTreeTest
 
         # ---
-        test/src/containers/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
+        test/src/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
     )
     target_link_libraries(
         SingleLinkageClusterTreeTest
@@ -489,7 +466,7 @@ elseif(MODE STREQUAL "gtest")
         LABELS "UtilityTests"
     )
 
-    set_tests_properties(KDTreeTest KDTreeIndexedTest PROPERTIES
+    set_tests_properties(KDTreeIndexedTest PROPERTIES
         LABELS "IndexingTests"
     )
 

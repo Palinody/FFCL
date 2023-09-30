@@ -10,7 +10,7 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/datastruct/kdtree/KDTreeIndexed.hpp"
 #include "ffcl/dbscan/DBSCAN.hpp"
 
 #include "ffcl/math/statistics/Statistics.hpp"
@@ -86,7 +86,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     timer.reset();
 
     // /*
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radiusSearch, radius);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search, radius);
     // */
     /*
     const auto predictions =
@@ -172,7 +172,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radiusSearch, radius);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search, radius);
 
     bench_summary.indexer_query_duration = timer.elapsed();
 
@@ -251,7 +251,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radiusSearch, radius);
+    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search, radius);
 
     bench_summary.indexer_query_duration = timer.elapsed();
 

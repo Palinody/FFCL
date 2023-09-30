@@ -2,7 +2,7 @@
 
 #include "BaseIndexer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/datastruct/kdtree/KDTreeIndexed.hpp"
 
 #include <cmath>
 
@@ -17,7 +17,7 @@ class FFCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
 
     using IndicesIterator = typename IndexContainer::iterator;
 
-    using IndexerType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>;
+    using IndexerType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>;
     using OptionsType             = typename IndexerType::Options;
     using AxisSelectionPolicyType = kdtree::policy::IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>;
@@ -31,7 +31,7 @@ class FFCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
       : BaseIndexer<IndexContainer, SamplesIterator>(data_first, data_last, n_features)
       , max_leaf_size_{max_leaf_size ? max_leaf_size : static_cast<std::size_t>(std::sqrt(this->n_samples_))}
       , indices_{IndexContainer(indices_first, indices_last)}
-      , kd_tree_{ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>(
+      , kd_tree_{ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>(
             indices_.begin(),
             indices_.end(),
             this->data_first_,
@@ -51,7 +51,7 @@ class FFCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
         return this->n_features_;
     }
 
-    BaseNearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const override {
+    BaseNearestNeighborsBuffer radius_search(std::size_t sample_index_query, const DataType& radius) const override {
         auto nearest_neighbors_buffer = kd_tree_.radius_search_around_query_index(sample_index_query, radius);
 
         return BaseNearestNeighborsBuffer(nearest_neighbors_buffer.move_indices(),

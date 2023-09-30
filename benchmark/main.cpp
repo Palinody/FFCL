@@ -6,9 +6,9 @@
 #include <stdio.h>
 
 int main() {
-    // kmeans::benchmark::mnist_bench();
-    // kmedoids::benchmark::mnist_bench();
-    dbscan::benchmark::run_dbscan_benchmarks_on_point_cloud_sequences();
+    kmeans::benchmark::bench_mnist();
+    kmedoids::benchmark::bench_mnist();
+    // dbscan::benchmark::run_dbscan_benchmarks_on_point_cloud_sequences();
 
     // kdtree::benchmark::run_toy_datasets_benchmarks();
 

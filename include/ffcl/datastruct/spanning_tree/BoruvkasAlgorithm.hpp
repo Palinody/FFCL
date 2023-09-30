@@ -2,9 +2,9 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/containers/spanning_tree/MinimumSpanningTree.hpp"
+#include "ffcl/datastruct/spanning_tree/MinimumSpanningTree.hpp"
 
-#include "ffcl/containers/UnionFind.hpp"
+#include "ffcl/datastruct/UnionFind.hpp"
 
 #include <cassert>
 #include <cstddef>

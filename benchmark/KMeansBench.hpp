@@ -21,6 +21,8 @@ void fit_once(const InputsIterator& samples_first,
 
     kmeans.set_options(KMeans::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
 
+    std::cout << "KMeans: \n";
+
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     kmeans.fit(samples_first, samples_last);
@@ -28,7 +30,7 @@ void fit_once(const InputsIterator& samples_first,
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
 
-void mnist_bench() {
+void bench_mnist() {
     fs::path filename = "mnist.txt";
 
     const auto        data = bench::io::txt::load_data<bench::io::DataType>(bench::io::inputs_folder / filename, ' ');

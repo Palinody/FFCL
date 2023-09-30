@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ffcl/containers/UnionFind.hpp"
-#include "ffcl/containers/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
-#include "ffcl/containers/spanning_tree/MinimumSpanningTree.hpp"
+#include "ffcl/datastruct/UnionFind.hpp"
+#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
+#include "ffcl/datastruct/spanning_tree/MinimumSpanningTree.hpp"
 
 #include <cstdio>
 #include <numeric>

@@ -2,7 +2,7 @@
 
 #include "ffcl/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/BoundingBox.hpp"
+#include "ffcl/datastruct/BoundingBox.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 #include "ffcl/math/random/Sampling.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
@@ -45,42 +45,6 @@ ssize_t select_axis_with_largest_bounding_box_difference(
         }
     }
     return current_max_range_feature_index;
-}
-
-template <typename SamplesIterator>
-ssize_t select_axis_with_largest_variance(const SamplesIterator& samples_first,
-                                          const SamplesIterator& samples_last,
-                                          std::size_t            n_features,
-                                          double                 n_samples_fraction) {
-    assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
-
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
-
-    // set the number of samples as a fraction of the input
-    const std::size_t n_choices = n_samples_fraction * n_samples;
-
-    // select the axis based on variance only if the number of selected samples is greater than 2
-    if (n_choices > 2) {
-        const auto random_samples =
-            math::random::select_n_random_samples(samples_first, samples_last, n_features, n_choices);
-        // return the feature index with the maximum variance
-        return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
-    }
-    // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
-    // compute the variance with the minimum number of samples, which is 3
-    if (n_samples > 2) {
-        const auto random_samples = math::random::select_n_random_samples(samples_first, samples_last, n_features, 3);
-        // return the feature index with the maximum variance
-        return math::statistics::argmax_variance_per_feature(random_samples.begin(), random_samples.end(), n_features);
-    }
-    // select the axis according to the dimension with the most spread between 2 points
-    if (n_samples == 2) {
-        // otherwise apply the bounding box method
-        const auto kd_bounding_box = ffcl::bbox::make_kd_bounding_box(samples_first, samples_last, n_features);
-        return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
-    }
-    // return a random axis if theres only one sample left
-    return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -162,76 +126,6 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          index_
     }
     // return a random axis if theres only one sample left
     return math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
-}
-
-template <typename SamplesIterator>
-std::tuple<std::size_t,
-           ffcl::bbox::IteratorPairType<SamplesIterator>,
-           ffcl::bbox::IteratorPairType<SamplesIterator>,
-           ffcl::bbox::IteratorPairType<SamplesIterator>>
-shift_median_to_leftmost_equal_value(std::size_t                                   median_index,
-                                     ffcl::bbox::IteratorPairType<SamplesIterator> left_range,
-                                     ffcl::bbox::IteratorPairType<SamplesIterator> median_range,
-                                     ffcl::bbox::IteratorPairType<SamplesIterator> right_range,
-                                     std::size_t                                   n_features,
-                                     std::size_t                                   feature_index) {
-    const auto left_range_samples = common::utils::get_n_samples(left_range.first, left_range.second, n_features);
-
-    // return if the left range is empty because no left shift is possible
-    if (!left_range_samples) {
-        return {median_index, left_range, median_range, right_range};
-    }
-    // the target value of the median
-    const auto cut_value = median_range.first[feature_index];
-
-    // the left range iterator at the value the current pointer will be compared to at each iteration
-    auto left_neighbor_value_it = left_range.second + feature_index - n_features;
-
-    // decrement the iterators while the left range isnt empty and the neighbor value at the left of the median is still
-    // equal to the cut value at the corresponding feature index
-    while (std::distance(left_range.first + feature_index, left_neighbor_value_it) >= 0 &&
-           common::utils::equality(*left_neighbor_value_it, cut_value)) {
-        left_neighbor_value_it -= n_features;
-        median_range.first -= n_features;
-    }
-    // update the ranges accordingly
-    left_range.second   = median_range.first;
-    median_range.second = median_range.first + n_features;
-    right_range.first   = median_range.second;
-    median_index        = common::utils::get_n_samples(left_range.first, median_range.first, n_features);
-
-    return {median_index, left_range, median_range, right_range};
-}
-
-template <typename SamplesIterator>
-std::tuple<std::size_t,
-           ffcl::bbox::IteratorPairType<SamplesIterator>,
-           ffcl::bbox::IteratorPairType<SamplesIterator>,
-           ffcl::bbox::IteratorPairType<SamplesIterator>>
-quickselect_median_range(SamplesIterator samples_first,
-                         SamplesIterator samples_last,
-                         std::size_t     n_features,
-                         std::size_t     feature_index) {
-    assert(feature_index < n_features);
-
-    std::size_t median_index = common::utils::get_n_samples(samples_first, samples_last, n_features) / 2;
-
-    const auto median_range =
-        ffcl::algorithms::quickselect_range(samples_first, samples_last, n_features, median_index, feature_index);
-
-    // all the points at the left of the pivot point
-    const auto left_range = std::make_pair(samples_first, samples_first + median_index * n_features);
-
-    // all the points at the right of the pivot point
-    const auto right_range = std::make_pair(samples_first + median_index * n_features + n_features, samples_last);
-
-    return shift_median_to_leftmost_equal_value(
-        /**/ median_index,
-        /**/ left_range,
-        /**/ median_range,
-        /**/ right_range,
-        /**/ n_features,
-        /**/ feature_index);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>

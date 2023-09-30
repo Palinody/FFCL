@@ -5,7 +5,7 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/LowerTriangleMatrix.hpp"
+#include "ffcl/datastruct/PrecomputedDistanceMatrix.hpp"
 #include "ffcl/kmedoids/KMedoids.hpp"
 #include "ffcl/math/random/VosesAliasMethod.hpp"
 
@@ -22,19 +22,15 @@ void fit_once(const InputsIterator& inputs_first,
     auto kmedoids = KMedoids(n_medoids, n_features);
 
     kmedoids.set_options(
-        /*KMedoids options=*/KMedoids::Options().max_iter(10).early_stopping(true).patience(0).n_init(1));
+        /*KMedoids options=*/KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
 
-#if defined(VERBOSE) && VERBOSE == true
-    std::cout << "\nRunning kmedoids dynamically: \n";
-#endif
+    std::cout << "Dynamic kmedoids: \n";
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     kmedoids.fit<ffcl::FasterMSC>(inputs_first, inputs_last);
 
-#if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);
-#endif
 }
 
 template <typename InputsIterator>
@@ -50,30 +46,19 @@ void fit_once_with_pairwise_distance_matrix(const InputsIterator& inputs_first,
     kmedoids.set_options(
         /*KMedoids options=*/KMedoids::Options().max_iter(100).early_stopping(true).patience(0).n_init(1));
 
-    const auto pairwise_distance_matrix = ffcl::containers::LowerTriangleMatrix(inputs_first, inputs_last, n_features);
-
-#if defined(VERBOSE) && VERBOSE == true
-    std::cout << "\nRunning kmedoids with precomputed distances matrix: \n";
-#endif
+    std::cout << "Precomputed pairwise distances kmedoids: \n";
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
+    const auto pairwise_distance_matrix =
+        ffcl::datastruct::PrecomputedDistanceMatrix(inputs_first, inputs_last, n_features);
+
     const auto medoids = kmedoids.fit<ffcl::FasterMSC>(pairwise_distance_matrix);
 
-#if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);
-#endif
-
-    timer.reset();
-
-    const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
-
-#if defined(VERBOSE) && VERBOSE == true
-    timer.print_elapsed_seconds(/*n_decimals=*/6);
-#endif
 }
 
-void distance_matrix_benchmark() {
+void distance_matrix_mnist() {
     fs::path filename = "mnist.txt";
 
     const auto        data = bench::io::txt::load_data<bench::io::DataType>(bench::io::inputs_folder / filename, ' ');
@@ -81,14 +66,12 @@ void distance_matrix_benchmark() {
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    ffcl::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
+    ffcl::datastruct::PrecomputedDistanceMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
 
-#if defined(VERBOSE) && VERBOSE == true
     timer.print_elapsed_seconds(/*n_decimals=*/6);
-#endif
 }
 
-void mnist_bench() {
+void bench_mnist() {
     fs::path filename = "mnist.txt";
 
     const auto        data = bench::io::txt::load_data<bench::io::DataType>(bench::io::inputs_folder / filename, ' ');

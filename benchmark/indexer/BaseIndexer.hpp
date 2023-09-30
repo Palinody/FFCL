@@ -52,7 +52,7 @@ class BaseIndexer {
 
     virtual std::size_t n_features() const = 0;
 
-    virtual BaseNearestNeighborsBuffer radiusSearch(std::size_t sample_index_query, const DataType& radius) const = 0;
+    virtual BaseNearestNeighborsBuffer radius_search(std::size_t sample_index_query, const DataType& radius) const = 0;
 
     virtual BaseNearestNeighborsBuffer nearestKSearch(std::size_t sample_index_query,
                                                       std::size_t k_nearest_neighbors) const = 0;

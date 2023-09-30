@@ -4,7 +4,7 @@
 #include <variant>
 #include <vector>
 
-namespace ffcl::containers {
+namespace ffcl::datastruct {
 
 /**
  * @brief A read-only feature mask array
@@ -44,4 +44,4 @@ class FeatureMaskArray {
     VariantType data_;
 };
 
-}  // namespace ffcl::containers
+}  // namespace ffcl::datastruct

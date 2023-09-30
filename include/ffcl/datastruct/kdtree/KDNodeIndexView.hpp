@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
+#include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // ssize_t
@@ -11,7 +11,7 @@
 
 #include "rapidjson/writer.h"
 
-namespace ffcl::containers {
+namespace ffcl::datastruct {
 
 template <typename IndicesIterator, typename SamplesIterator>
 struct KDNodeIndexView {
@@ -174,4 +174,4 @@ void KDNodeIndexView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Wri
     writer.EndArray();
 }
 
-}  // namespace ffcl::containers
+}  // namespace ffcl::datastruct

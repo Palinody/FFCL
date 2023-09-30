@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
+#include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
 
 namespace kdtree::policy {
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/LowerTriangleMatrix.hpp"
+#include "ffcl/datastruct/PrecomputedDistanceMatrix.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
 
 #include <algorithm>
@@ -78,8 +78,8 @@ build(const Iterator& samples_first, const Iterator& samples_last, std::size_t n
 
 template <typename Iterator>
 std::tuple<typename Iterator::value_type, std::vector<std::size_t>, std::vector<typename Iterator::value_type>> build(
-    const ffcl::containers::LowerTriangleMatrix<Iterator>& pairwise_distance_matrix,
-    std::size_t                                            n_medoids) {
+    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    std::size_t                                                  n_medoids) {
     using DataType = typename Iterator::value_type;
 
     const std::size_t n_samples = pairwise_distance_matrix.n_samples();

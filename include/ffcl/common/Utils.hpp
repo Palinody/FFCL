@@ -162,7 +162,7 @@ std::size_t count_matches_for_value(Iterator1 first1, Iterator1 last1, Iterator2
 template <typename IndicesContainer, typename InputContainer>
 InputContainer permutation_from_indices(const IndicesContainer& indices, const InputContainer& input) {
     if (input.size() != indices.size()) {
-        throw std::invalid_argument("The number of elements in the input and indices containers must match.");
+        throw std::invalid_argument("The number of elements in the input and indices datastruct must match.");
     }
     // Create a temporary container to store the elements
     auto swapped = InputContainer(input.size());
@@ -181,7 +181,7 @@ InputContainer remap_ranges_from_indices(const IndicesContainer& indices,
     static_assert(std::is_integral_v<IndicesType>);
 
     if (flattened_matrix.size() / n_features != indices.size()) {
-        throw std::invalid_argument("The number of elements in the flattened_matrix and indices containers must match. "
+        throw std::invalid_argument("The number of elements in the flattened_matrix and indices datastruct must match. "
                                     "The flattened_matrix size or the "
                                     "n_features you provided is wrong.");
     }

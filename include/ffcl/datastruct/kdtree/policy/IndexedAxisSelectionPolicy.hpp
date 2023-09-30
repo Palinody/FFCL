@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/FeatureMaskArray.hpp"
-#include "ffcl/containers/kdtree/KDTreeAlgorithms.hpp"
+#include "ffcl/datastruct/FeatureMaskArray.hpp"
+#include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
 
 #include <array>
 

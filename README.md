@@ -71,7 +71,7 @@ It'll stay that way for now for practicality.
       - `feature_mask({feature_index_0, feature_index_1, ..., feature_index_n})`: dynamic feature mask used the select the features of interest for the axis selection procedure during the build phase. The feature indices can be specified in any order, as long as `0 <= feature_index_j < n_features`. Duplicates feature indices should result in valid results but it would bias the axis selection procedure and thus defeat its purpose.
       - `splitting_rule_policy`: `IndexedQuickselectMedianRange` (default): quickselect median selection strategy for partitioning the children leaves around the pivot median value of the binary tree.
   - `KDTree`: kd-tree without index but with much less features than `KDTreeIndexed`. It was just implemented for experiments purposes against `KDTreeIndexed` but it doesnt seem to have anything better other than no index creation overhead.
-  - `LowerTriangleMatrix` currently used for the pairwise distance values that can be buffered for `KMedoids`.
+  - `LowerTriangleMatrixPrecomputedPairwiseDistances` currently used for the pairwise distance values that can be buffered for `KMedoids`.
 
 - ### Distance functions
 
@@ -272,13 +272,13 @@ splitting_rule_policy: IndexedQuickselectMedianRange (default)
 */
 using IndicesIterator         = decltype(indices)::iterator;
 using SamplesIterator         = decltype(data)::iterator;
-using OptionsType             = ffcl::containers::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
+using OptionsType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
 using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
 using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator SamplesIterator>;
 
 
 // KDTreeIndexed will only rearrange the 'indices' container. The 'data' container remains unchanged.
-auto kdtree = ffcl::containers::KDTreeIndexed(indices.begin(),
+auto kdtree = ffcl::datastruct::KDTreeIndexed(indices.begin(),
                                               indices.end(),
                                               data.begin(),
                                               data.end(),

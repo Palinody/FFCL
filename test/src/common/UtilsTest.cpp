@@ -160,7 +160,7 @@ TEST(FunctionTest, ToTypeTest) {
 }
 
 TEST(FunctionTest, AreContainersEqualTest) {
-    // Test for integral containers
+    // Test for integral datastruct
     std::vector<int> a{1, 2, 3, 4, 5};
     std::vector<int> b{1, 2, 3, 4, 5};
     std::vector<int> c{1, 2, 3, 4, 6};
@@ -169,7 +169,7 @@ TEST(FunctionTest, AreContainersEqualTest) {
     ASSERT_TRUE(common::utils::are_containers_equal(a, b));
     ASSERT_TRUE(!common::utils::are_containers_equal(a, c));
 
-    // Test for floating-point containers with tolerance
+    // Test for floating-point datastruct with tolerance
     std::vector<float> d{1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
     std::vector<float> e{1.0f, 2.0f, 3.0f, 4.0f, 5.000001f};
     std::vector<float> f{1.0f, 2.0f, 3.0f, 4.0f, 6.0f};
@@ -178,7 +178,7 @@ TEST(FunctionTest, AreContainersEqualTest) {
     ASSERT_TRUE(common::utils::are_containers_equal(d, e, 0.00001f));
     ASSERT_TRUE(!common::utils::are_containers_equal(d, f, 0.00001f));
 
-    // Test for containers of other types (unsupported)
+    // Test for datastruct of other types (unsupported)
     std::vector<char> g{'a', 'b', 'c', 'd', 'e'};
     std::vector<char> h{'a', 'b', 'c', 'd', 'e'};
     std::vector<char> i{'a', 'b', 'c', 'd', 'f'};

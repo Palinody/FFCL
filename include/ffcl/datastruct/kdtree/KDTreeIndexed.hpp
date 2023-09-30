@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/kdtree/KDNodeIndexView.hpp"
-#include "ffcl/containers/kdtree/policy/IndexedAxisSelectionPolicy.hpp"
-#include "ffcl/containers/kdtree/policy/IndexedSplittingRulePolicy.hpp"
+#include "ffcl/datastruct/kdtree/KDNodeIndexView.hpp"
+#include "ffcl/datastruct/kdtree/policy/IndexedAxisSelectionPolicy.hpp"
+#include "ffcl/datastruct/kdtree/policy/IndexedSplittingRulePolicy.hpp"
 
 #include "ffcl/math/heuristics/NearestNeighbor.hpp"
 #include "ffcl/math/random/Distributions.hpp"
@@ -24,7 +24,7 @@
 #include <filesystem>
 #include <fstream>
 
-namespace ffcl::containers {
+namespace ffcl::datastruct {
 
 namespace fs = std::filesystem;
 
@@ -2328,4 +2328,4 @@ void KDTreeIndexed<IndicesIterator, SamplesIterator>::serialize(const fs::path& 
     output_file.close();
 }
 
-}  // namespace ffcl::containers
+}  // namespace ffcl::datastruct

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/BoundingBox.hpp"
+#include "ffcl/datastruct/BoundingBox.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
 
-#include "ffcl/containers/UnionFind.hpp"
+#include "ffcl/datastruct/UnionFind.hpp"
 
 #include <functional>
 #include <iostream>

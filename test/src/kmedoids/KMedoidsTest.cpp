@@ -131,7 +131,8 @@ class KMedoidsErrorsTest : public ::testing::Test {
 
         using DatasetDescriptorType              = std::tuple<InputsIterator, InputsIterator, std::size_t>;
         DatasetDescriptorType dataset_descriptor = std::make_tuple(inputs_first, inputs_last, n_features);
-        const auto pairwise_distance_matrix = ffcl::containers::LowerTriangleMatrix<InputsIterator>(dataset_descriptor);
+        const auto            pairwise_distance_matrix =
+            ffcl::datastruct::PrecomputedDistanceMatrix<InputsIterator>(dataset_descriptor);
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 
@@ -299,7 +300,7 @@ TEST_F(KMedoidsErrorsTest, PairwiseDistanceMatrixTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
     auto pairwise_distance_matrix =
-        ffcl::containers::LowerTriangleMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
+        ffcl::datastruct::PrecomputedDistanceMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
 }
 
 TEST_F(KMedoidsErrorsTest, MnistSimpleFitTest) {

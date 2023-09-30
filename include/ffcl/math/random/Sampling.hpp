@@ -29,7 +29,7 @@ inline std::vector<std::size_t> select_from_range(std::size_t                   
 
     while (random_distinct_indices.size() < n_choices) {
         const auto index_candidate = random_number_generator();
-        // check if the index candidate is already in the set and adds it to both containers if not
+        // check if the index candidate is already in the set and adds it to both datastruct if not
         if (generated_indices.find(index_candidate) == generated_indices.end()) {
             random_distinct_indices.emplace_back(index_candidate);
             generated_indices.insert(index_candidate);

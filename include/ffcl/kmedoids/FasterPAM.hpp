@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/containers/LowerTriangleMatrix.hpp"
+#include "ffcl/datastruct/PrecomputedDistanceMatrix.hpp"
 #include "ffcl/kmedoids/PAMUtils.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/random/Distributions.hpp"
@@ -33,8 +33,8 @@ class FasterPAM {
     // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    using FirstVariantType   = ffcl::containers::LowerTriangleMatrixDynamic<Iterator>;
-    using SecondVariantType  = ffcl::containers::LowerTriangleMatrix<Iterator>;
+    using FirstVariantType   = ffcl::datastruct::PrecomputedDistanceMatrixDynamic<Iterator>;
+    using SecondVariantType  = ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>;
     using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
 
     FasterPAM(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids);
