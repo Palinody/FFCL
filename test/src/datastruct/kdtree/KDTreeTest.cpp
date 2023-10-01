@@ -153,7 +153,7 @@ TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        math::heuristics::nearest_neighbor_indexed_range(indices.begin(),
+        math::heuristics::nearest_neighbor(indices.begin(),
                                                          indices.end(),
                                                          data.begin(),
                                                          data.end(),

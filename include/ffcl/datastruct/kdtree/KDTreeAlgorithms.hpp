@@ -176,17 +176,17 @@ std::tuple<std::size_t,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>>
-quickselect_median_indexed_range(IndicesIterator index_first,
-                                 IndicesIterator index_last,
-                                 SamplesIterator samples_first,
-                                 SamplesIterator samples_last,
-                                 std::size_t     n_features,
-                                 std::size_t     feature_index) {
+quickselect_median(IndicesIterator index_first,
+                   IndicesIterator index_last,
+                   SamplesIterator samples_first,
+                   SamplesIterator samples_last,
+                   std::size_t     n_features,
+                   std::size_t     feature_index) {
     assert(feature_index < n_features);
 
     std::size_t median_index = std::distance(index_first, index_last) / 2;
 
-    const auto median_indices_range = ffcl::algorithms::quickselect_indexed_range(
+    const auto median_indices_range = ffcl::algorithms::quickselect(
         index_first, index_last, samples_first, samples_last, n_features, median_index, feature_index);
 
     // all the points at the left of the pivot point

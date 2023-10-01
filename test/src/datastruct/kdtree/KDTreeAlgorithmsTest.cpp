@@ -181,12 +181,12 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
                         ascending_elements_array.begin(), ascending_elements_array.end(), features);
 
                     const auto [cut_index, left_indexed_range, cut_indexed_range, right_indexed_range] =
-                        kdtree::algorithms::quickselect_median_indexed_range(data_indices.begin(),
-                                                                             data_indices.end(),
-                                                                             shuffled_ascending_elements_array.begin(),
-                                                                             shuffled_ascending_elements_array.end(),
-                                                                             features,
-                                                                             feature_index);
+                        kdtree::algorithms::quickselect_median(data_indices.begin(),
+                                                               data_indices.end(),
+                                                               shuffled_ascending_elements_array.begin(),
+                                                               shuffled_ascending_elements_array.end(),
+                                                               features,
+                                                               feature_index);
 
                     const auto [indexed_cut_range_begin, indexed_cut_range_end] = cut_indexed_range;
 

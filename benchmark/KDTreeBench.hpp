@@ -619,7 +619,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 void run_radius_search_benchmarks_on_point_cloud_sequences() {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    const std::vector<bench::io::DataType> radiuses = {1.0, 0.5, 0.3, 0.1};
+    const std::vector<bench::io::DataType> radiuses = {0.1, 0.3, 0.5, 1.0};
 
     const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
                                                   fs::path("pointclouds_sequences/2"),

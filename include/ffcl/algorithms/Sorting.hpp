@@ -9,13 +9,13 @@
 namespace ffcl::algorithms {
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t median_index_of_three_indexed_ranges(IndicesIterator index_first,
-                                                 IndicesIterator index_last,
-                                                 SamplesIterator first,
-                                                 SamplesIterator last,
-                                                 std::size_t     n_features,
-                                                 std::size_t     feature_index) {
-    common::utils::ignore_parameters(last);
+std::size_t median_index_of_three(const IndicesIterator& index_first,
+                                  const IndicesIterator& index_last,
+                                  const SamplesIterator& samples_first,
+                                  const SamplesIterator& samples_last,
+                                  std::size_t            n_features,
+                                  std::size_t            feature_index) {
+    common::utils::ignore_parameters(samples_last);
 
     const std::size_t n_samples    = std::distance(index_first, index_last);
     std::size_t       middle_index = n_samples / 2;
@@ -26,73 +26,62 @@ std::size_t median_index_of_three_indexed_ranges(IndicesIterator index_first,
     std::size_t left_index  = 0;
     std::size_t right_index = n_samples - 1;
 
-    if (first[index_first[middle_index] * n_features + feature_index] <
-        first[index_first[left_index] * n_features + feature_index]) {
+    if (samples_first[index_first[middle_index] * n_features + feature_index] <
+        samples_first[index_first[left_index] * n_features + feature_index]) {
         std::swap(middle_index, left_index);
     }
-    if (first[index_first[right_index] * n_features + feature_index] <
-        first[index_first[left_index] * n_features + feature_index]) {
+    if (samples_first[index_first[right_index] * n_features + feature_index] <
+        samples_first[index_first[left_index] * n_features + feature_index]) {
         std::swap(right_index, left_index);
     }
-    if (first[index_first[middle_index] * n_features + feature_index] <
-        first[index_first[right_index] * n_features + feature_index]) {
+    if (samples_first[index_first[middle_index] * n_features + feature_index] <
+        samples_first[index_first[right_index] * n_features + feature_index]) {
         std::swap(middle_index, right_index);
     }
     return right_index;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::pair<SamplesIterator, SamplesIterator> median_values_range_of_three_indexed_ranges(IndicesIterator index_first,
-                                                                                        IndicesIterator index_last,
-                                                                                        SamplesIterator first,
-                                                                                        SamplesIterator last,
-                                                                                        std::size_t     n_features,
-                                                                                        std::size_t     feature_index) {
+std::pair<SamplesIterator, SamplesIterator> median_values_range_of_three(const IndicesIterator& index_first,
+                                                                         const IndicesIterator& index_last,
+                                                                         const SamplesIterator& samples_first,
+                                                                         const SamplesIterator& samples_last,
+                                                                         std::size_t            n_features,
+                                                                         std::size_t            feature_index) {
     const std::size_t median_index =
-        median_index_of_three_indexed_ranges(index_first, index_last, first, last, n_features, feature_index);
+        median_index_of_three(index_first, index_last, samples_first, samples_last, n_features, feature_index);
 
-    return {first + index_first[median_index] * n_features,
-            first + index_first[median_index] * n_features + n_features};
-}
-
-template <typename SamplesIterator>
-std::pair<std::size_t, std::pair<SamplesIterator, SamplesIterator>> median_index_and_values_range_of_three_ranges(
-    SamplesIterator first,
-    SamplesIterator last,
-    std::size_t     n_features,
-    std::size_t     feature_index) {
-    const std::size_t median_index = median_index_of_three_ranges(first, last, n_features, feature_index);
-
-    return {median_index, {first + median_index * n_features, first + median_index * n_features + n_features}};
+    return {samples_first + index_first[median_index] * n_features,
+            samples_first + index_first[median_index] * n_features + n_features};
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::pair<std::size_t, std::pair<SamplesIterator, SamplesIterator>>
-median_index_and_values_range_of_three_indexed_ranges(IndicesIterator index_first,
-                                                      IndicesIterator index_last,
-                                                      SamplesIterator first,
-                                                      SamplesIterator last,
-                                                      std::size_t     n_features,
-                                                      std::size_t     feature_index) {
+std::pair<std::size_t, std::pair<SamplesIterator, SamplesIterator>> median_index_and_values_range_of_three(
+    const IndicesIterator& index_first,
+    const IndicesIterator& index_last,
+    const SamplesIterator& samples_first,
+    const SamplesIterator& samples_last,
+    std::size_t            n_features,
+    std::size_t            feature_index) {
     const std::size_t median_index =
-        median_index_of_three_indexed_ranges(index_first, index_last, first, last, n_features, feature_index);
+        median_index_of_three(index_first, index_last, samples_first, samples_last, n_features, feature_index);
 
-    return {
-        median_index,
-        {first + index_first[median_index] * n_features, first + index_first[median_index] * n_features + n_features}};
+    return {median_index,
+            {samples_first + index_first[median_index] * n_features,
+             samples_first + index_first[median_index] * n_features + n_features}};
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t partition_around_nth_indexed_range(IndicesIterator index_first,
-                                               IndicesIterator index_last,
-                                               SamplesIterator first,
-                                               SamplesIterator last,
-                                               std::size_t     n_features,
-                                               std::size_t     pivot_index,
-                                               std::size_t     feature_index) {
+std::size_t partition_around_nth_index(const IndicesIterator& index_first,
+                                       const IndicesIterator& index_last,
+                                       const SamplesIterator& samples_first,
+                                       const SamplesIterator& samples_last,
+                                       std::size_t            n_features,
+                                       std::size_t            pivot_index,
+                                       std::size_t            feature_index) {
     static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Index input should be integral.");
 
-    common::utils::ignore_parameters(last);
+    common::utils::ignore_parameters(samples_last);
 
     const std::size_t n_samples = std::distance(index_first, index_last);
 
@@ -105,16 +94,16 @@ std::size_t partition_around_nth_indexed_range(IndicesIterator index_first,
     ssize_t left_index  = -1;
     ssize_t right_index = n_samples;
 
-    const auto pivot_value = first[index_first[pivot_index] * n_features + feature_index];
+    const auto pivot_value = samples_first[index_first[pivot_index] * n_features + feature_index];
 
     while (true) {
         do {
             ++left_index;
-        } while (first[index_first[left_index] * n_features + feature_index] < pivot_value);
+        } while (samples_first[index_first[left_index] * n_features + feature_index] < pivot_value);
 
         do {
             --right_index;
-        } while (pivot_value < first[index_first[right_index] * n_features + feature_index]);
+        } while (pivot_value < samples_first[index_first[right_index] * n_features + feature_index]);
 
         // the partitioning is done if the left and right indices cross
         if (left_index >= right_index) {
@@ -137,7 +126,8 @@ std::size_t partition_around_nth_indexed_range(IndicesIterator index_first,
         */
         // /*
         // if the values at the pivot and at the right index are not equal
-        if (common::utils::inequality(pivot_value, first[index_first[right_index] * n_features + feature_index])) {
+        if (common::utils::inequality(pivot_value,
+                                      samples_first[index_first[right_index] * n_features + feature_index])) {
             // swap the ranges at the left index and right index
             std::iter_swap(index_first + left_index, index_first + right_index);
             // if the pivot was swapped because left index was equal to pivot index, update it to the index it was
@@ -152,7 +142,8 @@ std::size_t partition_around_nth_indexed_range(IndicesIterator index_first,
         // the values at the pivot and the right index are equal
         else {
             // if the value at the left index is equal to the value at the pivot index
-            if (common::utils::equality(first[index_first[left_index] * n_features + feature_index], pivot_value)) {
+            if (common::utils::equality(samples_first[index_first[left_index] * n_features + feature_index],
+                                        pivot_value)) {
                 // dont swap if the left range and pivot range are actually confounded
                 if (static_cast<std::size_t>(left_index) != pivot_index) {
                     // swap the ranges so that the range of the left index is put at the right of the pivot
@@ -179,13 +170,13 @@ std::size_t partition_around_nth_indexed_range(IndicesIterator index_first,
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::pair<IndicesIterator, IndicesIterator> quickselect_indexed_range(IndicesIterator index_first,
-                                                                      IndicesIterator index_last,
-                                                                      SamplesIterator first,
-                                                                      SamplesIterator last,
-                                                                      std::size_t     n_features,
-                                                                      std::size_t     kth_smallest,
-                                                                      std::size_t     feature_index) {
+std::pair<IndicesIterator, IndicesIterator> quickselect(const IndicesIterator& index_first,
+                                                        const IndicesIterator& index_last,
+                                                        const SamplesIterator& samples_first,
+                                                        const SamplesIterator& samples_last,
+                                                        std::size_t            n_features,
+                                                        std::size_t            kth_smallest,
+                                                        std::size_t            feature_index) {
     std::size_t left_index  = 0;
     std::size_t right_index = std::distance(index_first, index_last) - 1;
 
@@ -193,18 +184,22 @@ std::pair<IndicesIterator, IndicesIterator> quickselect_indexed_range(IndicesIte
         if (left_index == right_index) {
             return {index_first + left_index, index_first + right_index + 1};
         }
-        std::size_t pivot_index = median_index_of_three_indexed_ranges(
-            index_first + left_index, index_first + right_index + 1, first, last, n_features, feature_index);
+        std::size_t pivot_index = median_index_of_three(index_first + left_index,
+                                                        index_first + right_index + 1,
+                                                        samples_first,
+                                                        samples_last,
+                                                        n_features,
+                                                        feature_index);
 
         // partition the range around the pivot, which has moved to its sorted index. The pivot index is relative to the
         // left_index, so to get its absolute index, we need to shift it by the same amount
-        pivot_index = left_index + partition_around_nth_indexed_range(index_first + left_index,
-                                                                      index_first + right_index + 1,
-                                                                      first,
-                                                                      last,
-                                                                      n_features,
-                                                                      pivot_index,
-                                                                      feature_index);
+        pivot_index = left_index + partition_around_nth_index(index_first + left_index,
+                                                              index_first + right_index + 1,
+                                                              samples_first,
+                                                              samples_last,
+                                                              n_features,
+                                                              pivot_index,
+                                                              feature_index);
 
         if (kth_smallest == pivot_index) {
             return {index_first + pivot_index, index_first + pivot_index + 1};
@@ -219,13 +214,13 @@ std::pair<IndicesIterator, IndicesIterator> quickselect_indexed_range(IndicesIte
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t quicksort_indexed_range(IndicesIterator index_first,
-                                    IndicesIterator index_last,
-                                    SamplesIterator first,
-                                    SamplesIterator last,
-                                    std::size_t     n_features,
-                                    std::size_t     initial_pivot_index,
-                                    std::size_t     feature_index) {
+std::size_t quicksort(const IndicesIterator& index_first,
+                      const IndicesIterator& index_last,
+                      const SamplesIterator& samples_first,
+                      const SamplesIterator& samples_last,
+                      std::size_t            n_features,
+                      std::size_t            initial_pivot_index,
+                      std::size_t            feature_index) {
     const std::size_t n_samples = std::distance(index_first, index_last);
 
     // the pivot index is already correct if the number of samples is 0 or 1
@@ -233,34 +228,34 @@ std::size_t quicksort_indexed_range(IndicesIterator index_first,
         return initial_pivot_index;
     }
     // partial sort ranges around new pivot index
-    const std::size_t new_pivot_index = partition_around_nth_indexed_range(
-        index_first, index_last, first, last, n_features, initial_pivot_index, feature_index);
+    const std::size_t new_pivot_index = partition_around_nth_index(
+        index_first, index_last, samples_first, samples_last, n_features, initial_pivot_index, feature_index);
 
     // compute the median of the subranges
 
-    std::size_t pivot_index_subrange_left = median_index_of_three_indexed_ranges(
-        index_first, index_first + new_pivot_index, first, last, n_features, feature_index);
+    std::size_t pivot_index_subrange_left = median_index_of_three(
+        index_first, index_first + new_pivot_index, samples_first, samples_last, n_features, feature_index);
 
-    std::size_t pivot_index_subrange_right = median_index_of_three_indexed_ranges(
-        index_first + new_pivot_index + 1, index_last, first, last, n_features, feature_index);
+    std::size_t pivot_index_subrange_right = median_index_of_three(
+        index_first + new_pivot_index + 1, index_last, samples_first, samples_last, n_features, feature_index);
 
     // the pivot range is included in the left subrange
 
-    quicksort_indexed_range(/*left subrange*/ index_first,
-                            /*left subrange*/ index_first + new_pivot_index,
-                            first,
-                            last,
-                            n_features,
-                            pivot_index_subrange_left,
-                            feature_index);
+    quicksort(/*left subrange*/ index_first,
+              /*left subrange*/ index_first + new_pivot_index,
+              samples_first,
+              samples_last,
+              n_features,
+              pivot_index_subrange_left,
+              feature_index);
 
-    quicksort_indexed_range(/*right subrange*/ index_first + new_pivot_index + 1,
-                            /*right subrange*/ index_last,
-                            first,
-                            last,
-                            n_features,
-                            pivot_index_subrange_right,
-                            feature_index);
+    quicksort(/*right subrange*/ index_first + new_pivot_index + 1,
+              /*right subrange*/ index_last,
+              samples_first,
+              samples_last,
+              n_features,
+              pivot_index_subrange_right,
+              feature_index);
 
     return new_pivot_index;
 }

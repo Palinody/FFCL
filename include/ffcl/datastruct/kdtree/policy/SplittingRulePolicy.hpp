@@ -49,7 +49,7 @@ QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(IndicesIter
                                                                      SamplesIterator samples_last,
                                                                      std::size_t     n_features,
                                                                      std::size_t     feature_index) const {
-    return kdtree::algorithms::quickselect_median_indexed_range(
+    return kdtree::algorithms::quickselect_median(
         /**/ index_first,
         /**/ index_last,
         /**/ samples_first,
