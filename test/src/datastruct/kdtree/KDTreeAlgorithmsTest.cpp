@@ -162,7 +162,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxIndexedTest) {
     }
 }
 
-TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianIndexedRangeTest) {
+TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
         // tests on data from 1 to this->max_n_samples_ samples

@@ -14,18 +14,18 @@
 namespace ffcl::datastruct {
 
 template <typename IndicesIterator, typename SamplesIterator>
-struct KDNodeIndexView {
-    using KDNodeIndexViewType = KDNodeIndexView<IndicesIterator, SamplesIterator>;
-    using KDNodeIndexViewPtr  = std::shared_ptr<KDNodeIndexViewType>;
+struct KDNodeView {
+    using KDNodeViewType = KDNodeView<IndicesIterator, SamplesIterator>;
+    using KDNodeViewPtr  = std::shared_ptr<KDNodeViewType>;
 
-    KDNodeIndexView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-                    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
+    KDNodeView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
+               const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
 
-    KDNodeIndexView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-                    ssize_t                                       cut_feature_index,
-                    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
+    KDNodeView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
+               ssize_t                                       cut_feature_index,
+               const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
 
-    KDNodeIndexView(const KDNodeIndexView&) = delete;
+    KDNodeView(const KDNodeView&) = delete;
 
     bool is_empty() const;
 
@@ -41,7 +41,7 @@ struct KDNodeIndexView {
 
     bool has_children() const;
 
-    KDNodeIndexViewPtr get_sibling_node() const;
+    KDNodeViewPtr get_sibling_node() const;
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
                    SamplesIterator                             samples_first,
@@ -59,16 +59,16 @@ struct KDNodeIndexView {
     ffcl::bbox::RangeType<SamplesIterator> kd_bounding_box_;
     // A child node representing the left partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
-    KDNodeIndexViewPtr left_;
+    KDNodeViewPtr left_;
     // A child node representing the right partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
-    KDNodeIndexViewPtr right_;
+    KDNodeViewPtr right_;
     // A weak pointer to the unique parent node of this node. It allows traversal up the tree hierarchy.
-    std::weak_ptr<KDNodeIndexViewType> parent_;
+    std::weak_ptr<KDNodeViewType> parent_;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
+KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(
     ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
     const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
@@ -76,7 +76,7 @@ KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
-KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
+KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(
     ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
     ssize_t                                       cut_feature_index,
     const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box)
@@ -85,22 +85,22 @@ KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexView(
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
-bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_empty() const {
+bool KDNodeView<IndicesIterator, SamplesIterator>::is_empty() const {
     return n_samples() == static_cast<std::size_t>(0);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t KDNodeIndexView<IndicesIterator, SamplesIterator>::n_samples() const {
+std::size_t KDNodeView<IndicesIterator, SamplesIterator>::n_samples() const {
     return std::distance(indices_iterator_pair_.first, indices_iterator_pair_.second);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_leaf() const {
+bool KDNodeView<IndicesIterator, SamplesIterator>::is_leaf() const {
     return cut_feature_index_ == -1;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_left_child() const {
+bool KDNodeView<IndicesIterator, SamplesIterator>::is_left_child() const {
     if (has_parent()) {
         return this == parent_.lock()->left_.get();
     }
@@ -108,7 +108,7 @@ bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_left_child() const {
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_right_child() const {
+bool KDNodeView<IndicesIterator, SamplesIterator>::is_right_child() const {
     if (has_parent()) {
         return this == parent_.lock()->right_.get();
     }
@@ -116,18 +116,18 @@ bool KDNodeIndexView<IndicesIterator, SamplesIterator>::is_right_child() const {
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-bool KDNodeIndexView<IndicesIterator, SamplesIterator>::has_parent() const {
+bool KDNodeView<IndicesIterator, SamplesIterator>::has_parent() const {
     return parent_.lock() != nullptr;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-bool KDNodeIndexView<IndicesIterator, SamplesIterator>::has_children() const {
+bool KDNodeView<IndicesIterator, SamplesIterator>::has_children() const {
     return left_ != nullptr && right_ != nullptr;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-typename KDNodeIndexView<IndicesIterator, SamplesIterator>::KDNodeIndexViewPtr
-KDNodeIndexView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
+typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr
+KDNodeView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
     if (has_parent()) {
         auto parent_shared_ptr = parent_.lock();
 
@@ -142,10 +142,10 @@ KDNodeIndexView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void KDNodeIndexView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
-                                                                  SamplesIterator samples_first,
-                                                                  SamplesIterator samples_last,
-                                                                  std::size_t     n_features) const {
+void KDNodeView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
+                                                             SamplesIterator                             samples_first,
+                                                             SamplesIterator                             samples_last,
+                                                             std::size_t n_features) const {
     using DataType = ffcl::bbox::DataType<SamplesIterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,

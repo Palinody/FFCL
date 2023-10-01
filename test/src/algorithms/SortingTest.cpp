@@ -47,7 +47,7 @@ class SortingTestFixture : public Range2DBaseFixture<DataType> {
 using DataTypes = ::testing::Types<int, std::size_t, float, double>;
 TYPED_TEST_SUITE(SortingTestFixture, DataTypes);
 
-TYPED_TEST(SortingTestFixture, MedianIndexOfThreeIndexedRangesTest) {
+TYPED_TEST(SortingTestFixture, MedianIndexOfThreeRangesTest) {
     // index has to be either 0, median or last index
 
     // the number of times to perform the tests
@@ -73,7 +73,7 @@ TYPED_TEST(SortingTestFixture, MedianIndexOfThreeIndexedRangesTest) {
     }
 }
 
-TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesTest) {
+TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeRangesTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
 
     // the number of times to perform the tests
@@ -112,7 +112,7 @@ TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeIndexedRangesTest) {
     }
 }
 
-TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesTest) {
+TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
 
     // the number of times to perform the tests
@@ -156,7 +156,7 @@ TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeIndexedRangesTest
     }
 }
 
-TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
+TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
     // range values should be equal to one of the ranges at row 0, median or last row
 
     // the number of times to perform the tests
@@ -224,7 +224,7 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHIndexedRangeTest) {
     }
 }
 
-TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
+TYPED_TEST(SortingTestFixture, QuickselectRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
         // tests on data from 1 to this->max_n_samples_ samples
@@ -274,7 +274,7 @@ TYPED_TEST(SortingTestFixture, QuickselectIndexedRangeTest) {
     }
 }
 
-TYPED_TEST(SortingTestFixture, QuicksortIndexedRangeTest) {
+TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
     // the number of times to perform the tests
     for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
         // tests on data from 1 to this->max_n_samples_ samples

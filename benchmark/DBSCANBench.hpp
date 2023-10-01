@@ -10,7 +10,7 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/datastruct/kdtree/KDTree.hpp"
 #include "ffcl/dbscan/DBSCAN.hpp"
 
 #include "ffcl/math/statistics/Statistics.hpp"

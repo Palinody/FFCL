@@ -5,8 +5,8 @@
 namespace kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
-struct IndexedSplittingRulePolicy {
-    IndexedSplittingRulePolicy() = default;
+struct SplittingRulePolicy {
+    SplittingRulePolicy() = default;
 
     inline virtual std::tuple<std::size_t,
                               ffcl::bbox::IteratorPairType<IndicesIterator>,
@@ -21,7 +21,7 @@ struct IndexedSplittingRulePolicy {
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-struct IndexedQuickselectMedianRange : public IndexedSplittingRulePolicy<IndicesIterator, SamplesIterator> {
+struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, SamplesIterator> {
     inline std::tuple<std::size_t,
                       ffcl::bbox::IteratorPairType<IndicesIterator>,
                       ffcl::bbox::IteratorPairType<IndicesIterator>,
@@ -43,12 +43,12 @@ std::tuple<std::size_t,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>>
-IndexedQuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(IndicesIterator index_first,
-                                                                            IndicesIterator index_last,
-                                                                            SamplesIterator samples_first,
-                                                                            SamplesIterator samples_last,
-                                                                            std::size_t     n_features,
-                                                                            std::size_t     feature_index) const {
+QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(IndicesIterator index_first,
+                                                                     IndicesIterator index_last,
+                                                                     SamplesIterator samples_first,
+                                                                     SamplesIterator samples_last,
+                                                                     std::size_t     n_features,
+                                                                     std::size_t     feature_index) const {
     return kdtree::algorithms::quickselect_median_indexed_range(
         /**/ index_first,
         /**/ index_last,

@@ -39,11 +39,11 @@ set(HEADER_FILES
     include/ffcl/math/random/Distributions.hpp
     include/ffcl/math/random/VosesAliasMethod.hpp
 
-    include/ffcl/datastruct/kdtree/policy/IndexedAxisSelectionPolicy.hpp
-    include/ffcl/datastruct/kdtree/policy/IndexedSplittingRulePolicy.hpp
-    include/ffcl/datastruct/kdtree/KDNodeIndexView.hpp
+    include/ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp
+    include/ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp
+    include/ffcl/datastruct/kdtree/KDNodeView.hpp
     include/ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp
-    include/ffcl/datastruct/kdtree/KDTreeIndexed.hpp
+    include/ffcl/datastruct/kdtree/KDTree.hpp
 
     include/ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp
     include/ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp
@@ -368,13 +368,13 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
-        IndexedSplittingRulePolicyTest
+        SplittingRulePolicyTest
 
         # ---
-        test/src/datastruct/kdtree/policy/IndexedSplittingRulePolicyTest.cpp
+        test/src/datastruct/kdtree/policy/SplittingRulePolicyTest.cpp
     )
     target_link_libraries(
-        IndexedSplittingRulePolicyTest
+        SplittingRulePolicyTest
         PUBLIC
         TBB::tbb
         GTest::gtest_main
@@ -382,18 +382,18 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        IndexedSplittingRulePolicyTest
-        IndexedSplittingRulePolicyTest
+        SplittingRulePolicyTest
+        SplittingRulePolicyTest
     )
 
     add_executable(
-        IndexedAxisSelectionPolicyTest
+        AxisSelectionPolicyTest
 
         # ---
-        test/src/datastruct/kdtree/policy/IndexedAxisSelectionPolicyTest.cpp
+        test/src/datastruct/kdtree/policy/AxisSelectionPolicyTest.cpp
     )
     target_link_libraries(
-        IndexedAxisSelectionPolicyTest
+        AxisSelectionPolicyTest
         PUBLIC
         TBB::tbb
         GTest::gtest_main
@@ -401,18 +401,18 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        IndexedAxisSelectionPolicyTest
-        IndexedAxisSelectionPolicyTest
+        AxisSelectionPolicyTest
+        AxisSelectionPolicyTest
     )
 
     add_executable(
-        KDTreeIndexedTest
+        KDTreeTest
 
         # ---
-        test/src/datastruct/kdtree/KDTreeIndexedTest.cpp
+        test/src/datastruct/kdtree/KDTreeTest.cpp
     )
     target_link_libraries(
-        KDTreeIndexedTest
+        KDTreeTest
         PUBLIC
         TBB::tbb
         GTest::gtest_main
@@ -420,8 +420,8 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        KDTreeIndexedTest
-        KDTreeIndexedTest
+        KDTreeTest
+        KDTreeTest
     )
 
     add_executable(
@@ -470,7 +470,7 @@ elseif(MODE STREQUAL "gtest")
         LABELS "UtilityTests"
     )
 
-    set_tests_properties(KDTreeIndexedTest PROPERTIES
+    set_tests_properties(KDTreeTest PROPERTIES
         LABELS "IndexingTests"
     )
 

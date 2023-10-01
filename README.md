@@ -49,7 +49,7 @@ It'll stay that way for now for practicality.
 
 
 - ### Containers
-  - `KDTreeIndexed` is currently used for `DBSCAN`
+  - `KDTree` is currently used for `DBSCAN`
     - methods using an index pointing to one of the samples of the input dataset
       - nearest_neighbor_around_query_index
       - k_nearest_neighbors_around_query_index
@@ -67,10 +67,10 @@ It'll stay that way for now for practicality.
     - Options
       - `bucket_size(ssize_t)`: the maximum number of samples that a leaf node can contain
       - `max_depth(ssize_t)`: the maximum recursion depth of the tree. The `max_depth` takes priority over `bucket_size`, meaning that if the maximum recursion depth cannot be satisfied without violating the bucket size condition, the latter may not be fulfilled.
-      - `axis_selection_policy`: `IndexedHighestVarianceBuild` (default) or `IndexedMaximumSpreadBuild`. Custom policies can be implmented and used.
+      - `axis_selection_policy`: `HighestVarianceBuild` (default) or `MaximumSpreadBuild`. Custom policies can be implmented and used.
       - `feature_mask({feature_index_0, feature_index_1, ..., feature_index_n})`: dynamic feature mask used the select the features of interest for the axis selection procedure during the build phase. The feature indices can be specified in any order, as long as `0 <= feature_index_j < n_features`. Duplicates feature indices should result in valid results but it would bias the axis selection procedure and thus defeat its purpose.
-      - `splitting_rule_policy`: `IndexedQuickselectMedianRange` (default): quickselect median selection strategy for partitioning the children leaves around the pivot median value of the binary tree.
-  - `KDTree`: kd-tree without index but with much less features than `KDTreeIndexed`. It was just implemented for experiments purposes against `KDTreeIndexed` but it doesnt seem to have anything better other than no index creation overhead.
+      - `splitting_rule_policy`: `QuickselectMedianRange` (default): quickselect median selection strategy for partitioning the children leaves around the pivot median value of the binary tree.
+  - `KDTree`: kd-tree without index but with much less features than `KDTree`. It was just implemented for experiments purposes against `KDTree` but it doesnt seem to have anything better other than no index creation overhead.
   - `LowerTriangleMatrixPrecomputedPairwiseDistances` currently used for the pairwise distance values that can be buffered for `KMedoids`.
 
 - ### Distance functions
@@ -267,18 +267,18 @@ unfortunately those aliases will be needed if you want to explicitly specify axi
 The default ones are currently based on a quickselect median selection strategy for the split and the highest variance with a sampling rate of 0.1 for the axis selection.
 You can also implement your own custom policies.
 
-axis_selection_policy: IndexedHighestVarianceBuild (default), IndexedMaximumSpreadBuild, IndexedCycleThroughAxesBuild
-splitting_rule_policy: IndexedQuickselectMedianRange (default)
+axis_selection_policy: HighestVarianceBuild (default), MaximumSpreadBuild, CycleThroughAxesBuild
+splitting_rule_policy: QuickselectMedianRange (default)
 */
 using IndicesIterator         = decltype(indices)::iterator;
 using SamplesIterator         = decltype(data)::iterator;
-using OptionsType             = ffcl::datastruct::KDTreeIndexed<IndicesIterator, SamplesIterator>::Options;
-using AxisSelectionPolicyType = kdtree::policy::IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>;
-using SplittingRulePolicyType = kdtree::policy::IndexedQuickselectMedianRange<IndicesIterator SamplesIterator>;
+using OptionsType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>::Options;
+using AxisSelectionPolicyType = kdtree::policy::MaximumSpreadBuild<IndicesIterator, SamplesIterator>;
+using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator SamplesIterator>;
 
 
-// KDTreeIndexed will only rearrange the 'indices' container. The 'data' container remains unchanged.
-auto kdtree = ffcl::datastruct::KDTreeIndexed(indices.begin(),
+// KDTree will only rearrange the 'indices' container. The 'data' container remains unchanged.
+auto kdtree = ffcl::datastruct::KDTree(indices.begin(),
                                               indices.end(),
                                               data.begin(),
                                               data.end(),

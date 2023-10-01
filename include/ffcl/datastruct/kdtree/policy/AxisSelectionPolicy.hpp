@@ -9,7 +9,7 @@
 namespace kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
-class IndexedAxisSelectionPolicy {
+class AxisSelectionPolicy {
   public:
     virtual std::size_t operator()(IndicesIterator                              index_first,
                                    IndicesIterator                              index_last,
@@ -21,16 +21,16 @@ class IndexedAxisSelectionPolicy {
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<IndicesIterator, SamplesIterator> {
+class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
     using DataType = typename SamplesIterator::value_type;
 
-    constexpr IndexedCycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
+    constexpr CycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
         return *this;
     }
 
-    constexpr IndexedCycleThroughAxesBuild& feature_mask(std::vector<std::size_t>&& feature_mask) {
+    constexpr CycleThroughAxesBuild& feature_mask(std::vector<std::size_t>&& feature_mask) {
         feature_mask_ = std::move(feature_mask);
         return *this;
     }
@@ -49,21 +49,21 @@ class IndexedCycleThroughAxesBuild : public IndexedAxisSelectionPolicy<IndicesIt
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<IndicesIterator, SamplesIterator> {
+class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
     using DataType = typename SamplesIterator::value_type;
 
-    constexpr IndexedHighestVarianceBuild& sampling_proportion(double sampling_proportion) {
+    constexpr HighestVarianceBuild& sampling_proportion(double sampling_proportion) {
         sampling_proportion_ = sampling_proportion;
         return *this;
     }
 
-    constexpr IndexedHighestVarianceBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
+    constexpr HighestVarianceBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
         return *this;
     }
 
-    constexpr IndexedHighestVarianceBuild& feature_mask(std::vector<std::size_t>&& feature_mask) {
+    constexpr HighestVarianceBuild& feature_mask(std::vector<std::size_t>&& feature_mask) {
         feature_mask_ = std::move(feature_mask);
         return *this;
     }
@@ -84,16 +84,16 @@ class IndexedHighestVarianceBuild : public IndexedAxisSelectionPolicy<IndicesIte
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<IndicesIterator, SamplesIterator> {
+class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
     using DataType = typename SamplesIterator::value_type;
 
-    constexpr IndexedMaximumSpreadBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
+    constexpr MaximumSpreadBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
         return *this;
     }
 
-    constexpr IndexedMaximumSpreadBuild& feature_mask(std::vector<std::size_t>&& feature_mask) {
+    constexpr MaximumSpreadBuild& feature_mask(std::vector<std::size_t>&& feature_mask) {
         feature_mask_ = std::move(feature_mask);
         return *this;
     }
@@ -116,7 +116,7 @@ class IndexedMaximumSpreadBuild : public IndexedAxisSelectionPolicy<IndicesItera
 namespace kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t IndexedCycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
+std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
     IndicesIterator                              index_first,
     IndicesIterator                              index_last,
     SamplesIterator                              samples_first,
@@ -135,7 +135,7 @@ std::size_t IndexedCycleThroughAxesBuild<IndicesIterator, SamplesIterator>::oper
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
+std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
     IndicesIterator                              index_first,
     IndicesIterator                              index_last,
     SamplesIterator                              samples_first,
@@ -166,7 +166,7 @@ std::size_t IndexedHighestVarianceBuild<IndicesIterator, SamplesIterator>::opera
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t IndexedMaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
+std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
     IndicesIterator                              index_first,
     IndicesIterator                              index_last,
     SamplesIterator                              samples_first,
