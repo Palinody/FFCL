@@ -39,36 +39,6 @@ class NearestNeighborTestFixture : public Range2DBaseFixture<DataType> {
 using DataTypes = ::testing::Types<int, std::size_t, float, double>;
 TYPED_TEST_SUITE(NearestNeighborTestFixture, DataTypes);
 
-/*
-TYPED_TEST(NearestNeighborTestFixture, UpdateNearestNeighborIndicesBufferTest) {
-    using DataType        = TypeParam;
-    using SamplesIterator = typename std::vector<DataType>::iterator;
-
-    // const std::size_t query_index = this->max_n_samples_ / 2;
-    const std::size_t n_neighbors = 5;
-    const std::size_t n_samples   = 10;
-
-    const auto distances_buffer =
-        this->generate_random_uniform_vector(n_samples, 1, this->lower_bound_, this->upper_bound_);
-
-    NearestNeighborsBuffer<SamplesIterator> nn_buffer(n_neighbors);
-
-    for (std::size_t index = 0; index < distances_buffer.size(); ++index) {
-        std::cout << "\t(" << index << ", " << distances_buffer[index] << ")\n";
-
-        nn_buffer.update(index, distances_buffer[index]);
-
-        nn_buffer.print();
-        printf("---\n");
-    }
-    printf("Data:\n");
-    this->print_data(distances_buffer, this->n_features_);
-    printf("---\n");
-    nn_buffer.print();
-    printf("---\n");
-}
-*/
-
 TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
     using DataType = TypeParam;
 

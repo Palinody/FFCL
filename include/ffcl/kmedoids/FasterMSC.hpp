@@ -34,8 +34,8 @@ class FasterMSC {
     // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    using FirstVariantType   = ffcl::datastruct::PairwiseDistanceMatrixDynamic<Iterator>;
-    using SecondVariantType  = ffcl::datastruct::PairwiseDistanceMatrix<Iterator>;
+    using FirstVariantType   = datastruct::PairwiseDistanceMatrixDynamic<Iterator>;
+    using SecondVariantType  = datastruct::PairwiseDistanceMatrix<Iterator>;
     using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
 
     FasterMSC(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids);
