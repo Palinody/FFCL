@@ -22,20 +22,20 @@
 
 namespace ffcl {
 
-template <typename Iterator>
+template <typename SamplesIterator>
 class FasterMSC {
     // couldnt make FasterMSC stable with integers so it stays disabled for now
-    static_assert(std::is_floating_point_v<typename Iterator::value_type>,
+    static_assert(std::is_floating_point_v<typename SamplesIterator::value_type>,
                   "FasterMSC only allows floating point types.");
 
   public:
-    using DataType = typename Iterator::value_type;
+    using DataType = typename SamplesIterator::value_type;
 
     // pointers/iterators to the first and last elements of the dataset and the feature size
-    using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
+    using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
 
-    using FirstVariantType   = datastruct::PairwiseDistanceMatrixDynamic<Iterator>;
-    using SecondVariantType  = datastruct::PairwiseDistanceMatrix<Iterator>;
+    using FirstVariantType   = datastruct::PairwiseDistanceMatrixDynamic<SamplesIterator>;
+    using SecondVariantType  = datastruct::PairwiseDistanceMatrix<SamplesIterator>;
     using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
 
     FasterMSC(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids);
@@ -58,8 +58,8 @@ class FasterMSC {
 
   private:
     struct Buffers {
-        Buffers(const Iterator&                 samples_first,
-                const Iterator&                 samples_last,
+        Buffers(const SamplesIterator&          samples_first,
+                const SamplesIterator&          samples_last,
                 std::size_t                     n_features,
                 const std::vector<std::size_t>& medoids);
 
@@ -95,52 +95,53 @@ class FasterMSC {
     DataType                 loss_;
 };
 
-template <typename Iterator>
-FasterMSC<Iterator>::FasterMSC(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids)
-  : FasterMSC<Iterator>::FasterMSC(dataset_descriptor, medoids, common::utils::infinity<DataType>()) {
+template <typename SamplesIterator>
+FasterMSC<SamplesIterator>::FasterMSC(const DatasetDescriptorType&    dataset_descriptor,
+                                      const std::vector<std::size_t>& medoids)
+  : FasterMSC<SamplesIterator>::FasterMSC(dataset_descriptor, medoids, common::utils::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
                             static_cast<DataType>(0));
 }
 
-template <typename Iterator>
-FasterMSC<Iterator>::FasterMSC(const DatasetDescriptorType&    dataset_descriptor,
-                               const std::vector<std::size_t>& medoids,
-                               const DataType&                 loss)
+template <typename SamplesIterator>
+FasterMSC<SamplesIterator>::FasterMSC(const DatasetDescriptorType&    dataset_descriptor,
+                                      const std::vector<std::size_t>& medoids,
+                                      const DataType&                 loss)
   : storage_variant_{FirstVariantType(dataset_descriptor)}
   , n_samples_{std::get<FirstVariantType>(storage_variant_).n_rows()}
   , medoids_{medoids}
   , buffers_ptr_{std::make_unique<Buffers>(dataset_descriptor, medoids_)}
   , loss_{loss} {}
 
-template <typename Iterator>
-FasterMSC<Iterator>::FasterMSC(const SecondVariantType&        pairwise_distance_matrix,
-                               const std::vector<std::size_t>& medoids)
-  : FasterMSC<Iterator>::FasterMSC(pairwise_distance_matrix, medoids, common::utils::infinity<DataType>()) {
+template <typename SamplesIterator>
+FasterMSC<SamplesIterator>::FasterMSC(const SecondVariantType&        pairwise_distance_matrix,
+                                      const std::vector<std::size_t>& medoids)
+  : FasterMSC<SamplesIterator>::FasterMSC(pairwise_distance_matrix, medoids, common::utils::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
                             static_cast<DataType>(0));
 }
 
-template <typename Iterator>
-FasterMSC<Iterator>::FasterMSC(const SecondVariantType&        pairwise_distance_matrix,
-                               const std::vector<std::size_t>& medoids,
-                               const DataType&                 loss)
+template <typename SamplesIterator>
+FasterMSC<SamplesIterator>::FasterMSC(const SecondVariantType&        pairwise_distance_matrix,
+                                      const std::vector<std::size_t>& medoids,
+                                      const DataType&                 loss)
   : storage_variant_{pairwise_distance_matrix}
   , n_samples_{std::get<SecondVariantType>(storage_variant_).n_rows()}
   , medoids_{medoids}
   , buffers_ptr_{std::make_unique<Buffers>(pairwise_distance_matrix, medoids_)}
   , loss_{loss} {}
 
-template <typename Iterator>
-typename FasterMSC<Iterator>::DataType FasterMSC<Iterator>::total_deviation() const {
+template <typename SamplesIterator>
+typename FasterMSC<SamplesIterator>::DataType FasterMSC<SamplesIterator>::total_deviation() const {
     return loss_;
 }
 
-template <typename Iterator>
-std::vector<std::size_t> FasterMSC<Iterator>::step() {
+template <typename SamplesIterator>
+std::vector<std::size_t> FasterMSC<SamplesIterator>::step() {
     const auto& samples_to_nearest_medoid_indices = buffers_ptr_->samples_to_nearest_medoid_indices_;
 
     for (std::size_t medoid_candidate_index = 0; medoid_candidate_index < n_samples_; ++medoid_candidate_index) {
@@ -172,8 +173,8 @@ std::vector<std::size_t> FasterMSC<Iterator>::step() {
     return medoids_;
 }
 
-template <typename Iterator>
-std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_best_swap(
+template <typename SamplesIterator>
+std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIterator>::find_best_swap(
     std::size_t medoid_candidate_index) const {
     // TD set to the positive loss of removing medoid mi and assigning all of its members to the next best
     // alternative
@@ -243,8 +244,8 @@ std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_
     return {delta_td_xc + best_swap_distance, best_swap_index};
 }
 
-template <typename Iterator>
-std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_best_swap_k2(
+template <typename SamplesIterator>
+std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIterator>::find_best_swap_k2(
     std::size_t medoid_candidate_index) const {
     // TD set to the positive loss of removing medoid mi and assigning all of its members to the next best
     // alternative
@@ -282,9 +283,9 @@ std::pair<typename Iterator::value_type, std::size_t> FasterMSC<Iterator>::find_
     return {delta_td_xc + best_swap_distance, best_swap_index};
 }
 
-template <typename Iterator>
-typename Iterator::value_type FasterMSC<Iterator>::swap_buffers(std::size_t medoid_candidate_index,
-                                                                std::size_t best_swap_index) {
+template <typename SamplesIterator>
+typename SamplesIterator::value_type FasterMSC<SamplesIterator>::swap_buffers(std::size_t medoid_candidate_index,
+                                                                              std::size_t best_swap_index) {
     DataType loss = 0;
 
     auto& samples_to_nearest_medoid_indices          = buffers_ptr_->samples_to_nearest_medoid_indices_;
@@ -449,9 +450,9 @@ typename Iterator::value_type FasterMSC<Iterator>::swap_buffers(std::size_t medo
     return loss;
 }
 
-template <typename Iterator>
-typename Iterator::value_type FasterMSC<Iterator>::swap_buffers_k2(std::size_t medoid_candidate_index,
-                                                                   std::size_t best_swap_index) {
+template <typename SamplesIterator>
+typename SamplesIterator::value_type FasterMSC<SamplesIterator>::swap_buffers_k2(std::size_t medoid_candidate_index,
+                                                                                 std::size_t best_swap_index) {
     medoids_[best_swap_index] = medoid_candidate_index;
 
     DataType loss = 0;
@@ -502,11 +503,11 @@ typename Iterator::value_type FasterMSC<Iterator>::swap_buffers_k2(std::size_t m
     return loss;
 }
 
-template <typename Iterator>
-FasterMSC<Iterator>::Buffers::Buffers(const Iterator&                 samples_first,
-                                      const Iterator&                 samples_last,
-                                      std::size_t                     n_features,
-                                      const std::vector<std::size_t>& medoids)
+template <typename SamplesIterator>
+FasterMSC<SamplesIterator>::Buffers::Buffers(const SamplesIterator&          samples_first,
+                                             const SamplesIterator&          samples_last,
+                                             std::size_t                     n_features,
+                                             const std::vector<std::size_t>& medoids)
   : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
                                                                                          samples_last,
                                                                                          n_features,
@@ -558,17 +559,17 @@ FasterMSC<Iterator>::Buffers::Buffers(const Iterator&                 samples_fi
                                                 medoids.size())
                                           : std::vector<DataType>({})} {}
 
-template <typename Iterator>
-FasterMSC<Iterator>::Buffers::Buffers(const DatasetDescriptorType&    dataset_descriptor,
-                                      const std::vector<std::size_t>& medoids)
-  : FasterMSC<Iterator>::Buffers::Buffers(std::get<0>(dataset_descriptor),
-                                          std::get<1>(dataset_descriptor),
-                                          std::get<2>(dataset_descriptor),
-                                          medoids) {}
+template <typename SamplesIterator>
+FasterMSC<SamplesIterator>::Buffers::Buffers(const DatasetDescriptorType&    dataset_descriptor,
+                                             const std::vector<std::size_t>& medoids)
+  : FasterMSC<SamplesIterator>::Buffers::Buffers(std::get<0>(dataset_descriptor),
+                                                 std::get<1>(dataset_descriptor),
+                                                 std::get<2>(dataset_descriptor),
+                                                 medoids) {}
 
-template <typename Iterator>
-FasterMSC<Iterator>::Buffers::Buffers(const SecondVariantType&        pairwise_distance_matrix,
-                                      const std::vector<std::size_t>& medoids)
+template <typename SamplesIterator>
+FasterMSC<SamplesIterator>::Buffers::Buffers(const SecondVariantType&        pairwise_distance_matrix,
+                                             const std::vector<std::size_t>& medoids)
   : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(pairwise_distance_matrix,
                                                                                          medoids,
                                                                                          /*n_closest=*/1)}
@@ -609,8 +610,8 @@ FasterMSC<Iterator>::Buffers::Buffers(const SecondVariantType&        pairwise_d
                                                 medoids.size())
                                           : std::vector<DataType>({})} {}
 
-template <typename Iterator>
-void FasterMSC<Iterator>::Buffers::update_losses_with_closest_medoid_removal(std::size_t n_medoids) {
+template <typename SamplesIterator>
+void FasterMSC<SamplesIterator>::Buffers::update_losses_with_closest_medoid_removal(std::size_t n_medoids) {
     losses_with_closest_medoid_removal_ =
         pam::utils::compute_losses_with_silhouette_medoid_removal<DataType>(samples_to_nearest_medoid_indices_,
                                                                             samples_to_second_nearest_medoid_indices_,

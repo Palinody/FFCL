@@ -19,15 +19,15 @@ namespace math::heuristics {
  *    IN: {2, 2, 1, 0, 0, 1, 0, 2, 0, 5}
  *    OUT: {4, 2, 3, 0, 0, 1}
  *
- * @tparam IteratorInt
+ * @tparam IndicesIterator
  * @param sample_to_closest_centroid_index_first
  * @param sample_to_closest_centroid_index_last
  * @return std::vector<std::size_t>
  */
-template <typename IteratorInt>
-auto get_cluster_sizes(IteratorInt sample_to_closest_centroid_index_first,
-                       IteratorInt sample_to_closest_centroid_index_last) {
-    static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
+template <typename IndicesIterator>
+auto get_cluster_sizes(IndicesIterator sample_to_closest_centroid_index_first,
+                       IndicesIterator sample_to_closest_centroid_index_last) {
+    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
 
     // n_centroids = 1 + greatest_centroid_index
     const auto n_centroids =
@@ -49,26 +49,26 @@ auto get_cluster_sizes(IteratorInt sample_to_closest_centroid_index_first,
  *    C_{I}: cluster of the data sample with |C_{I}| the number of points belonging to cluster C_{I}
  *    d(i, j): distance between data points i and j. We subtract 1 to the division because d(i, i) is excluded
  *
- * @tparam IteratorFloat
- * @tparam IteratorInt
+ * @tparam SamplesIterator
+ * @tparam IndicesIterator
  * @param sample_first
  * @param sample_last
  * @param sample_to_closest_centroid_index_first
  * @param sample_to_closest_centroid_index_last
  * @param n_features
- * @return std::vector<typename IteratorFloat::value_type>
+ * @return std::vector<typename SamplesIterator::value_type>
  */
-template <typename IteratorFloat, typename IteratorInt>
-auto cohesion(const IteratorFloat& sample_first,
-              const IteratorFloat& sample_last,
-              const IteratorInt&   sample_to_closest_centroid_index_first,
-              const IteratorInt&   sample_to_closest_centroid_index_last,
-              std::size_t          n_features) {
-    static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
+template <typename SamplesIterator, typename IndicesIterator>
+auto cohesion(const SamplesIterator& sample_first,
+              const SamplesIterator& sample_last,
+              const IndicesIterator& sample_to_closest_centroid_index_first,
+              const IndicesIterator& sample_to_closest_centroid_index_last,
+              std::size_t            n_features) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
                   "Data should be a floating point type.");
-    static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
+    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
 
-    using FloatType = typename IteratorFloat::value_type;
+    using FloatType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(sample_first, sample_last, n_features);
 
@@ -114,26 +114,26 @@ auto cohesion(const IteratorFloat& sample_first,
  *    C_{j}: cluster of the data sample with |C_{j}| the number of points belonging to cluster C_{j}
  *    d(i, j): distance between data points i and j
  *
- * @tparam IteratorFloat
- * @tparam IteratorInt
+ * @tparam SamplesIterator
+ * @tparam IndicesIterator
  * @param sample_first
  * @param sample_last
  * @param sample_to_closest_centroid_index_first
  * @param sample_to_closest_centroid_index_last
  * @param n_features
- * @return std::vector<typename IteratorFloat::value_type>
+ * @return std::vector<typename SamplesIterator::value_type>
  */
-template <typename IteratorFloat, typename IteratorInt>
-auto separation(const IteratorFloat& sample_first,
-                const IteratorFloat& sample_last,
-                const IteratorInt&   sample_to_closest_centroid_index_first,
-                const IteratorInt&   sample_to_closest_centroid_index_last,
-                std::size_t          n_features) {
-    static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
+template <typename SamplesIterator, typename IndicesIterator>
+auto separation(const SamplesIterator& sample_first,
+                const SamplesIterator& sample_last,
+                const IndicesIterator& sample_to_closest_centroid_index_first,
+                const IndicesIterator& sample_to_closest_centroid_index_last,
+                std::size_t            n_features) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
                   "Data should be a floating point type.");
-    static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
+    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
 
-    using FloatType = typename IteratorFloat::value_type;
+    using FloatType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(sample_first, sample_last, n_features);
 
@@ -190,25 +190,25 @@ auto separation(const IteratorFloat& sample_first,
  *            b[i]/a[i]-1  , if a[i] > b[i]
  *      Thus: s[i] in [-1, 1]
  *
- * @tparam IteratorFloat
- * @tparam IteratorInt
+ * @tparam SamplesIterator
+ * @tparam IndicesIterator
  * @param sample_first
  * @param sample_last
  * @param sample_to_closest_centroid_index_first
  * @param sample_to_closest_centroid_index_last
  * @param n_features
  */
-template <typename IteratorFloat, typename IteratorInt>
-auto silhouette(const IteratorFloat& sample_first,
-                const IteratorFloat& sample_last,
-                const IteratorInt&   sample_to_closest_centroid_index_first,
-                const IteratorInt&   sample_to_closest_centroid_index_last,
-                std::size_t          n_features) {
-    static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
+template <typename SamplesIterator, typename IndicesIterator>
+auto silhouette(const SamplesIterator& sample_first,
+                const SamplesIterator& sample_last,
+                const IndicesIterator& sample_to_closest_centroid_index_first,
+                const IndicesIterator& sample_to_closest_centroid_index_last,
+                std::size_t            n_features) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
                   "Data should be a floating point type.");
-    static_assert(std::is_integral<typename IteratorInt::value_type>::value, "Data should be integer type.");
+    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
 
-    using FloatType = typename IteratorFloat::value_type;
+    using FloatType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(sample_first, sample_last, n_features);
 
@@ -243,10 +243,10 @@ auto silhouette(const IteratorFloat& sample_first,
     return silhouette_values;
 }
 
-template <typename IteratorFloat>
-typename IteratorFloat::value_type get_mean_silhouette_coefficient(const IteratorFloat& samples_silhouette_first,
-                                                                   const IteratorFloat& samples_silhouette_last) {
-    using FloatType = typename IteratorFloat::value_type;
+template <typename SamplesIterator>
+typename SamplesIterator::value_type get_mean_silhouette_coefficient(const SamplesIterator& samples_silhouette_first,
+                                                                     const SamplesIterator& samples_silhouette_last) {
+    using FloatType = typename SamplesIterator::value_type;
 
     const auto n_elements = std::distance(samples_silhouette_first, samples_silhouette_last);
 

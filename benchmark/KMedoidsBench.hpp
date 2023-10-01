@@ -11,11 +11,11 @@
 
 namespace kmedoids::benchmark {
 
-template <typename InputsIterator>
-void dynamic_fit(const InputsIterator& inputs_first,
-                 const InputsIterator& inputs_last,
-                 std::size_t           n_medoids,
-                 std::size_t           n_features) {
+template <typename SamplesIterator>
+void dynamic_fit(const SamplesIterator& samples_first,
+                 const SamplesIterator& samples_last,
+                 std::size_t            n_medoids,
+                 std::size_t            n_features) {
     using KMedoids = ffcl::KMedoids<bench::io::DataType, false>;
     // using PAM = ffcl::FasterMSC;
 
@@ -28,16 +28,16 @@ void dynamic_fit(const InputsIterator& inputs_first,
 
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    kmedoids.fit<ffcl::FasterPAM>(inputs_first, inputs_last);
+    kmedoids.fit<ffcl::FasterPAM>(samples_first, samples_last);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 }
 
-template <typename InputsIterator>
-void precomputed_fit(const InputsIterator& inputs_first,
-                     const InputsIterator& inputs_last,
-                     std::size_t           n_medoids,
-                     std::size_t           n_features) {
+template <typename SamplesIterator>
+void precomputed_fit(const SamplesIterator& samples_first,
+                     const SamplesIterator& samples_last,
+                     std::size_t            n_medoids,
+                     std::size_t            n_features) {
     using KMedoids = ffcl::KMedoids<bench::io::DataType, false>;
     // using PAM = ffcl::FasterMSC;
 
@@ -51,7 +51,7 @@ void precomputed_fit(const InputsIterator& inputs_first,
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     const auto pairwise_distance_matrix =
-        ffcl::datastruct::PairwiseDistanceMatrix(inputs_first, inputs_last, n_features);
+        ffcl::datastruct::PairwiseDistanceMatrix(samples_first, samples_last, n_features);
 
     timer.print_elapsed_seconds(/*n_decimals=*/6);
 

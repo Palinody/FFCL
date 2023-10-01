@@ -10,11 +10,11 @@
 
 namespace kmeans::benchmark {
 
-template <typename InputsIterator>
-void fit_once(const InputsIterator& samples_first,
-              const InputsIterator& samples_last,
-              std::size_t           n_centroids,
-              std::size_t           n_features) {
+template <typename SamplesIterator>
+void fit_once(const SamplesIterator& samples_first,
+              const SamplesIterator& samples_last,
+              std::size_t            n_centroids,
+              std::size_t            n_features) {
     using KMeans = ffcl::KMeans<bench::io::DataType>;
 
     auto kmeans = KMeans(n_centroids, n_features);

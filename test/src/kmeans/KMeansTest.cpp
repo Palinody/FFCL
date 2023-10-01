@@ -104,13 +104,13 @@ class KMeansErrorsTest : public ::testing::Test {
         }
     }
 
-    template <typename InputsIterator>
-    std::pair<std::vector<std::size_t>, std::vector<typename InputsIterator::value_type>> simple_fit(
-        const InputsIterator& inputs_first,
-        const InputsIterator& inputs_last,
-        std::size_t           n_centroids,
-        std::size_t           n_features,
-        std::size_t           n_iterations = 1) {
+    template <typename SamplesIterator>
+    std::pair<std::vector<std::size_t>, std::vector<typename SamplesIterator::value_type>> simple_fit(
+        const SamplesIterator& samples_first,
+        const SamplesIterator& samples_last,
+        std::size_t            n_centroids,
+        std::size_t            n_features,
+        std::size_t            n_iterations = 1) {
         using KMeans = ffcl::KMeans<dType>;
         // using PAM = ffcl::Lloyd;
 
@@ -124,10 +124,10 @@ class KMeansErrorsTest : public ::testing::Test {
                 .patience(0)
                 .n_init(10));
 
-        const auto centroids =
-            kmeans.fit<ffcl::Hamerly>(inputs_first, inputs_last, ffcl::kmeansplusplus::make_centroids<InputsIterator>);
+        const auto centroids = kmeans.fit<ffcl::Hamerly>(
+            samples_first, samples_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 
-        const auto predictions = kmeans.predict(inputs_first, inputs_last);
+        const auto predictions = kmeans.predict(samples_first, samples_last);
 
         return {predictions, centroids};
     }

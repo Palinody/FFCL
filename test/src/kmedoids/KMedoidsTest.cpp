@@ -101,12 +101,12 @@ class KMedoidsErrorsTest : public ::testing::Test {
         }
     }
 
-    template <typename InputsIterator>
-    void simple_fit(const InputsIterator& inputs_first,
-                    const InputsIterator& inputs_last,
-                    std::size_t           n_medoids,
-                    std::size_t           n_features,
-                    std::size_t           n_iterations = 1) {
+    template <typename SamplesIterator>
+    void simple_fit(const SamplesIterator& inputs_first,
+                    const SamplesIterator& inputs_last,
+                    std::size_t            n_medoids,
+                    std::size_t            n_features,
+                    std::size_t            n_iterations = 1) {
         using KMedoids = ffcl::KMedoids<dType, true>;
         // using PAM = ffcl::FasterMSC;
 
@@ -119,20 +119,20 @@ class KMedoidsErrorsTest : public ::testing::Test {
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
     }
 
-    template <typename InputsIterator>
-    std::pair<std::vector<std::size_t>, std::vector<typename InputsIterator::value_type>> fit_predict(
-        const InputsIterator& inputs_first,
-        const InputsIterator& inputs_last,
-        std::size_t           n_medoids,
-        std::size_t           n_features,
-        std::size_t           n_iterations = 1) {
+    template <typename SamplesIterator>
+    std::pair<std::vector<std::size_t>, std::vector<typename SamplesIterator::value_type>> fit_predict(
+        const SamplesIterator& inputs_first,
+        const SamplesIterator& inputs_last,
+        std::size_t            n_medoids,
+        std::size_t            n_features,
+        std::size_t            n_iterations = 1) {
         using KMedoids = ffcl::KMedoids<dType, true>;
         // using PAM = ffcl::FasterMSC;
 
-        using DatasetDescriptorType              = std::tuple<InputsIterator, InputsIterator, std::size_t>;
+        using DatasetDescriptorType              = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
         DatasetDescriptorType dataset_descriptor = std::make_tuple(inputs_first, inputs_last, n_features);
         const auto            pairwise_distance_matrix =
-            ffcl::datastruct::PairwiseDistanceMatrix<InputsIterator>(dataset_descriptor);
+            ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>(dataset_descriptor);
 
         auto kmedoids = KMedoids(n_medoids, n_features);
 

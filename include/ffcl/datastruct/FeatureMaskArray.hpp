@@ -9,22 +9,22 @@ namespace ffcl::datastruct {
 /**
  * @brief A read-only feature mask array
  *
- * @tparam DataType
+ * @tparam IndexType
  * @tparam NFeatures
  */
-template <typename DataType, std::size_t NFeatures>
+template <typename IndexType, std::size_t NFeatures>
 class FeatureMaskArray {
   public:
-    using VariantType   = std::variant<std::vector<DataType>, std::array<DataType, NFeatures>>;
-    using ConstIterator = typename VariantType::value_type::const_iterator;
+    using VariantType          = std::variant<std::vector<IndexType>, std::array<IndexType, NFeatures>>;
+    using ConstIndicesIterator = typename VariantType::value_type::const_iterator;
 
-    FeatureMaskArray(const std::vector<DataType>& vector)
+    FeatureMaskArray(const std::vector<IndexType>& vector)
       : data_{vector} {}
 
-    FeatureMaskArray(const std::array<DataType, NFeatures>& array)
+    FeatureMaskArray(const std::array<IndexType, NFeatures>& array)
       : data_{array} {}
 
-    constexpr DataType operator[](std::size_t index) const {
+    constexpr IndexType operator[](std::size_t index) const {
         return data_[index];
     }
 
@@ -32,11 +32,11 @@ class FeatureMaskArray {
         return data_.size();
     }
 
-    constexpr ConstIterator begin() const {
+    constexpr ConstIndicesIterator begin() const {
         return std::visit([](const auto& data) { return data.begin(); }, data_);
     }
 
-    constexpr ConstIterator end() const {
+    constexpr ConstIndicesIterator end() const {
         return std::visit([](const auto& data) { return data.end(); }, data_);
     }
 

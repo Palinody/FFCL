@@ -48,13 +48,13 @@ auto make_1d_bounding_box(const SamplesIterator& samples_first,
     return bounding_box_1d;
 }
 
-template <typename RandomAccessIntIterator, typename SamplesIterator>
-auto make_1d_bounding_box(const RandomAccessIntIterator& index_first,
-                          const RandomAccessIntIterator& index_last,
-                          const SamplesIterator&         samples_first,
-                          const SamplesIterator&         samples_last,
-                          std::size_t                    n_features,
-                          ssize_t                        feature_index) {
+template <typename IndicesIterator, typename SamplesIterator>
+auto make_1d_bounding_box(const IndicesIterator& index_first,
+                          const IndicesIterator& index_last,
+                          const SamplesIterator& samples_first,
+                          const SamplesIterator& samples_last,
+                          std::size_t            n_features,
+                          ssize_t                feature_index) {
     using DataType = DataType<SamplesIterator>;
 
     common::utils::ignore_parameters(samples_last);
@@ -109,12 +109,12 @@ auto make_kd_bounding_box(const SamplesIterator& samples_first,
     return kd_bounding_box;
 }
 
-template <typename RandomAccessIntIterator, typename SamplesIterator>
-auto make_kd_bounding_box(const RandomAccessIntIterator& index_first,
-                          const RandomAccessIntIterator& index_last,
-                          const SamplesIterator&         samples_first,
-                          const SamplesIterator&         samples_last,
-                          std::size_t                    n_features) {
+template <typename IndicesIterator, typename SamplesIterator>
+auto make_kd_bounding_box(const IndicesIterator& index_first,
+                          const IndicesIterator& index_last,
+                          const SamplesIterator& samples_first,
+                          const SamplesIterator& samples_last,
+                          std::size_t            n_features) {
     using DataType = DataType<SamplesIterator>;
 
     common::utils::ignore_parameters(samples_last);

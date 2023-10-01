@@ -5,13 +5,13 @@
 
 namespace kmeans::utils {
 
-template <typename Iterator>
+template <typename SamplesIterator>
 std::vector<std::size_t> samples_to_nearest_centroid_indices(
-    const Iterator&                                   samples_first,
-    const Iterator&                                   samples_last,
-    std::size_t                                       n_features,
-    const std::vector<typename Iterator::value_type>& centroids) {
-    using DataType = typename Iterator::value_type;
+    const SamplesIterator&                                   samples_first,
+    const SamplesIterator&                                   samples_last,
+    std::size_t                                              n_features,
+    const std::vector<typename SamplesIterator::value_type>& centroids) {
+    using DataType = typename SamplesIterator::value_type;
 
     const std::size_t n_samples   = common::utils::get_n_samples(samples_first, samples_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
@@ -40,13 +40,13 @@ std::vector<std::size_t> samples_to_nearest_centroid_indices(
     return nearest_centroid_indices;
 }
 
-template <typename Iterator>
-std::vector<typename Iterator::value_type> samples_to_nearest_centroid_distances(
-    const Iterator&                                   samples_first,
-    const Iterator&                                   samples_last,
-    std::size_t                                       n_features,
-    const std::vector<typename Iterator::value_type>& centroids) {
-    using DataType = typename Iterator::value_type;
+template <typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> samples_to_nearest_centroid_distances(
+    const SamplesIterator&                                   samples_first,
+    const SamplesIterator&                                   samples_last,
+    std::size_t                                              n_features,
+    const std::vector<typename SamplesIterator::value_type>& centroids) {
+    using DataType = typename SamplesIterator::value_type;
 
     const std::size_t n_samples   = common::utils::get_n_samples(samples_first, samples_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
@@ -72,13 +72,13 @@ std::vector<typename Iterator::value_type> samples_to_nearest_centroid_distances
     return nearest_centroid_distances;
 }
 
-template <typename Iterator>
-std::vector<typename Iterator::value_type> samples_to_second_nearest_centroid_distances(
-    const Iterator&                                   samples_first,
-    const Iterator&                                   samples_last,
-    std::size_t                                       n_features,
-    const std::vector<typename Iterator::value_type>& centroids) {
-    using DataType = typename Iterator::value_type;
+template <typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_centroid_distances(
+    const SamplesIterator&                                   samples_first,
+    const SamplesIterator&                                   samples_last,
+    std::size_t                                              n_features,
+    const std::vector<typename SamplesIterator::value_type>& centroids) {
+    using DataType = typename SamplesIterator::value_type;
 
     const std::size_t n_samples   = common::utils::get_n_samples(samples_first, samples_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
@@ -112,11 +112,11 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_centroid_di
     return second_nearest_centroid_distances;
 }
 
-template <typename IteratorInt>
-std::vector<std::size_t> compute_cluster_sizes(const IteratorInt& samples_to_nearest_centroid_indices_first,
-                                               const IteratorInt& samples_to_nearest_centroid_indices_last,
-                                               std::size_t        n_centroids) {
-    static_assert(std::is_integral_v<typename IteratorInt::value_type>, "Input elements type should be integral.");
+template <typename IndicesIterator>
+std::vector<std::size_t> compute_cluster_sizes(const IndicesIterator& samples_to_nearest_centroid_indices_first,
+                                               const IndicesIterator& samples_to_nearest_centroid_indices_last,
+                                               std::size_t            n_centroids) {
+    static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Input elements type should be integral.");
 
     // the number of samples associated to each centroids
     auto cluster_sizes = std::vector<std::size_t>(n_centroids);
@@ -129,19 +129,19 @@ std::vector<std::size_t> compute_cluster_sizes(const IteratorInt& samples_to_nea
     return cluster_sizes;
 }
 
-template <typename Iterator, typename IteratorInt>
-std::vector<typename Iterator::value_type> compute_cluster_positions_sum(
-    const Iterator&    samples_first,
-    const Iterator&    samples_last,
-    const IteratorInt& samples_to_nearest_centroid_indices_first,
-    std::size_t        n_centroids,
-    std::size_t        n_features) {
-    static_assert(std::is_integral_v<typename IteratorInt::value_type>, "Input elements type should be integral.");
+template <typename SamplesIterator, typename IndicesIterator>
+std::vector<typename SamplesIterator::value_type> compute_cluster_positions_sum(
+    const SamplesIterator& samples_first,
+    const SamplesIterator& samples_last,
+    const IndicesIterator& samples_to_nearest_centroid_indices_first,
+    std::size_t            n_centroids,
+    std::size_t            n_features) {
+    static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Input elements type should be integral.");
 
     const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
 
     // accumulate the positions of each sample in each cluster
-    auto cluster_positions_sum = std::vector<typename Iterator::value_type>(n_centroids * n_features);
+    auto cluster_positions_sum = std::vector<typename SamplesIterator::value_type>(n_centroids * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         const auto assigned_centroid_index = *(samples_to_nearest_centroid_indices_first + sample_index);
@@ -155,11 +155,11 @@ std::vector<typename Iterator::value_type> compute_cluster_positions_sum(
     return cluster_positions_sum;
 }
 
-template <typename Iterator>
-std::vector<typename Iterator::value_type> nearest_neighbor_distances(const Iterator& data_first,
-                                                                      const Iterator& data_last,
-                                                                      std::size_t     n_features) {
-    using DataType = typename Iterator::value_type;
+template <typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> nearest_neighbor_distances(const SamplesIterator& data_first,
+                                                                             const SamplesIterator& data_last,
+                                                                             std::size_t            n_features) {
+    using DataType = typename SamplesIterator::value_type;
 
     const std::size_t n_rows = common::utils::get_n_samples(data_first, data_last, n_features);
 

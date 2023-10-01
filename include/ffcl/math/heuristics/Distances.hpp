@@ -10,17 +10,17 @@
 
 namespace math::heuristics {
 
-template <typename IteratorFloat1, typename IteratorFloat2>
-typename IteratorFloat1::value_type squared_euclidean_distance(const IteratorFloat1& feature_first,
-                                                               const IteratorFloat1& feature_last,
-                                                               const IteratorFloat2& other_feature_first) {
-    static_assert(std::is_floating_point_v<typename IteratorFloat1::value_type>,
+template <typename FeatureIterator1, typename FeatureIterator2>
+typename FeatureIterator1::value_type squared_euclidean_distance(const FeatureIterator1& feature_first,
+                                                                 const FeatureIterator1& feature_last,
+                                                                 const FeatureIterator2& other_feature_first) {
+    static_assert(std::is_floating_point_v<typename FeatureIterator1::value_type>,
                   "Inputs should be floating point types.");
 
-    static_assert(std::is_floating_point_v<typename IteratorFloat2::value_type>,
+    static_assert(std::is_floating_point_v<typename FeatureIterator2::value_type>,
                   "Inputs should be floating point types.");
 
-    using FloatType = typename IteratorFloat1::value_type;
+    using FloatType = typename FeatureIterator1::value_type;
 
     return std::transform_reduce(feature_first,
                                  feature_last,
@@ -33,18 +33,18 @@ typename IteratorFloat1::value_type squared_euclidean_distance(const IteratorFlo
                                  });
 }
 
-template <typename IteratorFloat1, typename IteratorFloat2>
-typename IteratorFloat1::value_type euclidean_distance(const IteratorFloat1& feature_first,
-                                                       const IteratorFloat1& feature_last,
-                                                       const IteratorFloat2& other_feature_first) {
+template <typename FeatureIterator1, typename FeatureIterator2>
+typename FeatureIterator1::value_type euclidean_distance(const FeatureIterator1& feature_first,
+                                                         const FeatureIterator1& feature_last,
+                                                         const FeatureIterator2& other_feature_first) {
     return std::sqrt(squared_euclidean_distance(feature_first, feature_last, other_feature_first));
 }
 
-template <typename Iterator1, typename Iterator2>
-typename Iterator1::value_type manhattan_distance(const Iterator1& feature_first,
-                                                  const Iterator1& feature_last,
-                                                  const Iterator2& other_feature_first) {
-    using DataType = typename Iterator1::value_type;
+template <typename FeatureIterator1, typename FeatureIterator2>
+typename FeatureIterator1::value_type manhattan_distance(const FeatureIterator1& feature_first,
+                                                         const FeatureIterator1& feature_last,
+                                                         const FeatureIterator2& other_feature_first) {
+    using DataType = typename FeatureIterator1::value_type;
 
     return std::transform_reduce(feature_first,
                                  feature_last,
@@ -54,17 +54,17 @@ typename Iterator1::value_type manhattan_distance(const Iterator1& feature_first
                                  [](const auto& lhs, const auto& rhs) { return std::abs(lhs - rhs); });
 }
 
-template <typename IteratorUInt1, typename IteratorUInt2>
-typename IteratorUInt1::value_type unsigned_manhattan_distance(const IteratorUInt1& feature_first,
-                                                               const IteratorUInt1& feature_last,
-                                                               const IteratorUInt2& other_feature_first) {
-    static_assert(std::is_unsigned_v<typename IteratorUInt1::value_type>,
+template <typename FeatureIterator1, typename FeatureIterator2>
+typename FeatureIterator1::value_type unsigned_manhattan_distance(const FeatureIterator1& feature_first,
+                                                                  const FeatureIterator1& feature_last,
+                                                                  const FeatureIterator2& other_feature_first) {
+    static_assert(std::is_unsigned_v<typename FeatureIterator1::value_type>,
                   "Inputs should be unsigned integer point types.");
 
-    static_assert(std::is_unsigned_v<typename IteratorUInt2::value_type>,
+    static_assert(std::is_unsigned_v<typename FeatureIterator2::value_type>,
                   "Inputs should be unsigned integer point types.");
 
-    using UIntType = typename IteratorUInt1::value_type;
+    using UIntType = typename FeatureIterator1::value_type;
 
     return std::transform_reduce(feature_first,
                                  feature_last,
@@ -74,17 +74,17 @@ typename IteratorUInt1::value_type unsigned_manhattan_distance(const IteratorUIn
                                  [](const auto& lhs, const auto& rhs) { return lhs > rhs ? lhs - rhs : rhs - lhs; });
 }
 
-template <typename IteratorFloat1, typename IteratorFloat2>
-typename IteratorFloat1::value_type cosine_similarity(const IteratorFloat1& feature_first,
-                                                      const IteratorFloat1& feature_last,
-                                                      const IteratorFloat2& other_feature_first) {
-    static_assert(std::is_floating_point_v<typename IteratorFloat1::value_type>,
+template <typename FeatureIterator1, typename FeatureIterator2>
+typename FeatureIterator1::value_type cosine_similarity(const FeatureIterator1& feature_first,
+                                                        const FeatureIterator1& feature_last,
+                                                        const FeatureIterator2& other_feature_first) {
+    static_assert(std::is_floating_point_v<typename FeatureIterator1::value_type>,
                   "Inputs should be floating point types.");
 
-    static_assert(std::is_floating_point_v<typename IteratorFloat2::value_type>,
+    static_assert(std::is_floating_point_v<typename FeatureIterator2::value_type>,
                   "Inputs should be floating point types.");
 
-    using FloatType = typename IteratorFloat1::value_type;
+    using FloatType = typename FeatureIterator1::value_type;
 
     const std::size_t n_features = std::distance(feature_first, feature_last);
 
@@ -103,12 +103,12 @@ typename IteratorFloat1::value_type cosine_similarity(const IteratorFloat1& feat
     return dot_product / std::sqrt(magnitude_1 * magnitude_2);
 }
 
-template <typename Iterator1, typename Iterator2>
-auto auto_distance(const Iterator1& feature_first,
-                   const Iterator1& feature_last,
-                   const Iterator2& other_feature_first) {
-    using ValueType1 = typename Iterator1::value_type;
-    using ValueType2 = typename Iterator2::value_type;
+template <typename FeatureIterator1, typename FeatureIterator2>
+auto auto_distance(const FeatureIterator1& feature_first,
+                   const FeatureIterator1& feature_last,
+                   const FeatureIterator2& other_feature_first) {
+    using ValueType1 = typename FeatureIterator1::value_type;
+    using ValueType2 = typename FeatureIterator2::value_type;
 
     static_assert(std::is_same_v<ValueType1, ValueType2>);
 

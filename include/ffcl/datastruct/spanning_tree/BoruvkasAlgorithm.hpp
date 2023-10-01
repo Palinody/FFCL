@@ -58,8 +58,8 @@ class BoruvkasAlgorithm {
 
     class Forest {
       public:
-        using Iterator      = typename ForestType::iterator;
-        using ConstIterator = typename ForestType::const_iterator;
+        using ForestIterator      = typename ForestType::iterator;
+        using ConstForestIterator = typename ForestType::const_iterator;
 
         Forest(std::size_t n_samples)
           : n_samples_{n_samples}
@@ -85,27 +85,27 @@ class BoruvkasAlgorithm {
             return union_find_;
         }
 
-        Iterator begin() {
+        ForestIterator begin() {
             return components_.begin();
         }
 
-        Iterator end() {
+        ForestIterator end() {
             return components_.end();
         }
 
-        ConstIterator begin() const {
+        ConstForestIterator begin() const {
             return components_.begin();
         }
 
-        ConstIterator end() const {
+        ConstForestIterator end() const {
             return components_.end();
         }
 
-        ConstIterator cbegin() const {
+        ConstForestIterator cbegin() const {
             return components_.cbegin();
         }
 
-        ConstIterator cend() const {
+        ConstForestIterator cend() const {
             return components_.cend();
         }
 

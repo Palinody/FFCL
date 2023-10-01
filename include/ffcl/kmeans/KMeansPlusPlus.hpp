@@ -30,19 +30,19 @@ namespace ffcl::kmeansplusplus {
  * datasets or higher-dimensional data. Since each new centroid must be evaluated with respect to all previous
  * centroids, the algorithm may slow down significantly as the number of clusters increases or the dataset size grows.
  *
- * @tparam IteratorFloat
+ * @tparam SamplesIterator
  * @param data_first
  * @param data_last
  * @param n_centroids
  * @param n_features
- * @return std::vector<typename IteratorFloat::value_type>
+ * @return std::vector<typename SamplesIterator::value_type>
  */
-template <typename IteratorFloat>
-std::vector<typename IteratorFloat::value_type> make_centroids(const IteratorFloat& data_first,
-                                                               const IteratorFloat& data_last,
-                                                               std::size_t          n_centroids,
-                                                               std::size_t          n_features) {
-    static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
+template <typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> make_centroids(const SamplesIterator& data_first,
+                                                                 const SamplesIterator& data_last,
+                                                                 std::size_t            n_centroids,
+                                                                 std::size_t            n_features) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
                   "Data should be a floating point type.");
 
     auto centroids = math::random::select_random_sample(data_first, data_last, n_features);
@@ -71,19 +71,20 @@ std::vector<typename IteratorFloat::value_type> make_centroids(const IteratorFlo
  * However, this approach may be more prone to getting stuck in local minima, since it does not take into
  * account the overall distribution of centroids.
  *
- * @tparam IteratorFloat
+ * @tparam SamplesIterator
  * @param data_first
  * @param data_last
  * @param n_centroids
  * @param n_features
- * @return std::vector<typename IteratorFloat::value_type>
+ * @return std::vector<typename SamplesIterator::value_type>
  */
-template <typename IteratorFloat>
-std::vector<typename IteratorFloat::value_type> make_centroids_from_previous_centroid(const IteratorFloat& data_first,
-                                                                                      const IteratorFloat& data_last,
-                                                                                      std::size_t          n_centroids,
-                                                                                      std::size_t          n_features) {
-    static_assert(std::is_floating_point<typename IteratorFloat::value_type>::value,
+template <typename SamplesIterator>
+std::vector<typename SamplesIterator::value_type> make_centroids_from_previous_centroid(
+    const SamplesIterator& data_first,
+    const SamplesIterator& data_last,
+    std::size_t            n_centroids,
+    std::size_t            n_features) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
                   "Data should be a floating point type.");
 
     auto previous_centroid = math::random::select_random_sample(data_first, data_last, n_features);
