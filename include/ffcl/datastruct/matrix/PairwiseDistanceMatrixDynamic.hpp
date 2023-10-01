@@ -58,14 +58,6 @@ PairwiseDistanceMatrixDynamic<SamplesIterator>::PairwiseDistanceMatrixDynamic(
 
 template <typename SamplesIterator>
 auto PairwiseDistanceMatrixDynamic<SamplesIterator>::operator()(std::size_t row_index, std::size_t column_index) const {
-    // swap the indices if an lower triangle (diagonal excluded) quiery is made
-    if (row_index > column_index) {
-        std::swap(row_index, column_index);
-
-        return math::heuristics::auto_distance(samples_first_ + column_index * n_features_,
-                                               samples_first_ + column_index * n_features_ + n_features_,
-                                               samples_first_ + row_index * n_features_);
-    }
     return math::heuristics::auto_distance(samples_first_ + row_index * n_features_,
                                            samples_first_ + row_index * n_features_ + n_features_,
                                            samples_first_ + column_index * n_features_);
