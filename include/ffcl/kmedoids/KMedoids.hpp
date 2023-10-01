@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/PrecomputedDistanceMatrix.hpp"
+#include "ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 #include "ffcl/math/random/Sampling.hpp"
@@ -84,25 +84,25 @@ class KMedoids {
 
     template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
     std::vector<std::size_t> fit(
-        const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix);
+        const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix);
 
     template <typename SamplesIterator>
     std::vector<std::size_t> fit(
-        const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix);
+        const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix);
 
     template <typename SamplesIterator>
     std::vector<T> forward(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
 
     template <typename SamplesIterator>
     std::vector<T> forward(
-        const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const;
+        const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const;
 
     template <typename SamplesIterator>
     std::vector<std::size_t> predict(const SamplesIterator& data_first, const SamplesIterator& data_last) const;
 
     template <typename SamplesIterator>
     std::vector<std::size_t> predict(
-        const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const;
+        const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const;
 
   private:
     // number of medoids that a KMedoids instance should handle (could vary)
@@ -187,11 +187,11 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
     auto medoids_candidates_prev = std::vector<std::vector<std::size_t>>(medoids_candidates.size());
 
     // instanciate a pairwise_distance_matrix only if PrecomputePairwiseDistanceMatrix is set to true
-    std::unique_ptr<ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>> pairwise_distance_matrix_ptr;
+    std::unique_ptr<ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>> pairwise_distance_matrix_ptr;
 
     if constexpr (PrecomputePairwiseDistanceMatrix) {
         pairwise_distance_matrix_ptr =
-            std::make_unique<ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>>(dataset_descriptor);
+            std::make_unique<ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>>(dataset_descriptor);
     }
 #if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for
@@ -252,7 +252,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(cons
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) {
     // contains the medoids indices for each tries which number is defined by options_.n_init_ if medoids_
     // werent already assigned
     auto medoids_candidates = std::vector<std::vector<std::size_t>>();
@@ -261,7 +261,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
     if (medoids_.empty()) {
         for (std::size_t k = 0; k < options_.n_init_; ++k) {
             const auto random_medoids =
-                math::random::select_from_range(n_medoids_, {0, pairwise_distance_matrix.n_samples()});
+                math::random::select_from_range(n_medoids_, {0, pairwise_distance_matrix.n_rows()});
 
             // default initialization of the medoids indices if not initialized
             medoids_candidates.emplace_back(random_medoids);
@@ -328,7 +328,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::fit(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) {
     // execute fit function with a default PAM algorithm
     return fit<ffcl::FasterPAM>(pairwise_distance_matrix);
 }
@@ -343,7 +343,7 @@ std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::forward(const Samp
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
 std::vector<T> KMedoids<T, PrecomputePairwiseDistanceMatrix>::forward(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const {
+    const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const {
     return pam::utils::samples_to_nearest_medoid_distances(pairwise_distance_matrix, medoids_);
 }
 
@@ -358,7 +358,7 @@ std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::predict(
 template <typename T, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
 std::vector<std::size_t> KMedoids<T, PrecomputePairwiseDistanceMatrix>::predict(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const {
+    const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const {
     return pam::utils::samples_to_nearest_medoid_indices(pairwise_distance_matrix, medoids_);
 }
 

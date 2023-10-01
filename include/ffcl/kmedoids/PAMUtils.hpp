@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/PrecomputedDistanceMatrix.hpp"
+#include "ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
@@ -59,14 +59,14 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const Iterator&      
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_nearest_medoid_indices(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = pairwise_distance_matrix.n_samples();
+    const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     // the vector that will contain the indices from each sample to the nearest medoid
     auto nearest_medoid_indices = std::vector<std::size_t>(n_samples);
@@ -139,14 +139,14 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const Iterator
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = pairwise_distance_matrix.n_samples();
+    const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     // the vector that will contain the indices from each sample to the second nearest medoid
     auto second_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
@@ -241,14 +241,14 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const Iterator&
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = pairwise_distance_matrix.n_samples();
+    const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     // the vector that will contain the indices from each sample to the third nearest medoid
     auto third_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
@@ -322,9 +322,9 @@ std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(const Iterator&  
 
 template <typename Iterator>
 std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids,
-    std::size_t                                                  nth_closest = 1) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids,
+    std::size_t                                               nth_closest = 1) {
     if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
@@ -386,14 +386,14 @@ std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_nearest_medoid_distances(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = pairwise_distance_matrix.n_samples();
+    const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto nearest_medoid_distances = std::vector<DataType>(n_samples);
@@ -461,14 +461,14 @@ std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_dist
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_second_nearest_medoid_distances(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = pairwise_distance_matrix.n_samples();
+    const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto second_nearest_medoid_distances = std::vector<DataType>(n_samples);
@@ -550,14 +550,14 @@ std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_dista
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_third_nearest_medoid_distances(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids) {
     using DataType = typename Iterator::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = pairwise_distance_matrix.n_samples();
+    const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto third_nearest_medoid_distances = std::vector<DataType>(n_samples);
@@ -623,9 +623,9 @@ std::vector<typename Iterator::value_type> samples_to_nth_nearest_medoid_distanc
 
 template <typename Iterator>
 std::vector<typename Iterator::value_type> samples_to_nth_nearest_medoid_distances(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix,
-    const std::vector<std::size_t>&                              medoids,
-    std::size_t                                                  nth_closest = 1) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix,
+    const std::vector<std::size_t>&                           medoids,
+    std::size_t                                               nth_closest = 1) {
     if (nth_closest == 0 || nth_closest > medoids.size()) {
         throw std::invalid_argument("nth_closest value should be inside range ]0, n_medoids].");
     }
@@ -735,10 +735,10 @@ std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair
 
 template <typename Iterator>
 std::pair<typename Iterator::value_type, std::size_t> first_medoid_td_index_pair(
-    const ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>& pairwise_distance_matrix) {
+    const ffcl::datastruct::PairwiseDistanceMatrix<Iterator>& pairwise_distance_matrix) {
     using DataType = typename Iterator::value_type;
 
-    const std::size_t n_samples = pairwise_distance_matrix.n_samples();
+    const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     std::size_t selected_medoid = 0;
     auto        total_deviation = common::utils::infinity<DataType>();

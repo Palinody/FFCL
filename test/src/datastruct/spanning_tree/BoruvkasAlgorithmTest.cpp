@@ -3,8 +3,8 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/PrecomputedDistanceMatrix.hpp"
 #include "ffcl/datastruct/kdtree/KDTreeIndexed.hpp"
+#include "ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp"
 #include "ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp"
 
 #include <sys/types.h>  // std::ssize_t

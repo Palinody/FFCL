@@ -45,8 +45,10 @@ set(HEADER_FILES
     include/ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp
     include/ffcl/datastruct/kdtree/KDTreeIndexed.hpp
 
+    include/ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp
+    include/ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp
+
     include/ffcl/datastruct/FeatureMaskArray.hpp
-    include/ffcl/datastruct/PrecomputedDistanceMatrix.hpp
     include/ffcl/datastruct/BoundingBox.hpp
 
     include/ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
@@ -100,6 +102,8 @@ if(MODE STREQUAL "benchmark")
     )
     target_link_libraries(
         ${PROJECT_NAME}
+        PUBLIC
+        TBB::tbb
         ${PCL_LIBRARIES}
         OpenMP::OpenMP_CXX
     )

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/PrecomputedDistanceMatrix.hpp"
+#include "ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp"
+#include "ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp"
 #include "ffcl/kmedoids/PAMUtils.hpp"
 #include "ffcl/math/heuristics/Distances.hpp"
 #include "ffcl/math/random/Distributions.hpp"
@@ -33,8 +34,8 @@ class FasterMSC {
     // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<Iterator, Iterator, std::size_t>;
 
-    using FirstVariantType   = ffcl::datastruct::PrecomputedDistanceMatrixDynamic<Iterator>;
-    using SecondVariantType  = ffcl::datastruct::PrecomputedDistanceMatrix<Iterator>;
+    using FirstVariantType   = ffcl::datastruct::PairwiseDistanceMatrixDynamic<Iterator>;
+    using SecondVariantType  = ffcl::datastruct::PairwiseDistanceMatrix<Iterator>;
     using StorageVariantType = std::variant<FirstVariantType, SecondVariantType>;
 
     FasterMSC(const DatasetDescriptorType& dataset_descriptor, const std::vector<std::size_t>& medoids);
@@ -108,7 +109,7 @@ FasterMSC<Iterator>::FasterMSC(const DatasetDescriptorType&    dataset_descripto
                                const std::vector<std::size_t>& medoids,
                                const DataType&                 loss)
   : storage_variant_{FirstVariantType(dataset_descriptor)}
-  , n_samples_{std::get<FirstVariantType>(storage_variant_).n_samples()}
+  , n_samples_{std::get<FirstVariantType>(storage_variant_).n_rows()}
   , medoids_{medoids}
   , buffers_ptr_{std::make_unique<Buffers>(dataset_descriptor, medoids_)}
   , loss_{loss} {}
@@ -128,7 +129,7 @@ FasterMSC<Iterator>::FasterMSC(const SecondVariantType&        pairwise_distance
                                const std::vector<std::size_t>& medoids,
                                const DataType&                 loss)
   : storage_variant_{pairwise_distance_matrix}
-  , n_samples_{std::get<SecondVariantType>(storage_variant_).n_samples()}
+  , n_samples_{std::get<SecondVariantType>(storage_variant_).n_rows()}
   , medoids_{medoids}
   , buffers_ptr_{std::make_unique<Buffers>(pairwise_distance_matrix, medoids_)}
   , loss_{loss} {}
