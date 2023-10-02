@@ -5,6 +5,8 @@
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
+#include "ffcl/knn/NearestNeighbor.hpp"
+
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
 #include <fstream>
@@ -153,7 +155,7 @@ TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
-        math::heuristics::nearest_neighbor(indices.begin(),
+        ffcl::knn::nearest_neighbor(indices.begin(),
                                                          indices.end(),
                                                          data.begin(),
                                                          data.end(),

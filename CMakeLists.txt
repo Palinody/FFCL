@@ -36,8 +36,7 @@ set(HEADER_FILES
     include/ffcl/kmedoids/PAMUtils.hpp
     include/ffcl/kmedoids/PAMBuild.hpp
 
-    include/ffcl/math/random/Distributions.hpp
-    include/ffcl/math/random/VosesAliasMethod.hpp
+    include/ffcl/knn/NearestNeighbor.hpp
 
     include/ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp
     include/ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp
@@ -55,9 +54,11 @@ set(HEADER_FILES
 
     include/ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp
 
+    include/ffcl/math/random/Distributions.hpp
+    include/ffcl/math/random/VosesAliasMethod.hpp
+
     include/ffcl/math/heuristics/Distances.hpp
     include/ffcl/math/heuristics/SilhouetteMethod.hpp
-    include/ffcl/math/heuristics/NearestNeighbor.hpp
 
     include/ffcl/common/Utils.hpp
     include/ffcl/common/Timer.hpp
@@ -79,7 +80,7 @@ execute_process(
 
 string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" GPP_VERSION "${GPP_VERSION_OUTPUT}")
 
-message("Using g++ Version: ${GPP_VERSION}")
+message(" Using g++ Version: ${GPP_VERSION} ")
 
 # set(MODE "benchmarks")
 if(MODE STREQUAL "benchmark")
@@ -200,7 +201,7 @@ elseif(MODE STREQUAL "gtest")
         NearestNeighborTest
 
         # ---
-        test/src/math/heuristics/NearestNeighborTest.cpp
+        test/src/knn/NearestNeighborTest.cpp
     )
     target_link_libraries(
         NearestNeighborTest

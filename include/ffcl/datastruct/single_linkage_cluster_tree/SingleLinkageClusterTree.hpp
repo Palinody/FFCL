@@ -19,7 +19,7 @@ template <typename IndexType, typename ValueType>
 class SingleLinkageClusterTree {
   public:
     using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
-    using UnionFindType           = UnionFind<IndexType>;
+    using UnionFindType           = datastruct::UnionFind<IndexType>;
 
     using NodeType = SingleLinkageClusterNode<IndexType, ValueType>;
     using NodePtr  = std::shared_ptr<NodeType>;

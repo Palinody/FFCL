@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/heuristics/NearestNeighbor.hpp"
+#include "ffcl/knn/NearestNeighbor.hpp"
 
 #include "Range2DBaseFixture.hpp"
 
@@ -72,12 +72,12 @@ TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
     printf("Distances:\n");
     this->print_data(nn_distances, 1);
 
-    NearestNeighborsBufferWithMemory<SamplesIterator> nn_buffer(nn_indices, nn_distances, n_neighbors);
+    ffcl::knn::NearestNeighborsBufferWithMemory<SamplesIterator> nn_buffer(nn_indices, nn_distances, n_neighbors);
 
     auto new_nn_buffer = nn_buffer;
 
     for (std::size_t i = 0; i < 5; ++i) {
-        math::heuristics::k_nearest_neighbors_range(
+        ffcl::knn::k_nearest_neighbors(
             /**/ data.begin(),
             /**/ data.end(),
             /**/ data.begin(),

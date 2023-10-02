@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-namespace ffcl {
+namespace ffcl::datastruct {
 
 template <typename IndexType>
 class UnionFind {
@@ -86,4 +86,4 @@ void UnionFind<IndexType>::print() const {
     std::cout << "\n---\n";
 }
 
-}  // namespace ffcl
+}  // namespace ffcl::datastruct

@@ -33,7 +33,7 @@ class BoruvkasAlgorithm {
     using EdgeType                = mst::Edge<IndexType, ValueType>;
     using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
 
-    using UnionFindType = UnionFind<IndexType>;
+    using UnionFindType = datastruct::UnionFind<IndexType>;
 
     using CoreDistancesArray    = std::unique_ptr<ValueType[]>;
     using CoreDistancesArrayPtr = std::shared_ptr<CoreDistancesArray>;
@@ -245,7 +245,7 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
 
         // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
         // other components using the UnionFind data structure
-        auto nn_buffer = NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
+        auto nn_buffer = knn::NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
             forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {
