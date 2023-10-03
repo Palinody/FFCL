@@ -123,9 +123,6 @@ class KDTree {
 
     // existing samples
 
-    auto buffered_k_mutual_reachability_distance(std::size_t                        query_index_1,
-                                                 std::size_t                        query_index_2,
-                                                 const std::shared_ptr<DataType[]>& core_distances) const;
     // (1)
     auto nearest_neighbor_around_query_index(std::size_t query_index) const;
 
@@ -559,23 +556,6 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
                                                   kd_bounding_box[cut_feature_index]);
     }
     return kdnode;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-auto KDTree<IndicesIterator, SamplesIterator>::buffered_k_mutual_reachability_distance(
-    std::size_t                        query_index_1,
-    std::size_t                        query_index_2,
-    const std::shared_ptr<DataType[]>& core_distances) const {
-    if (query_index_1 != query_index_2) {
-        const auto queries_distance =
-            math::heuristics::auto_distance(samples_first_ + query_index_1 * n_features_,
-                                            samples_first_ + query_index_1 * n_features_ + n_features_,
-                                            samples_first_ + query_index_2 * n_features_);
-
-        return std::max({core_distances[query_index_1], core_distances[query_index_2], queries_distance});
-    } else {
-        return static_cast<DataType>(0);
-    }
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
