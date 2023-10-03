@@ -123,10 +123,6 @@ class KDTree {
 
     // existing samples
 
-    auto k_mutual_reachability_distance(std::size_t query_index_1,
-                                        std::size_t query_index_2,
-                                        std::size_t k_nearest_neighbors) const;
-
     auto buffered_k_mutual_reachability_distance(std::size_t                        query_index_1,
                                                  std::size_t                        query_index_2,
                                                  const std::shared_ptr<DataType[]>& core_distances) const;
@@ -563,30 +559,6 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
                                                   kd_bounding_box[cut_feature_index]);
     }
     return kdnode;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-auto KDTree<IndicesIterator, SamplesIterator>::k_mutual_reachability_distance(std::size_t query_index_1,
-                                                                              std::size_t query_index_2,
-                                                                              std::size_t k_nearest_neighbors) const {
-    if (query_index_1 != query_index_2) {
-        const auto furthest_nn_distance_1 =
-            this->k_nearest_neighbors_around_query_index(query_index_1, k_nearest_neighbors)
-                .furthest_k_nearest_neighbor_distance();
-
-        const auto furthest_nn_distance_2 =
-            this->k_nearest_neighbors_around_query_index(query_index_2, k_nearest_neighbors)
-                .furthest_k_nearest_neighbor_distance();
-
-        const auto queries_distance =
-            math::heuristics::auto_distance(samples_first_ + query_index_1 * n_features_,
-                                            samples_first_ + query_index_1 * n_features_ + n_features_,
-                                            samples_first_ + query_index_2 * n_features_);
-
-        return std::max({furthest_nn_distance_1, furthest_nn_distance_2, queries_distance});
-    } else {
-        return static_cast<DataType>(0);
-    }
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
