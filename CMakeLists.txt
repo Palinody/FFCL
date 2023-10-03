@@ -67,7 +67,7 @@ set(HEADER_FILES
 set(SOURCE_FILES
 )
 
-add_definitions(-DTHREADS_ENABLED=true)
+add_definitions(-DTHREADS_ENABLED=false)
 add_definitions(-DVERBOSE=false)
 
 # disable all assertions

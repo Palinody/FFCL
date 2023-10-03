@@ -120,6 +120,7 @@ auto auto_distance(const FeatureIterator1& feature_first,
 
     } else if constexpr (std::is_unsigned_v<ValueType1>) {
         return unsigned_manhattan_distance(feature_first, feature_last, other_feature_first);
+
     } else {
 #if defined(VERBOSE) && VERBOSE == true
         std::cout << "[WARN] requested type for auto_distance not handled. Using default: euclidean.\n";
