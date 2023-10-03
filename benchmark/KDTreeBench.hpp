@@ -67,7 +67,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType().feature_mask({0, 1, 2}))
+                                   .axis_selection_policy(AxisSelectionPolicyType() /*.feature_mask({0, 1, 2})*/)
                                    .splitting_rule_policy(SplittingRulePolicyType()));
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -143,7 +143,7 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType().feature_mask({0, 1, 2}))
+                                   .axis_selection_policy(AxisSelectionPolicyType() /*.feature_mask({0, 1, 2})*/)
                                    .splitting_rule_policy(SplittingRulePolicyType()));
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -203,6 +203,8 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
+    timer.reset();
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     cloud->resize(n_samples);
 
@@ -212,7 +214,6 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
         cloud->points[sample_index].y = data[sample_index * n_features + 1];
         cloud->points[sample_index].z = data[sample_index * n_features + 2];
     }
-    timer.reset();
 
     pcl::search::FlannSearch<pcl::PointXYZ> kd_tree(
         new pcl::search::FlannSearch<pcl::PointXYZ>::KdTreeIndexCreator(/*max_leaf_size=*/std::sqrt(n_samples)));
@@ -276,6 +277,8 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
+    timer.reset();
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     cloud->resize(n_samples);
 
@@ -285,7 +288,6 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
         cloud->points[sample_index].y = data[sample_index * n_features + 1];
         cloud->points[sample_index].z = data[sample_index * n_features + 2];
     }
-    timer.reset();
 
     pcl::search::FlannSearch<pcl::PointXYZ> kd_tree(
         new pcl::search::FlannSearch<pcl::PointXYZ>::KdTreeIndexCreator(/*max_leaf_size=*/std::sqrt(n_samples)));
@@ -350,6 +352,8 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
+    timer.reset();
+
     auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -358,8 +362,6 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
         data_xyz[sample_index * n_features + 1] = data[sample_index * n_features + 1];
         data_xyz[sample_index * n_features + 2] = data[sample_index * n_features + 2];
     }
-
-    timer.reset();
 
     flann::Matrix<bench::io::DataType> dataset(data_xyz.data(), n_samples, n_features);
     // build 1 kdtree
@@ -371,18 +373,20 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
 
     std::vector<std::size_t> nn_histogram(n_samples);
 
+    std::vector<std::vector<std::size_t>> indices;
+    indices.reserve(n_samples);
+    std::vector<std::vector<bench::io::DataType>> distances;
+    distances.reserve(n_samples);
+
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         const auto elapsed_start = timer.elapsed();
-
-        std::vector<std::vector<std::size_t>>         indices;
-        std::vector<std::vector<bench::io::DataType>> distances;
 
         flann::Matrix<bench::io::DataType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
 
         // Perform radius search for each point in the cloud
         index.radiusSearch(query, indices, distances, radius, flann::SearchParams{});
 
-        nn_histogram[sample_index_query] = indices[0].size();
+        nn_histogram[sample_index_query] = indices[sample_index_query].size();
 
         bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
     }
@@ -422,6 +426,8 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     bench_summary.n_samples  = n_samples;
     bench_summary.n_features = n_features;
 
+    timer.reset();
+
     auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -430,8 +436,6 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
         data_xyz[sample_index * n_features + 1] = data[sample_index * n_features + 1];
         data_xyz[sample_index * n_features + 2] = data[sample_index * n_features + 2];
     }
-
-    timer.reset();
 
     flann::Matrix<bench::io::DataType> dataset(data_xyz.data(), n_samples, n_features);
     // build 1 kdtree
@@ -443,18 +447,20 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
 
     std::vector<std::size_t> nn_histogram(n_samples);
 
+    std::vector<std::vector<std::size_t>> indices;
+    indices.reserve(n_samples);
+    std::vector<std::vector<bench::io::DataType>> distances;
+    distances.reserve(n_samples);
+
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         const auto elapsed_start = timer.elapsed();
-
-        std::vector<std::vector<std::size_t>>         indices;
-        std::vector<std::vector<bench::io::DataType>> distances;
 
         flann::Matrix<bench::io::DataType> query(&data_xyz[sample_index_query * n_features], 1, n_features);
 
         // Perform radius search for each point in the cloud
         index.knnSearch(query, indices, distances, k_nearest_neighbors, flann::SearchParams{});
 
-        nn_histogram[sample_index_query] = indices[0].size();
+        nn_histogram[sample_index_query] = indices[sample_index_query].size();
 
         bench_summary.indexer_query_duration += timer.elapsed() - elapsed_start;
     }
@@ -657,12 +663,12 @@ void run_radius_search_benchmarks_on_point_cloud_sequences() {
 void run_k_nearest_neighbors_search_benchmarks_on_point_cloud_sequences() {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
-    const std::vector<std::size_t> n_neighbors_choices = {10, 5, 3};
+    const std::vector<std::size_t> n_neighbors_choices = {1, 3, 5, 10};
 
     const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
-                                                  fs::path("pointclouds_sequences/2"),
+                                                  fs::path("pointclouds_sequences/2")/*,
                                                   fs::path("pointclouds_sequences/0000"),
-                                                  fs::path("pointclouds_sequences/0001")};
+                                                  fs::path("pointclouds_sequences/0001")*/};
 
     for (const auto& n_neighbors : n_neighbors_choices) {
         std::cout << "Running benchmarks with n_neighbors: " << n_neighbors << "\n";

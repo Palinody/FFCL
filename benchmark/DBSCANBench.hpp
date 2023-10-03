@@ -354,14 +354,14 @@ void run_dbscan_benchmarks_on_point_cloud_sequences() {
             std::cout << "Running benchmarks with radius: " << radius << "\n";
             for (const auto& relative_path : relative_paths) {
                 std::cout << "---\nSequence in folder: " << relative_path.c_str() << "\n\n";
-                /*
+                // /*
                 timer.reset();
                 run_pointclouds_sequences_benchmark(
                     &pcl_::run_dbscan, relative_path, false, "PCL", min_samples, radius);
                 timer.print_elapsed_seconds();
 
                 std::cout << "---\n";
-                */
+                // */
 
                 timer.reset();
                 run_pointclouds_sequences_benchmark(

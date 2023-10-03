@@ -18,12 +18,12 @@ struct KDNodeView {
     using KDNodeViewType = KDNodeView<IndicesIterator, SamplesIterator>;
     using KDNodeViewPtr  = std::shared_ptr<KDNodeViewType>;
 
-    KDNodeView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-               const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
+    KDNodeView(const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_iterator_pair,
+               const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box);
 
-    KDNodeView(ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-               ssize_t                                       cut_feature_index,
-               const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box);
+    KDNodeView(const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_iterator_pair,
+               ssize_t                                              cut_feature_index,
+               const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box);
 
     KDNodeView(const KDNodeView&) = delete;
 
@@ -44,8 +44,8 @@ struct KDNodeView {
     KDNodeViewPtr get_sibling_node() const;
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
-                   SamplesIterator                             samples_first,
-                   SamplesIterator                             samples_last,
+                   const SamplesIterator&                      samples_first,
+                   const SamplesIterator&                      samples_last,
                    std::size_t                                 n_features) const;
 
     // A pair of iterators representing a window in the index array, referring to samples in the dataset.
@@ -69,17 +69,17 @@ struct KDNodeView {
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(
-    ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box)
+    const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_iterator_pair,
+    const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
   , cut_feature_index_{-1}
   , kd_bounding_box_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(
-    ffcl::bbox::IteratorPairType<IndicesIterator> indices_iterator_pair,
-    ssize_t                                       cut_feature_index,
-    const ffcl::bbox::RangeType<SamplesIterator>& kd_bounding_box)
+    const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_iterator_pair,
+    ssize_t                                              cut_feature_index,
+    const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box)
   : indices_iterator_pair_{indices_iterator_pair}
   , cut_feature_index_{cut_feature_index}
   , kd_bounding_box_{kd_bounding_box} {}
@@ -143,8 +143,8 @@ KDNodeView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
 
 template <typename IndicesIterator, typename SamplesIterator>
 void KDNodeView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
-                                                             SamplesIterator                             samples_first,
-                                                             SamplesIterator                             samples_last,
+                                                             const SamplesIterator&                      samples_first,
+                                                             const SamplesIterator&                      samples_last,
                                                              std::size_t n_features) const {
     using DataType = ffcl::bbox::DataType<SamplesIterator>;
 
