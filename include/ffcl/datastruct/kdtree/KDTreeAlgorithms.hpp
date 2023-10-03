@@ -147,7 +147,7 @@ shift_median_to_leftmost_equal_value(std::size_t                                
 
     // return if the left range is empty because no left shift is possible
     if (!left_range_length) {
-        return {median_index, left_indices_range, median_indices_range, right_indices_range};
+        return std::make_tuple(median_index, left_indices_range, median_indices_range, right_indices_range);
     }
     // the target value of the median
     const auto cut_value = samples_first[median_indices_range.first[0] * n_features + feature_index];
