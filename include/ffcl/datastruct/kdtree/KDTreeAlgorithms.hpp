@@ -137,8 +137,8 @@ shift_median_to_leftmost_equal_value(std::size_t                                
                                      ffcl::bbox::IteratorPairType<IndicesIterator> left_indices_range,
                                      ffcl::bbox::IteratorPairType<IndicesIterator> median_indices_range,
                                      ffcl::bbox::IteratorPairType<IndicesIterator> right_indices_range,
-                                     SamplesIterator                               samples_first,
-                                     SamplesIterator                               samples_last,
+                                     const SamplesIterator&                        samples_first,
+                                     const SamplesIterator&                        samples_last,
                                      std::size_t                                   n_features,
                                      std::size_t                                   feature_index) {
     common::utils::ignore_parameters(samples_last);
@@ -168,7 +168,7 @@ shift_median_to_leftmost_equal_value(std::size_t                                
     right_indices_range.first   = median_indices_range.second;
     median_index                = std::distance(left_indices_range.first, median_indices_range.first);
 
-    return {median_index, left_indices_range, median_indices_range, right_indices_range};
+    return std::make_tuple(median_index, left_indices_range, median_indices_range, right_indices_range);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -176,12 +176,12 @@ std::tuple<std::size_t,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>>
-quickselect_median(IndicesIterator index_first,
-                   IndicesIterator index_last,
-                   SamplesIterator samples_first,
-                   SamplesIterator samples_last,
-                   std::size_t     n_features,
-                   std::size_t     feature_index) {
+quickselect_median(const IndicesIterator& index_first,
+                   const IndicesIterator& index_last,
+                   const SamplesIterator& samples_first,
+                   const SamplesIterator& samples_last,
+                   std::size_t            n_features,
+                   std::size_t            feature_index) {
     assert(feature_index < n_features);
 
     std::size_t median_index = std::distance(index_first, index_last) / 2;
