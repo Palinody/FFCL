@@ -120,12 +120,11 @@ class KMedoidsErrorsTest : public ::testing::Test {
     }
 
     template <typename SamplesIterator>
-    std::pair<std::vector<std::size_t>, std::vector<typename SamplesIterator::value_type>> fit_predict(
-        const SamplesIterator& inputs_first,
-        const SamplesIterator& inputs_last,
-        std::size_t            n_medoids,
-        std::size_t            n_features,
-        std::size_t            n_iterations = 1) {
+    auto fit_predict(const SamplesIterator& inputs_first,
+                     const SamplesIterator& inputs_last,
+                     std::size_t            n_medoids,
+                     std::size_t            n_features,
+                     std::size_t            n_iterations = 1) {
         using KMedoids = ffcl::KMedoids<dType, true>;
         // using PAM = ffcl::FasterMSC;
 
@@ -144,7 +143,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
 
         const auto predictions = kmedoids.predict(inputs_first, inputs_last);
 
-        return {predictions, centroids};
+        return std::make_pair(predictions, centroids);
     }
 
     static constexpr std::size_t n_iterations_global = 100;

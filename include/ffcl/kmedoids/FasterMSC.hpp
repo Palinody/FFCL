@@ -52,9 +52,9 @@ class FasterMSC {
 
     FasterMSC(const FasterMSC&) = delete;
 
-    DataType total_deviation() const;
+    auto total_deviation() const;
 
-    std::vector<std::size_t> step();
+    auto step();
 
   private:
     struct Buffers {
@@ -136,12 +136,12 @@ FasterMSC<SamplesIterator>::FasterMSC(const SecondVariantType&        pairwise_d
   , loss_{loss} {}
 
 template <typename SamplesIterator>
-typename FasterMSC<SamplesIterator>::DataType FasterMSC<SamplesIterator>::total_deviation() const {
+auto FasterMSC<SamplesIterator>::total_deviation() const {
     return loss_;
 }
 
 template <typename SamplesIterator>
-std::vector<std::size_t> FasterMSC<SamplesIterator>::step() {
+auto FasterMSC<SamplesIterator>::step() {
     const auto& samples_to_nearest_medoid_indices = buffers_ptr_->samples_to_nearest_medoid_indices_;
 
     for (std::size_t medoid_candidate_index = 0; medoid_candidate_index < n_samples_; ++medoid_candidate_index) {

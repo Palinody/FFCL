@@ -29,9 +29,9 @@ class Hamerly {
 
     Hamerly(const Hamerly&) = delete;
 
-    DataType total_deviation() const;
+    auto total_deviation() const;
 
-    std::vector<DataType> step();
+    auto step();
 
   private:
     struct Buffers {
@@ -61,7 +61,7 @@ class Hamerly {
 
     void update_centroids_velocities(const std::vector<DataType>& previous_centroids);
 
-    DataType update_bounds();
+    auto update_bounds();
 
     DatasetDescriptorType    dataset_descriptor_;
     std::size_t              n_samples_;
@@ -77,7 +77,7 @@ Hamerly<SamplesIterator>::Hamerly(const DatasetDescriptorType& dataset_descripto
     // compute initial loss
     loss_ = std::reduce(buffers_ptr_->samples_to_nearest_centroid_distances_.begin(),
                         buffers_ptr_->samples_to_nearest_centroid_distances_.end(),
-                        static_cast<typename Hamerly<SamplesIterator>::DataType>(0),
+                        static_cast<DataType>(0),
                         std::plus<>());
 }
 
@@ -94,12 +94,12 @@ Hamerly<SamplesIterator>::Hamerly(const DatasetDescriptorType& dataset_descripto
   , loss_{loss} {}
 
 template <typename SamplesIterator>
-typename Hamerly<SamplesIterator>::DataType Hamerly<SamplesIterator>::total_deviation() const {
+auto Hamerly<SamplesIterator>::total_deviation() const {
     return loss_;
 }
 
 template <typename SamplesIterator>
-std::vector<typename Hamerly<SamplesIterator>::DataType> Hamerly<SamplesIterator>::step() {
+auto Hamerly<SamplesIterator>::step() {
     // iterate over all the samples and swap the lower and upper bounds only if necessary
     swap_bounds();
 
@@ -133,8 +133,7 @@ void Hamerly<SamplesIterator>::swap_bounds() {
         auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
         // triangular inequality
         const auto upper_bound_comparison =
-            std::max(static_cast<typename Hamerly<SamplesIterator>::DataType>(0.5) *
-                         centroid_to_nearest_centroid_distances[assigned_centroid_index],
+            std::max(static_cast<DataType>(0.5) * centroid_to_nearest_centroid_distances[assigned_centroid_index],
                      samples_to_second_nearest_centroid_distances[sample_index]);
         // first bound test
         if (samples_to_nearest_centroid_distances[sample_index] > upper_bound_comparison) {
@@ -151,9 +150,10 @@ void Hamerly<SamplesIterator>::swap_bounds() {
 
             // second bound test
             if (samples_to_nearest_centroid_distances[sample_index] > upper_bound_comparison) {
-                auto lower_bound = common::utils::infinity<typename Hamerly<SamplesIterator>::DataType>();
+                auto lower_bound = common::utils::infinity<DataType>();
 
-                const std::size_t n_centroids = centroids_.size() / n_features;
+                const std::size_t n_centroids =
+                    common::utils::get_n_samples(centroids_.begin(), centroids_.end(), n_features);
 
                 for (std::size_t other_centroid_index = 0; other_centroid_index < n_centroids; ++other_centroid_index) {
                     if (other_centroid_index != assigned_centroid_index) {
@@ -216,7 +216,7 @@ void Hamerly<SamplesIterator>::swap_bounds() {
 template <typename SamplesIterator>
 void Hamerly<SamplesIterator>::update_centroids() {
     const std::size_t n_features  = std::get<2>(dataset_descriptor_);
-    const std::size_t n_centroids = centroids_.size() / n_features;
+    const std::size_t n_centroids = common::utils::get_n_samples(centroids_.begin(), centroids_.end(), n_features);
 
     const auto& cluster_sizes         = buffers_ptr_->cluster_sizes_;
     const auto& cluster_position_sums = buffers_ptr_->cluster_position_sums_;
@@ -232,17 +232,16 @@ void Hamerly<SamplesIterator>::update_centroids() {
                            cluster_position_sums.begin() + feature_index_end,
                            centroids_.begin() + feature_index_start,
                            [cluster_size = cluster_sizes[centroid_index]](const auto& sum) {
-                               return sum / static_cast<typename Hamerly<SamplesIterator>::DataType>(cluster_size);
+                               return sum / static_cast<DataType>(cluster_size);
                            });
         }
     }
 }
 
 template <typename SamplesIterator>
-void Hamerly<SamplesIterator>::update_centroids_velocities(
-    const std::vector<typename Hamerly<SamplesIterator>::DataType>& previous_centroids) {
+void Hamerly<SamplesIterator>::update_centroids_velocities(const std::vector<DataType>& previous_centroids) {
     const std::size_t n_features  = std::get<2>(dataset_descriptor_);
-    const std::size_t n_centroids = centroids_.size() / n_features;
+    const std::size_t n_centroids = common::utils::get_n_samples(centroids_.begin(), centroids_.end(), n_features);
 
     auto& centroid_velocities = buffers_ptr_->centroid_velocities_;
 
@@ -256,7 +255,7 @@ void Hamerly<SamplesIterator>::update_centroids_velocities(
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type Hamerly<SamplesIterator>::update_bounds() {
+auto Hamerly<SamplesIterator>::update_bounds() {
     const auto [furthest_moving_centroid_index, furthest_moving_centroid_distance] =
         math::statistics::get_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
                                                    buffers_ptr_->centroid_velocities_.end());
@@ -286,10 +285,10 @@ typename SamplesIterator::value_type Hamerly<SamplesIterator>::update_bounds() {
 }
 
 template <typename SamplesIterator>
-Hamerly<SamplesIterator>::Buffers::Buffers(const SamplesIterator& samples_first,
-                                           const SamplesIterator& samples_last,
-                                           std::size_t            n_features,
-                                           const std::vector<typename Hamerly<SamplesIterator>::DataType>& centroids)
+Hamerly<SamplesIterator>::Buffers::Buffers(const SamplesIterator&       samples_first,
+                                           const SamplesIterator&       samples_last,
+                                           std::size_t                  n_features,
+                                           const std::vector<DataType>& centroids)
   : samples_to_nearest_centroid_indices_{kmeans::utils::samples_to_nearest_centroid_indices(samples_first,
                                                                                             samples_last,
                                                                                             n_features,
@@ -314,11 +313,11 @@ Hamerly<SamplesIterator>::Buffers::Buffers(const SamplesIterator& samples_first,
                                                                         samples_to_nearest_centroid_indices_.begin(),
                                                                         centroids.size() / n_features,
                                                                         n_features)}
-  , centroid_velocities_{std::vector<typename Hamerly<SamplesIterator>::DataType>(centroids.size() / n_features)} {}
+  , centroid_velocities_{std::vector<DataType>(centroids.size() / n_features)} {}
 
 template <typename SamplesIterator>
 Hamerly<SamplesIterator>::Buffers::Buffers(const DatasetDescriptorType& dataset_descriptor,
-                                           const std::vector<typename Hamerly<SamplesIterator>::DataType>& centroids)
+                                           const std::vector<DataType>& centroids)
   : Hamerly<SamplesIterator>::Buffers::Buffers(std::get<0>(dataset_descriptor),
                                                std::get<1>(dataset_descriptor),
                                                std::get<2>(dataset_descriptor),

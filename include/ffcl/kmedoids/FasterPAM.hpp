@@ -52,9 +52,9 @@ class FasterPAM {
 
     FasterPAM(const FasterPAM&) = delete;
 
-    DataType total_deviation() const;
+    auto total_deviation() const;
 
-    std::vector<std::size_t> step();
+    auto step();
 
   private:
     struct Buffers {
@@ -78,9 +78,9 @@ class FasterPAM {
         std::vector<DataType>    losses_with_closest_medoid_removal_;
     };
 
-    std::pair<DataType, std::size_t> find_best_swap(std::size_t medoid_candidate_index) const;
+    auto find_best_swap(std::size_t medoid_candidate_index) const;
 
-    DataType swap_buffers(std::size_t medoid_candidate_index, std::size_t best_swap_index);
+    auto swap_buffers(std::size_t medoid_candidate_index, std::size_t best_swap_index);
 
     StorageVariantType       storage_variant_;
     std::size_t              n_samples_;
@@ -130,12 +130,12 @@ FasterPAM<SamplesIterator>::FasterPAM(const SecondVariantType&        pairwise_d
   , loss_{loss} {}
 
 template <typename SamplesIterator>
-typename FasterPAM<SamplesIterator>::DataType FasterPAM<SamplesIterator>::total_deviation() const {
+auto FasterPAM<SamplesIterator>::total_deviation() const {
     return loss_;
 }
 
 template <typename SamplesIterator>
-std::vector<std::size_t> FasterPAM<SamplesIterator>::step() {
+auto FasterPAM<SamplesIterator>::step() {
     const auto& samples_to_nearest_medoid_indices = buffers_ptr_->samples_to_nearest_medoid_indices_;
 
     for (std::size_t medoid_candidate_index = 0; medoid_candidate_index < n_samples_; ++medoid_candidate_index) {
@@ -157,8 +157,7 @@ std::vector<std::size_t> FasterPAM<SamplesIterator>::step() {
 }
 
 template <typename SamplesIterator>
-std::pair<typename SamplesIterator::value_type, std::size_t> FasterPAM<SamplesIterator>::find_best_swap(
-    std::size_t medoid_candidate_index) const {
+auto FasterPAM<SamplesIterator>::find_best_swap(std::size_t medoid_candidate_index) const {
     // TD set to the positive loss of removing medoid mi and assigning all of its members to the next best
     // alternative
     auto delta_td_mi = buffers_ptr_->losses_with_closest_medoid_removal_;
@@ -198,12 +197,11 @@ std::pair<typename SamplesIterator::value_type, std::size_t> FasterPAM<SamplesIt
     const auto [best_swap_index, best_swap_distance] =
         math::statistics::get_min_index_value_pair(delta_td_mi.begin(), delta_td_mi.end());
 
-    return {delta_td_xc + best_swap_distance, best_swap_index};
+    return std::make_pair(delta_td_xc + best_swap_distance, best_swap_index);
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type FasterPAM<SamplesIterator>::swap_buffers(std::size_t medoid_candidate_index,
-                                                                              std::size_t best_swap_index) {
+auto FasterPAM<SamplesIterator>::swap_buffers(std::size_t medoid_candidate_index, std::size_t best_swap_index) {
     DataType loss = 0;
 
     auto& samples_to_nearest_medoid_indices          = buffers_ptr_->samples_to_nearest_medoid_indices_;
