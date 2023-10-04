@@ -12,6 +12,9 @@ namespace ffcl {
 
 template <typename IndexType, typename ValueType>
 struct SingleLinkageClusterNode {
+    static_assert(std::is_fundamental<IndexType>::value, "IndexType must be a fundamental type.");
+    static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
+
     using NodeType = SingleLinkageClusterNode<IndexType, ValueType>;
     using NodePtr  = std::shared_ptr<NodeType>;
 
@@ -44,12 +47,11 @@ SingleLinkageClusterNode<IndexType, ValueType>::SingleLinkageClusterNode(const I
 template <typename IndexType, typename ValueType>
 bool SingleLinkageClusterNode<IndexType, ValueType>::is_leaf() const {
     // could do level_ == 0 but that might require performing float equality
-    return (left_ == nullptr && right_ == nullptr);
+    return left_ == nullptr && right_ == nullptr;
 }
 
 template <typename IndexType, typename ValueType>
 std::size_t SingleLinkageClusterNode<IndexType, ValueType>::size() const {
-    // could do level_ == 0 but that might require performing float equality
     return cluster_size_;
 }
 

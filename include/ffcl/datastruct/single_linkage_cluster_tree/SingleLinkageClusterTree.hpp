@@ -4,9 +4,11 @@
 #include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
 #include "ffcl/datastruct/spanning_tree/MinimumSpanningTree.hpp"
 
-#include <cstdio>
+#include <memory>
 #include <numeric>
+#include <vector>
 
+#include <cstdio>
 #include <iostream>
 
 #include "rapidjson/writer.h"
@@ -17,12 +19,15 @@ namespace fs = std::filesystem;
 
 template <typename IndexType, typename ValueType>
 class SingleLinkageClusterTree {
+    static_assert(std::is_fundamental<IndexType>::value, "IndexType must be a fundamental type.");
+    static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
+
   public:
     using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
     using UnionFindType           = datastruct::UnionFind<IndexType>;
 
-    using NodeType = SingleLinkageClusterNode<IndexType, ValueType>;
-    using NodePtr  = std::shared_ptr<NodeType>;
+    using SingleLinkageClusterNodeType = SingleLinkageClusterNode<IndexType, ValueType>;
+    using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterNodeType::NodePtr;
 
     using ClusterIndexType = IndexType;
 
@@ -30,20 +35,27 @@ class SingleLinkageClusterTree {
 
     SingleLinkageClusterTree(MinimumSpanningTreeType&& mst);
 
+    auto extract_flat_cluster(const ValueType& cut_level, std::size_t min_cluster_size = 1) const;
+
     void print() const;
 
     void serialize(const fs::path& filepath) const;
 
   private:
-    void serialize(const NodePtr& node, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
-
     auto build();
 
-    void print_node(const NodePtr& node) const;
+    auto recurse_to_closest_leaf_node(const ValueType&            cut_level,
+                                      std::size_t                 min_cluster_size,
+                                      const ClusterIndexType&     cluster_label,
+                                      SingleLinkageClusterNodePtr kdnode) const;
+
+    void serialize(const SingleLinkageClusterNodePtr& node, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
+
+    void print_node(const SingleLinkageClusterNodePtr& node) const;
 
     MinimumSpanningTreeType sorted_mst_;
 
-    NodePtr root_;
+    SingleLinkageClusterNodePtr root_;
 };
 
 template <typename IndexType, typename ValueType>
@@ -55,6 +67,23 @@ template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
   : sorted_mst_{ffcl::mst::sort(std::move(mst))}
   , root_{build()} {}
+
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::extract_flat_cluster(const ValueType& cut_level,
+                                                                          std::size_t      min_cluster_size) const {
+    auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
+
+    return flat_cluster;
+}
+
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::recurse_to_closest_leaf_node(
+    const ValueType&            cut_level,
+    std::size_t                 min_cluster_size,
+    const ClusterIndexType&     cluster_label,
+    SingleLinkageClusterNodePtr kdnode) const {
+    //
+}
 
 template <typename IndexType, typename ValueType>
 void SingleLinkageClusterTree<IndexType, ValueType>::print() const {
@@ -69,11 +98,11 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
     UnionFindType union_find(n_samples);
 
     // cluster indices mapped to their node that may contain descendants
-    auto nodes = std::map<ClusterIndexType, NodePtr>{};
+    auto nodes = std::map<ClusterIndexType, SingleLinkageClusterNodePtr>{};
 
     // init each sample as its own cluster/component
     for (std::size_t cluster_index = 0; cluster_index < n_samples; ++cluster_index) {
-        nodes[cluster_index] = std::make_shared<NodeType>(cluster_index);
+        nodes[cluster_index] = std::make_shared<SingleLinkageClusterNodeType>(cluster_index);
     }
     for (const auto& [sample_index_1, sample_index_2, distance] : sorted_mst_) {
         // find in which cluster index the samples are currently in
@@ -84,7 +113,7 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
             const auto new_representative = union_find.find(sample_index_1);
 
             // create a new node, if we have reached a new level, that will agglomerate its children
-            auto cluster_node = std::make_shared<NodeType>(
+            auto cluster_node = std::make_shared<SingleLinkageClusterNodeType>(
                 new_representative, distance, nodes[representative_1]->size() + nodes[representative_2]->size());
 
             // link the nodes to their new parent node
@@ -106,7 +135,7 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
 }
 
 template <typename IndexType, typename ValueType>
-void SingleLinkageClusterTree<IndexType, ValueType>::print_node(const NodePtr& node) const {
+void SingleLinkageClusterTree<IndexType, ValueType>::print_node(const SingleLinkageClusterNodePtr& node) const {
     std::cout << "representative "
               << "(" << node->level_ << "): " << node->representative_ << "\n---\n";
 
@@ -118,7 +147,7 @@ void SingleLinkageClusterTree<IndexType, ValueType>::print_node(const NodePtr& n
 
 template <typename IndexType, typename ValueType>
 void SingleLinkageClusterTree<IndexType, ValueType>::serialize(
-    const NodePtr&                              node,
+    const SingleLinkageClusterNodePtr&          node,
     rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     writer.StartObject();
     {

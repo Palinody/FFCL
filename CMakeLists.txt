@@ -350,6 +350,44 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        CondensedClusterTreeTest
+
+        # ---
+        test/src/hdbscan/CondensedClusterTreeTest.cpp
+    )
+    target_link_libraries(
+        CondensedClusterTreeTest
+        PUBLIC
+        TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        CondensedClusterTreeTest
+        CondensedClusterTreeTest
+    )
+
+    add_executable(
+        HDBSCANTest
+
+        # ---
+        test/src/hdbscan/HDBSCANTest.cpp
+    )
+    target_link_libraries(
+        HDBSCANTest
+        PUBLIC
+        TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        HDBSCANTest
+        HDBSCANTest
+    )
+
+    add_executable(
         KDTreeAlgorithmsTest
 
         # ---

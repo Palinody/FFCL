@@ -117,60 +117,6 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
-template <typename Type>
-void print_data(const std::vector<Type>& data, std::size_t n_features) {
-    if (!n_features) {
-        return;
-    }
-    const std::size_t n_samples = data.size() / n_features;
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            std::cout << data[sample_index * n_features + feature_index] << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
-template <typename Indexer, typename IndexerFunction, typename... Args>
-auto get_neighbors(std::size_t query_index, const Indexer& indexer, IndexerFunction&& func, Args&&... args) {
-    using LabelType = ssize_t;
-
-    const std::size_t n_samples = indexer.n_samples();
-
-    // vector keeping track of the cluster label for each index specified by the global index range
-    auto predictions = std::vector<LabelType>(n_samples);
-
-    // initialize the initial cluster counter that's in [0, n_samples)
-    LabelType cluster_label = static_cast<LabelType>(0);
-
-    auto query_function = [&indexer = static_cast<const Indexer&>(indexer), func = std::forward<IndexerFunction>(func)](
-                              std::size_t index, auto&&... funcArgs) mutable {
-        return std::invoke(func, indexer, index, std::forward<decltype(funcArgs)>(funcArgs)...);
-    };
-
-    // the indices of the neighbors in the global dataset with their corresponding distances
-    // the query sample is not included
-    auto initial_neighbors_buffer = query_function(query_index, std::forward<Args>(args)...);
-
-    ++cluster_label;
-
-    predictions[query_index] = cluster_label;
-
-    auto initial_neighbors_indices = initial_neighbors_buffer.extract_indices();
-
-    // iterate over the samples that are assigned to the current cluster
-    for (std::size_t cluster_sample_index = 0; cluster_sample_index < initial_neighbors_indices.size();
-         ++cluster_sample_index) {
-        const auto neighbor_index   = initial_neighbors_indices[cluster_sample_index];
-        predictions[neighbor_index] = cluster_label;
-    }
-
-    predictions[query_index] = ++cluster_label;
-    return predictions;
-}
-
-// /*
 TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
