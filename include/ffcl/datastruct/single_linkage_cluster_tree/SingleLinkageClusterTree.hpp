@@ -58,7 +58,11 @@ class SingleLinkageClusterTree {
 
     SingleLinkageClusterTree(const MinimumSpanningTreeType& mst);
 
+    SingleLinkageClusterTree(const MinimumSpanningTreeType& mst, const Options& options);
+
     SingleLinkageClusterTree(MinimumSpanningTreeType&& mst);
+
+    SingleLinkageClusterTree(MinimumSpanningTreeType&& mst, const Options& options);
 
     SingleLinkageClusterTree<IndexType, ValueType>& set_options(const Options& options);
 
@@ -92,9 +96,23 @@ SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const M
   , root_{build()} {}
 
 template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst,
+                                                                         const Options&                 options)
+  : sorted_mst_{ffcl::mst::sort_copy(mst)}
+  , root_{build()}
+  , options_{options} {}
+
+template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
   : sorted_mst_{ffcl::mst::sort(std::move(mst))}
   , root_{build()} {}
+
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst,
+                                                                         const Options&            options)
+  : sorted_mst_{ffcl::mst::sort(std::move(mst))}
+  , root_{build()}
+  , options_{options} {}
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>& SingleLinkageClusterTree<IndexType, ValueType>::set_options(
