@@ -27,6 +27,7 @@ except:
 
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pyflann-py3"])
     import pyflann
+
     # dont install automatically "pyflann" because the default is full of bugs with python3
     # the current tests have been made with a version fixed locally
     # see: https://github.com/primetang/pyflann/issues/1 to fix it yourself if you want to install
@@ -91,17 +92,27 @@ def TestSklearnKDTreeBuildTime(points: np.ndarray):
         distances, indices = tree.query([query_point], k=k)
 
     end_time = time.process_time()
-    print(f"Elapsed time for KDTree {k} nearest neighbor (scikit-learn):", end_time - start_time, "seconds")
+    print(
+        f"Elapsed time for KDTree {k} nearest neighbor (scikit-learn):",
+        end_time - start_time,
+        "seconds",
+    )
 
     # Find points within a radius
     radius = RADIUS
     start_time = time.process_time()
 
     for query_point in points:
-        distances, indices = tree.query_radius([query_point], r=radius, return_distance=True, count_only=False)
+        distances, indices = tree.query_radius(
+            [query_point], r=radius, return_distance=True, count_only=False
+        )
 
     end_time = time.process_time()
-    print(f"Elapsed time for KDTree {radius} radius count (scikit-learn):", end_time - start_time, "seconds")
+    print(
+        f"Elapsed time for KDTree {radius} radius count (scikit-learn):",
+        end_time - start_time,
+        "seconds",
+    )
 
 
 def TestFlannKDTreeBuildTime(points: np.ndarray):
@@ -117,7 +128,7 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
     # np.random.shuffle(points)
 
     # random_query_index = random.randint(0, points.shape[0] - 1)
-    
+
     # query_index = 13201
     # query_point = points[query_index, :]
     # np.delete(points, query_index, axis=0),
@@ -151,21 +162,21 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
 
     for query_point in points:
         result = flann.nn_index(query_point, k)
-    
+
     end_time = time.process_time()
     print(
         f"Elapsed time for KDTree {k} nearest neighbor (pyflann):",
         end_time - start_time,
         "seconds",
     )
-    
+
     radius = RADIUS
 
     start_time = time.process_time()
 
     for query_point in points:
         indices, distances = flann.nn_radius(query_point, radius)
-    
+
     end_time = time.process_time()
     print(
         f"Elapsed time for KDTree {radius} radius count (pyflann):",
@@ -173,7 +184,6 @@ def TestFlannKDTreeBuildTime(points: np.ndarray):
         "seconds",
     )
     print(f"num_neighbors: {indices.shape[0]}, radius: {radius}")
-
 
 
 def run_all():
@@ -208,7 +218,7 @@ def run_all():
         # try:
         TestFlannKDTreeBuildTime(dataset)
         # except:
-            # print(dir(pyflann))
+        # print(dir(pyflann))
 
 
 def run_mnist():

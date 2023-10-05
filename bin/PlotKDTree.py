@@ -15,6 +15,7 @@ DatasetType = List[FeatureVectorType]
 
 VERBOSE = False
 
+
 class KDNode:
     def __init__(self) -> None:
         self.points: List[Tuple[float]]
@@ -151,10 +152,13 @@ def main():
     """noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""
     root_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "kdtree/")
 
-    file_names = [f for f in os.listdir(root_folder) if os.path.isfile(os.path.join(root_folder, f))]
+    file_names = [
+        f
+        for f in os.listdir(root_folder)
+        if os.path.isfile(os.path.join(root_folder, f))
+    ]
 
     for filename in file_names:
-
         input_path = root_folder + filename
 
         kdtree = KDTree(input_path, keep_sequence=False)

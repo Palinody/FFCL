@@ -31,11 +31,38 @@ class SingleLinkageClusterTree {
 
     using ClusterIndexType = IndexType;
 
+    struct Options {
+        Options() = default;
+
+        Options(const Options& other) = default;
+
+        Options& cut_level(const ValueType& cut_level) {
+            cut_level_ = cut_level;
+            return *this;
+        }
+
+        Options& min_cluster_size(std::size_t min_cluster_size) {
+            min_cluster_size_ = min_cluster_size;
+            return *this;
+        }
+
+        Options& operator=(const Options& options) {
+            cut_level_        = options.cut_level_;
+            min_cluster_size_ = options.min_cluster_size_;
+            return *this;
+        }
+
+        ValueType   cut_level_        = common::utils::infinity<ValueType>();
+        std::size_t min_cluster_size_ = 1;
+    };
+
     SingleLinkageClusterTree(const MinimumSpanningTreeType& mst);
 
     SingleLinkageClusterTree(MinimumSpanningTreeType&& mst);
 
-    auto extract_flat_cluster(const ValueType& cut_level, std::size_t min_cluster_size = 1) const;
+    SingleLinkageClusterTree<IndexType, ValueType>& set_options(const Options& options);
+
+    auto extract_flat_cluster() const;
 
     void print() const;
 
@@ -44,10 +71,9 @@ class SingleLinkageClusterTree {
   private:
     auto build();
 
-    auto recurse_to_closest_leaf_node(const ValueType&            cut_level,
-                                      std::size_t                 min_cluster_size,
-                                      const ClusterIndexType&     cluster_label,
-                                      SingleLinkageClusterNodePtr kdnode) const;
+    void preorder_traversal(ClusterIndexType                   cluster_label,
+                            const SingleLinkageClusterNodePtr& kdnode,
+                            std::vector<ClusterIndexType>&     flat_cluster) const;
 
     void serialize(const SingleLinkageClusterNodePtr& node, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
@@ -56,6 +82,8 @@ class SingleLinkageClusterTree {
     MinimumSpanningTreeType sorted_mst_;
 
     SingleLinkageClusterNodePtr root_;
+
+    Options options_;
 };
 
 template <typename IndexType, typename ValueType>
@@ -69,20 +97,48 @@ SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(Minimum
   , root_{build()} {}
 
 template <typename IndexType, typename ValueType>
-auto SingleLinkageClusterTree<IndexType, ValueType>::extract_flat_cluster(const ValueType& cut_level,
-                                                                          std::size_t      min_cluster_size) const {
+SingleLinkageClusterTree<IndexType, ValueType>& SingleLinkageClusterTree<IndexType, ValueType>::set_options(
+    const Options& options) {
+    options_ = options;
+    return *this;
+}
+
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
     auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
+
+    preorder_traversal(root_->representative_, root_, flat_cluster);
 
     return flat_cluster;
 }
 
 template <typename IndexType, typename ValueType>
-auto SingleLinkageClusterTree<IndexType, ValueType>::recurse_to_closest_leaf_node(
-    const ValueType&            cut_level,
-    std::size_t                 min_cluster_size,
-    const ClusterIndexType&     cluster_label,
-    SingleLinkageClusterNodePtr kdnode) const {
-    //
+void SingleLinkageClusterTree<IndexType, ValueType>::preorder_traversal(
+    ClusterIndexType                   cluster_label,
+    const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+    std::vector<ClusterIndexType>&     flat_cluster) const {
+    // consider updating the cluster label for the descendant nodes only if we are above or at the desired cut level
+    // else the same cluster label will be used for all the descendant nodes from the current node
+    if (single_linkage_cluster_node->level_ >= options_.cut_level_) {
+        // set the cluster label as noise if the current node is parent of less than 'min cluster size' nodes
+        if (single_linkage_cluster_node->size() < options_.min_cluster_size_) {
+            cluster_label = 0;
+
+        } else {
+            // set the cluster label as the one at the current level
+            cluster_label = single_linkage_cluster_node->representative_;
+        }
+    }
+    // continue to traverse the tree if the current node is not leaf
+    // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
+    if (!single_linkage_cluster_node->is_leaf()) {
+        preorder_traversal(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
+        preorder_traversal(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
+
+    } else {
+        // assign the cluster label to the sample index (which is its own node at level 0)
+        flat_cluster[single_linkage_cluster_node->representative_] = cluster_label;
+    }
 }
 
 template <typename IndexType, typename ValueType>

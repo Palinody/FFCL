@@ -27,7 +27,7 @@ SHIFT = 0
 TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
-n_samples = 5000
+n_samples = 500
 n_features = 2
 # None to load everything else specify
 n_samples_mnist = None
@@ -37,32 +37,31 @@ RESCALE_MNIST = True
 # np.random.seed(1)
 random_state = 1
 
-noisy_circles = datasets.make_circles(n_samples=n_samples, 
-                                      factor=0.5, 
-                                      noise=0.05, 
-                                      random_state=random_state
+noisy_circles = datasets.make_circles(
+    n_samples=n_samples, factor=0.5, noise=0.05, random_state=random_state
 )
-noisy_moons = datasets.make_moons(n_samples=n_samples, 
-                                  noise=0.05, 
-                                  random_state=random_state
+noisy_moons = datasets.make_moons(
+    n_samples=n_samples, noise=0.05, random_state=random_state
 )
-blobs = datasets.make_blobs(n_samples=n_samples, 
-                            n_features=n_features, 
-                            random_state=random_state
+blobs = datasets.make_blobs(
+    n_samples=n_samples, n_features=n_features, random_state=random_state
 )
 no_structure = np.random.rand(n_samples, n_features), np.zeros((n_samples))
 
 # Anisotropicly distributed data
-X, y = datasets.make_blobs(n_samples=n_samples, 
-                           n_features=n_features, 
-                           random_state=random_state)
-transformation = np.random.rand(n_features, n_features)#[[0.6, -0.6], [-0.4, 0.8]]
+X, y = datasets.make_blobs(
+    n_samples=n_samples, n_features=n_features, random_state=random_state
+)
+transformation = np.random.rand(n_features, n_features)  # [[0.6, -0.6], [-0.4, 0.8]]
 X_aniso = np.dot(X, transformation)
 aniso = (X_aniso, y)
 
 # blobs with varied variances
 varied = datasets.make_blobs(
-    n_samples=n_samples, n_features=n_features, cluster_std=[1.0, 2.5, 0.5], random_state=random_state
+    n_samples=n_samples,
+    n_features=n_features,
+    cluster_std=[1.0, 2.5, 0.5],
+    random_state=random_state,
 )
 
 default_base = {
@@ -194,26 +193,37 @@ def save_dataset(inputs, labels, root_folder, dataset_name):
 
 
 def write_datasets(root_folder):
-    for dataset_index, (dataset_name, (dataset, algo_params)) in enumerate(zip(datasets_names, datasets_params)):
+    for dataset_index, (dataset_name, (dataset, algo_params)) in enumerate(
+        zip(datasets_names, datasets_params)
+    ):
         # update parameters with dataset-specific values
         params = default_base.copy()
         params.update(algo_params)
         X, y = dataset
-        X, y = normalize_dataset( X, y, scale=SCALE_MULTIPLIER, shift=SHIFT)
-        save_dataset( X, y, root_folder=root_folder, dataset_name=dataset_name)
+        X, y = normalize_dataset(X, y, scale=SCALE_MULTIPLIER, shift=SHIFT)
+        save_dataset(X, y, root_folder=root_folder, dataset_name=dataset_name)
 
     # make a last dataset with unbalanced clusters densities
-    X, y = datasets.make_blobs(n_samples=[int(0.3*n_samples), int(0.6*n_samples), int(0.1*n_samples)], random_state=random_state)
+    X, y = datasets.make_blobs(
+        n_samples=[int(0.3 * n_samples), int(0.6 * n_samples), int(0.1 * n_samples)],
+        random_state=random_state,
+    )
     X, y = normalize_dataset(X, y, scale=SCALE_MULTIPLIER, shift=SHIFT)
     save_dataset(X, y, root_folder=root_folder, dataset_name="unbalanced_blobs")
 
-    X, y = datasets.fetch_openml("mnist_784", return_X_y=True, parser="auto", as_frame=False)
-    X, y = normalize_mnist(X[:n_samples_mnist, :], y[:n_samples_mnist]) if RESCALE_MNIST else (X, y)
-    save_dataset( X, y, root_folder=root_folder, dataset_name="mnist")
+    X, y = datasets.fetch_openml(
+        "mnist_784", return_X_y=True, parser="auto", as_frame=False
+    )
+    X, y = (
+        normalize_mnist(X[:n_samples_mnist, :], y[:n_samples_mnist])
+        if RESCALE_MNIST
+        else (X, y)
+    )
+    save_dataset(X, y, root_folder=root_folder, dataset_name="mnist")
 
     X, y = datasets.load_iris(return_X_y=True, as_frame=False)
     X, y = normalize_dataset(X, y, scale=SCALE_MULTIPLIER, shift=SHIFT)
-    save_dataset( X, y, root_folder=root_folder, dataset_name="iris")
+    save_dataset(X, y, root_folder=root_folder, dataset_name="iris")
 
 
 if __name__ == "__main__":

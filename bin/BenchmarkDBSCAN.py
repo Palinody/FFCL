@@ -16,16 +16,19 @@ except:
 def read_dataset(filepath: str):
     return np.loadtxt(filepath, dtype=np.float32, delimiter=" ")
 
+
 def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
     # np.random.shuffle(points)
 
-    clustering = DBSCAN(eps=epsilon, 
-                        min_samples=min_samples, 
-                        algorithm='kd_tree', 
-                        leaf_size=int(math.sqrt(points.shape[0])), 
-                        metric="euclidean",
-                        n_jobs=None)
-    
+    clustering = DBSCAN(
+        eps=epsilon,
+        min_samples=min_samples,
+        algorithm="kd_tree",
+        leaf_size=int(math.sqrt(points.shape[0])),
+        metric="euclidean",
+        n_jobs=None,
+    )
+
     start_time = time.process_time()
     clustering.kdtree_ = KDTree(points, leaf_size=math.sqrt(points.shape[0]))
     end_time = time.process_time()
@@ -46,6 +49,7 @@ def TestSkLearnDBSCAN(points: np.ndarray, epsilon, min_samples):
         "seconds",
     )
 
+
 def run_all():
     """noisy_circles.txt, noisy_moons.txt, varied.txt, aniso.txt, blobs.txt, no_structure.txt, unbalanced_blobs.txt"""
     root_folder = os.path.join(
@@ -62,15 +66,7 @@ def run_all():
         "unbalanced_blobs.txt",
     ]  # os.listdir(root_folder)
 
-    datasets_parameters = [
-        (2, 5), 
-        (1, 5), 
-        (1, 3),
-        (1.2,10),
-        (1, 10),
-        (1, 5),
-        (2, 5)
-    ]
+    datasets_parameters = [(2, 5), (1, 5), (1, 3), (1.2, 10), (1, 10), (1, 5), (2, 5)]
 
     for filename, dataset_parameters in zip(file_names, datasets_parameters):
         input_path = root_folder + filename
@@ -83,6 +79,7 @@ def run_all():
         print(f"DBSCAN parameters: Epsilon: {epsilon}, MinSamples: {min_samples}")
 
         TestSkLearnDBSCAN(dataset, epsilon=epsilon, min_samples=min_samples)
+
 
 if __name__ == "__main__":
     run_all()

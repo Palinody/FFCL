@@ -25,14 +25,17 @@ except:
 def read_dataset(filepath: str):
     return np.loadtxt(filepath, dtype=np.float32, delimiter=" ")
 
+
 def TestHDBSCAN(points: np.ndarray, min_samples):
     # np.random.shuffle(points)
-    
-    clustering = hdbscan.HDBSCAN(min_cluster_size=10, 
-                                 min_samples=min_samples, 
-                                 gen_min_span_tree=True, 
-                                 approx_min_span_tree=True, 
-                                 core_dist_n_jobs=6)
+
+    clustering = hdbscan.HDBSCAN(
+        min_cluster_size=10,
+        min_samples=min_samples,
+        gen_min_span_tree=True,
+        approx_min_span_tree=True,
+        core_dist_n_jobs=6,
+    )
 
     start_time = time.process_time()
     labels = clustering.fit_predict(points)
@@ -43,6 +46,7 @@ def TestHDBSCAN(points: np.ndarray, min_samples):
         end_time - start_time,
         "seconds",
     )
+
 
 def run_all():
     """noisy_circles.txt, noisy_moons.txt, varied.txt, aniso.txt, blobs.txt, no_structure.txt, unbalanced_blobs.txt"""
@@ -60,15 +64,7 @@ def run_all():
         "unbalanced_blobs.txt",
     ]
 
-    datasets_parameters = [
-        (5),
-        (5),
-        (5),
-        (5),
-        (5),
-        (5),
-        (5)
-    ]
+    datasets_parameters = [(5), (5), (5), (5), (5), (5), (5)]
 
     for filename, dataset_parameters in zip(file_names, datasets_parameters):
         input_path = root_folder + filename
@@ -81,6 +77,7 @@ def run_all():
         print(f"HDBSCAN parameters: MinSamples: {min_samples}")
 
         TestHDBSCAN(dataset, min_samples=min_samples)
+
 
 if __name__ == "__main__":
     run_all()
