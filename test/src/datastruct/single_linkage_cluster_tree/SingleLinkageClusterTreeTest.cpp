@@ -198,7 +198,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 
@@ -213,7 +213,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
     timer.print_elapsed_seconds(9);
 
     single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(1));
+        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
 
     fs::path slink_filename = filename.stem().string() + ".json";
 
@@ -260,7 +260,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 
@@ -275,7 +275,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
     timer.print_elapsed_seconds(9);
 
     single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(1));
+        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
 
     fs::path slink_filename = filename.stem().string() + ".json";
 
@@ -322,7 +322,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 
@@ -337,7 +337,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
     timer.print_elapsed_seconds(9);
 
     single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(1));
+        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
 
     fs::path slink_filename = filename.stem().string() + ".json";
 
@@ -384,7 +384,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 
@@ -399,7 +399,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
     timer.print_elapsed_seconds(9);
 
     single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(1));
+        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
 
     fs::path slink_filename = filename.stem().string() + ".json";
 
@@ -446,7 +446,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 
@@ -461,7 +461,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
     timer.print_elapsed_seconds(9);
 
     single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(1));
+        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
 
     fs::path slink_filename = filename.stem().string() + ".json";
 
@@ -508,7 +508,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 
@@ -523,7 +523,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
     timer.print_elapsed_seconds(9);
 
     single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(1));
+        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
 
     fs::path slink_filename = filename.stem().string() + ".json";
 
@@ -570,7 +570,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 
@@ -585,7 +585,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
     timer.print_elapsed_seconds(9);
 
     single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(1));
+        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
 
     fs::path slink_filename = filename.stem().string() + ".json";
 
@@ -646,7 +646,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
     timer.reset();
 

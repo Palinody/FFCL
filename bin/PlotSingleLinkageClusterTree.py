@@ -120,6 +120,7 @@ class SLINKTree:
             fig, axis = plt.subplots(figsize=(12, 8))
 
         linkage_matrix = self.make_linkage_matrix()
+
         dendrogram(
             linkage_matrix,
             p=1.4,

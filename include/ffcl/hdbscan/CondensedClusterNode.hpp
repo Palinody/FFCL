@@ -7,23 +7,53 @@
 namespace ffcl {
 
 template <typename IndexType, typename ValueType>
-struct CondensedClusterNode {
+struct CondensedClusterNode : public SingleLinkageClusterNode<IndexerType, ValueType> {
     static_assert(std::is_fundamental<IndexType>::value, "IndexType must be a fundamental type.");
     static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
 
     using NodeType = CondensedClusterNode<IndexType, ValueType>;
     using NodePtr  = std::shared_ptr<NodeType>;
 
-    CondensedClusterNode(const IndexType& representative, const ValueType& level = 0, std::size_t cluster_size = 1);
+    CondensedClusterNode(SingleLinkageClusterNode single_linkage_cluster_node);
 
     bool is_leaf() const;
 
     std::size_t size() const;
 
-    // the number of nodes that this node is an ancestor of (counting itself)
-    std::size_t cluster_size_;
+    void update_stability(const ValueType& lambda_value);
+
+    // the single linkage cluster node pointer that led to a split of the single linkage tree.
+    single_linkage_cluster_node_;
+    // the initial lambda value: 1 / distance. It results from the creation of the current node after a split.
+    ValueType lambda_init_;
+    // the total accumulated lambda values for each points persisting in the same cluster.
+    // stability: sum(lambda(p) - lambda_init), with p a point in the cluster.
+    ValueType stability_;
     // parent pointer used to parse from the leaves to the root and the left/right ones for the opposite direction
     NodePtr parent_, left_, right_;
 };
+
+template <typename IndexType, typename ValueType>
+CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(SingleLinkageClusterNode single_linkage_cluster_node)
+  : single_linkage_cluster_node_{single_linkage_cluster_node}
+  , lambda_init_{1 / single_linkage_cluster_node_->level_}
+  , stability_{} {}
+
+template <typename IndexType, typename ValueType>
+bool CondensedClusterNode<IndexType, ValueType>::is_leaf() const {
+    // could do level_ == 0 but that might require performing float equality
+    return left_ == nullptr && right_ == nullptr;
+}
+
+template <typename IndexType, typename ValueType>
+std::size_t CondensedClusterNode<IndexType, ValueType>::size() const {
+    // takes into account only the initiating node of the branch that persists along different lambda values
+    return single_linkage_cluster_node_->cluster_size_;
+}
+
+template <typename IndexType, typename ValueType>
+void CondensedClusterNode<IndexType, ValueType>::update_stability(const ValueType& lambda_value) {
+    stability_ += lambda_value - lambda_init_;
+}
 
 }  // namespace ffcl
