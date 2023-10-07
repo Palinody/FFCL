@@ -66,6 +66,8 @@ class SingleLinkageClusterTree {
 
     SingleLinkageClusterTree<IndexType, ValueType>& set_options(const Options& options);
 
+    auto root() const;
+
     auto extract_flat_cluster() const;
 
     void print() const;
@@ -119,6 +121,11 @@ SingleLinkageClusterTree<IndexType, ValueType>& SingleLinkageClusterTree<IndexTy
     const Options& options) {
     options_ = options;
     return *this;
+}
+
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::root() const {
+    return root_;
 }
 
 template <typename IndexType, typename ValueType>

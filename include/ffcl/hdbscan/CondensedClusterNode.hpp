@@ -2,28 +2,33 @@
 
 #include "ffcl/common/Utils.hpp"
 
+#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
+
 #include <memory>
 
 namespace ffcl {
 
 template <typename IndexType, typename ValueType>
-struct CondensedClusterNode : public SingleLinkageClusterNode<IndexerType, ValueType> {
+struct CondensedClusterNode {
     static_assert(std::is_fundamental<IndexType>::value, "IndexType must be a fundamental type.");
     static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
 
     using NodeType = CondensedClusterNode<IndexType, ValueType>;
     using NodePtr  = std::shared_ptr<NodeType>;
 
-    CondensedClusterNode(SingleLinkageClusterNode single_linkage_cluster_node);
+    using SingleLinkageClusterNodeType = SingleLinkageClusterNode<IndexType, ValueType>;
+    using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterNodeType::NodePtr;
+
+    CondensedClusterNode(SingleLinkageClusterNodePtr single_linkage_cluster_node);
 
     bool is_leaf() const;
 
     std::size_t size() const;
 
-    void update_stability(const ValueType& lambda_value);
+    void update_stability(const ValueType& level);
 
     // the single linkage cluster node pointer that led to a split of the single linkage tree.
-    single_linkage_cluster_node_;
+    SingleLinkageClusterNodePtr single_linkage_cluster_node_;
     // the initial lambda value: 1 / distance. It results from the creation of the current node after a split.
     ValueType lambda_init_;
     // the total accumulated lambda values for each points persisting in the same cluster.
@@ -34,7 +39,8 @@ struct CondensedClusterNode : public SingleLinkageClusterNode<IndexerType, Value
 };
 
 template <typename IndexType, typename ValueType>
-CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(SingleLinkageClusterNode single_linkage_cluster_node)
+CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
+    SingleLinkageClusterNodePtr single_linkage_cluster_node)
   : single_linkage_cluster_node_{single_linkage_cluster_node}
   , lambda_init_{1 / single_linkage_cluster_node_->level_}
   , stability_{} {}
@@ -52,8 +58,8 @@ std::size_t CondensedClusterNode<IndexType, ValueType>::size() const {
 }
 
 template <typename IndexType, typename ValueType>
-void CondensedClusterNode<IndexType, ValueType>::update_stability(const ValueType& lambda_value) {
-    stability_ += lambda_value - lambda_init_;
+void CondensedClusterNode<IndexType, ValueType>::update_stability(const ValueType& level) {
+    stability_ += 1 / level - lambda_init_;
 }
 
 }  // namespace ffcl
