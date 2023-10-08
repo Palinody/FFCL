@@ -98,18 +98,35 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
     SingleLinkageClusterNodePtr single_linkage_cluster_node,
     CondensedClusterNodePtr     condensed_cluster_node) {
     if (!single_linkage_cluster_node->is_leaf()) {
+        // if the left node has at least min cluster size descendant samples
         if (single_linkage_cluster_node->left_->size() >= options_.min_cluster_size_) {
+            // create a new node split
             condensed_cluster_node->left_ = std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node);
-
+            // continue to traverse the tree with the new condensed_cluster_node and the left single linkage node
             preorder_traversal(single_linkage_cluster_node->left_, condensed_cluster_node->left_);
-        }
-        if (single_linkage_cluster_node->right_->size() >= options_.min_cluster_size_) {
-            condensed_cluster_node->right_ = std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node);
 
-            preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node->right_);
+        } else {
+            // update the stability of the same condensed cluster node with maybe a few less samples
+            condensed_cluster_node->update_stability(single_linkage_cluster_node->left_->level_);
+            // continue to traverse the tree with the same condensed_cluster_node and the left single linkage node
+            preorder_traversal(single_linkage_cluster_node->left_, condensed_cluster_node);
         }
+        // if the right node has at least min cluster size descendant samples
+        if (single_linkage_cluster_node->right_->size() >= options_.min_cluster_size_) {
+            // create a new node split
+            condensed_cluster_node->right_ = std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node);
+            // continue to traverse the tree with the new condensed_cluster_node and the right single linkage node
+            preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node->right_);
+
+        } else {
+            // update the stability of the same condensed cluster node with maybe a few less samples
+            condensed_cluster_node->update_stability(single_linkage_cluster_node->right_->level_);
+            // continue to traverse the tree with the same condensed_cluster_node and the right single linkage node
+            preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node);
+        }
+    } else {
+        condensed_cluster_node->update_stability(single_linkage_cluster_node->level_);
     }
-    condensed_cluster_node->update_stability(single_linkage_cluster_node->level_);
 }
 
 }  // namespace ffcl

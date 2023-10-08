@@ -139,6 +139,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
     using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
+    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -159,12 +160,14 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
 
+    printf("Boruvka's MST build:\n");
     timer.reset();
 
     auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
 
     timer.print_elapsed_seconds(9);
 
+    printf("SingleLinkageClusterTree build:\n");
     timer.reset();
 
     ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
@@ -176,7 +179,12 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
 
+    printf("CondensedClusterTree build:\n");
+    timer.reset();
+
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(single_linkage_cluster_tree_root);
+
+    timer.print_elapsed_seconds(9);
 }
 
 int main(int argc, char** argv) {
