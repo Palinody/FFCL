@@ -42,7 +42,9 @@ template <typename IndexType, typename ValueType>
 CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
     SingleLinkageClusterNodePtr single_linkage_cluster_node)
   : single_linkage_cluster_node_{single_linkage_cluster_node}
-  , lambda_init_{1 / single_linkage_cluster_node_->level_}
+  , lambda_init_{common::utils::division(1,
+                                         single_linkage_cluster_node_->level_,
+                                         common::utils::infinity<decltype(single_linkage_cluster_node_->level_)>())}
   , stability_{} {}
 
 template <typename IndexType, typename ValueType>
@@ -59,7 +61,11 @@ std::size_t CondensedClusterNode<IndexType, ValueType>::size() const {
 
 template <typename IndexType, typename ValueType>
 void CondensedClusterNode<IndexType, ValueType>::update_stability(const ValueType& level) {
-    stability_ += 1 / level - lambda_init_;
+    // the division performs
+    //      1 / level if level != 0,
+    //      else it returns lambda_init_
+    // so the operation is cancelled out in case we encounter a division by zero
+    stability_ += common::utils::division(1, level, lambda_init_) - lambda_init_;
 }
 
 }  // namespace ffcl

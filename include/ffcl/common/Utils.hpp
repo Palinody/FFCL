@@ -59,14 +59,15 @@ constexpr bool inequality(const T& a, const U& b) noexcept {
 }
 
 template <typename T, typename U>
-constexpr auto division(const T& a, const U& b) -> std::common_type_t<T, U> {
-    if (equality(b, static_cast<U>(0))) {
+constexpr auto division(const T& numerator, const U& denominator, const U& default_return_value = 0)
+    -> std::common_type_t<T, U> {
+    if (equality(denominator, static_cast<U>(0))) {
 #if defined(VERBOSE) && VERBOSE == true
-        printf("[WARN] attempted division by zero: returning zero.\n");
+        printf("[WARN] attempted division by zero: returning default_return_value.\n");
 #endif
-        return 0;
+        return default_return_value;
     }
-    return a / b;
+    return numerator / denominator;
 }
 
 template <typename OutputContainer, typename Iterator>

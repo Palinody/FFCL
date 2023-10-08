@@ -182,7 +182,9 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
     printf("CondensedClusterTree build:\n");
     timer.reset();
 
-    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(single_linkage_cluster_tree_root);
+    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
+        single_linkage_cluster_tree_root,
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(15));
 
     timer.print_elapsed_seconds(9);
 }
