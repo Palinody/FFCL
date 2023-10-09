@@ -11,7 +11,9 @@ namespace ffcl::datastruct {
 template <typename IndexType>
 class UnionFind {
   public:
-    UnionFind(std::size_t n_samples);
+    explicit UnionFind(std::size_t n_samples);
+
+    UnionFind(std::size_t n_samples, std::unique_ptr<IndexType[]> labels);
 
     IndexType find(IndexType index) const;
 
@@ -32,6 +34,12 @@ UnionFind<IndexType>::UnionFind(std::size_t n_samples)
   , ranks_{std::make_unique<IndexType[]>(n_samples)} {
     std::iota(labels_.get(), labels_.get() + n_samples, static_cast<IndexType>(0));
 }
+
+template <typename IndexType>
+UnionFind<IndexType>::UnionFind(std::size_t n_samples, std::unique_ptr<IndexType[]> labels)
+  : n_samples_{n_samples}
+  , labels_{std::move(labels)}
+  , ranks_{std::make_unique<IndexType[]>(n_samples)} {}
 
 template <typename IndexType>
 IndexType UnionFind<IndexType>::find(IndexType index) const {
