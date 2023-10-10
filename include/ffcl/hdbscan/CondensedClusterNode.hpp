@@ -23,6 +23,8 @@ struct CondensedClusterNode {
 
     bool is_leaf() const;
 
+    bool& is_selected();
+
     std::size_t size() const;
 
     void update_stability(const ValueType& level);
@@ -34,6 +36,9 @@ struct CondensedClusterNode {
     // the total accumulated lambda values for each points persisting in the same cluster.
     // stability: sum(lambda(p) - lambda_init), with p a point in the cluster.
     ValueType stability_;
+    // whether this node is marked as selected. Used for flat cluster extraction algorithm and might not be the actual
+    // selected cluster if marked as true if shallower cluster nodes are also marked as selected.
+    bool is_selected_;
     // parent pointer used to parse from the leaves to the root and the left/right ones for the opposite direction
     NodePtr parent_, left_, right_;
 };
@@ -45,12 +50,18 @@ CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
   , lambda_init_{common::utils::division(1,
                                          single_linkage_cluster_node_->level_,
                                          common::utils::infinity<decltype(single_linkage_cluster_node_->level_)>())}
-  , stability_{} {}
+  , stability_{}
+  , is_selected_{false} {}
 
 template <typename IndexType, typename ValueType>
 bool CondensedClusterNode<IndexType, ValueType>::is_leaf() const {
     // could do level_ == 0 but that might require performing float equality
     return left_ == nullptr && right_ == nullptr;
+}
+
+template <typename IndexType, typename ValueType>
+bool& CondensedClusterNode<IndexType, ValueType>::is_selected() {
+    return is_selected_;
 }
 
 template <typename IndexType, typename ValueType>

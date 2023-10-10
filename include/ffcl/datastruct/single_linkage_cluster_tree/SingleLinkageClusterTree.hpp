@@ -185,7 +185,7 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
     for (std::size_t cluster_index = 0; cluster_index < n_samples; ++cluster_index) {
         nodes[cluster_index] = std::make_shared<SingleLinkageClusterNodeType>(cluster_index);
     }
-    for (const auto& [sample_index_1, sample_index_2, distance] : sorted_mst_) {
+    for (const auto& [sample_index_1, sample_index_2, samples_edge_weight] : sorted_mst_) {
         // find in which cluster index the samples are currently in
         const auto representative_1 = union_find.find(sample_index_1);
         const auto representative_2 = union_find.find(sample_index_2);
@@ -195,7 +195,9 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
 
             // create a new node, if we have reached a new level, that will agglomerate its children
             auto cluster_node = std::make_shared<SingleLinkageClusterNodeType>(
-                new_representative, distance, nodes[representative_1]->size() + nodes[representative_2]->size());
+                new_representative,
+                samples_edge_weight,
+                nodes[representative_1]->size() + nodes[representative_2]->size());
 
             // link the nodes to their new parent node
             nodes[representative_1]->parent_ = nodes[new_representative];

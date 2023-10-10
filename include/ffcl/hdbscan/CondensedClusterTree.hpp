@@ -5,6 +5,7 @@
 #include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
 #include "ffcl/hdbscan/CondensedClusterNode.hpp"
 
+#include <map>
 #include <memory>
 
 namespace ffcl {
@@ -23,6 +24,8 @@ class CondensedClusterTree {
     using SingleLinkageClusterTreeType = SingleLinkageClusterTree<IndexType, ValueType>;
     using SingleLinkageClusterNodeType = typename SingleLinkageClusterTreeType::SingleLinkageClusterNodeType;
     using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterTreeType::SingleLinkageClusterNodePtr;
+
+    using ClusterIndexType = IndexType;
 
     struct Options {
         Options() = default;
@@ -54,11 +57,13 @@ class CondensedClusterTree {
     void preorder_traversal(SingleLinkageClusterNodePtr single_linkage_cluster_node,
                             CondensedClusterNodePtr     condensed_cluster_node);
 
+    void select_condensed_cluster_nodes();
+
     Options options_;
 
     SingleLinkageClusterNodePtr single_linkage_cluster_root_;
 
-    std::vector<CondensedClusterNodePtr> selected_condensed_cluster_nodes_;
+    std::vector<CondensedClusterNodePtr> leaf_condensed_cluster_nodes_;
 
     CondensedClusterNodePtr root_;
 };
@@ -66,7 +71,7 @@ class CondensedClusterTree {
 template <typename IndexType, typename ValueType>
 CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
     SingleLinkageClusterNodePtr single_linkage_cluster_root)
-  : CondensedClusterTree(single_linkage_cluster_root, {}) {}
+  : CondensedClusterTree(single_linkage_cluster_root, Options{}) {}
 
 template <typename IndexType, typename ValueType>
 CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
@@ -74,8 +79,10 @@ CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
     const Options&              options)
   : options_{options}
   , single_linkage_cluster_root_{single_linkage_cluster_root}
-  , selected_condensed_cluster_nodes_{}
-  , root_{build(single_linkage_cluster_root)} {}
+  , leaf_condensed_cluster_nodes_{}
+  , root_{build(single_linkage_cluster_root)} {
+    select_condensed_cluster_nodes();
+}
 
 template <typename IndexType, typename ValueType>
 auto CondensedClusterTree<IndexType, ValueType>::build(SingleLinkageClusterNodePtr single_linkage_cluster_node) {
@@ -97,12 +104,16 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
         const bool is_right_child_split_candidate =
             single_linkage_cluster_node->right_->size() >= options_.min_cluster_size_;
 
+        std::cout << "not leaf\n";
+
         // if both children are split candidates, we consider the event as a true split and split the condensed cluster
         // node in two new condensed cluster nodes
         if (is_left_child_split_candidate && is_right_child_split_candidate) {
             // create a new left cluster node split
             condensed_cluster_node->left_ =
                 std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node->left_);
+            // link the new created left branch node to the current node
+            condensed_cluster_node->left_->parent_ = condensed_cluster_node;
             // continue to traverse the tree with the new condensed_cluster_node and the left single linkage node that
             // didn't fall out of the cluster
             preorder_traversal(single_linkage_cluster_node->left_, condensed_cluster_node->left_);
@@ -110,6 +121,8 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
             // create a new right cluster node split
             condensed_cluster_node->right_ =
                 std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node->right_);
+            // link the new created right branch node to the current node
+            condensed_cluster_node->right_->parent_ = condensed_cluster_node;
             // continue to traverse the tree with the new condensed_cluster_node and the right single linkage node that
             // didn't fall out of the cluster
             preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node->right_);
@@ -129,10 +142,38 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
             preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node);
         }
     } else {
-        // If single_linkage_cluster_node is leaf then so is condensed_cluster_node. Initialise the current
-        // condensed_cluster_node as a selected cluster.
-        selected_condensed_cluster_nodes_.emplace_back(condensed_cluster_node);
+        // mark the leaf node as a selected node
+        condensed_cluster_node->is_selected() = true;
+        // add the leaf node to the set of other leaf nodes
+        leaf_condensed_cluster_nodes_.emplace_back(condensed_cluster_node);
     }
+}
+
+/*
+Declare all leaf nodes to be selected clusters. Now work up through the tree (the reverse topological sort order). If
+the sum of the stabilities of the child clusters is greater than the stability of the cluster, then we set the cluster
+stability to be the sum of the child stabilities. If, on the other hand, the cluster’s stability is greater than the sum
+of its children then we declare the cluster to be a selected cluster and unselect all its descendants. Once we reach the
+root node we call the current set of selected clusters our flat clustering and return that.
+*/
+template <typename IndexType, typename ValueType>
+void CondensedClusterTree<IndexType, ValueType>::select_condensed_cluster_nodes() {
+    std::cout << "before:\n";
+
+    std::cout << "leaf_condensed_cluster_nodes_ size: " << leaf_condensed_cluster_nodes_.size() << "\n";
+
+    std::size_t counter = 0;
+    // find the condensed node with the deepest single linkage cluster
+    auto deepest_leaf_node = *std::min_element(leaf_condensed_cluster_nodes_.begin(),
+                                               leaf_condensed_cluster_nodes_.end(),
+                                               [&](const auto& node_1, const auto& node_2) {
+                                                   std::cout << counter++ << "\n";
+                                                   return node_1->single_linkage_cluster_node_->level_ <
+                                                          node_2->single_linkage_cluster_node_->level_;
+                                               });
+    std::cout << "after:\n";
+
+    std::cout << "Deepest node level: " << deepest_leaf_node->single_linkage_cluster_node_->level_ << "\n";
 }
 
 }  // namespace ffcl
