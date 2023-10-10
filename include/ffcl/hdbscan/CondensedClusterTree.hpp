@@ -104,8 +104,6 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
         const bool is_right_child_split_candidate =
             single_linkage_cluster_node->right_->size() >= options_.min_cluster_size_;
 
-        std::cout << "not leaf\n";
-
         // if both children are split candidates, we consider the event as a true split and split the condensed cluster
         // node in two new condensed cluster nodes
         if (is_left_child_split_candidate && is_right_child_split_candidate) {
@@ -141,12 +139,11 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
             // didn't fall out of the cluster
             preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node);
         }
-    } else {
-        // mark the leaf node as a selected node
-        condensed_cluster_node->is_selected() = true;
-        // add the leaf node to the set of other leaf nodes
-        leaf_condensed_cluster_nodes_.emplace_back(condensed_cluster_node);
     }
+    // the condensed cluster tree can finally be considered a leaf node if no children are splitting candidates
+    condensed_cluster_node->is_selected() = true;
+    // add the leaf node to the set of other leaf nodes
+    leaf_condensed_cluster_nodes_.emplace_back(condensed_cluster_node);
 }
 
 /*
@@ -158,22 +155,25 @@ root node we call the current set of selected clusters our flat clustering and r
 */
 template <typename IndexType, typename ValueType>
 void CondensedClusterTree<IndexType, ValueType>::select_condensed_cluster_nodes() {
-    std::cout << "before:\n";
-
-    std::cout << "leaf_condensed_cluster_nodes_ size: " << leaf_condensed_cluster_nodes_.size() << "\n";
-
-    std::size_t counter = 0;
     // find the condensed node with the deepest single linkage cluster
     auto deepest_leaf_node = *std::min_element(leaf_condensed_cluster_nodes_.begin(),
                                                leaf_condensed_cluster_nodes_.end(),
                                                [&](const auto& node_1, const auto& node_2) {
-                                                   std::cout << counter++ << "\n";
                                                    return node_1->single_linkage_cluster_node_->level_ <
                                                           node_2->single_linkage_cluster_node_->level_;
                                                });
-    std::cout << "after:\n";
 
-    std::cout << "Deepest node level: " << deepest_leaf_node->single_linkage_cluster_node_->level_ << "\n";
+    const auto deepest_level = deepest_leaf_node->single_linkage_cluster_node_->level_;
+
+    std::cout << "Deepest node level: " << deepest_level << "\n";
+
+    std::cout << "node level:\n";
+    for (const auto& leaf_node : leaf_condensed_cluster_nodes_) {
+        std::cout << (deepest_level >= leaf_node->single_linkage_cluster_node_->level_) << ",";
+    }
+    std::cout << "\n";
+
+    std::cout << "leaf_condensed_cluster_nodes_ size: " << leaf_condensed_cluster_nodes_.size() << "\n";
 }
 
 }  // namespace ffcl
