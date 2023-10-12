@@ -174,9 +174,6 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     timer.print_elapsed_seconds(9);
 
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<IndexType, ValueType>::Options().cut_level(1.4).min_cluster_size(15));
-
     auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
 
     printf("CondensedClusterTree build:\n");
@@ -184,9 +181,18 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(15));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(1));
 
     timer.print_elapsed_seconds(9);
+
+    printf("CondensedClusterTree extract_flat_cluster:\n");
+    timer.reset();
+
+    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
 int main(int argc, char** argv) {

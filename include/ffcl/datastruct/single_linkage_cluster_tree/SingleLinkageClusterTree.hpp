@@ -77,9 +77,9 @@ class SingleLinkageClusterTree {
   private:
     auto build();
 
-    void preorder_traversal(ClusterIndexType                   cluster_label,
-                            const SingleLinkageClusterNodePtr& kdnode,
-                            std::vector<ClusterIndexType>&     flat_cluster) const;
+    void single_linkage_preorder_traversal_clustering(ClusterIndexType                   cluster_label,
+                                                      const SingleLinkageClusterNodePtr& kdnode,
+                                                      std::vector<ClusterIndexType>&     flat_cluster) const;
 
     void serialize(const SingleLinkageClusterNodePtr& node, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
@@ -132,13 +132,13 @@ template <typename IndexType, typename ValueType>
 auto SingleLinkageClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
     auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
 
-    preorder_traversal(root_->representative_, root_, flat_cluster);
+    single_linkage_preorder_traversal_clustering(root_->representative_, root_, flat_cluster);
 
     return flat_cluster;
 }
 
 template <typename IndexType, typename ValueType>
-void SingleLinkageClusterTree<IndexType, ValueType>::preorder_traversal(
+void SingleLinkageClusterTree<IndexType, ValueType>::single_linkage_preorder_traversal_clustering(
     ClusterIndexType                   cluster_label,
     const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
     std::vector<ClusterIndexType>&     flat_cluster) const {
@@ -157,18 +157,13 @@ void SingleLinkageClusterTree<IndexType, ValueType>::preorder_traversal(
     // continue to traverse the tree if the current node is not leaf
     // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
     if (!single_linkage_cluster_node->is_leaf()) {
-        preorder_traversal(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
-        preorder_traversal(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
+        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
+        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
 
     } else {
         // assign the cluster label to the sample index (which is its own node at level 0)
         flat_cluster[single_linkage_cluster_node->representative_] = cluster_label;
     }
-}
-
-template <typename IndexType, typename ValueType>
-void SingleLinkageClusterTree<IndexType, ValueType>::print() const {
-    print_node(root_);
 }
 
 template <typename IndexType, typename ValueType>
@@ -215,6 +210,11 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
         }
     }
     return nodes.begin()->second;
+}
+
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::print() const {
+    print_node(root_);
 }
 
 template <typename IndexType, typename ValueType>

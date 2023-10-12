@@ -51,11 +51,21 @@ class CondensedClusterTree {
 
     CondensedClusterTree(const Options& options);
 
-  private:
-    auto build(SingleLinkageClusterNodePtr single_linkage_cluster_node);
+    auto extract_flat_cluster() const;
 
-    void preorder_traversal(SingleLinkageClusterNodePtr single_linkage_cluster_node,
-                            CondensedClusterNodePtr     condensed_cluster_node);
+  private:
+    auto build(const SingleLinkageClusterNodePtr& single_linkage_cluster_node);
+
+    void preorder_traversal_assign_cluster_label_to_node(const ClusterIndexType&        cluster_label,
+                                                         const CondensedClusterNodePtr& condensed_cluster_node,
+                                                         std::vector<ClusterIndexType>& flat_cluster) const;
+
+    void single_linkage_preorder_traversal_clustering(const ClusterIndexType&        cluster_label,
+                                                      SingleLinkageClusterNodePtr    single_linkage_cluster_node,
+                                                      std::vector<ClusterIndexType>& flat_cluster) const;
+
+    void preorder_traversal_build(const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+                                  CondensedClusterNodePtr            condensed_cluster_node);
 
     void select_condensed_cluster_nodes();
 
@@ -63,7 +73,7 @@ class CondensedClusterTree {
 
     SingleLinkageClusterNodePtr single_linkage_cluster_root_;
 
-    std::vector<CondensedClusterNodePtr> leaf_condensed_cluster_nodes_;
+    std::vector<CondensedClusterNodePtr> condensed_cluster_node_leaves_;
 
     CondensedClusterNodePtr root_;
 };
@@ -79,24 +89,24 @@ CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
     const Options&              options)
   : options_{options}
   , single_linkage_cluster_root_{single_linkage_cluster_root}
-  , leaf_condensed_cluster_nodes_{}
-  , root_{build(single_linkage_cluster_root)} {
-    select_condensed_cluster_nodes();
+  , condensed_cluster_node_leaves_{}
+  , root_{build(single_linkage_cluster_root_)} {
+    // select_condensed_cluster_nodes();
 }
 
 template <typename IndexType, typename ValueType>
-auto CondensedClusterTree<IndexType, ValueType>::build(SingleLinkageClusterNodePtr single_linkage_cluster_node) {
+auto CondensedClusterTree<IndexType, ValueType>::build(const SingleLinkageClusterNodePtr& single_linkage_cluster_node) {
     auto condensed_cluster_node = std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node);
 
-    preorder_traversal(single_linkage_cluster_node, condensed_cluster_node);
+    preorder_traversal_build(single_linkage_cluster_node, condensed_cluster_node);
 
     return condensed_cluster_node;
 }
 
 template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
-    SingleLinkageClusterNodePtr single_linkage_cluster_node,
-    CondensedClusterNodePtr     condensed_cluster_node) {
+void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
+    const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+    CondensedClusterNodePtr            condensed_cluster_node) {
     if (!single_linkage_cluster_node->is_leaf()) {
         const bool is_left_child_split_candidate =
             single_linkage_cluster_node->left_->size() >= options_.min_cluster_size_;
@@ -114,7 +124,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
             condensed_cluster_node->left_->parent_ = condensed_cluster_node;
             // continue to traverse the tree with the new condensed_cluster_node and the left single linkage node that
             // didn't fall out of the cluster
-            preorder_traversal(single_linkage_cluster_node->left_, condensed_cluster_node->left_);
+            preorder_traversal_build(single_linkage_cluster_node->left_, condensed_cluster_node->left_);
 
             // create a new right cluster node split
             condensed_cluster_node->right_ =
@@ -123,27 +133,73 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal(
             condensed_cluster_node->right_->parent_ = condensed_cluster_node;
             // continue to traverse the tree with the new condensed_cluster_node and the right single linkage node that
             // didn't fall out of the cluster
-            preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node->right_);
+            preorder_traversal_build(single_linkage_cluster_node->right_, condensed_cluster_node->right_);
 
         } else if (is_left_child_split_candidate) {
             // update the stability of the same condensed cluster node with maybe a few less samples
             condensed_cluster_node->update_stability(single_linkage_cluster_node->left_->level_);
             // continue to traverse the tree with the same condensed_cluster_node and the left single linkage node that
             // didn't fall out of the cluster
-            preorder_traversal(single_linkage_cluster_node->left_, condensed_cluster_node);
+            preorder_traversal_build(single_linkage_cluster_node->left_, condensed_cluster_node);
 
         } else if (is_right_child_split_candidate) {
             // update the stability of the same condensed cluster node with maybe a few less samples
             condensed_cluster_node->update_stability(single_linkage_cluster_node->right_->level_);
             // continue to traverse the tree with the same condensed_cluster_node and the right single linkage node that
             // didn't fall out of the cluster
-            preorder_traversal(single_linkage_cluster_node->right_, condensed_cluster_node);
+            preorder_traversal_build(single_linkage_cluster_node->right_, condensed_cluster_node);
         }
     }
     // the condensed cluster tree can finally be considered a leaf node if no children are splitting candidates
     condensed_cluster_node->is_selected() = true;
     // add the leaf node to the set of other leaf nodes
-    leaf_condensed_cluster_nodes_.emplace_back(condensed_cluster_node);
+    condensed_cluster_node_leaves_.emplace_back(condensed_cluster_node);
+}
+
+template <typename IndexType, typename ValueType>
+void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_assign_cluster_label_to_node(
+    const ClusterIndexType&        cluster_label,
+    const CondensedClusterNodePtr& condensed_cluster_node,
+    std::vector<ClusterIndexType>& flat_cluster) const {
+    // continue to traverse the tree if the current node is not leaf
+    // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
+    if (!condensed_cluster_node->is_leaf()) {
+        preorder_traversal_assign_cluster_label_to_node(cluster_label, condensed_cluster_node->left_, flat_cluster);
+        preorder_traversal_assign_cluster_label_to_node(cluster_label, condensed_cluster_node->right_, flat_cluster);
+
+    } else {
+        // assign the cluster label to the sample index (which is its own node at level 0)
+        flat_cluster[condensed_cluster_node->single_linkage_cluster_node->representative_] = cluster_label;
+    }
+}
+
+template <typename IndexType, typename ValueType>
+auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
+    auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
+
+    ClusterIndexType cluster_label = 1;
+    for (const auto& condensed_cluster_node_leaf : condensed_cluster_node_leaves_) {
+        single_linkage_preorder_traversal_clustering(
+            cluster_label++, condensed_cluster_node_leaf->single_linkage_cluster_node_, flat_cluster);
+    }
+    return flat_cluster;
+}
+
+template <typename IndexType, typename ValueType>
+void CondensedClusterTree<IndexType, ValueType>::single_linkage_preorder_traversal_clustering(
+    const ClusterIndexType&        cluster_label,
+    SingleLinkageClusterNodePtr    single_linkage_cluster_node,
+    std::vector<ClusterIndexType>& flat_cluster) const {
+    // continue to traverse the tree if the current node is not leaf
+    // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
+    if (!single_linkage_cluster_node->is_leaf()) {
+        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
+        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
+
+    } else {
+        // assign the cluster label to the sample index (which is its own node at level 0)
+        flat_cluster[single_linkage_cluster_node->representative_] = cluster_label;
+    }
 }
 
 /*
@@ -156,8 +212,8 @@ root node we call the current set of selected clusters our flat clustering and r
 template <typename IndexType, typename ValueType>
 void CondensedClusterTree<IndexType, ValueType>::select_condensed_cluster_nodes() {
     // find the condensed node with the deepest single linkage cluster
-    auto deepest_leaf_node = *std::min_element(leaf_condensed_cluster_nodes_.begin(),
-                                               leaf_condensed_cluster_nodes_.end(),
+    auto deepest_leaf_node = *std::min_element(condensed_cluster_node_leaves_.begin(),
+                                               condensed_cluster_node_leaves_.end(),
                                                [&](const auto& node_1, const auto& node_2) {
                                                    return node_1->single_linkage_cluster_node_->level_ <
                                                           node_2->single_linkage_cluster_node_->level_;
@@ -168,12 +224,12 @@ void CondensedClusterTree<IndexType, ValueType>::select_condensed_cluster_nodes(
     std::cout << "Deepest node level: " << deepest_level << "\n";
 
     std::cout << "node level:\n";
-    for (const auto& leaf_node : leaf_condensed_cluster_nodes_) {
+    for (const auto& leaf_node : condensed_cluster_node_leaves_) {
         std::cout << (deepest_level >= leaf_node->single_linkage_cluster_node_->level_) << ",";
     }
     std::cout << "\n";
 
-    std::cout << "leaf_condensed_cluster_nodes_ size: " << leaf_condensed_cluster_nodes_.size() << "\n";
+    std::cout << "condensed_cluster_node_leaves_ size: " << condensed_cluster_node_leaves_.size() << "\n";
 }
 
 }  // namespace ffcl
