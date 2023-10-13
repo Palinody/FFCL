@@ -181,7 +181,463 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(1));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+
+    timer.print_elapsed_seconds(9);
+
+    printf("CondensedClusterTree extract_flat_cluster:\n");
+    timer.reset();
+
+    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "noisy_moons.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndexType               = std::size_t /*decltype(indices[0])*/;
+    using ValueType               = dType /*decltype(data[0])*/;
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    printf("Indexer build:\n");
+    timer.reset();
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+
+    printf("Boruvka's MST build:\n");
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    printf("SingleLinkageClusterTree build:\n");
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
+
+    printf("CondensedClusterTree build:\n");
+    timer.reset();
+
+    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
+        single_linkage_cluster_tree_root,
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+
+    timer.print_elapsed_seconds(9);
+
+    printf("CondensedClusterTree extract_flat_cluster:\n");
+    timer.reset();
+
+    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "varied.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndexType               = std::size_t /*decltype(indices[0])*/;
+    using ValueType               = dType /*decltype(data[0])*/;
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    printf("Indexer build:\n");
+    timer.reset();
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+
+    printf("Boruvka's MST build:\n");
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    printf("SingleLinkageClusterTree build:\n");
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
+
+    printf("CondensedClusterTree build:\n");
+    timer.reset();
+
+    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
+        single_linkage_cluster_tree_root,
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+
+    timer.print_elapsed_seconds(9);
+
+    printf("CondensedClusterTree extract_flat_cluster:\n");
+    timer.reset();
+
+    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "aniso.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndexType               = std::size_t /*decltype(indices[0])*/;
+    using ValueType               = dType /*decltype(data[0])*/;
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    printf("Indexer build:\n");
+    timer.reset();
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+
+    printf("Boruvka's MST build:\n");
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    printf("SingleLinkageClusterTree build:\n");
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
+
+    printf("CondensedClusterTree build:\n");
+    timer.reset();
+
+    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
+        single_linkage_cluster_tree_root,
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+
+    timer.print_elapsed_seconds(9);
+
+    printf("CondensedClusterTree extract_flat_cluster:\n");
+    timer.reset();
+
+    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "blobs.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndexType               = std::size_t /*decltype(indices[0])*/;
+    using ValueType               = dType /*decltype(data[0])*/;
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    printf("Indexer build:\n");
+    timer.reset();
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+
+    printf("Boruvka's MST build:\n");
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    printf("SingleLinkageClusterTree build:\n");
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
+
+    printf("CondensedClusterTree build:\n");
+    timer.reset();
+
+    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
+        single_linkage_cluster_tree_root,
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+
+    timer.print_elapsed_seconds(9);
+
+    printf("CondensedClusterTree extract_flat_cluster:\n");
+    timer.reset();
+
+    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "no_structure.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndexType               = std::size_t /*decltype(indices[0])*/;
+    using ValueType               = dType /*decltype(data[0])*/;
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    printf("Indexer build:\n");
+    timer.reset();
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+
+    printf("Boruvka's MST build:\n");
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    printf("SingleLinkageClusterTree build:\n");
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
+
+    printf("CondensedClusterTree build:\n");
+    timer.reset();
+
+    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
+        single_linkage_cluster_tree_root,
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+
+    timer.print_elapsed_seconds(9);
+
+    printf("CondensedClusterTree extract_flat_cluster:\n");
+    timer.reset();
+
+    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+
+    timer.print_elapsed_seconds(9);
+
+    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
+    common::timer::Timer<common::timer::Nanoseconds> timer;
+
+    fs::path filename = "unbalanced_blobs.txt";
+
+    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
+    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndexType               = std::size_t /*decltype(indices[0])*/;
+    using ValueType               = dType /*decltype(data[0])*/;
+    using IndicesIterator         = decltype(indices)::iterator;
+    using SamplesIterator         = decltype(data)::iterator;
+    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType             = IndexerType::Options;
+    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    printf("Indexer build:\n");
+    timer.reset();
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType())
+                                   .splitting_rule_policy(SplittingRulePolicyType()));
+
+    timer.print_elapsed_seconds(9);
+
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
+
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+
+    printf("Boruvka's MST build:\n");
+    timer.reset();
+
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+
+    timer.print_elapsed_seconds(9);
+
+    printf("SingleLinkageClusterTree build:\n");
+    timer.reset();
+
+    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+
+    timer.print_elapsed_seconds(9);
+
+    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
+
+    printf("CondensedClusterTree build:\n");
+    timer.reset();
+
+    ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
+        single_linkage_cluster_tree_root,
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
 
     timer.print_elapsed_seconds(9);
 

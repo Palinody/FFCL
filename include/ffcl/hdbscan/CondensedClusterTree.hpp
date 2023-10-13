@@ -64,14 +64,12 @@ class CondensedClusterTree {
                                                       SingleLinkageClusterNodePtr    single_linkage_cluster_node,
                                                       std::vector<ClusterIndexType>& flat_cluster) const;
 
-    void preorder_traversal_build(const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
-                                  CondensedClusterNodePtr            condensed_cluster_node);
+    void preorder_traversal_build(SingleLinkageClusterNodePtr single_linkage_cluster_node,
+                                  CondensedClusterNodePtr     condensed_cluster_node);
 
     void select_condensed_cluster_nodes();
 
     Options options_;
-
-    SingleLinkageClusterNodePtr single_linkage_cluster_root_;
 
     std::vector<CondensedClusterNodePtr> condensed_cluster_node_leaves_;
 
@@ -88,9 +86,8 @@ CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
     SingleLinkageClusterNodePtr single_linkage_cluster_root,
     const Options&              options)
   : options_{options}
-  , single_linkage_cluster_root_{single_linkage_cluster_root}
   , condensed_cluster_node_leaves_{}
-  , root_{build(single_linkage_cluster_root_)} {
+  , root_{build(single_linkage_cluster_root)} {
     // select_condensed_cluster_nodes();
 }
 
@@ -105,8 +102,8 @@ auto CondensedClusterTree<IndexType, ValueType>::build(const SingleLinkageCluste
 
 template <typename IndexType, typename ValueType>
 void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
-    const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
-    CondensedClusterNodePtr            condensed_cluster_node) {
+    SingleLinkageClusterNodePtr single_linkage_cluster_node,
+    CondensedClusterNodePtr     condensed_cluster_node) {
     if (!single_linkage_cluster_node->is_leaf()) {
         const bool is_left_child_split_candidate =
             single_linkage_cluster_node->left_->size() >= options_.min_cluster_size_;
@@ -138,22 +135,24 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         } else if (is_left_child_split_candidate) {
             // update the stability of the same condensed cluster node with maybe a few less samples
             condensed_cluster_node->update_stability(single_linkage_cluster_node->left_->level_);
-            // continue to traverse the tree with the same condensed_cluster_node and the left single linkage node that
-            // didn't fall out of the cluster
+            // continue to traverse the tree with the left single linkage node that didn't fall out of the cluster
+            // in the same condensed cluster node
             preorder_traversal_build(single_linkage_cluster_node->left_, condensed_cluster_node);
 
         } else if (is_right_child_split_candidate) {
             // update the stability of the same condensed cluster node with maybe a few less samples
             condensed_cluster_node->update_stability(single_linkage_cluster_node->right_->level_);
-            // continue to traverse the tree with the same condensed_cluster_node and the right single linkage node that
-            // didn't fall out of the cluster
+            // continue to traverse the tree with the right single linkage node that didn't fall out of the cluster
+            // in the same condensed cluster node
             preorder_traversal_build(single_linkage_cluster_node->right_, condensed_cluster_node);
+
+        } else {
+            // the condensed cluster node can finally be considered a leaf node if no children are splitting candidates
+            condensed_cluster_node->is_selected() = true;
+            // add the leaf node to the set of other leaf nodes
+            condensed_cluster_node_leaves_.emplace_back(condensed_cluster_node);
         }
     }
-    // the condensed cluster tree can finally be considered a leaf node if no children are splitting candidates
-    condensed_cluster_node->is_selected() = true;
-    // add the leaf node to the set of other leaf nodes
-    condensed_cluster_node_leaves_.emplace_back(condensed_cluster_node);
 }
 
 template <typename IndexType, typename ValueType>
