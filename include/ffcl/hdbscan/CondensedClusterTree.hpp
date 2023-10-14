@@ -147,7 +147,8 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
             preorder_traversal_build(single_linkage_cluster_node->right_, condensed_cluster_node);
 
         } else {
-            // the condensed cluster node can finally be considered a leaf node if no children are splitting candidates
+            // The condensed cluster node can finally be considered a leaf node if no children are splitting candidates.
+            // All the samples descendant to the node split fall out of the cluster and thus terminate the tree build.
             condensed_cluster_node->is_selected() = true;
             // add the leaf node to the set of other leaf nodes
             condensed_cluster_node_leaves_.emplace_back(condensed_cluster_node);
@@ -175,9 +176,11 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_assign_clust
 template <typename IndexType, typename ValueType>
 auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
     auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
-
+    // The cluster hierarchy for each condensed cluster node will be assigned consecutive cluster labels beginning from
+    // 1, with 0 denoting noise.
     ClusterIndexType cluster_label = 1;
     for (const auto& condensed_cluster_node_leaf : condensed_cluster_node_leaves_) {
+        // assign all descendant samples in the node hierarchy with the same cluster label
         single_linkage_preorder_traversal_clustering(
             cluster_label++, condensed_cluster_node_leaf->single_linkage_cluster_node_, flat_cluster);
     }
@@ -210,25 +213,34 @@ root node we call the current set of selected clusters our flat clustering and r
 */
 template <typename IndexType, typename ValueType>
 void CondensedClusterTree<IndexType, ValueType>::select_condensed_cluster_nodes() {
-    // find the condensed node with the deepest single linkage cluster
-    auto deepest_leaf_node = *std::min_element(condensed_cluster_node_leaves_.begin(),
-                                               condensed_cluster_node_leaves_.end(),
-                                               [&](const auto& node_1, const auto& node_2) {
-                                                   return node_1->single_linkage_cluster_node_->level_ <
-                                                          node_2->single_linkage_cluster_node_->level_;
-                                               });
+    /*
+    std::map<CondensedClusterNodePtr, ValueType> condensed_cluster_node_candidates;
 
-    const auto deepest_level = deepest_leaf_node->single_linkage_cluster_node_->level_;
-
-    std::cout << "Deepest node level: " << deepest_level << "\n";
-
-    std::cout << "node level:\n";
-    for (const auto& leaf_node : condensed_cluster_node_leaves_) {
-        std::cout << (deepest_level >= leaf_node->single_linkage_cluster_node_->level_) << ",";
+    for (const auto& condensed_cluster_leaf_node : condensed_cluster_node_leaves_) {
+        condensed_cluster_node_candidates.insert(
+            std::make_pair(condensed_cluster_leaf_node, condensed_cluster_leaf_node->stability_));
     }
-    std::cout << "\n";
+    while (!condensed_cluster_node_candidates.empty()) {
+        std::map<CondensedClusterNodePtr, ValueType> next_condensed_cluster_node_candidates;
 
-    std::cout << "condensed_cluster_node_leaves_ size: " << condensed_cluster_node_leaves_.size() << "\n";
+        for (const auto& node : condensed_cluster_node_candidates) {
+            if (!node->is_leaf()) {
+                const auto children_total_stability = condensed_cluster_node_candidates[node->left_]->stability_ +
+                                                      condensed_cluster_node_candidates[node->right_]->stability_;
+
+                if (node->stability_ < children_total_stability) {
+                    next_condensed_cluster_node_candidates.insert(std::make_pair(node, children_total_stability));
+
+                } else {
+                    next_condensed_cluster_node_candidates.insert(std::make_pair(node, node->stability_));
+                }
+            } else {
+                next_condensed_cluster_node_candidates.insert(std::make_pair(node->parent_, node->stability_));
+            }
+        }
+        condensed_cluster_node_candidates = std::move(next_condensed_cluster_node_candidates);
+    }
+    */
 }
 
 }  // namespace ffcl

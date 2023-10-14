@@ -96,7 +96,7 @@ std::size_t KDNodeView<IndicesIterator, SamplesIterator>::n_samples() const {
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::is_leaf() const {
-    return cut_feature_index_ == -1;
+    return left_ == nullptr && right_ == nullptr;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
