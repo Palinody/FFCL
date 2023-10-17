@@ -37,12 +37,19 @@ class CondensedClusterTree {
             return *this;
         }
 
-        Options& operator=(const Options& options) {
-            min_cluster_size_ = options.min_cluster_size_;
+        Options& allow_root_selection(bool allow_root_selection) {
+            allow_root_selection_ = allow_root_selection;
             return *this;
         }
 
-        std::size_t min_cluster_size_ = 1;
+        Options& operator=(const Options& options) {
+            min_cluster_size_     = options.min_cluster_size_;
+            allow_root_selection_ = options.allow_root_selection_;
+            return *this;
+        }
+
+        std::size_t min_cluster_size_     = 1;
+        bool        allow_root_selection_ = false;
     };
 
     CondensedClusterTree(SingleLinkageClusterNodePtr single_linkage_cluster_root);
@@ -60,18 +67,22 @@ class CondensedClusterTree {
                                                          const CondensedClusterNodePtr& condensed_cluster_node,
                                                          std::vector<ClusterIndexType>& flat_cluster) const;
 
-    void single_linkage_preorder_traversal_clustering(const ClusterIndexType&        cluster_label,
-                                                      SingleLinkageClusterNodePtr    single_linkage_cluster_node,
-                                                      std::vector<ClusterIndexType>& flat_cluster) const;
+    void single_linkage_preorder_traversal_clustering(const ClusterIndexType&            cluster_label,
+                                                      const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+                                                      std::vector<ClusterIndexType>&     flat_cluster) const;
 
     void preorder_traversal_build(SingleLinkageClusterNodePtr single_linkage_cluster_node,
                                   CondensedClusterNodePtr     condensed_cluster_node);
 
-    void select_condensed_cluster_nodes();
+    auto select_subtree(CondensedClusterNodePtr condensed_cluster_node);
+
+    auto return_shallowest_cluster_selection() const;
+
+    void preorder_traversal_assign_shallowest_selected_nodes(
+        const CondensedClusterNodePtr&        condensed_cluster_node,
+        std::vector<CondensedClusterNodePtr>& selected_condensed_cluster_nodes) const;
 
     Options options_;
-
-    std::vector<CondensedClusterNodePtr> condensed_cluster_node_leaves_;
 
     CondensedClusterNodePtr root_;
 };
@@ -86,9 +97,9 @@ CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
     SingleLinkageClusterNodePtr single_linkage_cluster_root,
     const Options&              options)
   : options_{options}
-  , condensed_cluster_node_leaves_{}
   , root_{build(single_linkage_cluster_root)} {
-    // select_condensed_cluster_nodes();
+    // if the target cluster nodes for flat clustering arent leaf
+    select_subtree(root_);
 }
 
 template <typename IndexType, typename ValueType>
@@ -150,8 +161,6 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
             // The condensed cluster node can finally be considered a leaf node if no children are splitting candidates.
             // All the samples descendant to the node split fall out of the cluster and thus terminate the tree build.
             condensed_cluster_node->is_selected() = true;
-            // add the leaf node to the set of other leaf nodes
-            condensed_cluster_node_leaves_.emplace_back(condensed_cluster_node);
         }
     }
 }
@@ -179,19 +188,19 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
     // The cluster hierarchy for each condensed cluster node will be assigned consecutive cluster labels beginning from
     // 1, with 0 denoting noise.
     ClusterIndexType cluster_label = 1;
-    for (const auto& condensed_cluster_node_leaf : condensed_cluster_node_leaves_) {
+    for (const auto& condensed_cluster_node : return_shallowest_cluster_selection()) {
         // assign all descendant samples in the node hierarchy with the same cluster label
         single_linkage_preorder_traversal_clustering(
-            cluster_label++, condensed_cluster_node_leaf->single_linkage_cluster_node_, flat_cluster);
+            cluster_label++, condensed_cluster_node->single_linkage_cluster_node_, flat_cluster);
     }
     return flat_cluster;
 }
 
 template <typename IndexType, typename ValueType>
 void CondensedClusterTree<IndexType, ValueType>::single_linkage_preorder_traversal_clustering(
-    const ClusterIndexType&        cluster_label,
-    SingleLinkageClusterNodePtr    single_linkage_cluster_node,
-    std::vector<ClusterIndexType>& flat_cluster) const {
+    const ClusterIndexType&            cluster_label,
+    const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+    std::vector<ClusterIndexType>&     flat_cluster) const {
     // continue to traverse the tree if the current node is not leaf
     // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
     if (!single_linkage_cluster_node->is_leaf()) {
@@ -204,43 +213,54 @@ void CondensedClusterTree<IndexType, ValueType>::single_linkage_preorder_travers
     }
 }
 
-/*
-Declare all leaf nodes to be selected clusters. Now work up through the tree (the reverse topological sort order). If
-the sum of the stabilities of the child clusters is greater than the stability of the cluster, then we set the cluster
-stability to be the sum of the child stabilities. If, on the other hand, the cluster’s stability is greater than the sum
-of its children then we declare the cluster to be a selected cluster and unselect all its descendants. Once we reach the
-root node we call the current set of selected clusters our flat clustering and return that.
-*/
 template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::select_condensed_cluster_nodes() {
-    /*
-    std::map<CondensedClusterNodePtr, ValueType> condensed_cluster_node_candidates;
+auto CondensedClusterTree<IndexType, ValueType>::select_subtree(CondensedClusterNodePtr condensed_cluster_node) {
+    // return the stability of the node directly if the node query is leaf
+    if (condensed_cluster_node->is_leaf()) {
+        return condensed_cluster_node->stability_;
 
-    for (const auto& condensed_cluster_leaf_node : condensed_cluster_node_leaves_) {
-        condensed_cluster_node_candidates.insert(
-            std::make_pair(condensed_cluster_leaf_node, condensed_cluster_leaf_node->stability_));
-    }
-    while (!condensed_cluster_node_candidates.empty()) {
-        std::map<CondensedClusterNodePtr, ValueType> next_condensed_cluster_node_candidates;
+    } else {
+        // compute the stability of the children of the current node, recursively
+        const auto children_stability =
+            select_subtree(condensed_cluster_node->left_) + select_subtree(condensed_cluster_node->right_);
+        // If the sum of the stabilities of the child clusters is greater than the stability of the cluster, then we set
+        // the cluster stability to be the sum of the child stabilities and the cluster remains unselected
+        if (children_stability > condensed_cluster_node->stability_) {
+            return children_stability;
 
-        for (const auto& node : condensed_cluster_node_candidates) {
-            if (!node->is_leaf()) {
-                const auto children_total_stability = condensed_cluster_node_candidates[node->left_]->stability_ +
-                                                      condensed_cluster_node_candidates[node->right_]->stability_;
-
-                if (node->stability_ < children_total_stability) {
-                    next_condensed_cluster_node_candidates.insert(std::make_pair(node, children_total_stability));
-
-                } else {
-                    next_condensed_cluster_node_candidates.insert(std::make_pair(node, node->stability_));
-                }
-            } else {
-                next_condensed_cluster_node_candidates.insert(std::make_pair(node->parent_, node->stability_));
-            }
+        } else {
+            // If, on the other hand, the cluster’s stability is greater than the sum of its children then we declare
+            // the cluster to be a selected cluster
+            condensed_cluster_node->is_selected() = true;
+            // and we return its stability
+            return condensed_cluster_node->stability_;
         }
-        condensed_cluster_node_candidates = std::move(next_condensed_cluster_node_candidates);
     }
-    */
+}
+
+template <typename IndexType, typename ValueType>
+auto CondensedClusterTree<IndexType, ValueType>::return_shallowest_cluster_selection() const {
+    std::vector<CondensedClusterNodePtr> selected_condensed_cluster_nodes;
+
+    preorder_traversal_assign_shallowest_selected_nodes(root_, selected_condensed_cluster_nodes);
+
+    return selected_condensed_cluster_nodes;
+}
+
+template <typename IndexType, typename ValueType>
+void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_assign_shallowest_selected_nodes(
+    const CondensedClusterNodePtr&        condensed_cluster_node,
+    std::vector<CondensedClusterNodePtr>& selected_condensed_cluster_nodes) const {
+    if (condensed_cluster_node->is_selected()) {
+        selected_condensed_cluster_nodes.emplace_back(condensed_cluster_node);
+
+    } else {
+        preorder_traversal_assign_shallowest_selected_nodes(condensed_cluster_node->left_,
+                                                            selected_condensed_cluster_nodes);
+
+        preorder_traversal_assign_shallowest_selected_nodes(condensed_cluster_node->right_,
+                                                            selected_condensed_cluster_nodes);
+    }
 }
 
 }  // namespace ffcl

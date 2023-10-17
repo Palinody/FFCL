@@ -158,7 +158,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     printf("Boruvka's MST build:\n");
     timer.reset();
@@ -181,7 +181,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(100));
 
     timer.print_elapsed_seconds(9);
 
@@ -234,7 +234,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     printf("Boruvka's MST build:\n");
     timer.reset();
@@ -257,7 +257,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(100));
 
     timer.print_elapsed_seconds(9);
 
@@ -310,7 +310,7 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     printf("Boruvka's MST build:\n");
     timer.reset();
@@ -333,7 +333,7 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(100));
 
     timer.print_elapsed_seconds(9);
 
@@ -386,7 +386,7 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     printf("Boruvka's MST build:\n");
     timer.reset();
@@ -409,7 +409,7 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(100));
 
     timer.print_elapsed_seconds(9);
 
@@ -462,7 +462,7 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     printf("Boruvka's MST build:\n");
     timer.reset();
@@ -485,7 +485,7 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(100));
 
     timer.print_elapsed_seconds(9);
 
@@ -538,7 +538,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     printf("Boruvka's MST build:\n");
     timer.reset();
@@ -561,7 +561,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(100));
 
     timer.print_elapsed_seconds(9);
 
@@ -614,7 +614,7 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(1));
 
     printf("Boruvka's MST build:\n");
     timer.reset();
@@ -637,7 +637,7 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
-        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(10));
+        ffcl::CondensedClusterTree<IndexType, ValueType>::Options().min_cluster_size(100));
 
     timer.print_elapsed_seconds(9);
 
