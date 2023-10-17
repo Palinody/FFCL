@@ -42,14 +42,21 @@ class CondensedClusterTree {
             return *this;
         }
 
+        Options& return_leaf_nodes(bool return_leaf_nodes) {
+            return_leaf_nodes_ = return_leaf_nodes;
+            return *this;
+        }
+
         Options& operator=(const Options& options) {
             min_cluster_size_     = options.min_cluster_size_;
             allow_root_selection_ = options.allow_root_selection_;
+            return_leaf_nodes_    = options.return_leaf_nodes_;
             return *this;
         }
 
         std::size_t min_cluster_size_     = 1;
         bool        allow_root_selection_ = false;
+        bool        return_leaf_nodes_    = false;
     };
 
     CondensedClusterTree(SingleLinkageClusterNodePtr single_linkage_cluster_root);
@@ -98,8 +105,11 @@ CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
     const Options&              options)
   : options_{options}
   , root_{build(single_linkage_cluster_root)} {
-    // if the target cluster nodes for flat clustering arent leaf
-    select_subtree(root_);
+    // Don't perform cluster selection if the leaf nodes are requested.
+    // The build already marks the leaves as selected.
+    if (!options_.return_leaf_nodes_) {
+        select_subtree(root_);
+    }
 }
 
 template <typename IndexType, typename ValueType>

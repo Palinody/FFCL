@@ -139,6 +139,7 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
         gen_min_span_tree=True,
         approx_min_span_tree=False,
         core_dist_n_jobs=1,
+        allow_single_cluster=True
     )
     predictions = clusterer.fit_predict(data)
 
