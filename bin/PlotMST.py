@@ -134,7 +134,7 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
     )
 
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=10,
+        min_cluster_size=5,
         min_samples=5,
         gen_min_span_tree=True,
         approx_min_span_tree=False,
@@ -142,12 +142,13 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
         allow_single_cluster=True
     )
     predictions = clusterer.fit_predict(data)
-
+    """
     # plots from the c++ generated data
     fig = plt.figure(num=1, figsize=(8, 6))
     gs = gridspec.GridSpec(1, 1)
     ax = plt.subplot(gs[0, 0])
     plot_mst(dataset=data, mst=mst, axis=ax)
+    """
 
     # plots from the hdbscan python library
     fig = plt.figure(num=2, figsize=(8, 6))

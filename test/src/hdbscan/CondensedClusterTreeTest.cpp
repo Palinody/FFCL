@@ -182,16 +182,16 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_root_selection(true));
+            .allow_single_cluster(false));
 
     timer.print_elapsed_seconds(9);
 
-    printf("CondensedClusterTree extract_flat_cluster:\n");
+    printf("CondensedClusterTree prediction:\n");
     timer.reset();
 
-    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+    const auto predictions = condensed_cluster_tree.predict();
 
     timer.print_elapsed_seconds(9);
 
@@ -261,16 +261,16 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_root_selection(true));
+            .allow_single_cluster(false));
 
     timer.print_elapsed_seconds(9);
 
-    printf("CondensedClusterTree extract_flat_cluster:\n");
+    printf("CondensedClusterTree prediction:\n");
     timer.reset();
 
-    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+    const auto predictions = condensed_cluster_tree.predict();
 
     timer.print_elapsed_seconds(9);
 
@@ -340,16 +340,16 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_root_selection(true));
+            .allow_single_cluster(false));
 
     timer.print_elapsed_seconds(9);
 
-    printf("CondensedClusterTree extract_flat_cluster:\n");
+    printf("CondensedClusterTree prediction:\n");
     timer.reset();
 
-    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+    const auto predictions = condensed_cluster_tree.predict();
 
     timer.print_elapsed_seconds(9);
 
@@ -419,16 +419,16 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_root_selection(true));
+            .allow_single_cluster(false));
 
     timer.print_elapsed_seconds(9);
 
-    printf("CondensedClusterTree extract_flat_cluster:\n");
+    printf("CondensedClusterTree prediction:\n");
     timer.reset();
 
-    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+    const auto predictions = condensed_cluster_tree.predict();
 
     timer.print_elapsed_seconds(9);
 
@@ -498,16 +498,16 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_root_selection(true));
+            .allow_single_cluster(false));
 
     timer.print_elapsed_seconds(9);
 
-    printf("CondensedClusterTree extract_flat_cluster:\n");
+    printf("CondensedClusterTree prediction:\n");
     timer.reset();
 
-    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+    const auto predictions = condensed_cluster_tree.predict();
 
     timer.print_elapsed_seconds(9);
 
@@ -577,16 +577,16 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_root_selection(true));
+            .allow_single_cluster(false));
 
     timer.print_elapsed_seconds(9);
 
-    printf("CondensedClusterTree extract_flat_cluster:\n");
+    printf("CondensedClusterTree prediction:\n");
     timer.reset();
 
-    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+    const auto predictions = condensed_cluster_tree.predict();
 
     timer.print_elapsed_seconds(9);
 
@@ -656,16 +656,16 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_root_selection(true));
+            .allow_single_cluster(false));
 
     timer.print_elapsed_seconds(9);
 
-    printf("CondensedClusterTree extract_flat_cluster:\n");
+    printf("CondensedClusterTree prediction:\n");
     timer.reset();
 
-    const auto predictions = condensed_cluster_tree.extract_flat_cluster();
+    const auto predictions = condensed_cluster_tree.predict();
 
     timer.print_elapsed_seconds(9);
 

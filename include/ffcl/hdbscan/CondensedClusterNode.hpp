@@ -25,9 +25,11 @@ struct CondensedClusterNode {
 
     bool& is_selected();
 
+    bool is_selected() const;
+
     std::size_t size() const;
 
-    void update_stability(const ValueType& level);
+    void accumulate_stability(const ValueType& level);
 
     // the single linkage cluster node pointer that led to a split of the single linkage tree.
     SingleLinkageClusterNodePtr single_linkage_cluster_node_;
@@ -50,17 +52,21 @@ CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
   , lambda_init_{common::utils::division(1,
                                          single_linkage_cluster_node_->level_,
                                          common::utils::infinity<decltype(single_linkage_cluster_node_->level_)>())}
-  , stability_{}
+  , stability_{0}
   , is_selected_{false} {}
 
 template <typename IndexType, typename ValueType>
 bool CondensedClusterNode<IndexType, ValueType>::is_leaf() const {
-    // could do level_ == 0 but that might require performing float equality
     return left_ == nullptr && right_ == nullptr;
 }
 
 template <typename IndexType, typename ValueType>
 bool& CondensedClusterNode<IndexType, ValueType>::is_selected() {
+    return is_selected_;
+}
+
+template <typename IndexType, typename ValueType>
+bool CondensedClusterNode<IndexType, ValueType>::is_selected() const {
     return is_selected_;
 }
 
@@ -71,7 +77,7 @@ std::size_t CondensedClusterNode<IndexType, ValueType>::size() const {
 }
 
 template <typename IndexType, typename ValueType>
-void CondensedClusterNode<IndexType, ValueType>::update_stability(const ValueType& level) {
+void CondensedClusterNode<IndexType, ValueType>::accumulate_stability(const ValueType& level) {
     // the division performs
     //      1 / level if level != 0,
     //      else it returns lambda_init_
