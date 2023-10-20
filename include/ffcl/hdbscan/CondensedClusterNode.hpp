@@ -34,7 +34,7 @@ struct CondensedClusterNode {
     // the single linkage cluster node pointer that led to a split of the single linkage tree.
     SingleLinkageClusterNodePtr single_linkage_cluster_node_;
     // the initial lambda value: 1 / distance. It results from the creation of the current node after a split.
-    ValueType lambda_init_;
+    ValueType lambda_init_, lambda_final_;
     // the total accumulated lambda values for each points persisting in the same cluster.
     // stability: sum(lambda(p) - lambda_init), with p a point in the cluster.
     ValueType stability_;
@@ -52,6 +52,7 @@ CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
   , lambda_init_{common::utils::division(1,
                                          single_linkage_cluster_node_->level_,
                                          common::utils::infinity<decltype(single_linkage_cluster_node_->level_)>())}
+  , lambda_final_{lambda_init_}
   , stability_{0}
   , is_selected_{false} {}
 

@@ -184,7 +184,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
             .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_single_cluster(false));
+            .allow_single_cluster(true));
 
     timer.print_elapsed_seconds(9);
 
@@ -263,7 +263,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
             .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_single_cluster(false));
+            .allow_single_cluster(true));
 
     timer.print_elapsed_seconds(9);
 
@@ -342,7 +342,7 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
             .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_single_cluster(false));
+            .allow_single_cluster(true));
 
     timer.print_elapsed_seconds(9);
 
@@ -421,7 +421,7 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
             .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_single_cluster(false));
+            .allow_single_cluster(true));
 
     timer.print_elapsed_seconds(9);
 
@@ -500,7 +500,7 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
             .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_single_cluster(false));
+            .allow_single_cluster(true));
 
     timer.print_elapsed_seconds(9);
 
@@ -579,7 +579,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
             .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_single_cluster(false));
+            .allow_single_cluster(true));
 
     timer.print_elapsed_seconds(9);
 
@@ -658,7 +658,7 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
             .min_cluster_size(5)
             .return_leaf_nodes(false)
-            .allow_single_cluster(false));
+            .allow_single_cluster(true));
 
     timer.print_elapsed_seconds(9);
 
