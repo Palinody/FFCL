@@ -24,6 +24,10 @@ struct SingleLinkageClusterNode {
 
     std::size_t size() const;
 
+    bool has_parent() const;
+
+    NodePtr get_sibling_node() const;
+
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     // a node indexes itself if the node is leaf or the sample's index used as a cluster index representative otherwise
@@ -53,6 +57,25 @@ bool SingleLinkageClusterNode<IndexType, ValueType>::is_leaf() const {
 template <typename IndexType, typename ValueType>
 std::size_t SingleLinkageClusterNode<IndexType, ValueType>::size() const {
     return cluster_size_;
+}
+
+template <typename IndexType, typename ValueType>
+bool SingleLinkageClusterNode<IndexType, ValueType>::has_parent() const {
+    return parent_ != nullptr;
+}
+
+template <typename IndexType, typename ValueType>
+typename SingleLinkageClusterNode<IndexType, ValueType>::NodePtr
+SingleLinkageClusterNode<IndexType, ValueType>::get_sibling_node() const {
+    if (has_parent()) {
+        if (this == parent_->left_.get()) {
+            return parent_->right_;
+
+        } else if (this == parent_->right_.get()) {
+            return parent_->left_;
+        }
+    }
+    return nullptr;
 }
 
 template <typename IndexType, typename ValueType>

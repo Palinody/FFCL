@@ -195,8 +195,8 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
                 nodes[representative_1]->size() + nodes[representative_2]->size());
 
             // link the nodes to their new parent node
-            nodes[representative_1]->parent_ = nodes[new_representative];
-            nodes[representative_2]->parent_ = nodes[new_representative];
+            nodes[representative_1]->parent_ = cluster_node;
+            nodes[representative_2]->parent_ = cluster_node;
 
             // add them as children of their common parent node
             cluster_node->left_  = std::move(nodes[representative_1]);

@@ -29,12 +29,19 @@ struct CondensedClusterNode {
 
     std::size_t size() const;
 
-    void accumulate_stability(const ValueType& level);
+    void accumulate_excess_stability(const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+                                     const ValueType&                   lambda_max);
+
+    void accumulate_stability_from_node(const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+                                        const ValueType&                   lambda_max);
+
+    void accumulate_fallen_clusters_stability(const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+                                              const ValueType&                   lambda_max);
 
     // the single linkage cluster node pointer that led to a split of the single linkage tree.
-    SingleLinkageClusterNodePtr single_linkage_cluster_node_;
+    SingleLinkageClusterNodePtr single_linkage_cluster_node_min_;
     // the initial lambda value: 1 / distance. It results from the creation of the current node after a split.
-    ValueType lambda_init_, lambda_final_;
+    ValueType lambda_min_;
     // the total accumulated lambda values for each points persisting in the same cluster.
     // stability: sum(lambda(p) - lambda_init), with p a point in the cluster.
     ValueType stability_;
@@ -48,11 +55,10 @@ struct CondensedClusterNode {
 template <typename IndexType, typename ValueType>
 CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
     SingleLinkageClusterNodePtr single_linkage_cluster_node)
-  : single_linkage_cluster_node_{single_linkage_cluster_node}
-  , lambda_init_{common::utils::division(1,
-                                         single_linkage_cluster_node_->level_,
-                                         common::utils::infinity<decltype(single_linkage_cluster_node_->level_)>())}
-  , lambda_final_{lambda_init_}
+  : single_linkage_cluster_node_min_{single_linkage_cluster_node}
+  , lambda_min_{single_linkage_cluster_node_min_->parent_
+                    ? common::utils::division(1, single_linkage_cluster_node_min_->parent_->level_)
+                    : 0}
   , stability_{0}
   , is_selected_{false} {}
 
@@ -74,16 +80,58 @@ bool CondensedClusterNode<IndexType, ValueType>::is_selected() const {
 template <typename IndexType, typename ValueType>
 std::size_t CondensedClusterNode<IndexType, ValueType>::size() const {
     // takes into account only the initiating node of the branch that persists along different lambda values
-    return single_linkage_cluster_node_->cluster_size_;
+    return single_linkage_cluster_node_min_->cluster_size_;
 }
 
 template <typename IndexType, typename ValueType>
-void CondensedClusterNode<IndexType, ValueType>::accumulate_stability(const ValueType& level) {
+void CondensedClusterNode<IndexType, ValueType>::accumulate_excess_stability(
+    const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+    const ValueType&                   lambda_max) {
     // the division performs
     //      1 / level if level != 0,
-    //      else it returns lambda_init_
+    //      else it returns lambda_min_
     // so the operation is cancelled out in case we encounter a division by zero
-    stability_ += common::utils::division(1, level, lambda_init_) - lambda_init_;
+    stability_ += single_linkage_cluster_node->size() * (lambda_max - lambda_min_);
+}
+
+template <typename IndexType, typename ValueType>
+void CondensedClusterNode<IndexType, ValueType>::accumulate_stability_from_node(
+    const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+    const ValueType&                   lambda_max) {
+    if (single_linkage_cluster_node == single_linkage_cluster_node_min_) {
+        if (!single_linkage_cluster_node->is_leaf()) {
+            accumulate_stability_from_node(single_linkage_cluster_node->left_, lambda_max);
+            accumulate_stability_from_node(single_linkage_cluster_node->right_, lambda_max);
+        }
+        // if single_linkage_cluster_node->is_leaf(), the stability will be 0 so we skip the computation
+    } else {
+        if (single_linkage_cluster_node->is_leaf()) {
+            const auto current_lambda = common::utils::division(1, single_linkage_cluster_node->parent_->level_);
+
+            stability_ += current_lambda < lambda_max ? current_lambda - lambda_min_ : lambda_max - lambda_min_;
+
+        } else {
+            const auto current_lambda = common::utils::division(1, single_linkage_cluster_node->level_);
+
+            if (current_lambda < lambda_max) {
+                accumulate_stability_from_node(single_linkage_cluster_node->left_, lambda_max);
+                accumulate_stability_from_node(single_linkage_cluster_node->right_, lambda_max);
+
+            } else {
+                accumulate_excess_stability(single_linkage_cluster_node, lambda_max);
+            }
+        }
+    }
+}
+
+template <typename IndexType, typename ValueType>
+void CondensedClusterNode<IndexType, ValueType>::accumulate_fallen_clusters_stability(
+    const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+    const ValueType&                   lambda_max) {
+    if (single_linkage_cluster_node != single_linkage_cluster_node_min_) {
+        accumulate_stability_from_node(single_linkage_cluster_node->get_sibling_node(), lambda_max);
+        accumulate_fallen_clusters_stability(single_linkage_cluster_node->parent_, lambda_max);
+    }
 }
 
 }  // namespace ffcl
