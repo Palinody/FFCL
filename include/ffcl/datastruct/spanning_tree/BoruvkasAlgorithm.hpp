@@ -259,19 +259,15 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
 
             // consider computing the k mutual reachability distance only if the core_distance != nullptr
             if (core_distances) {
-                // compute k_mutual_reachability_distance if the core distance is within the bounds of the current
-                // shortest edge
-                if ((*core_distances)[sample_index] < current_closest_edge_distance) {
-                    const auto k_mutual_reachability_distance = std::max({(*core_distances)[sample_index],
-                                                                          (*core_distances)[nearest_neighbor_index],
-                                                                          nearest_neighbor_distance});
+                const auto k_mutual_reachability_distance = std::max({(*core_distances)[sample_index],
+                                                                      (*core_distances)[nearest_neighbor_index],
+                                                                      nearest_neighbor_distance});
 
-                    // then update the current shortest edge if the k_mutual_reachability_distance is indeed
-                    // shortest than the current shortest edge distance
-                    if (k_mutual_reachability_distance < current_closest_edge_distance) {
-                        components_closest_edge[component_representative] =
-                            EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
-                    }
+                // then update the current shortest edge if the k_mutual_reachability_distance is indeed
+                // shortest than the current shortest edge distance
+                if (k_mutual_reachability_distance < current_closest_edge_distance) {
+                    components_closest_edge[component_representative] =
+                        EdgeType{sample_index, nearest_neighbor_index, k_mutual_reachability_distance};
                 }
             }
             // otherwise just use the distance of the kth nearest neighbor

@@ -103,7 +103,7 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
     )
     predictions = clusterer.fit_predict(data)
 
-    fig = plt.figure(num=2, figsize=(8, 6))
+    fig = plt.figure(num=2, figsize=(24, 12))
     gs = gridspec.GridSpec(1, 2)
     ax1 = plt.subplot(gs[0, 0])
     ax2 = plt.subplot(gs[0, 1])

@@ -92,7 +92,7 @@ def plot_hdbscan_predictions(datapath, filename, axis=None):
 
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=15,
-        min_samples=1,
+        min_samples=5,
         cluster_selection_epsilon=0,
         gen_min_span_tree=True,
         approx_min_span_tree=False,
