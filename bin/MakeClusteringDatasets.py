@@ -35,7 +35,7 @@ n_samples_mnist = n_samples
 RESCALE_MNIST = True
 
 # np.random.seed(1)
-random_state = 2
+random_state = 8
 
 noisy_circles = datasets.make_circles(
     n_samples=n_samples, factor=0.5, noise=0.05, random_state=random_state

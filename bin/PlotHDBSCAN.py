@@ -54,7 +54,7 @@ def plot_mst(dataset, mst, axis=None):
     plt.colorbar(sm, ax=axis, label="Edge Distance")
     axis.set_xlabel("X-axis")
     axis.set_ylabel("Y-axis")
-    axis.set_title("FFCL MST")
+    axis.set_title("Minimum Spanning Tree with Edge Distance Gradient")
     axis.legend()
 
     if standalone_plot:
@@ -70,9 +70,49 @@ def plot_hdbscan_mst(clusterer, axis=None):
     clusterer.minimum_spanning_tree_.plot(
         axis=axis, edge_cmap="viridis", edge_alpha=0.6, node_size=80, edge_linewidth=2
     )
-    
-    axis.set_title("HDBSCAN python3 MST")
-    
+
+    if standalone_plot:
+        plt.show()
+
+
+def plot_hdbscan_predictions(inputs, predictions, axis=None):
+    standalone_plot = axis is None
+
+    if standalone_plot:
+        fig, axis = plt.subplots()
+
+    norm = Normalize(vmin=min(predictions), vmax=max(predictions))
+    normalized_predictions = norm(predictions)
+
+    cmap = plt.get_cmap("viridis")
+    colors = cmap(normalized_predictions)
+
+    axis.scatter(*inputs.T, color=colors, alpha=0.4, label="HDBSCAN predictions")
+
+    if standalone_plot:
+        plt.show()
+
+
+def plot_hdbscan_single_linkage_tree(clusterer, axis=None):
+    standalone_plot = axis is None
+
+    if standalone_plot:
+        fig, axis = plt.subplots()
+
+    clusterer.single_linkage_tree_.plot(axis=axis, cmap="viridis", colorbar=True)
+
+    if standalone_plot:
+        plt.show()
+
+
+def plot_hdbscan_condensed_tree(clusterer, axis=None):
+    standalone_plot = axis is None
+
+    if standalone_plot:
+        fig, axis = plt.subplots()
+
+    clusterer.condensed_tree_.plot(axis=axis, select_clusters=True, colorbar=True)
+
     if standalone_plot:
         plt.show()
 
@@ -102,15 +142,25 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
         allow_single_cluster=True
     )
     predictions = clusterer.fit_predict(data)
+    """
+    # plots from the c++ generated data
+    fig = plt.figure(num=1, figsize=(8, 6))
+    gs = gridspec.GridSpec(1, 1)
+    ax = plt.subplot(gs[0, 0])
+    plot_mst(dataset=data, mst=mst, axis=ax)
+    """
 
-    fig = plt.figure(num=2, figsize=(8, 6))
-    gs = gridspec.GridSpec(1, 2)
+    # plots from the hdbscan python library
+    fig = plt.figure(num=1, figsize=(8, 6))
+    gs = gridspec.GridSpec(2, 2)
     ax1 = plt.subplot(gs[0, 0])
     ax2 = plt.subplot(gs[0, 1])
-    # plot from the c++ generated data
-    plot_mst(dataset=data, mst=mst, axis=ax1)
-    # plot from the hdbscan python library
-    plot_hdbscan_mst(clusterer=clusterer, axis=ax2)
+    ax3 = plt.subplot(gs[1, 0])
+    ax4 = plt.subplot(gs[1, 1])
+    plot_hdbscan_mst(clusterer=clusterer, axis=ax1)
+    plot_hdbscan_predictions(inputs=data, predictions=predictions, axis=ax2)
+    plot_hdbscan_single_linkage_tree(clusterer=clusterer, axis=ax3)
+    plot_hdbscan_condensed_tree(clusterer=clusterer, axis=ax4)
 
     plt.tight_layout()
     plt.show()
