@@ -30,11 +30,13 @@ def TestHDBSCAN(points: np.ndarray, min_samples):
     # np.random.shuffle(points)
 
     clustering = hdbscan.HDBSCAN(
-        min_cluster_size=10,
+        min_cluster_size=15,
         min_samples=min_samples,
+        cluster_selection_epsilon=0,
         gen_min_span_tree=True,
-        approx_min_span_tree=True,
-        core_dist_n_jobs=6,
+        approx_min_span_tree=False,
+        core_dist_n_jobs=1,
+        allow_single_cluster=True
     )
 
     start_time = time.process_time()
@@ -64,7 +66,7 @@ def run_all():
         "unbalanced_blobs.txt",
     ]
 
-    datasets_parameters = [(5), (5), (5), (5), (5), (5), (5)]
+    datasets_parameters = [(10), (10), (10), (10), (10), (10), (10)]
 
     for filename, dataset_parameters in zip(file_names, datasets_parameters):
         input_path = root_folder + filename

@@ -27,7 +27,7 @@ SHIFT = 0
 TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
-n_samples = 1000
+n_samples = 50000
 n_features = 2
 # None to load everything else specify
 n_samples_mnist = None
@@ -35,7 +35,7 @@ n_samples_mnist = n_samples
 RESCALE_MNIST = True
 
 # np.random.seed(1)
-random_state = 8
+random_state = 7
 
 noisy_circles = datasets.make_circles(
     n_samples=n_samples, factor=0.5, noise=0.05, random_state=random_state
