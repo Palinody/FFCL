@@ -72,9 +72,10 @@ class CondensedClusterTree {
   private:
     auto build(const SingleLinkageClusterNodePtr& slink_root_node);
 
-    void single_linkage_preorder_traversal_clustering(const ClusterIndexType&            cluster_label,
-                                                      const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
-                                                      std::vector<ClusterIndexType>&     flat_cluster) const;
+    void preorder_traversal_clustering_from_single_linkage_node(
+        const ClusterIndexType&            cluster_label,
+        const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+        std::vector<ClusterIndexType>&     flat_cluster) const;
 
     void preorder_traversal_build(CondensedClusterNodePtr            condensed_cluster_node,
                                   const SingleLinkageClusterNodePtr& single_linkage_cluster_node);
@@ -86,8 +87,6 @@ class CondensedClusterTree {
     void preorder_traversal_fill_shallowest_selected_nodes(
         const CondensedClusterNodePtr&        condensed_cluster_node,
         std::vector<CondensedClusterNodePtr>& selected_condensed_cluster_nodes) const;
-
-    void preorder_traversal_unselect_subtree(CondensedClusterNodePtr condensed_cluster_node);
 
     Options options_;
 
@@ -138,17 +137,14 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         const bool is_right_child_split_candidate =
             single_linkage_cluster_node->right_->size() >= options_.min_cluster_size_;
 
-        const auto lambda_max = common::utils::division(1, single_linkage_cluster_node->level_);
+        const auto lambda_value = common::utils::division(1, single_linkage_cluster_node->level_);
 
         // if both children are split candidates (they hold enough samples to be considered as their own cluster), we
         // consider the event as a true split and split the condensed cluster node in two new condensed cluster nodes
         if (is_left_child_split_candidate && is_right_child_split_candidate) {
-            {
-                condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node, lambda_max);
-
-                condensed_cluster_node->single_linkage_cluster_node_max_ =
-                    condensed_cluster_node->single_linkage_cluster_node_min_;
-            }
+            // update the stability of the current condensed cluster node with the final slink node
+            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node, lambda_value);
+            // make the new left condensed cluster node
             {
                 // create a new left cluster node split
                 condensed_cluster_node->left_ =
@@ -159,6 +155,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
                 // that didn't fall out of the cluster
                 preorder_traversal_build(condensed_cluster_node->left_, single_linkage_cluster_node->left_);
             }
+            // make the new right condensed cluster node
             {
                 // create a new right cluster node split
                 condensed_cluster_node->right_ =
@@ -173,7 +170,8 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         // if only the left child is a split candidate, it persists in the current condensed cluster node and the right
         // child is simply discarded (it "falls out of the cluster")
         else if (is_left_child_split_candidate) {
-            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node->right_, lambda_max);
+            // update the condensed cluster node with the samples that fell out from the cluster at the current level
+            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node->right_, lambda_value);
 
             // continue to traverse the tree with the left single linkage node that didn't fall out of the cluster
             // in the same condensed cluster node
@@ -182,7 +180,8 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         // if only the right child is a split candidate, it persists in the current condensed cluster node and the left
         // child is simply discarded (it "falls out of the cluster")
         else if (is_right_child_split_candidate) {
-            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node->left_, lambda_max);
+            // update the condensed cluster node with the samples that fell out from the cluster at the current level
+            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node->left_, lambda_value);
 
             // continue to traverse the tree with the right single linkage node that didn't fall out of the cluster
             // in the same condensed cluster node
@@ -190,10 +189,8 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         }
         // if none of the children are split candidates, then the tree branch is terminated
         else {
-            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node, lambda_max);
-
-            condensed_cluster_node->single_linkage_cluster_node_max_ =
-                condensed_cluster_node->single_linkage_cluster_node_min_;
+            // update the condensed cluster node with the samples that fell out from the cluster at the current level
+            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node, lambda_value);
 
             // The condensed cluster node can finally be considered a leaf node if no children are splitting
             // candidates. All the samples descendant to the node split fall out of the cluster and thus terminate
@@ -204,7 +201,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
     // if single_linkage_cluster_node is a leaf node, then we simply mark the current condensed_cluster_node as selected
     // as its also a leaf node
     else {
-        throw std::invalid_argument("Invalid condensed leaf node state\n");
+        condensed_cluster_node->is_selected() = true;
     }
 }
 
@@ -218,8 +215,8 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
     for (const auto& condensed_cluster_node : return_shallowest_cluster_selection()) {
         // assign all descendant samples in the node hierarchy with the same cluster label
         // then increment the cluster label for the next non-overlapping cluster
-        single_linkage_preorder_traversal_clustering(
-            cluster_label++, condensed_cluster_node->single_linkage_cluster_node_max_, flat_cluster);
+        preorder_traversal_clustering_from_single_linkage_node(
+            cluster_label++, condensed_cluster_node->single_linkage_cluster_node_min_, flat_cluster);
     }
     return flat_cluster;
 }
@@ -230,15 +227,17 @@ auto CondensedClusterTree<IndexType, ValueType>::predict() const {
 }
 
 template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::single_linkage_preorder_traversal_clustering(
+void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_clustering_from_single_linkage_node(
     const ClusterIndexType&            cluster_label,
     const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
     std::vector<ClusterIndexType>&     flat_cluster) const {
     // continue to traverse the tree if the current node is not leaf
     // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
     if (!single_linkage_cluster_node->is_leaf()) {
-        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
-        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
+        preorder_traversal_clustering_from_single_linkage_node(
+            cluster_label, single_linkage_cluster_node->left_, flat_cluster);
+        preorder_traversal_clustering_from_single_linkage_node(
+            cluster_label, single_linkage_cluster_node->right_, flat_cluster);
 
     } else {
         // assert that single_linkage_cluster_node is indeed a leaf  by checking if its level in the tree is zero
@@ -262,12 +261,9 @@ auto CondensedClusterTree<IndexType, ValueType>::select_subtree(CondensedCluster
         // If the sum of the stabilities of the child clusters is greater than the stability of the cluster, then we set
         // the cluster stability to be the sum of the child stabilities and the cluster remains unselected
         if (children_stability > condensed_cluster_node->stability_) {
-            // condensed_cluster_node->is_selected() = false;
-            // condensed_cluster_node->stability_ = children_stability;
             return children_stability;
 
         } else {
-            // preorder_traversal_unselect_subtree(condensed_cluster_node);
             // If, on the other hand, the cluster’s stability is greater than the sum of its children then we declare
             // the cluster to be a selected cluster
             condensed_cluster_node->is_selected() = true;
@@ -302,20 +298,6 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_fill_shallow
 
         preorder_traversal_fill_shallowest_selected_nodes(condensed_cluster_node->right_,
                                                           selected_condensed_cluster_nodes);
-    }
-}
-
-template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_unselect_subtree(
-    CondensedClusterNodePtr condensed_cluster_node) {
-    if (condensed_cluster_node->is_leaf()) {
-        condensed_cluster_node->is_selected() = false;
-    } else {
-        condensed_cluster_node->left_->is_selected() = false;
-        preorder_traversal_unselect_subtree(condensed_cluster_node->left_);
-
-        condensed_cluster_node->right_->is_selected() = false;
-        preorder_traversal_unselect_subtree(condensed_cluster_node->right_);
     }
 }
 

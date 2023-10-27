@@ -262,9 +262,9 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
                 // compute k_mutual_reachability_distance if the core distance is within the bounds of the current
                 // shortest edge
                 if ((*core_distances)[sample_index] < current_closest_edge_distance) {
-                    const auto k_mutual_reachability_distance =
-                        std::max(std::max((*core_distances)[sample_index], (*core_distances)[nearest_neighbor_index]),
-                                 nearest_neighbor_distance);
+                    const auto k_mutual_reachability_distance = std::max({(*core_distances)[sample_index],
+                                                                          (*core_distances)[nearest_neighbor_index],
+                                                                          nearest_neighbor_distance});
 
                     // then update the current shortest edge if the k_mutual_reachability_distance is indeed
                     // shortest than the current shortest edge distance

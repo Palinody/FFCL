@@ -162,7 +162,7 @@ TEST_F(CondensedClusterTreeErrorsTest, MainTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
@@ -240,7 +240,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
@@ -319,7 +319,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
@@ -398,7 +398,7 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
@@ -477,7 +477,7 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
@@ -556,7 +556,7 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
@@ -635,7 +635,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
@@ -714,7 +714,7 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
     ffcl::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
         single_linkage_cluster_tree_root,
         ffcl::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(10)
+            .min_cluster_size(15)
             .return_leaf_nodes(false)
             .allow_single_cluster(false));
 
