@@ -143,7 +143,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         // consider the event as a true split and split the condensed cluster node in two new condensed cluster nodes
         if (is_left_child_split_candidate && is_right_child_split_candidate) {
             // update the stability of the current condensed cluster node with the final slink node
-            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node, lambda_value);
+            condensed_cluster_node->add_excess_of_mass(single_linkage_cluster_node, lambda_value);
             // make the new left condensed cluster node
             {
                 // create a new left cluster node split
@@ -171,8 +171,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         // child is simply discarded (it "falls out of the cluster")
         else if (is_left_child_split_candidate) {
             // update the condensed cluster node with the samples that fell out from the cluster at the current level
-            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node->right_, lambda_value);
-
+            condensed_cluster_node->add_excess_of_mass(single_linkage_cluster_node->right_, lambda_value);
             // continue to traverse the tree with the left single linkage node that didn't fall out of the cluster
             // in the same condensed cluster node
             preorder_traversal_build(condensed_cluster_node, single_linkage_cluster_node->left_);
@@ -181,8 +180,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         // child is simply discarded (it "falls out of the cluster")
         else if (is_right_child_split_candidate) {
             // update the condensed cluster node with the samples that fell out from the cluster at the current level
-            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node->left_, lambda_value);
-
+            condensed_cluster_node->add_excess_of_mass(single_linkage_cluster_node->left_, lambda_value);
             // continue to traverse the tree with the right single linkage node that didn't fall out of the cluster
             // in the same condensed cluster node
             preorder_traversal_build(condensed_cluster_node, single_linkage_cluster_node->right_);
@@ -190,8 +188,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         // if none of the children are split candidates, then the tree branch is terminated
         else {
             // update the condensed cluster node with the samples that fell out from the cluster at the current level
-            condensed_cluster_node->accumulate_excess_stability(single_linkage_cluster_node, lambda_value);
-
+            condensed_cluster_node->add_excess_of_mass(single_linkage_cluster_node, lambda_value);
             // The condensed cluster node can finally be considered a leaf node if no children are splitting
             // candidates. All the samples descendant to the node split fall out of the cluster and thus terminate
             // the tree build.
@@ -216,7 +213,7 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
         // assign all descendant samples in the node hierarchy with the same cluster label
         // then increment the cluster label for the next non-overlapping cluster
         preorder_traversal_clustering_from_single_linkage_node(
-            cluster_label++, condensed_cluster_node->single_linkage_cluster_node_min_, flat_cluster);
+            cluster_label++, condensed_cluster_node->single_linkage_cluster_node_first_, flat_cluster);
     }
     return flat_cluster;
 }

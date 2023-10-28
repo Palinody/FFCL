@@ -71,7 +71,8 @@ add_definitions(-DTHREADS_ENABLED=false)
 add_definitions(-DVERBOSE=false)
 
 # disable all assertions
-# add_definitions(-DNDEBUG)
+add_definitions(-DNDEBUG)
+
 execute_process(
     COMMAND ${CMAKE_CXX_COMPILER} --version
     OUTPUT_VARIABLE GPP_VERSION_OUTPUT
