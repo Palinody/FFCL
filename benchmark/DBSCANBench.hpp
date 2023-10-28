@@ -337,7 +337,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
            bench_summary_variance.total_duration);
 }
 
-void run_dbscan_benchmarks_on_point_cloud_sequences() {
+void run_point_cloud_sequences() {
     common::timer::Timer<common::timer::Nanoseconds> timer;
 
     const std::vector<std::size_t>         min_samples_choices = {3, 5, 10};

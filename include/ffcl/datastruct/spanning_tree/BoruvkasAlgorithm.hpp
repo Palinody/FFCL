@@ -232,7 +232,6 @@ template <typename Indexer>
 auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
                                       const CoreDistancesArrayPtr& core_distances,
                                       Forest&                      forest) const {
-    std::cout << "forest.n_components(): " << forest.n_components() << "\n";
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
     auto components_closest_edge = std::map<IndexType, EdgeType>();

@@ -1,4 +1,5 @@
 #include "DBSCANBench.hpp"
+#include "HDBSCANBench.hpp"
 #include "KDTreeBench.hpp"
 #include "KMeansBench.hpp"
 #include "KMedoidsBench.hpp"
@@ -11,7 +12,8 @@ int main() {
     // kmeans::benchmark::bench_mnist();
     // kmedoids::benchmark::bench_mnist();
 
-    dbscan::benchmark::run_dbscan_benchmarks_on_point_cloud_sequences();
+    // dbscan::benchmark::run_point_cloud_sequences();
+    hdbscan::benchmark::run_point_cloud_sequences();
 
     // kdtree::benchmark::run_toy_datasets_benchmarks();
     // kdtree::benchmark::run_radius_search_benchmarks_on_point_cloud_sequences();
