@@ -24,7 +24,7 @@ namespace ffcl {
 template <typename Indexer>
 class BoruvkasAlgorithm {
   public:
-    using IndexType = std::size_t;
+    using IndexType = typename Indexer::IndexType;
     using ValueType = typename Indexer::DataType;
 
     using ComponentType = std::unordered_set<IndexType>;

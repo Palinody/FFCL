@@ -32,6 +32,7 @@ namespace fs = std::filesystem;
 template <typename IndicesIterator, typename SamplesIterator>
 class KDTree {
   public:
+    using IndexType      = typename IndicesIterator::value_type;
     using DataType       = typename SamplesIterator::value_type;
     using KDNodeViewType = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewType;
     using KDNodeViewPtr  = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr;
