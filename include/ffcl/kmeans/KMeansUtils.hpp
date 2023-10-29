@@ -7,13 +7,13 @@ namespace kmeans::utils {
 
 template <typename SamplesIterator>
 std::vector<std::size_t> samples_to_nearest_centroid_indices(
-    const SamplesIterator&                                   samples_first,
-    const SamplesIterator&                                   samples_last,
+    const SamplesIterator&                                   samples_range_first,
+    const SamplesIterator&                                   samples_range_last,
     std::size_t                                              n_features,
     const std::vector<typename SamplesIterator::value_type>& centroids) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples   = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples   = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
 
     // contains the indices from each sample to the nearest centroid
@@ -26,8 +26,8 @@ std::vector<std::size_t> samples_to_nearest_centroid_indices(
 
         for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
             const DataType sample_to_centroid_distance =
-                math::heuristics::auto_distance(samples_first + sample_index * n_features,
-                                                samples_first + sample_index * n_features + n_features,
+                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
+                                                samples_range_first + sample_index * n_features + n_features,
                                                 centroids.begin() + centroid_index * n_features);
 
             if (sample_to_centroid_distance < min_distance) {
@@ -42,13 +42,13 @@ std::vector<std::size_t> samples_to_nearest_centroid_indices(
 
 template <typename SamplesIterator>
 std::vector<typename SamplesIterator::value_type> samples_to_nearest_centroid_distances(
-    const SamplesIterator&                                   samples_first,
-    const SamplesIterator&                                   samples_last,
+    const SamplesIterator&                                   samples_range_first,
+    const SamplesIterator&                                   samples_range_last,
     std::size_t                                              n_features,
     const std::vector<typename SamplesIterator::value_type>& centroids) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples   = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples   = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
 
     // contains the distances from each sample to the nearest centroid
@@ -59,8 +59,8 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_centroid_di
 
         for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
             const auto nearest_candidate =
-                math::heuristics::auto_distance(samples_first + sample_index * n_features,
-                                                samples_first + sample_index * n_features + n_features,
+                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
+                                                samples_range_first + sample_index * n_features + n_features,
                                                 centroids.begin() + centroid_index * n_features);
 
             if (nearest_candidate < min_distance) {
@@ -74,13 +74,13 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_centroid_di
 
 template <typename SamplesIterator>
 std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_centroid_distances(
-    const SamplesIterator&                                   samples_first,
-    const SamplesIterator&                                   samples_last,
+    const SamplesIterator&                                   samples_range_first,
+    const SamplesIterator&                                   samples_range_last,
     std::size_t                                              n_features,
     const std::vector<typename SamplesIterator::value_type>& centroids) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples   = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples   = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
 
     // the vector that will contain the distances from each sample to the nearest centroid
@@ -93,8 +93,8 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_cent
         // iterate over the centroids indices
         for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
             const auto second_nearest_candidate =
-                math::heuristics::auto_distance(samples_first + sample_index * n_features,
-                                                samples_first + sample_index * n_features + n_features,
+                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
+                                                samples_range_first + sample_index * n_features + n_features,
                                                 centroids.begin() + centroid_index * n_features);
 
             if (second_nearest_candidate < first_min_distance) {
@@ -131,14 +131,14 @@ std::vector<std::size_t> compute_cluster_sizes(const IndicesIterator& samples_to
 
 template <typename SamplesIterator, typename IndicesIterator>
 std::vector<typename SamplesIterator::value_type> compute_cluster_positions_sum(
-    const SamplesIterator& samples_first,
-    const SamplesIterator& samples_last,
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
     const IndicesIterator& samples_to_nearest_centroid_indices_first,
     std::size_t            n_centroids,
     std::size_t            n_features) {
     static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Input elements type should be integral.");
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // accumulate the positions of each sample in each cluster
     auto cluster_positions_sum = std::vector<typename SamplesIterator::value_type>(n_centroids * n_features);
@@ -148,7 +148,7 @@ std::vector<typename SamplesIterator::value_type> compute_cluster_positions_sum(
 
         std::transform(cluster_positions_sum.begin() + assigned_centroid_index * n_features,
                        cluster_positions_sum.begin() + assigned_centroid_index * n_features + n_features,
-                       samples_first + sample_index * n_features,
+                       samples_range_first + sample_index * n_features,
                        cluster_positions_sum.begin() + assigned_centroid_index * n_features,
                        std::plus<>());
     }

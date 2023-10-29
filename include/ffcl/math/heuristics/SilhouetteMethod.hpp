@@ -51,16 +51,16 @@ auto get_cluster_sizes(IndicesIterator sample_to_closest_centroid_index_first,
  *
  * @tparam SamplesIterator
  * @tparam IndicesIterator
- * @param sample_first
- * @param sample_last
+ * @param samples_range_first
+ * @param samples_range_last
  * @param sample_to_closest_centroid_index_first
  * @param sample_to_closest_centroid_index_last
  * @param n_features
  * @return std::vector<typename SamplesIterator::value_type>
  */
 template <typename SamplesIterator, typename IndicesIterator>
-auto cohesion(const SamplesIterator& sample_first,
-              const SamplesIterator& sample_last,
+auto cohesion(const SamplesIterator& samples_range_first,
+              const SamplesIterator& samples_range_last,
               const IndicesIterator& sample_to_closest_centroid_index_first,
               const IndicesIterator& sample_to_closest_centroid_index_last,
               std::size_t            n_features) {
@@ -70,7 +70,7 @@ auto cohesion(const SamplesIterator& sample_first,
 
     using FloatType = typename SamplesIterator::value_type;
 
-    const auto n_samples = common::utils::get_n_samples(sample_first, sample_last, n_features);
+    const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     const auto cluster_sizes =
         get_cluster_sizes(sample_to_closest_centroid_index_first, sample_to_closest_centroid_index_last);
@@ -88,9 +88,9 @@ auto cohesion(const SamplesIterator& sample_first,
             if ((centroid_index == other_centroid_index) && (sample_index != other_sample_index)) {
                 // accumulate the squared distances
                 samples_cohesion_values[sample_index] +=
-                    math::heuristics::auto_distance(sample_first + sample_index * n_features,
-                                                    sample_first + sample_index * n_features + n_features,
-                                                    sample_first + other_sample_index * n_features);
+                    math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
+                                                    samples_range_first + sample_index * n_features + n_features,
+                                                    samples_range_first + other_sample_index * n_features);
             }
         }
         // number of samples in the current centroid
@@ -116,16 +116,16 @@ auto cohesion(const SamplesIterator& sample_first,
  *
  * @tparam SamplesIterator
  * @tparam IndicesIterator
- * @param sample_first
- * @param sample_last
+ * @param samples_range_first
+ * @param samples_range_last
  * @param sample_to_closest_centroid_index_first
  * @param sample_to_closest_centroid_index_last
  * @param n_features
  * @return std::vector<typename SamplesIterator::value_type>
  */
 template <typename SamplesIterator, typename IndicesIterator>
-auto separation(const SamplesIterator& sample_first,
-                const SamplesIterator& sample_last,
+auto separation(const SamplesIterator& samples_range_first,
+                const SamplesIterator& samples_range_last,
                 const IndicesIterator& sample_to_closest_centroid_index_first,
                 const IndicesIterator& sample_to_closest_centroid_index_last,
                 std::size_t            n_features) {
@@ -135,7 +135,7 @@ auto separation(const SamplesIterator& sample_first,
 
     using FloatType = typename SamplesIterator::value_type;
 
-    const auto n_samples = common::utils::get_n_samples(sample_first, sample_last, n_features);
+    const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     const auto cluster_sizes =
         get_cluster_sizes(sample_to_closest_centroid_index_first, sample_to_closest_centroid_index_last);
@@ -155,9 +155,9 @@ auto separation(const SamplesIterator& sample_first,
             if (centroid_index != other_centroid_index) {
                 // accumulate the squared distances for the correct centroid index
                 sample_to_other_cluster_samples_distance_mean[other_centroid_index] +=
-                    math::heuristics::auto_distance(sample_first + sample_index * n_features,
-                                                    sample_first + sample_index * n_features + n_features,
-                                                    sample_first + other_sample_index * n_features);
+                    math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
+                                                    samples_range_first + sample_index * n_features + n_features,
+                                                    samples_range_first + other_sample_index * n_features);
             }
         }
         // normalize each cluster mean distance sum by each cluster's number of samples
@@ -192,15 +192,15 @@ auto separation(const SamplesIterator& sample_first,
  *
  * @tparam SamplesIterator
  * @tparam IndicesIterator
- * @param sample_first
- * @param sample_last
+ * @param samples_range_first
+ * @param samples_range_last
  * @param sample_to_closest_centroid_index_first
  * @param sample_to_closest_centroid_index_last
  * @param n_features
  */
 template <typename SamplesIterator, typename IndicesIterator>
-auto silhouette(const SamplesIterator& sample_first,
-                const SamplesIterator& sample_last,
+auto silhouette(const SamplesIterator& samples_range_first,
+                const SamplesIterator& samples_range_last,
                 const IndicesIterator& sample_to_closest_centroid_index_first,
                 const IndicesIterator& sample_to_closest_centroid_index_last,
                 std::size_t            n_features) {
@@ -210,16 +210,16 @@ auto silhouette(const SamplesIterator& sample_first,
 
     using FloatType = typename SamplesIterator::value_type;
 
-    const auto n_samples = common::utils::get_n_samples(sample_first, sample_last, n_features);
+    const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    const auto cohesion_values = cohesion(sample_first,
-                                          sample_last,
+    const auto cohesion_values = cohesion(samples_range_first,
+                                          samples_range_last,
                                           sample_to_closest_centroid_index_first,
                                           sample_to_closest_centroid_index_last,
                                           n_features);
 
-    const auto separation_values = separation(sample_first,
-                                              sample_last,
+    const auto separation_values = separation(samples_range_first,
+                                              samples_range_last,
                                               sample_to_closest_centroid_index_first,
                                               sample_to_closest_centroid_index_last,
                                               n_features);

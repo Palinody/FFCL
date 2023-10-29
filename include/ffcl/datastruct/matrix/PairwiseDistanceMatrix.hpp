@@ -23,8 +23,8 @@ class PairwiseDistanceMatrix {
     using ValueType             = typename SamplesIterator::value_type;
     using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
 
-    PairwiseDistanceMatrix(const SamplesIterator& samples_first,
-                           const SamplesIterator& samples_last,
+    PairwiseDistanceMatrix(const SamplesIterator& samples_range_first,
+                           const SamplesIterator& samples_range_last,
                            std::size_t            n_features);
 
     PairwiseDistanceMatrix(const DatasetDescriptorType& dataset_descriptor);
@@ -40,16 +40,16 @@ class PairwiseDistanceMatrix {
     }
 
   private:
-    auto compute_pairwise_distances_sequential(const SamplesIterator& samples_first,
-                                               const SamplesIterator& samples_last,
+    auto compute_pairwise_distances_sequential(const SamplesIterator& samples_range_first,
+                                               const SamplesIterator& samples_range_last,
                                                std::size_t            n_features);
 
-    auto compute_pairwise_distances_parallel(const SamplesIterator& samples_first,
-                                             const SamplesIterator& samples_last,
+    auto compute_pairwise_distances_parallel(const SamplesIterator& samples_range_first,
+                                             const SamplesIterator& samples_range_last,
                                              std::size_t            n_features);
 
-    auto compute_pairwise_distances(const SamplesIterator& samples_first,
-                                    const SamplesIterator& samples_last,
+    auto compute_pairwise_distances(const SamplesIterator& samples_range_first,
+                                    const SamplesIterator& samples_range_last,
                                     std::size_t            n_features);
 
     auto compute_pairwise_distances(
@@ -61,11 +61,11 @@ class PairwiseDistanceMatrix {
 };
 
 template <typename SamplesIterator>
-PairwiseDistanceMatrix<SamplesIterator>::PairwiseDistanceMatrix(const SamplesIterator& samples_first,
-                                                                const SamplesIterator& samples_last,
+PairwiseDistanceMatrix<SamplesIterator>::PairwiseDistanceMatrix(const SamplesIterator& samples_range_first,
+                                                                const SamplesIterator& samples_range_last,
                                                                 std::size_t            n_features)
-  : n_samples_{common::utils::get_n_samples(samples_first, samples_last, n_features)}
-  , data_{compute_pairwise_distances(samples_first, samples_last, n_features)} {}
+  : n_samples_{common::utils::get_n_samples(samples_range_first, samples_range_last, n_features)}
+  , data_{compute_pairwise_distances(samples_range_first, samples_range_last, n_features)} {}
 
 template <typename SamplesIterator>
 PairwiseDistanceMatrix<SamplesIterator>::PairwiseDistanceMatrix(const DatasetDescriptorType& dataset_descriptor)
@@ -89,10 +89,11 @@ auto PairwiseDistanceMatrix<SamplesIterator>::operator()(std::size_t row_index, 
 }
 
 template <typename SamplesIterator>
-auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_parallel(const SamplesIterator& samples_first,
-                                                                                  const SamplesIterator& samples_last,
-                                                                                  std::size_t            n_features) {
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_parallel(
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
+    std::size_t            n_features) {
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     auto low_triangle_distance_matrix = std::vector<ValueType>(n_samples * (n_samples - 1) / 2);
 
@@ -102,9 +103,9 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_paralle
 
         for (std::size_t column_index = 0; column_index < row_index; ++column_index) {
             low_triangle_distance_matrix[flat_index + column_index] =
-                math::heuristics::auto_distance(samples_first + row_index * n_features,
-                                                samples_first + row_index * n_features + n_features,
-                                                samples_first + column_index * n_features);
+                math::heuristics::auto_distance(samples_range_first + row_index * n_features,
+                                                samples_range_first + row_index * n_features + n_features,
+                                                samples_range_first + column_index * n_features);
         }
     }
     return low_triangle_distance_matrix;
@@ -112,10 +113,10 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_paralle
 
 template <typename SamplesIterator>
 auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_sequential(
-    const SamplesIterator& samples_first,
-    const SamplesIterator& samples_last,
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
     std::size_t            n_features) {
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     auto low_triangle_distance_matrix = std::vector<ValueType>(n_samples * (n_samples - 1) / 2);
 
@@ -124,22 +125,22 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_sequent
 
         for (std::size_t column_index = 0; column_index < row_index; ++column_index) {
             low_triangle_distance_matrix[flat_index + column_index] =
-                math::heuristics::auto_distance(samples_first + row_index * n_features,
-                                                samples_first + row_index * n_features + n_features,
-                                                samples_first + column_index * n_features);
+                math::heuristics::auto_distance(samples_range_first + row_index * n_features,
+                                                samples_range_first + row_index * n_features + n_features,
+                                                samples_range_first + column_index * n_features);
         }
     }
     return low_triangle_distance_matrix;
 }
 
 template <typename SamplesIterator>
-auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances(const SamplesIterator& samples_first,
-                                                                         const SamplesIterator& samples_last,
+auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances(const SamplesIterator& samples_range_first,
+                                                                         const SamplesIterator& samples_range_last,
                                                                          std::size_t            n_features) {
 #if defined(_OPENMP) && THREADS_ENABLED == true
-    return compute_pairwise_distances_parallel(samples_first, samples_last, n_features);
+    return compute_pairwise_distances_parallel(samples_range_first, samples_range_last, n_features);
 #else
-    return compute_pairwise_distances_sequential(samples_first, samples_last, n_features);
+    return compute_pairwise_distances_sequential(samples_range_first, samples_range_last, n_features);
 #endif
 }
 

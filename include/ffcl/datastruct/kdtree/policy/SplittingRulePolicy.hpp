@@ -12,10 +12,10 @@ struct SplittingRulePolicy {
                               ffcl::bbox::IteratorPairType<IndicesIterator>,
                               ffcl::bbox::IteratorPairType<IndicesIterator>,
                               ffcl::bbox::IteratorPairType<IndicesIterator>>
-    operator()(IndicesIterator index_first,
-               IndicesIterator index_last,
-               SamplesIterator samples_first,
-               SamplesIterator samples_last,
+    operator()(IndicesIterator indices_range_first,
+               IndicesIterator indices_range_last,
+               SamplesIterator samples_range_first,
+               SamplesIterator samples_range_last,
                std::size_t     n_features,
                std::size_t     feature_index) const = 0;
 };
@@ -26,10 +26,10 @@ struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, Samp
                       ffcl::bbox::IteratorPairType<IndicesIterator>,
                       ffcl::bbox::IteratorPairType<IndicesIterator>,
                       ffcl::bbox::IteratorPairType<IndicesIterator>>
-    operator()(IndicesIterator index_first,
-               IndicesIterator index_last,
-               SamplesIterator samples_first,
-               SamplesIterator samples_last,
+    operator()(IndicesIterator indices_range_first,
+               IndicesIterator indices_range_last,
+               SamplesIterator samples_range_first,
+               SamplesIterator samples_range_last,
                std::size_t     n_features,
                std::size_t     feature_index) const;
 };
@@ -43,17 +43,17 @@ std::tuple<std::size_t,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>,
            ffcl::bbox::IteratorPairType<IndicesIterator>>
-QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(IndicesIterator index_first,
-                                                                     IndicesIterator index_last,
-                                                                     SamplesIterator samples_first,
-                                                                     SamplesIterator samples_last,
+QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(IndicesIterator indices_range_first,
+                                                                     IndicesIterator indices_range_last,
+                                                                     SamplesIterator samples_range_first,
+                                                                     SamplesIterator samples_range_last,
                                                                      std::size_t     n_features,
                                                                      std::size_t     feature_index) const {
     return kdtree::algorithms::quickselect_median(
-        /**/ index_first,
-        /**/ index_last,
-        /**/ samples_first,
-        /**/ samples_last,
+        /**/ indices_range_first,
+        /**/ indices_range_last,
+        /**/ samples_range_first,
+        /**/ samples_range_last,
         /**/ n_features,
         /**/ feature_index);
 }

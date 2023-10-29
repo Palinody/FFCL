@@ -16,19 +16,19 @@
 namespace math::linear_algebra {
 
 template <typename SamplesIterator>
-auto transpose_sequential(const SamplesIterator& samples_first,
-                          const SamplesIterator& samples_last,
+auto transpose_sequential(const SamplesIterator& samples_range_first,
+                          const SamplesIterator& samples_range_last,
                           std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     std::vector<DataType> transposed(n_samples * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             transposed[feature_index * n_samples + sample_index] =
-                samples_first[sample_index * n_features + feature_index];
+                samples_range_first[sample_index * n_features + feature_index];
         }
     }
     // transposed data, number of samples (transposed), number of features (transposed)
@@ -36,12 +36,12 @@ auto transpose_sequential(const SamplesIterator& samples_first,
 }
 
 template <typename SamplesIterator>
-auto transpose_parallel_openmp(const SamplesIterator& samples_first,
-                               const SamplesIterator& samples_last,
+auto transpose_parallel_openmp(const SamplesIterator& samples_range_first,
+                               const SamplesIterator& samples_range_last,
                                std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     std::vector<DataType> transposed(n_samples * n_features);
     std::size_t           output_n_samples  = n_features;
@@ -55,7 +55,7 @@ auto transpose_parallel_openmp(const SamplesIterator& samples_first,
             // transpose the block
             for (std::size_t i = sample_index; i < sample_index + block_size && i < n_samples; ++i) {
                 for (std::size_t j = feature_index; j < feature_index + block_size && j < n_features; ++j) {
-                    transposed[j * n_samples + i] = samples_first[i * n_features + j];
+                    transposed[j * n_samples + i] = samples_range_first[i * n_features + j];
                 }
             }
         }
@@ -65,11 +65,13 @@ auto transpose_parallel_openmp(const SamplesIterator& samples_first,
 }
 
 template <typename SamplesIterator>
-auto transpose(const SamplesIterator& samples_first, const SamplesIterator& samples_last, std::size_t n_features) {
+auto transpose(const SamplesIterator& samples_range_first,
+               const SamplesIterator& samples_range_last,
+               std::size_t            n_features) {
 #if defined(_OPENMP) && THREADS_ENABLED == true
-    return transpose_parallel_openmp(samples_first, samples_last, n_features);
+    return transpose_parallel_openmp(samples_range_first, samples_range_last, n_features);
 #else
-    return transpose_sequential(samples_first, samples_last, n_features);
+    return transpose_sequential(samples_range_first, samples_range_last, n_features);
 #endif
 }
 

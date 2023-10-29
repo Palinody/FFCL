@@ -35,8 +35,8 @@ class Hamerly {
 
   private:
     struct Buffers {
-        Buffers(const SamplesIterator&       samples_first,
-                const SamplesIterator&       samples_last,
+        Buffers(const SamplesIterator&       samples_range_first,
+                const SamplesIterator&       samples_range_last,
                 std::size_t                  n_features,
                 const std::vector<DataType>& centroids);
 
@@ -137,11 +137,11 @@ void Hamerly<SamplesIterator>::swap_bounds() {
                      samples_to_second_nearest_centroid_distances[sample_index]);
         // first bound test
         if (samples_to_nearest_centroid_distances[sample_index] > upper_bound_comparison) {
-            const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
+            const auto [samples_range_first, samples_range_last, n_features] = dataset_descriptor_;
             // tighten upper bound
             auto upper_bound =
-                math::heuristics::auto_distance(samples_first + sample_index * n_features,
-                                                samples_first + sample_index * n_features + n_features,
+                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
+                                                samples_range_first + sample_index * n_features + n_features,
                                                 centroids_.begin() + assigned_centroid_index * n_features);
 
             const auto previous_assigned_centroid_distance = samples_to_nearest_centroid_distances[sample_index];
@@ -157,10 +157,10 @@ void Hamerly<SamplesIterator>::swap_bounds() {
 
                 for (std::size_t other_centroid_index = 0; other_centroid_index < n_centroids; ++other_centroid_index) {
                     if (other_centroid_index != assigned_centroid_index) {
-                        const auto other_nearest_candidate =
-                            math::heuristics::auto_distance(samples_first + sample_index * n_features,
-                                                            samples_first + sample_index * n_features + n_features,
-                                                            centroids_.begin() + other_centroid_index * n_features);
+                        const auto other_nearest_candidate = math::heuristics::auto_distance(
+                            samples_range_first + sample_index * n_features,
+                            samples_range_first + sample_index * n_features + n_features,
+                            centroids_.begin() + other_centroid_index * n_features);
 
                         // if another center is closer than the current assignment
                         if (other_nearest_candidate < upper_bound) {
@@ -193,14 +193,14 @@ void Hamerly<SamplesIterator>::swap_bounds() {
                     std::transform(
                         cluster_position_sums.begin() + previous_assigned_centroid_index * n_features,
                         cluster_position_sums.begin() + previous_assigned_centroid_index * n_features + n_features,
-                        samples_first + sample_index * n_features,
+                        samples_range_first + sample_index * n_features,
                         cluster_position_sums.begin() + previous_assigned_centroid_index * n_features,
                         std::minus<>());
 
                     // add the current sample to the centroid it is now assigned to
                     std::transform(cluster_position_sums.begin() + assigned_centroid_index * n_features,
                                    cluster_position_sums.begin() + assigned_centroid_index * n_features + n_features,
-                                   samples_first + sample_index * n_features,
+                                   samples_range_first + sample_index * n_features,
                                    cluster_position_sums.begin() + assigned_centroid_index * n_features,
                                    std::plus<>());
 
@@ -285,21 +285,21 @@ auto Hamerly<SamplesIterator>::update_bounds() {
 }
 
 template <typename SamplesIterator>
-Hamerly<SamplesIterator>::Buffers::Buffers(const SamplesIterator&       samples_first,
-                                           const SamplesIterator&       samples_last,
+Hamerly<SamplesIterator>::Buffers::Buffers(const SamplesIterator&       samples_range_first,
+                                           const SamplesIterator&       samples_range_last,
                                            std::size_t                  n_features,
                                            const std::vector<DataType>& centroids)
-  : samples_to_nearest_centroid_indices_{kmeans::utils::samples_to_nearest_centroid_indices(samples_first,
-                                                                                            samples_last,
+  : samples_to_nearest_centroid_indices_{kmeans::utils::samples_to_nearest_centroid_indices(samples_range_first,
+                                                                                            samples_range_last,
                                                                                             n_features,
                                                                                             centroids)}
-  , samples_to_nearest_centroid_distances_{kmeans::utils::samples_to_nearest_centroid_distances(samples_first,
-                                                                                                samples_last,
+  , samples_to_nearest_centroid_distances_{kmeans::utils::samples_to_nearest_centroid_distances(samples_range_first,
+                                                                                                samples_range_last,
                                                                                                 n_features,
                                                                                                 centroids)}
   , samples_to_second_nearest_centroid_distances_{kmeans::utils::samples_to_second_nearest_centroid_distances(
-        samples_first,
-        samples_last,
+        samples_range_first,
+        samples_range_last,
         n_features,
         centroids)}
   , centroid_to_nearest_centroid_distances_{kmeans::utils::nearest_neighbor_distances(centroids.begin(),
@@ -308,8 +308,8 @@ Hamerly<SamplesIterator>::Buffers::Buffers(const SamplesIterator&       samples_
   , cluster_sizes_{kmeans::utils::compute_cluster_sizes(samples_to_nearest_centroid_indices_.begin(),
                                                         samples_to_nearest_centroid_indices_.end(),
                                                         centroids.size() / n_features)}
-  , cluster_position_sums_{kmeans::utils::compute_cluster_positions_sum(samples_first,
-                                                                        samples_last,
+  , cluster_position_sums_{kmeans::utils::compute_cluster_positions_sum(samples_range_first,
+                                                                        samples_range_last,
                                                                         samples_to_nearest_centroid_indices_.begin(),
                                                                         centroids.size() / n_features,
                                                                         n_features)}

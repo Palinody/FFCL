@@ -435,17 +435,17 @@ class KDTree {
                                                           NearestNeighborsBufferType& nearest_neighbors_buffer,
                                                           KDNodeViewPtr               kdnode) const;
 
+    // Options used to configure the indexing structure.
+    Options options_;
     // Iterator pointing to the first element of the dataset.
-    SamplesIterator samples_first_;
+    SamplesIterator samples_range_first_;
     // Iterator pointing to the last element of the dataset.
-    SamplesIterator samples_last_;
+    SamplesIterator samples_range_last_;
     // The number of features in the dataset, used to represent data as a vectorized 2D array.
     std::size_t n_features_;
     // A hyperrectangle (bounding box) specifying the value bounds of the subset of data represented by the index array
     // from the entire dataset. This hyperrectangle is defined with respect to each dimension.
     HyperRangeType kd_bounding_box_;
-    // Options used to configure the indexing structure.
-    Options options_;
     // The root node of the indexing structure.
     KDNodeViewPtr root_;
 };
@@ -457,21 +457,21 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator index_first,
                                                  SamplesIterator samples_last,
                                                  std::size_t     n_features,
                                                  const Options&  options)
-  : samples_first_{samples_first}
-  , samples_last_{samples_last}
+  : options_{options}
+  , samples_range_first_{samples_first}
+  , samples_range_last_{samples_last}
   , n_features_{n_features}
   , kd_bounding_box_{ffcl::bbox::make_kd_bounding_box(index_first,
                                                       index_last,
-                                                      samples_first_,
-                                                      samples_last_,
+                                                      samples_range_first_,
+                                                      samples_range_last_,
                                                       n_features_)}
-  , options_{options}
   , root_{build(index_first,
                 index_last,
                 (*options_.axis_selection_policy_ptr_)(index_first,
                                                        index_last,
-                                                       samples_first_,
-                                                       samples_last_,
+                                                       samples_range_first_,
+                                                       samples_range_last_,
                                                        n_features_,
                                                        0,
                                                        kd_bounding_box_),
@@ -480,7 +480,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator index_first,
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::n_samples() const {
-    return common::utils::get_n_samples(samples_first_, samples_last_, n_features_);
+    return common::utils::get_n_samples(samples_range_first_, samples_range_last_, n_features_);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -504,30 +504,31 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
         cut_feature_index = (*options_.axis_selection_policy_ptr_)(
             /**/ index_first,
             /**/ index_last,
-            /**/ samples_first_,
-            /**/ samples_last_,
+            /**/ samples_range_first_,
+            /**/ samples_range_last_,
             /**/ n_features_,
             /**/ depth,
             /**/ kd_bounding_box);
 
-        auto [cut_index, left_index_range, cut_index_range, right_index_range] = (*options_.splitting_rule_policy_ptr_)(
-            /**/ index_first,
-            /**/ index_last,
-            /**/ samples_first_,
-            /**/ samples_last_,
-            /**/ n_features_,
-            /**/ cut_feature_index);
+        auto [cut_index, left_indices_range, cut_indices_range, right_indices_range] =
+            (*options_.splitting_rule_policy_ptr_)(
+                /**/ index_first,
+                /**/ index_last,
+                /**/ samples_range_first_,
+                /**/ samples_range_last_,
+                /**/ n_features_,
+                /**/ cut_feature_index);
 
         kdnode =
-            std::make_shared<KDNodeViewType>(cut_index_range, cut_feature_index, kd_bounding_box[cut_feature_index]);
+            std::make_shared<KDNodeViewType>(cut_indices_range, cut_feature_index, kd_bounding_box[cut_feature_index]);
 
-        const auto cut_feature_value = samples_first_[*cut_index_range.first * n_features_ + cut_feature_index];
+        const auto cut_feature_value = samples_range_first_[*cut_indices_range.first * n_features_ + cut_feature_index];
         {
             // set the right bound of the left child to the cut value
             kd_bounding_box[cut_feature_index].second = cut_feature_value;
 
-            kdnode->left_ = build(/**/ left_index_range.first,
-                                  /**/ left_index_range.second,
+            kdnode->left_ = build(/**/ left_indices_range.first,
+                                  /**/ left_indices_range.second,
                                   /**/ cut_feature_index,
                                   /**/ depth + 1,
                                   /**/ kd_bounding_box);
@@ -541,8 +542,8 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
             // set the left bound of the right child to the cut value
             kd_bounding_box[cut_feature_index].first = cut_feature_value;
 
-            kdnode->right_ = build(/**/ right_index_range.first,
-                                   /**/ right_index_range.second,
+            kdnode->right_ = build(/**/ right_indices_range.first,
+                                   /**/ right_indices_range.second,
                                    /**/ cut_feature_index,
                                    /**/ depth + 1,
                                    /**/ kd_bounding_box);
@@ -601,10 +602,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        DataType&     current_nearest_neighbor_distance,
                                                                        KDNodeViewPtr kdnode) const {
     // update the current neighbor index and distance. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::nearest_neighbor(kdnode->indices_iterator_pair_.first,
-                                kdnode->indices_iterator_pair_.second,
-                                samples_first_,
-                                samples_last_,
+    ffcl::knn::nearest_neighbor(kdnode->indices_range_.first,
+                                kdnode->indices_range_.second,
+                                samples_range_first_,
+                                samples_range_last_,
                                 n_features_,
                                 query_index,
                                 current_nearest_neighbor_index,
@@ -612,11 +613,11 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
+        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value
@@ -648,11 +649,13 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto query_split_value =
+            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current nearest neighbor distance, there could be a nearest neighbor
         // to the other side of the hyperrectangle since the values that are equal to the pivot are put to the right
         bool visit_sibling =
@@ -730,21 +733,21 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors(kdnode->indices_iterator_pair_.first,
-                                   kdnode->indices_iterator_pair_.second,
-                                   samples_first_,
-                                   samples_last_,
+    ffcl::knn::k_nearest_neighbors(kdnode->indices_range_.first,
+                                   kdnode->indices_range_.second,
+                                   samples_range_first_,
+                                   samples_range_last_,
                                    n_features_,
                                    query_index,
                                    nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
+        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value
@@ -774,11 +777,13 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto query_split_value =
+            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a nearest
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
@@ -848,10 +853,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        KDNodeViewPtr   kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    ffcl::knn::increment_neighbors_count_in_radius(kdnode->indices_iterator_pair_.first,
-                                                   kdnode->indices_iterator_pair_.second,
-                                                   samples_first_,
-                                                   samples_last_,
+    ffcl::knn::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
+                                                   kdnode->indices_range_.second,
+                                                   samples_range_first_,
+                                                   samples_range_last_,
                                                    n_features_,
                                                    query_index,
                                                    radius,
@@ -859,11 +864,11 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
+        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value
@@ -894,11 +899,13 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto query_split_value =
+            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the radius of the search, there could be a nearest
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
@@ -983,10 +990,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors_in_radius(kdnode->indices_iterator_pair_.first,
-                                             kdnode->indices_iterator_pair_.second,
-                                             samples_first_,
-                                             samples_last_,
+    ffcl::knn::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
+                                             kdnode->indices_range_.second,
+                                             samples_range_first_,
+                                             samples_range_last_,
                                              n_features_,
                                              query_index,
                                              radius,
@@ -994,11 +1001,11 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
+        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value
@@ -1031,11 +1038,13 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto query_split_value =
+            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a nearest
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
@@ -1067,8 +1076,8 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_i
     std::size_t neighbors_count = 0;
 
     const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
-        /**/ samples_first_ + query_index * n_features_,
-        /**/ samples_first_ + query_index * n_features_ + n_features_,
+        /**/ samples_range_first_ + query_index * n_features_,
+        /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
     inner_range_count_around_query_index(query_index, translated_kd_bounding_box, neighbors_count);
@@ -1109,10 +1118,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        KDNodeViewPtr         kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    ffcl::knn::increment_neighbors_count_in_hyper_range(kdnode->indices_iterator_pair_.first,
-                                                        kdnode->indices_iterator_pair_.second,
-                                                        samples_first_,
-                                                        samples_last_,
+    ffcl::knn::increment_neighbors_count_in_hyper_range(kdnode->indices_range_.first,
+                                                        kdnode->indices_range_.second,
+                                                        samples_range_first_,
+                                                        samples_range_last_,
                                                         n_features_,
                                                         query_index,
                                                         kd_bounding_box,
@@ -1120,11 +1129,11 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
+        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value
@@ -1155,11 +1164,13 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto query_split_value =
+            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to size of the bounding box divided by 2 along the current cut dimension
         // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
         // hyperrectangle since the values that are equal to the pivot are put to the right
@@ -1199,8 +1210,8 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_range_search_around_quer
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
     const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
-        /**/ samples_first_ + query_index * n_features_,
-        /**/ samples_first_ + query_index * n_features_ + n_features_,
+        /**/ samples_range_first_ + query_index * n_features_,
+        /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
     inner_range_search_around_query_index(query_index, translated_kd_bounding_box, nearest_neighbors_buffer);
@@ -1211,8 +1222,8 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
     std::size_t           query_index,
     const HyperRangeType& kd_bounding_box) const {
     const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
-        /**/ samples_first_ + query_index * n_features_,
-        /**/ samples_first_ + query_index * n_features_ + n_features_,
+        /**/ samples_range_first_ + query_index * n_features_,
+        /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
     knn::NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer;
@@ -1258,10 +1269,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_iterator_pair_.first,
-                                                  kdnode->indices_iterator_pair_.second,
-                                                  samples_first_,
-                                                  samples_last_,
+    ffcl::knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
+                                                  kdnode->indices_range_.second,
+                                                  samples_range_first_,
+                                                  samples_range_last_,
                                                   n_features_,
                                                   query_index,
                                                   kd_bounding_box,
@@ -1269,11 +1280,11 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode->cut_feature_index_];
+        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
 
         // traverse either the left or right child node depending on where the target sample is located relatively to
         // the cut value
@@ -1306,11 +1317,13 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = samples_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto query_split_value =
+            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to size of the bounding box divided by 2 along the current cut dimension
         // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
         // hyperrectangle since the values that are equal to the pivot are put to the right
@@ -1391,10 +1404,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
                                                                        DataType&     current_nearest_neighbor_distance,
                                                                        KDNodeViewPtr kdnode) const {
     // update the current neighbor index and distance. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::nearest_neighbor(kdnode->indices_iterator_pair_.first,
-                                kdnode->indices_iterator_pair_.second,
-                                samples_first_,
-                                samples_last_,
+    ffcl::knn::nearest_neighbor(kdnode->indices_range_.first,
+                                kdnode->indices_range_.second,
+                                samples_range_first_,
+                                samples_range_last_,
                                 n_features_,
                                 query_feature_first,
                                 query_feature_last,
@@ -1403,9 +1416,9 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
 
@@ -1442,9 +1455,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current nearest neighbor distance, there could be a nearest neighbor
@@ -1532,10 +1546,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors(kdnode->indices_iterator_pair_.first,
-                                   kdnode->indices_iterator_pair_.second,
-                                   samples_first_,
-                                   samples_last_,
+    ffcl::knn::k_nearest_neighbors(kdnode->indices_range_.first,
+                                   kdnode->indices_range_.second,
+                                   samples_range_first_,
+                                   samples_range_last_,
                                    n_features_,
                                    query_feature_first,
                                    query_feature_last,
@@ -1544,9 +1558,9 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
 
@@ -1581,9 +1595,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a nearest
@@ -1663,10 +1678,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
                                                                        KDNodeViewPtr   kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    ffcl::knn::increment_neighbors_count_in_radius(kdnode->indices_iterator_pair_.first,
-                                                   kdnode->indices_iterator_pair_.second,
-                                                   samples_first_,
-                                                   samples_last_,
+    ffcl::knn::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
+                                                   kdnode->indices_range_.second,
+                                                   samples_range_first_,
+                                                   samples_range_last_,
                                                    n_features_,
                                                    query_feature_first,
                                                    query_feature_last,
@@ -1675,9 +1690,9 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
 
@@ -1713,9 +1728,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the radius of the search, there could be a nearest
@@ -1807,10 +1823,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors_in_radius(kdnode->indices_iterator_pair_.first,
-                                             kdnode->indices_iterator_pair_.second,
-                                             samples_first_,
-                                             samples_last_,
+    ffcl::knn::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
+                                             kdnode->indices_range_.second,
+                                             samples_range_first_,
+                                             samples_range_last_,
                                              n_features_,
                                              query_feature_first,
                                              query_feature_last,
@@ -1819,9 +1835,9 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
 
@@ -1859,9 +1875,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a nearest
@@ -1942,10 +1959,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
                                                                        KDNodeViewPtr         kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    ffcl::knn::increment_neighbors_count_in_hyper_range(kdnode->indices_iterator_pair_.first,
-                                                        kdnode->indices_iterator_pair_.second,
-                                                        samples_first_,
-                                                        samples_last_,
+    ffcl::knn::increment_neighbors_count_in_hyper_range(kdnode->indices_range_.first,
+                                                        kdnode->indices_range_.second,
+                                                        samples_range_first_,
+                                                        samples_range_last_,
                                                         n_features_,
                                                         query_feature_first,
                                                         query_feature_last,
@@ -1954,9 +1971,9 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
 
@@ -1992,9 +2009,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to size of the bounding box divided by 2 along the current cut dimension
@@ -2100,10 +2118,10 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_iterator_pair_.first,
-                                                  kdnode->indices_iterator_pair_.second,
-                                                  samples_first_,
-                                                  samples_last_,
+    ffcl::knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
+                                                  kdnode->indices_range_.second,
+                                                  samples_range_first_,
+                                                  samples_range_last_,
                                                   n_features_,
                                                   query_feature_first,
                                                   query_feature_last,
@@ -2112,9 +2130,9 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
+        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
 
@@ -2152,9 +2170,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     // if kdnode has a parent
     if (kdnode_parent) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_iterator_pair_.first[0];
+        const auto pivot_index = kdnode_parent->indices_range_.first[0];
         // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
+        const auto pivot_split_value =
+            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
         // get the value of the query according to the split dimension
         const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
         // if the axiswise distance is equal to size of the bounding box divided by 2 along the current cut dimension
@@ -2196,7 +2215,7 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const KDNodeViewPtr&   
         writer.Int64(kdnode->cut_feature_index_);
 
         writer.String("points");
-        kdnode->serialize(writer, samples_first_, samples_last_, n_features_);
+        kdnode->serialize(writer, samples_range_first_, samples_range_last_, n_features_);
 
         // continue the recursion if the current node is not leaf
         if (!kdnode->is_leaf()) {
@@ -2227,7 +2246,7 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepat
     writer.StartObject();
     {
         writer.String("n_samples");
-        writer.Int64(common::utils::get_n_samples(samples_first_, samples_last_, n_features_));
+        writer.Int64(common::utils::get_n_samples(samples_range_first_, samples_range_last_, n_features_));
 
         writer.String("n_features");
         writer.Int64(n_features_);

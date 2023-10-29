@@ -33,8 +33,8 @@ class Lloyd {
 
   private:
     struct Buffers {
-        Buffers(const SamplesIterator&       samples_first,
-                const SamplesIterator&       samples_last,
+        Buffers(const SamplesIterator&       samples_range_first,
+                const SamplesIterator&       samples_range_last,
                 std::size_t                  n_features,
                 const std::vector<DataType>& centroids);
 
@@ -152,32 +152,32 @@ typename SamplesIterator::value_type Lloyd<SamplesIterator>::update_buffers() {
 
 template <typename SamplesIterator>
 void Lloyd<SamplesIterator>::update_clusters() {
-    const auto [samples_first, samples_last, n_features] = dataset_descriptor_;
-    const std::size_t n_centroids                        = centroids_.size() / n_features;
+    const auto [samples_range_first, samples_range_last, n_features] = dataset_descriptor_;
+    const std::size_t n_centroids                                    = centroids_.size() / n_features;
 
     buffers_ptr_->cluster_sizes_ =
         kmeans::utils::compute_cluster_sizes(buffers_ptr_->samples_to_nearest_centroid_indices_.begin(),
                                              buffers_ptr_->samples_to_nearest_centroid_indices_.end(),
                                              n_centroids);
     buffers_ptr_->cluster_position_sums_ =
-        kmeans::utils::compute_cluster_positions_sum(samples_first,
-                                                     samples_last,
+        kmeans::utils::compute_cluster_positions_sum(samples_range_first,
+                                                     samples_range_last,
                                                      buffers_ptr_->samples_to_nearest_centroid_indices_.begin(),
                                                      n_centroids,
                                                      n_features);
 }
 
 template <typename SamplesIterator>
-Lloyd<SamplesIterator>::Buffers::Buffers(const SamplesIterator&       samples_first,
-                                         const SamplesIterator&       samples_last,
+Lloyd<SamplesIterator>::Buffers::Buffers(const SamplesIterator&       samples_range_first,
+                                         const SamplesIterator&       samples_range_last,
                                          std::size_t                  n_features,
                                          const std::vector<DataType>& centroids)
-  : samples_to_nearest_centroid_indices_{kmeans::utils::samples_to_nearest_centroid_indices(samples_first,
-                                                                                            samples_last,
+  : samples_to_nearest_centroid_indices_{kmeans::utils::samples_to_nearest_centroid_indices(samples_range_first,
+                                                                                            samples_range_last,
                                                                                             n_features,
                                                                                             centroids)}
-  , samples_to_nearest_centroid_distances_{kmeans::utils::samples_to_nearest_centroid_distances(samples_first,
-                                                                                                samples_last,
+  , samples_to_nearest_centroid_distances_{kmeans::utils::samples_to_nearest_centroid_distances(samples_range_first,
+                                                                                                samples_range_last,
                                                                                                 n_features,
                                                                                                 centroids)}
   , cluster_sizes_{std::vector<std::size_t>(centroids.size() / n_features)}

@@ -22,13 +22,13 @@ template <typename SamplesIterator>
 using HyperRangeType = std::vector<RangeType<SamplesIterator>>;
 
 template <typename SamplesIterator>
-auto make_1d_bounding_box(const SamplesIterator& samples_first,
-                          const SamplesIterator& samples_last,
+auto make_1d_bounding_box(const SamplesIterator& samples_range_first,
+                          const SamplesIterator& samples_range_last,
                           std::size_t            n_features,
                           ssize_t                feature_index) {
     using DataType = DataType<SamplesIterator>;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     auto bounding_box_1d =
         RangeType<SamplesIterator>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest());
@@ -36,7 +36,7 @@ auto make_1d_bounding_box(const SamplesIterator& samples_first,
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // a candidate for being a min, max or min-max compared to the current min and max according to the current
         // feature_index
-        const auto min_max_feature_candidate = samples_first[sample_index * n_features + feature_index];
+        const auto min_max_feature_candidate = samples_range_first[sample_index * n_features + feature_index];
 
         if (min_max_feature_candidate < bounding_box_1d.first) {
             bounding_box_1d.first = min_max_feature_candidate;
@@ -49,17 +49,17 @@ auto make_1d_bounding_box(const SamplesIterator& samples_first,
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-auto make_1d_bounding_box(const IndicesIterator& index_first,
-                          const IndicesIterator& index_last,
-                          const SamplesIterator& samples_first,
-                          const SamplesIterator& samples_last,
+auto make_1d_bounding_box(const IndicesIterator& indices_range_first,
+                          const IndicesIterator& indices_range_last,
+                          const SamplesIterator& samples_range_first,
+                          const SamplesIterator& samples_range_last,
                           std::size_t            n_features,
                           ssize_t                feature_index) {
     using DataType = DataType<SamplesIterator>;
 
-    common::utils::ignore_parameters(samples_last);
+    common::utils::ignore_parameters(samples_range_last);
 
-    const std::size_t n_samples = std::distance(index_first, index_last);
+    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
     auto bounding_box_1d =
         RangeType<SamplesIterator>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest());
@@ -67,7 +67,8 @@ auto make_1d_bounding_box(const IndicesIterator& index_first,
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // a candidate for being a min, max or min-max compared to the current min and max according to the current
         // feature_index
-        const auto min_max_feature_candidate = samples_first[index_first[sample_index] * n_features + feature_index];
+        const auto min_max_feature_candidate =
+            samples_range_first[indices_range_first[sample_index] * n_features + feature_index];
 
         if (min_max_feature_candidate < bounding_box_1d.first) {
             bounding_box_1d.first = min_max_feature_candidate;
@@ -80,12 +81,12 @@ auto make_1d_bounding_box(const IndicesIterator& index_first,
 }
 
 template <typename SamplesIterator>
-auto make_kd_bounding_box(const SamplesIterator& samples_first,
-                          const SamplesIterator& samples_last,
+auto make_kd_bounding_box(const SamplesIterator& samples_range_first,
+                          const SamplesIterator& samples_range_last,
                           std::size_t            n_features) {
     using DataType = DataType<SamplesIterator>;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // min max elements per feature vector
     auto kd_bounding_box = HyperRangeType<SamplesIterator>(
@@ -96,7 +97,7 @@ auto make_kd_bounding_box(const SamplesIterator& samples_first,
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             // a candidate for being a min, max or min-max compared to the current min and max according to the current
             // feature_index
-            const auto min_max_feature_candidate = samples_first[sample_index * n_features + feature_index];
+            const auto min_max_feature_candidate = samples_range_first[sample_index * n_features + feature_index];
 
             if (min_max_feature_candidate < kd_bounding_box[feature_index].first) {
                 kd_bounding_box[feature_index].first = min_max_feature_candidate;
@@ -110,16 +111,16 @@ auto make_kd_bounding_box(const SamplesIterator& samples_first,
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-auto make_kd_bounding_box(const IndicesIterator& index_first,
-                          const IndicesIterator& index_last,
-                          const SamplesIterator& samples_first,
-                          const SamplesIterator& samples_last,
+auto make_kd_bounding_box(const IndicesIterator& indices_range_first,
+                          const IndicesIterator& indices_range_last,
+                          const SamplesIterator& samples_range_first,
+                          const SamplesIterator& samples_range_last,
                           std::size_t            n_features) {
     using DataType = DataType<SamplesIterator>;
 
-    common::utils::ignore_parameters(samples_last);
+    common::utils::ignore_parameters(samples_range_last);
 
-    const std::size_t n_samples = std::distance(index_first, index_last);
+    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
     // min max elements per feature vector
     auto kd_bounding_box = HyperRangeType<SamplesIterator>(
@@ -131,7 +132,7 @@ auto make_kd_bounding_box(const IndicesIterator& index_first,
             // a candidate for being a min, max or min-max compared to the current min and max according to the current
             // feature_index
             const auto min_max_feature_candidate =
-                samples_first[index_first[sample_index] * n_features + feature_index];
+                samples_range_first[indices_range_first[sample_index] * n_features + feature_index];
 
             if (min_max_feature_candidate < kd_bounding_box[feature_index].first) {
                 kd_bounding_box[feature_index].first = min_max_feature_candidate;

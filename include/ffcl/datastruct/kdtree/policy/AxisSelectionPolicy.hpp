@@ -11,10 +11,10 @@ namespace kdtree::policy {
 template <typename IndicesIterator, typename SamplesIterator>
 class AxisSelectionPolicy {
   public:
-    virtual std::size_t operator()(IndicesIterator                              index_first,
-                                   IndicesIterator                              index_last,
-                                   SamplesIterator                              samples_first,
-                                   SamplesIterator                              samples_last,
+    virtual std::size_t operator()(IndicesIterator                              indices_range_first,
+                                   IndicesIterator                              indices_range_last,
+                                   SamplesIterator                              samples_range_first,
+                                   SamplesIterator                              samples_range_last,
                                    std::size_t                                  n_features,
                                    ssize_t                                      depth,
                                    ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const = 0;
@@ -35,10 +35,10 @@ class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, Sample
         return *this;
     }
 
-    std::size_t operator()(IndicesIterator                              index_first,
-                           IndicesIterator                              index_last,
-                           SamplesIterator                              samples_first,
-                           SamplesIterator                              samples_last,
+    std::size_t operator()(IndicesIterator                              indices_range_first,
+                           IndicesIterator                              indices_range_last,
+                           SamplesIterator                              samples_range_first,
+                           SamplesIterator                              samples_range_last,
                            std::size_t                                  n_features,
                            ssize_t                                      depth,
                            ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const;
@@ -53,8 +53,8 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
   public:
     using DataType = typename SamplesIterator::value_type;
 
-    constexpr HighestVarianceBuild& sampling_proportion(double sampling_proportion) {
-        sampling_proportion_ = sampling_proportion;
+    constexpr HighestVarianceBuild& sampling_rate(double sampling_rate) {
+        sampling_rate_ = sampling_rate;
         return *this;
     }
 
@@ -68,10 +68,10 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
         return *this;
     }
 
-    std::size_t operator()(IndicesIterator                              index_first,
-                           IndicesIterator                              index_last,
-                           SamplesIterator                              samples_first,
-                           SamplesIterator                              samples_last,
+    std::size_t operator()(IndicesIterator                              indices_range_first,
+                           IndicesIterator                              indices_range_last,
+                           SamplesIterator                              samples_range_first,
+                           SamplesIterator                              samples_range_last,
                            std::size_t                                  n_features,
                            ssize_t                                      depth,
                            ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const;
@@ -80,7 +80,7 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
     // contains the sequence of feature indices of interest
     std::vector<std::size_t> feature_mask_;
     // default sampling proportion value. Range: [0, 1]
-    double sampling_proportion_ = 0.1;
+    double sampling_rate_ = 0.1;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -98,10 +98,10 @@ class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIt
         return *this;
     }
 
-    std::size_t operator()(IndicesIterator                              index_first,
-                           IndicesIterator                              index_last,
-                           SamplesIterator                              samples_first,
-                           SamplesIterator                              samples_last,
+    std::size_t operator()(IndicesIterator                              indices_range_first,
+                           IndicesIterator                              indices_range_last,
+                           SamplesIterator                              samples_range_first,
+                           SamplesIterator                              samples_range_last,
                            std::size_t                                  n_features,
                            ssize_t                                      depth,
                            ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const;
@@ -117,14 +117,15 @@ namespace kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
-    IndicesIterator                              index_first,
-    IndicesIterator                              index_last,
-    SamplesIterator                              samples_first,
-    SamplesIterator                              samples_last,
+    IndicesIterator                              indices_range_first,
+    IndicesIterator                              indices_range_last,
+    SamplesIterator                              samples_range_first,
+    SamplesIterator                              samples_range_last,
     std::size_t                                  n_features,
     ssize_t                                      depth,
     ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const {
-    common::utils::ignore_parameters(index_first, index_last, samples_first, samples_last, kd_bounding_box);
+    common::utils::ignore_parameters(
+        indices_range_first, indices_range_last, samples_range_first, samples_range_last, kd_bounding_box);
     if (feature_mask_.empty()) {
         // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
         // select the cut_feature_index according to the one with the most variance
@@ -136,10 +137,10 @@ std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
-    IndicesIterator                              index_first,
-    IndicesIterator                              index_last,
-    SamplesIterator                              samples_first,
-    SamplesIterator                              samples_last,
+    IndicesIterator                              indices_range_first,
+    IndicesIterator                              indices_range_last,
+    SamplesIterator                              samples_range_first,
+    SamplesIterator                              samples_range_last,
     std::size_t                                  n_features,
     ssize_t                                      depth,
     ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const {
@@ -148,33 +149,34 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most variance
         return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator>(
-            /**/ index_first,
-            /**/ index_last,
-            /**/ samples_first,
-            /**/ samples_last,
+            /**/ indices_range_first,
+            /**/ indices_range_last,
+            /**/ samples_range_first,
+            /**/ samples_range_last,
             /**/ n_features,
-            /**/ sampling_proportion_);
+            /**/ sampling_rate_);
     }
     return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator>(
-        /**/ index_first,
-        /**/ index_last,
-        /**/ samples_first,
-        /**/ samples_last,
+        /**/ indices_range_first,
+        /**/ indices_range_last,
+        /**/ samples_range_first,
+        /**/ samples_range_last,
         /**/ n_features,
-        /**/ sampling_proportion_,
+        /**/ sampling_rate_,
         /**/ feature_mask_);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
-    IndicesIterator                              index_first,
-    IndicesIterator                              index_last,
-    SamplesIterator                              samples_first,
-    SamplesIterator                              samples_last,
+    IndicesIterator                              indices_range_first,
+    IndicesIterator                              indices_range_last,
+    SamplesIterator                              samples_range_first,
+    SamplesIterator                              samples_range_last,
     std::size_t                                  n_features,
     ssize_t                                      depth,
     ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const {
-    common::utils::ignore_parameters(index_first, index_last, samples_first, samples_last, n_features, depth);
+    common::utils::ignore_parameters(
+        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, depth);
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most spread (min-max values)

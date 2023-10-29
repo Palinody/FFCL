@@ -70,53 +70,42 @@ constexpr auto division(const T& numerator, const U& denominator, const U& defau
     return numerator / denominator;
 }
 
-template <typename OutputContainer, typename Iterator>
-OutputContainer abs_distances(const Iterator& data_first, const Iterator& data_last, const Iterator& other_first) {
-    std::size_t n_elements = std::distance(data_first, data_last);
-
-    auto abs_distances_values = OutputContainer(n_elements);
-
-    for (std::size_t n = 0; n < n_elements; ++n) {
-        abs_distances_values[n] = std::abs(data_first[n] - other_first[n]);
-    }
-    return abs_distances_values;
-}
-
-template <typename TargetType, typename Iterator>
-std::vector<TargetType> to_type(const Iterator& data_first, const Iterator& data_last) {
-    using InputType = typename std::iterator_traits<Iterator>::value_type;
+template <typename TargetType, typename DataIterator>
+std::vector<TargetType> to_type(const DataIterator& data_range_first, const DataIterator& data_range_last) {
+    using InputType = typename std::iterator_traits<DataIterator>::value_type;
 
     if constexpr (std::is_same_v<InputType, TargetType>) {
         // If InputType is already TargetType, return a copy of the input range
-        return std::vector<TargetType>(data_first, data_last);
+        return std::vector<TargetType>(data_range_first, data_range_last);
     }
     // Input is not of type TargetType, convert to TargetType and return the result
-    auto result = std::vector<TargetType>(std::distance(data_first, data_last));
-    std::transform(data_first, data_last, result.begin(), [](const auto& x) { return static_cast<TargetType>(x); });
+    auto result = std::vector<TargetType>(std::distance(data_range_first, data_range_last));
+    std::transform(
+        data_range_first, data_range_last, result.begin(), [](const auto& x) { return static_cast<TargetType>(x); });
     return result;
 }
 
-template <typename Iterator>
+template <typename DataIterator>
 bool are_containers_equal(
-    Iterator                      first1,
-    Iterator                      last1,
-    Iterator                      first2,
-    typename Iterator::value_type tolerance = std::numeric_limits<typename Iterator::value_type>::epsilon()) {
-    using InputType = typename Iterator::value_type;
-    while (first1 != last1) {
+    DataIterator                      left_data_range_first,
+    DataIterator                      left_data_range_last,
+    DataIterator                      right_data_range_first,
+    typename DataIterator::value_type tolerance = std::numeric_limits<typename DataIterator::value_type>::epsilon()) {
+    using InputType = typename DataIterator::value_type;
+    while (left_data_range_first != left_data_range_last) {
         if constexpr (std::is_integral_v<InputType>) {
-            if (*first1 != *first2) {
+            if (*left_data_range_first != *right_data_range_first) {
                 return false;
             }
         } else if constexpr (std::is_floating_point_v<InputType>) {
-            if (std::abs(*first1 - *first2) > tolerance) {
+            if (std::abs(*left_data_range_first - *right_data_range_first) > tolerance) {
                 return false;
             }
         } else {
             static_assert(std::is_integral_v<InputType> || std::is_floating_point_v<InputType>, "Unsupported type");
         }
-        ++first1;
-        ++first2;
+        ++left_data_range_first;
+        ++right_data_range_first;
     }
     ignore_parameters(tolerance);
     return true;
@@ -124,38 +113,43 @@ bool are_containers_equal(
 
 template <typename Container>
 bool are_containers_equal(
-    const Container&                      first,
-    const Container&                      second,
+    const Container&                      left_container,
+    const Container&                      right_container,
     const typename Container::value_type& tolerance = std::numeric_limits<typename Container::value_type>::epsilon()) {
-    if (first.size() != second.size()) {
+    if (left_container.size() != right_container.size()) {
         ignore_parameters(tolerance);
         return false;
     }
-    return are_containers_equal(first.begin(), first.end(), second.begin(), tolerance);
+    return are_containers_equal(left_container.begin(), left_container.end(), right_container.begin(), tolerance);
 }
 
-template <typename Iterator1, typename Iterator2>
-std::size_t count_matches(Iterator1 first1, Iterator1 last1, Iterator2 first2) {
+template <typename LeftDataIterator, typename RightDataIterator>
+std::size_t count_matches(LeftDataIterator  left_data_range_first,
+                          LeftDataIterator  left_data_range_last,
+                          RightDataIterator right_data_range_first) {
     std::size_t count = 0;
 
-    while (first1 != last1) {
-        if (*(first1++) == *(first2++)) {
+    while (left_data_range_first != left_data_range_last) {
+        if (*(left_data_range_first++) == *(right_data_range_first++)) {
             ++count;
         }
     }
     return count;
 }
 
-template <typename Iterator1, typename Iterator2, typename T>
-std::size_t count_matches_for_value(Iterator1 first1, Iterator1 last1, Iterator2 first2, const T& value) {
+template <typename LeftDataIterator, typename RightDataIterator, typename T>
+std::size_t count_matches_for_value(LeftDataIterator  left_data_range_first,
+                                    LeftDataIterator  left_data_range_last,
+                                    RightDataIterator right_data_range_first,
+                                    const T&          value) {
     std::size_t count = 0;
 
-    while (first1 != last1) {
-        if (*first2 == value && *first1 == *first2) {
+    while (left_data_range_first != left_data_range_last) {
+        if (*right_data_range_first == value && *left_data_range_first == *right_data_range_first) {
             ++count;
         }
-        ++first1;
-        ++first2;
+        ++left_data_range_first;
+        ++right_data_range_first;
     }
     return count;
 }
@@ -199,88 +193,80 @@ InputContainer remap_ranges_from_indices(const IndicesContainer& indices,
     return swapped;
 }
 
-template <typename Iterator>
-std::size_t get_n_samples(const Iterator& first, const Iterator& last, std::size_t n_features) {
+template <typename DataIterator>
+std::size_t get_n_samples(const DataIterator& data_range_first,
+                          const DataIterator& data_range_last,
+                          std::size_t         n_features) {
     // get the total number of elements
-    const std::size_t n_elements = std::distance(first, last);
+    const std::size_t n_elements = std::distance(data_range_first, data_range_last);
     // divide by the number of features provided to get the number of samples (rows)
     assert(n_elements % n_features == 0 && "Input data missing values or wrong number of features specified.\n");
 
     return n_elements / n_features;
 }
 
-template <typename Iterator>
-bool is_element_in(const Iterator&                      data_first,
-                   const Iterator&                      data_last,
-                   const typename Iterator::value_type& element) {
+template <typename DataIterator>
+bool is_element_in(const DataIterator&                      data_range_first,
+                   const DataIterator&                      data_range_last,
+                   const typename DataIterator::value_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the opposite boolean value
-    return !(std::find(data_first, data_last, element) == data_last);
+    return !(std::find(data_range_first, data_range_last, element) == data_range_last);
 }
 
-template <typename Iterator>
-bool is_element_not_in(const Iterator&                      data_first,
-                       const Iterator&                      data_last,
-                       const typename Iterator::value_type& element) {
+template <typename DataIterator>
+bool is_element_not_in(const DataIterator&                      data_range_first,
+                       const DataIterator&                      data_range_last,
+                       const typename DataIterator::value_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the same boolean value
-    return std::find(data_first, data_last, element) == data_last;
+    return std::find(data_range_first, data_range_last, element) == data_range_last;
 }
 
 /**
  * @brief
  *
- * @tparam IteratorPair
- * @param data_first: beginning of iterator of std::container<std::pair<T, U>>
- * @param data_last: end of iterator of std::container<std::pair<T, U>>
+ * @tparam PairIterator
+ * @param pairs_range_first: beginning of iterator of std::container<std::pair<T, U>>
+ * @param pairs_range_last: end of iterator of std::container<std::pair<T, U>>
  * @param element: some element of type T
  * @return true
  * @return false
  */
-template <typename IteratorPair>
-bool is_element_in_first(const IteratorPair&                                  data_first,
-                         const IteratorPair&                                  data_last,
-                         const typename IteratorPair::value_type::first_type& element) {
+template <typename PairIterator>
+bool is_element_in_first(const PairIterator&                                  pairs_range_first,
+                         const PairIterator&                                  pairs_range_last,
+                         const typename PairIterator::value_type::first_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the opposite boolean value
-    return !(std::find_if(data_first, data_last, [&element](const auto& pair) {
+    return !(std::find_if(pairs_range_first, pairs_range_last, [&element](const auto& pair) {
                  return equality(element, pair.first);
-             }) == data_last);
+             }) == pairs_range_last);
 }
 
 /**
  * @brief
  *
- * @tparam IteratorPair
- * @param data_first: beginning of iterator of std::container<std::pair<T, U>>
- * @param data_last: end of iterator of std::container<std::pair<T, U>>
+ * @tparam PairIterator
+ * @param pairs_range_first: beginning of iterator of std::container<std::pair<T, U>>
+ * @param pairs_range_last: end of iterator of std::container<std::pair<T, U>>
  * @param element: some element of type T
  * @return true
  * @return false
  */
-template <typename IteratorPair>
-bool is_element_not_in_first(const IteratorPair&                                  data_first,
-                             const IteratorPair&                                  data_last,
-                             const typename IteratorPair::value_type::first_type& element) {
+template <typename PairIterator>
+bool is_element_not_in_first(const PairIterator&                                  pairs_range_first,
+                             const PairIterator&                                  pairs_range_last,
+                             const typename PairIterator::value_type::first_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the same boolean value
-    return std::find_if(data_first, data_last, [&element](const auto& pair) {
+    return std::find_if(pairs_range_first, pairs_range_last, [&element](const auto& pair) {
                return equality(element, pair.first);
-           }) == data_last;
+           }) == pairs_range_last;
 }
 
 template <typename DataType>
-std::vector<DataType> generate_values(const DataType& value_first, const DataType& value_last) {
-    assert(value_last >= value_first);
-
-    std::vector<DataType> elements(static_cast<std::size_t>(value_last - value_first));
-    // construct the range
-    std::iota(elements.begin(), elements.end(), value_first);
-    return elements;
-}
-
-template <typename Type>
-void print_flattened_vector_as_matrix(const std::vector<Type>& data, std::size_t n_features) {
+void print_flattened_vector_as_matrix(const std::vector<DataType>& data, std::size_t n_features) {
     const std::size_t n_samples = data.size() / n_features;
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {

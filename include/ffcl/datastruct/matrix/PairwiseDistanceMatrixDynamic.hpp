@@ -23,8 +23,8 @@ class PairwiseDistanceMatrixDynamic {
     using ValueType             = typename SamplesIterator::value_type;
     using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
 
-    PairwiseDistanceMatrixDynamic(const SamplesIterator& samples_first,
-                                  const SamplesIterator& samples_last,
+    PairwiseDistanceMatrixDynamic(const SamplesIterator& samples_range_first,
+                                  const SamplesIterator& samples_range_last,
                                   std::size_t            n_features);
 
     PairwiseDistanceMatrixDynamic(const DatasetDescriptorType& dataset_descriptor);
@@ -42,11 +42,12 @@ class PairwiseDistanceMatrixDynamic {
 };
 
 template <typename SamplesIterator>
-PairwiseDistanceMatrixDynamic<SamplesIterator>::PairwiseDistanceMatrixDynamic(const SamplesIterator& samples_first,
-                                                                              const SamplesIterator& samples_last,
-                                                                              std::size_t            n_features)
-  : samples_first_{samples_first}
-  , samples_last_{samples_last}
+PairwiseDistanceMatrixDynamic<SamplesIterator>::PairwiseDistanceMatrixDynamic(
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
+    std::size_t            n_features)
+  : samples_first_{samples_range_first}
+  , samples_last_{samples_range_last}
   , n_features_{n_features} {}
 
 template <typename SamplesIterator>

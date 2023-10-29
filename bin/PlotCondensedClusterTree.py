@@ -97,7 +97,7 @@ def plot_hdbscan_predictions(datapath, filename, axis=None):
         gen_min_span_tree=True,
         approx_min_span_tree=True,
         core_dist_n_jobs=1,
-        allow_single_cluster=True
+        allow_single_cluster=False
     )
     predictions = clusterer.fit_predict(data)
 

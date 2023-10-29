@@ -118,24 +118,6 @@ TEST(FunctionTest, DivisionTest) {
     ASSERT_EQ(common::utils::division(10.0, 0.0), 0.0);
 }
 
-TEST(FunctionTest, AbsDistanceTest) {
-    std::vector<int> v1  = {1, 2, 3};
-    std::vector<int> v2  = {4, 5, 6};
-    auto             res = common::utils::abs_distances<std::vector<int>>(v1.begin(), v1.end(), v2.begin());
-    ASSERT_TRUE(res.size() == 3);
-    ASSERT_TRUE(res[0] == 3);
-    ASSERT_TRUE(res[1] == 3);
-    ASSERT_TRUE(res[2] == 3);
-
-    std::array<double, 3> a1   = {1.2, 3.4, 5.6};
-    std::array<double, 3> a2   = {1.1, 3.4, 5.7};
-    auto                  res2 = common::utils::abs_distances<std::vector<double>>(a1.begin(), a1.end(), a2.begin());
-    ASSERT_TRUE(res2.size() == 3);
-    ASSERT_NEAR(res2[0], 0.1, 1e-7);
-    ASSERT_NEAR(res2[1], 0.0, 1e-7);
-    ASSERT_NEAR(res2[2], 0.1, 1e-7);
-}
-
 TEST(FunctionTest, ToTypeTest) {
     std::vector<int> v1  = {1, 2, 3};
     auto             res = common::utils::to_type<double>(v1.begin(), v1.end());
@@ -296,43 +278,6 @@ TEST(CommonUtilsTest, IsElementNotInFirstTest) {
     element   = 4;
     is_not_in = common::utils::is_element_not_in_first(data.begin(), data.end(), element);
     ASSERT_TRUE(is_not_in);
-}
-
-TEST(CommonUtilsTest, UnsignedIntegerDataTypeTest) {
-    const std::size_t value_first = 0;
-    const std::size_t value_last  = 5;
-
-    // Generate the expected result
-    std::vector<std::size_t> expected{0, 1, 2, 3, 4};
-
-    // Call the function and check the result
-    auto result = common::utils::generate_values(value_first, value_last);
-    EXPECT_EQ(result, expected);
-}
-
-TEST(CommonUtilsTest, SignedIntegerDataTypeTest) {
-    const int value_first = -2;
-    const int value_last  = 3;
-
-    // Generate the expected result
-    std::vector<int> expected{-2, -1, 0, 1, 2};
-
-    // Call the function and check the result
-    auto result = common::utils::generate_values(value_first, value_last);
-    EXPECT_EQ(result, expected);
-}
-
-TEST(CommonUtilsTest, FloatDataTypeTest) {
-    const float value_first = -2.5f;
-    const float value_last  = 2.5f;
-
-    // Generate the expected result
-    std::vector<float> expected{-2.5f, -1.5f, -0.5f, 0.5f, 1.5f};
-
-    // Call the function and check the result
-    auto result = common::utils::generate_values(value_first, value_last);
-
-    EXPECT_TRUE(common::utils::are_containers_equal(result.begin(), result.end(), expected.begin()));
 }
 
 int main(int argc, char** argv) {

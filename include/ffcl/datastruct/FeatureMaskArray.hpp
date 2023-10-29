@@ -19,29 +19,29 @@ class FeatureMaskArray {
     using ConstIndicesIterator = typename VariantType::value_type::const_iterator;
 
     FeatureMaskArray(const std::vector<IndexType>& vector)
-      : data_{vector} {}
+      : indices_{vector} {}
 
     FeatureMaskArray(const std::array<IndexType, NFeatures>& array)
-      : data_{array} {}
+      : indices_{array} {}
 
     constexpr IndexType operator[](std::size_t index) const {
-        return data_[index];
+        return indices_[index];
     }
 
     constexpr std::size_t size() const {
-        return data_.size();
+        return indices_.size();
     }
 
     constexpr ConstIndicesIterator begin() const {
-        return std::visit([](const auto& data) { return data.begin(); }, data_);
+        return std::visit([](const auto& data) { return data.begin(); }, indices_);
     }
 
     constexpr ConstIndicesIterator end() const {
-        return std::visit([](const auto& data) { return data.end(); }, data_);
+        return std::visit([](const auto& data) { return data.end(); }, indices_);
     }
 
   private:
-    VariantType data_;
+    VariantType indices_;
 };
 
 }  // namespace ffcl::datastruct

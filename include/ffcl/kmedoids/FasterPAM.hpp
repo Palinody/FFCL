@@ -58,8 +58,8 @@ class FasterPAM {
 
   private:
     struct Buffers {
-        Buffers(const SamplesIterator&          samples_first,
-                const SamplesIterator&          samples_last,
+        Buffers(const SamplesIterator&          samples_range_first,
+                const SamplesIterator&          samples_range_last,
                 std::size_t                     n_features,
                 const std::vector<std::size_t>& medoids);
 
@@ -306,27 +306,27 @@ auto FasterPAM<SamplesIterator>::swap_buffers(std::size_t medoid_candidate_index
 }
 
 template <typename SamplesIterator>
-FasterPAM<SamplesIterator>::Buffers::Buffers(const SamplesIterator&          samples_first,
-                                             const SamplesIterator&          samples_last,
+FasterPAM<SamplesIterator>::Buffers::Buffers(const SamplesIterator&          samples_range_first,
+                                             const SamplesIterator&          samples_range_last,
                                              std::size_t                     n_features,
                                              const std::vector<std::size_t>& medoids)
-  : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
-                                                                                         samples_last,
+  : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_range_first,
+                                                                                         samples_range_last,
                                                                                          n_features,
                                                                                          medoids,
                                                                                          /*n_closest=*/1)}
-  , samples_to_second_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
-                                                                                                samples_last,
+  , samples_to_second_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_range_first,
+                                                                                                samples_range_last,
                                                                                                 n_features,
                                                                                                 medoids,
                                                                                                 /*n_closest=*/2)}
-  , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
-                                                                                             samples_last,
+  , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_range_first,
+                                                                                             samples_range_last,
                                                                                              n_features,
                                                                                              medoids,
                                                                                              /*n_closest=*/1)}
-  , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
-                                                                                                    samples_last,
+  , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_range_first,
+                                                                                                    samples_range_last,
                                                                                                     n_features,
                                                                                                     medoids,
                                                                                                     /*n_closest=*/2)}

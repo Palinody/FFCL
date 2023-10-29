@@ -19,8 +19,8 @@
 namespace pam::utils {
 
 template <typename SamplesIterator>
-std::vector<std::size_t> samples_to_nearest_medoid_indices(const SamplesIterator&          samples_first,
-                                                           const SamplesIterator&          samples_last,
+std::vector<std::size_t> samples_to_nearest_medoid_indices(const SamplesIterator&          samples_range_first,
+                                                           const SamplesIterator&          samples_range_last,
                                                            std::size_t                     n_features,
                                                            const std::vector<std::size_t>& medoids) {
     using DataType = typename SamplesIterator::value_type;
@@ -28,15 +28,15 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const SamplesIterator
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the indices from each sample to the nearest medoid
     auto nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_first + left_idx * n_features,
-                                               samples_first + left_idx * n_features + n_features,
-                                               samples_first + right_idx * n_features);
+        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                               samples_range_first + left_idx * n_features + n_features,
+                                               samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -90,8 +90,8 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(
 }
 
 template <typename SamplesIterator>
-std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const SamplesIterator&          samples_first,
-                                                                  const SamplesIterator&          samples_last,
+std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const SamplesIterator&          samples_range_first,
+                                                                  const SamplesIterator&          samples_range_last,
                                                                   std::size_t                     n_features,
                                                                   const std::vector<std::size_t>& medoids) {
     using DataType = typename SamplesIterator::value_type;
@@ -99,15 +99,15 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const SamplesI
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the indices from each sample to the second nearest medoid
     auto second_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_first + left_idx * n_features,
-                                               samples_first + left_idx * n_features + n_features,
-                                               samples_first + right_idx * n_features);
+        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                               samples_range_first + left_idx * n_features + n_features,
+                                               samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -180,8 +180,8 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
 }
 
 template <typename SamplesIterator>
-std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const SamplesIterator&          samples_first,
-                                                                 const SamplesIterator&          samples_last,
+std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const SamplesIterator&          samples_range_first,
+                                                                 const SamplesIterator&          samples_range_last,
                                                                  std::size_t                     n_features,
                                                                  const std::vector<std::size_t>& medoids) {
     using DataType = typename SamplesIterator::value_type;
@@ -189,15 +189,15 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const SamplesIt
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the indices from each sample to the third nearest medoid
     auto third_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_first + left_idx * n_features,
-                                               samples_first + left_idx * n_features + n_features,
-                                               samples_first + right_idx * n_features);
+        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                               samples_range_first + left_idx * n_features + n_features,
+                                               samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -294,8 +294,8 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
 }
 
 template <typename SamplesIterator>
-std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(const SamplesIterator&          samples_first,
-                                                               const SamplesIterator&          samples_last,
+std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(const SamplesIterator&          samples_range_first,
+                                                               const SamplesIterator&          samples_range_last,
                                                                std::size_t                     n_features,
                                                                const std::vector<std::size_t>& medoids,
                                                                std::size_t                     nth_closest = 1) {
@@ -307,13 +307,13 @@ std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(const SamplesIter
     }
 
     if (nth_closest == 1) {
-        return samples_to_nearest_medoid_indices(samples_first, samples_last, n_features, medoids);
+        return samples_to_nearest_medoid_indices(samples_range_first, samples_range_last, n_features, medoids);
 
     } else if (nth_closest == 2) {
-        return samples_to_second_nearest_medoid_indices(samples_first, samples_last, n_features, medoids);
+        return samples_to_second_nearest_medoid_indices(samples_range_first, samples_range_last, n_features, medoids);
 
     } else if (nth_closest == 3) {
-        return samples_to_third_nearest_medoid_indices(samples_first, samples_last, n_features, medoids);
+        return samples_to_third_nearest_medoid_indices(samples_range_first, samples_range_last, n_features, medoids);
 
     } else {
         throw std::invalid_argument("Invalid nth_closest parameter.");
@@ -348,8 +348,8 @@ std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(
 
 template <typename SamplesIterator>
 std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_distances(
-    const SamplesIterator&          samples_first,
-    const SamplesIterator&          samples_last,
+    const SamplesIterator&          samples_range_first,
+    const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
     const std::vector<std::size_t>& medoids) {
     using DataType = typename SamplesIterator::value_type;
@@ -357,15 +357,15 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_dist
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_first + left_idx * n_features,
-                                               samples_first + left_idx * n_features + n_features,
-                                               samples_first + right_idx * n_features);
+        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                               samples_range_first + left_idx * n_features + n_features,
+                                               samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -417,8 +417,8 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_dist
 
 template <typename SamplesIterator>
 std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medoid_distances(
-    const SamplesIterator&          samples_first,
-    const SamplesIterator&          samples_last,
+    const SamplesIterator&          samples_range_first,
+    const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
     const std::vector<std::size_t>& medoids) {
     using DataType = typename SamplesIterator::value_type;
@@ -426,15 +426,15 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medo
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto second_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_first + left_idx * n_features,
-                                               samples_first + left_idx * n_features + n_features,
-                                               samples_first + right_idx * n_features);
+        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                               samples_range_first + left_idx * n_features + n_features,
+                                               samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -498,8 +498,8 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medo
 
 template <typename SamplesIterator>
 std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoid_distances(
-    const SamplesIterator&          samples_first,
-    const SamplesIterator&          samples_last,
+    const SamplesIterator&          samples_range_first,
+    const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
     const std::vector<std::size_t>& medoids) {
     using DataType = typename SamplesIterator::value_type;
@@ -507,15 +507,15 @@ std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoi
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto third_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_first + left_idx * n_features,
-                                               samples_first + left_idx * n_features + n_features,
-                                               samples_first + right_idx * n_features);
+        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                               samples_range_first + left_idx * n_features + n_features,
+                                               samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -595,8 +595,8 @@ std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoi
 
 template <typename SamplesIterator>
 std::vector<typename SamplesIterator::value_type> samples_to_nth_nearest_medoid_distances(
-    const SamplesIterator&          samples_first,
-    const SamplesIterator&          samples_last,
+    const SamplesIterator&          samples_range_first,
+    const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
     const std::vector<std::size_t>& medoids,
     std::size_t                     nth_closest = 1) {
@@ -608,13 +608,13 @@ std::vector<typename SamplesIterator::value_type> samples_to_nth_nearest_medoid_
     }
 
     if (nth_closest == 1) {
-        return samples_to_nearest_medoid_distances(samples_first, samples_last, n_features, medoids);
+        return samples_to_nearest_medoid_distances(samples_range_first, samples_range_last, n_features, medoids);
 
     } else if (nth_closest == 2) {
-        return samples_to_second_nearest_medoid_distances(samples_first, samples_last, n_features, medoids);
+        return samples_to_second_nearest_medoid_distances(samples_range_first, samples_range_last, n_features, medoids);
 
     } else if (nth_closest == 3) {
-        return samples_to_third_nearest_medoid_distances(samples_first, samples_last, n_features, medoids);
+        return samples_to_third_nearest_medoid_distances(samples_range_first, samples_range_last, n_features, medoids);
 
     } else {
         throw std::invalid_argument("Invalid nth_closest parameter.");
@@ -703,12 +703,12 @@ std::vector<DataType> compute_losses_with_silhouette_medoid_removal(
 
 template <typename SamplesIterator>
 std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_index_pair(
-    const SamplesIterator& data_first,
-    const SamplesIterator& data_last,
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
     std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = common::utils::get_n_samples(data_first, data_last, n_features);
+    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     std::size_t selected_medoid = 0;
     auto        total_deviation = common::utils::infinity<DataType>();
@@ -719,9 +719,10 @@ std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_ind
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // the following should be done if other_sample_index != medoid_candidate_idx
             // but the distance would be 0 anyway with dist(other_sample, medoid_candidate)
-            loss_acc += math::heuristics::auto_distance(data_first + medoid_candidate_idx * n_features,
-                                                        data_first + medoid_candidate_idx * n_features + n_features,
-                                                        data_first + other_sample_index * n_features);
+            loss_acc +=
+                math::heuristics::auto_distance(samples_range_first + medoid_candidate_idx * n_features,
+                                                samples_range_first + medoid_candidate_idx * n_features + n_features,
+                                                samples_range_first + other_sample_index * n_features);
         }
         // if the candidate total deviation is lower than the current total deviation
         if (loss_acc < total_deviation) {
@@ -764,11 +765,11 @@ std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_ind
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> medoids_to_centroids(const SamplesIterator&          data_first,
-                                                                       const SamplesIterator&          data_last,
-                                                                       std::size_t                     n_features,
+std::vector<typename SamplesIterator::value_type> medoids_to_centroids(const SamplesIterator& samples_range_first,
+                                                                       const SamplesIterator& samples_range_last,
+                                                                       std::size_t            n_features,
                                                                        const std::vector<std::size_t>& medoids) {
-    static_cast<void>(data_last);
+    common::utils::ignore_parameters(samples_range_last);
 
     const auto n_medoids = medoids.size();
     auto       clusters  = std::vector<typename SamplesIterator::value_type>(n_medoids * n_features);
@@ -776,8 +777,8 @@ std::vector<typename SamplesIterator::value_type> medoids_to_centroids(const Sam
     for (std::size_t k = 0; k < n_medoids; ++k) {
         const std::size_t data_index = medoids[k];
 
-        std::copy(data_first + data_index * n_features,
-                  data_first + data_index * n_features + n_features,
+        std::copy(samples_range_first + data_index * n_features,
+                  samples_range_first + data_index * n_features + n_features,
                   clusters.begin() + k * n_features);
     }
     return clusters;

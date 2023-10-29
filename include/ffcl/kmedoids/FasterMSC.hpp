@@ -58,8 +58,8 @@ class FasterMSC {
 
   private:
     struct Buffers {
-        Buffers(const SamplesIterator&          samples_first,
-                const SamplesIterator&          samples_last,
+        Buffers(const SamplesIterator&          samples_range_first,
+                const SamplesIterator&          samples_range_last,
                 std::size_t                     n_features,
                 const std::vector<std::size_t>& medoids);
 
@@ -504,50 +504,50 @@ typename SamplesIterator::value_type FasterMSC<SamplesIterator>::swap_buffers_k2
 }
 
 template <typename SamplesIterator>
-FasterMSC<SamplesIterator>::Buffers::Buffers(const SamplesIterator&          samples_first,
-                                             const SamplesIterator&          samples_last,
+FasterMSC<SamplesIterator>::Buffers::Buffers(const SamplesIterator&          samples_range_first,
+                                             const SamplesIterator&          samples_range_last,
                                              std::size_t                     n_features,
                                              const std::vector<std::size_t>& medoids)
-  : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
-                                                                                         samples_last,
+  : samples_to_nearest_medoid_indices_{pam::utils::samples_to_nth_nearest_medoid_indices(samples_range_first,
+                                                                                         samples_range_last,
                                                                                          n_features,
                                                                                          medoids,
                                                                                          /*n_closest=*/1)}
   , /* Not required when n_medoids = 2 (K2) */
   samples_to_second_nearest_medoid_indices_{(medoids.size() > 2)
-                                                ? pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
-                                                                                                    samples_last,
+                                                ? pam::utils::samples_to_nth_nearest_medoid_indices(samples_range_first,
+                                                                                                    samples_range_last,
                                                                                                     n_features,
                                                                                                     medoids,
                                                                                                     /*n_closest=*/2)
                                                 : std::vector<std::size_t>({})}
   , /* Not required when n_medoids = 2 (K2) */
   samples_to_third_nearest_medoid_indices_{(medoids.size() > 2)
-                                               ? pam::utils::samples_to_nth_nearest_medoid_indices(samples_first,
-                                                                                                   samples_last,
+                                               ? pam::utils::samples_to_nth_nearest_medoid_indices(samples_range_first,
+                                                                                                   samples_range_last,
                                                                                                    n_features,
                                                                                                    medoids,
                                                                                                    /*n_closest=*/3)
                                                : std::vector<std::size_t>({})}
 
-  , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
-                                                                                             samples_last,
+  , samples_to_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_range_first,
+                                                                                             samples_range_last,
                                                                                              n_features,
                                                                                              medoids,
                                                                                              /*n_closest=*/1)}
-  , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
-                                                                                                    samples_last,
+  , samples_to_second_nearest_medoid_distances_{pam::utils::samples_to_nth_nearest_medoid_distances(samples_range_first,
+                                                                                                    samples_range_last,
                                                                                                     n_features,
                                                                                                     medoids,
                                                                                                     /*n_closest=*/2)}
   , /* Not required when n_medoids = 2 (K2) */
-  samples_to_third_nearest_medoid_distances_{(medoids.size() > 2)
-                                                 ? pam::utils::samples_to_nth_nearest_medoid_distances(samples_first,
-                                                                                                       samples_last,
-                                                                                                       n_features,
-                                                                                                       medoids,
-                                                                                                       /*n_closest=*/3)
-                                                 : std::vector<DataType>({})}
+  samples_to_third_nearest_medoid_distances_{
+      (medoids.size() > 2) ? pam::utils::samples_to_nth_nearest_medoid_distances(samples_range_first,
+                                                                                 samples_range_last,
+                                                                                 n_features,
+                                                                                 medoids,
+                                                                                 /*n_closest=*/3)
+                           : std::vector<DataType>({})}
   , /* Not required when n_medoids = 2 (K2) */
   losses_with_closest_medoid_removal_{(medoids.size() > 2)
                                           ? pam::utils::compute_losses_with_silhouette_medoid_removal<DataType>(
