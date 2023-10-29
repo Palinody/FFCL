@@ -151,7 +151,7 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
     """
 
     # plots from the hdbscan python library
-    fig = plt.figure(num=1, figsize=(8, 6))
+    fig = plt.figure(num=1, figsize=(24, 12))
     gs = gridspec.GridSpec(2, 2)
     ax1 = plt.subplot(gs[0, 0])
     ax2 = plt.subplot(gs[0, 1])

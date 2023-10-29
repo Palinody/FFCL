@@ -48,18 +48,18 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
 
     utils::DurationsSummary bench_summary;
 
-    n_features = 3;
+    static constexpr std::size_t n_features_target = 3;
 
     bench_summary.n_samples  = n_samples;
-    bench_summary.n_features = n_features;
+    bench_summary.n_features = n_features_target;
 
-    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
+    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features_target);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
-        data_xyz[sample_index * n_features]     = data[sample_index * n_features];
-        data_xyz[sample_index * n_features + 1] = data[sample_index * n_features + 1];
-        data_xyz[sample_index * n_features + 2] = data[sample_index * n_features + 2];
+        data_xyz[sample_index * n_features_target]     = data[sample_index * n_features];
+        data_xyz[sample_index * n_features_target + 1] = data[sample_index * n_features + 1];
+        data_xyz[sample_index * n_features_target + 2] = data[sample_index * n_features + 2];
     }
 
     auto indices = utils::generate_indices(n_samples);
@@ -77,7 +77,7 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
                                indices.end(),
                                data_xyz.begin(),
                                data_xyz.end(),
-                               n_features,
+                               n_features_target,
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
@@ -105,8 +105,10 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
     if (predictions_filepath.has_value()) {
         if (filepath.extension().string() == ".bin") {
             bench::io::bin::encode(predictions, predictions_filepath.value());
+
         } else if (filepath.extension().string() == ".txt") {
             bench::io::txt::write_data(predictions, 1, predictions_filepath.value());
+
         } else {
             char message[100];
             std::sprintf(
@@ -188,11 +190,11 @@ void run_point_cloud_sequences() {
     // const std::vector<std::size_t> k_nearest_neighbors = {3, 5, 10};
     const std::vector<std::size_t> k_nearest_neighbors = {5};
     // const std::vector<std::size_t> min_cluster_sizes   = {5, 10, 15, 20};
-    const std::vector<std::size_t> min_cluster_sizes = {100};
+    const std::vector<std::size_t> min_cluster_sizes = {10};
 
-    const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
+    const std::vector<fs::path> relative_paths = {/*fs::path("pointclouds_sequences/1"),
                                                   fs::path("pointclouds_sequences/2"),
-                                                  fs::path("pointclouds_sequences/0000"),
+                                                  fs::path("pointclouds_sequences/0000"),*/
                                                   fs::path("pointclouds_sequences/0001")};
 
     for (const auto& knn : k_nearest_neighbors) {

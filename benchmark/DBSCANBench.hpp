@@ -53,18 +53,18 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     utils::DurationsSummary bench_summary;
 
-    n_features = 3;
+    static constexpr std::size_t n_features_target = 3;
 
     bench_summary.n_samples  = n_samples;
-    bench_summary.n_features = n_features;
+    bench_summary.n_features = n_features_target;
 
-    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features);
+    auto data_xyz = std::vector<bench::io::DataType>(n_samples * n_features_target);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // Each point represents one row of the 2D matrix (n_features-dimensional point)
-        data_xyz[sample_index * n_features]     = data[sample_index * n_features];
-        data_xyz[sample_index * n_features + 1] = data[sample_index * n_features + 1];
-        data_xyz[sample_index * n_features + 2] = data[sample_index * n_features + 2];
+        data_xyz[sample_index * n_features_target]     = data[sample_index * n_features];
+        data_xyz[sample_index * n_features_target + 1] = data[sample_index * n_features + 1];
+        data_xyz[sample_index * n_features_target + 2] = data[sample_index * n_features + 2];
     }
 
     auto indices = utils::generate_indices(n_samples);
@@ -75,7 +75,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     timer.reset();
 
-    auto indexer = IndexerType(indices.begin(), indices.end(), data_xyz.begin(), data_xyz.end(), n_features);
+    auto indexer = IndexerType(indices.begin(), indices.end(), data_xyz.begin(), data_xyz.end(), n_features_target);
 
     bench_summary.indexer_build_duration = timer.elapsed();
 

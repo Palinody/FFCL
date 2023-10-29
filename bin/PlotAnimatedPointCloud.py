@@ -210,26 +210,25 @@ def animate_point_clouds_from_bin_files(
         for filename in file_list:
             print(f"filename: {filename}")
             point_cloud_path = os.path.join(root_folder, filename)
-            point_cloud = IO.auto_decode(point_cloud_path, np.float32, n_features=4)[:, :3]
+            point_cloud = IO.decode_bin(point_cloud_path, n_features=4, dtype=np.float32)[:, :3]
 
             labels_path = os.path.join(labels_folder, filename)
-            labels = IO.auto_decode(labels_path, np.int64, n_features=1).ravel()
+            labels = IO.decode_bin(labels_path, n_features=1, dtype=np.uint64).ravel()
 
+            print(f"Input shape: {point_cloud.shape}")
+            print(f"labels shape: {labels.shape}")
             unique_labels = np.unique(labels)
 
-            print(point_cloud.shape)
-            print(labels.shape)
             print(f"Unique labels: {unique_labels.shape[0]}")
 
-            # point cloud without the pointsd that have been classified as noise
-            filtered_point_cloud = point_cloud[labels > 0]
+            point_cloud_filtered = point_cloud[labels > 0]
             labels_filtered = labels[labels > 0]
 
             plot.mlab_source.reset(
-                x=filtered_point_cloud[:, 0],
-                y=filtered_point_cloud[:, 1],
-                z=filtered_point_cloud[:, 2],
-                scalars=labels_filtered / np.max(labels_filtered),
+                x=point_cloud_filtered[:, 0],
+                y=point_cloud_filtered[:, 1],
+                z=point_cloud_filtered[:, 2],
+                scalars=labels_filtered,
             )
             yield
 
@@ -237,7 +236,7 @@ def animate_point_clouds_from_bin_files(
 
 
 def main():
-    folder_name = "0000"
+    folder_name = "0001"
     # conversions, inputs
     point_clouds_folder = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
