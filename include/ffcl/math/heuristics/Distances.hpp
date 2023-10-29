@@ -154,6 +154,8 @@ auto auto_distance(const LeftFeatureIterator&  left_feature_vector_first,
     using FeatureType1 = typename LeftFeatureIterator::value_type;
     using FeatureType2 = typename RightFeatureIterator::value_type;
 
+    // The feature types must be the same for the auto_distance function since its only be used for practicality
+    // purposes for now. Each function is compatible with different types.
     static_assert(std::is_same_v<FeatureType1, FeatureType2>);
 
     if constexpr (std::is_floating_point_v<FeatureType1>) {
