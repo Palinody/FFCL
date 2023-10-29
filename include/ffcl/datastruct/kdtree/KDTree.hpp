@@ -109,10 +109,10 @@ class KDTree {
     };
 
   public:
-    KDTree(IndicesIterator index_first,
-           IndicesIterator index_last,
-           SamplesIterator samples_first,
-           SamplesIterator samples_last,
+    KDTree(IndicesIterator indices_range_first,
+           IndicesIterator indices_range_last,
+           SamplesIterator samples_range_first,
+           SamplesIterator samples_range_last,
            std::size_t     n_features,
            const Options&  options = Options());
 
@@ -211,8 +211,8 @@ class KDTree {
     void serialize(const fs::path& filepath) const;
 
   private:
-    KDNodeViewPtr build(IndicesIterator index_first,
-                        IndicesIterator index_last,
+    KDNodeViewPtr build(IndicesIterator indices_range_first,
+                        IndicesIterator indices_range_last,
                         ssize_t         cut_feature_index,
                         ssize_t         depth,
                         HyperRangeType& kd_bounding_box);
@@ -451,25 +451,25 @@ class KDTree {
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator index_first,
-                                                 IndicesIterator index_last,
-                                                 SamplesIterator samples_first,
-                                                 SamplesIterator samples_last,
+KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_first,
+                                                 IndicesIterator indices_range_last,
+                                                 SamplesIterator samples_range_first,
+                                                 SamplesIterator samples_range_last,
                                                  std::size_t     n_features,
                                                  const Options&  options)
   : options_{options}
-  , samples_range_first_{samples_first}
-  , samples_range_last_{samples_last}
+  , samples_range_first_{samples_range_first}
+  , samples_range_last_{samples_range_last}
   , n_features_{n_features}
-  , kd_bounding_box_{ffcl::bbox::make_kd_bounding_box(index_first,
-                                                      index_last,
+  , kd_bounding_box_{ffcl::bbox::make_kd_bounding_box(indices_range_first,
+                                                      indices_range_last,
                                                       samples_range_first_,
                                                       samples_range_last_,
                                                       n_features_)}
-  , root_{build(index_first,
-                index_last,
-                (*options_.axis_selection_policy_ptr_)(index_first,
-                                                       index_last,
+  , root_{build(indices_range_first,
+                indices_range_last,
+                (*options_.axis_selection_policy_ptr_)(indices_range_first,
+                                                       indices_range_last,
                                                        samples_range_first_,
                                                        samples_range_last_,
                                                        n_features_,
@@ -490,20 +490,20 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::n_features() const {
 
 template <typename IndicesIterator, typename SamplesIterator>
 typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesIterator, SamplesIterator>::build(
-    IndicesIterator index_first,
-    IndicesIterator index_last,
+    IndicesIterator indices_range_first,
+    IndicesIterator indices_range_last,
     ssize_t         cut_feature_index,
     ssize_t         depth,
     HyperRangeType& kd_bounding_box) {
     KDNodeViewPtr kdnode;
     // number of samples in the current node
-    const std::size_t n_node_samples = std::distance(index_first, index_last);
+    const std::size_t n_node_samples = std::distance(indices_range_first, indices_range_last);
     // if the current number of samples is greater than the target bucket size, the node is not leaf
     if (depth < options_.max_depth_ && n_node_samples > options_.bucket_size_) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
         cut_feature_index = (*options_.axis_selection_policy_ptr_)(
-            /**/ index_first,
-            /**/ index_last,
+            /**/ indices_range_first,
+            /**/ indices_range_last,
             /**/ samples_range_first_,
             /**/ samples_range_last_,
             /**/ n_features_,
@@ -512,8 +512,8 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
 
         auto [cut_index, left_indices_range, cut_indices_range, right_indices_range] =
             (*options_.splitting_rule_policy_ptr_)(
-                /**/ index_first,
-                /**/ index_last,
+                /**/ indices_range_first,
+                /**/ indices_range_last,
                 /**/ samples_range_first_,
                 /**/ samples_range_last_,
                 /**/ n_features_,
@@ -554,7 +554,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
             kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_.first;
         }
     } else {
-        kdnode = std::make_shared<KDNodeViewType>(std::make_pair(index_first, index_last),
+        kdnode = std::make_shared<KDNodeViewType>(std::make_pair(indices_range_first, indices_range_last),
                                                   kd_bounding_box[cut_feature_index]);
     }
     return kdnode;
