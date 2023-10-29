@@ -1109,14 +1109,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        KDNodeViewPtr         kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    ffcl::knn::increment_neighbors_count_in_kd_bounding_box(kdnode->indices_iterator_pair_.first,
-                                                            kdnode->indices_iterator_pair_.second,
-                                                            samples_first_,
-                                                            samples_last_,
-                                                            n_features_,
-                                                            query_index,
-                                                            kd_bounding_box,
-                                                            neighbors_count);
+    ffcl::knn::increment_neighbors_count_in_hyper_range(kdnode->indices_iterator_pair_.first,
+                                                        kdnode->indices_iterator_pair_.second,
+                                                        samples_first_,
+                                                        samples_last_,
+                                                        n_features_,
+                                                        query_index,
+                                                        kd_bounding_box,
+                                                        neighbors_count);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1258,14 +1258,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors_in_kd_bounding_box(kdnode->indices_iterator_pair_.first,
-                                                      kdnode->indices_iterator_pair_.second,
-                                                      samples_first_,
-                                                      samples_last_,
-                                                      n_features_,
-                                                      query_index,
-                                                      kd_bounding_box,
-                                                      nearest_neighbors_buffer);
+    ffcl::knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_iterator_pair_.first,
+                                                  kdnode->indices_iterator_pair_.second,
+                                                  samples_first_,
+                                                  samples_last_,
+                                                  n_features_,
+                                                  query_index,
+                                                  kd_bounding_box,
+                                                  nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1942,15 +1942,15 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
                                                                        KDNodeViewPtr         kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    ffcl::knn::increment_neighbors_count_in_kd_bounding_box(kdnode->indices_iterator_pair_.first,
-                                                            kdnode->indices_iterator_pair_.second,
-                                                            samples_first_,
-                                                            samples_last_,
-                                                            n_features_,
-                                                            query_feature_first,
-                                                            query_feature_last,
-                                                            kd_bounding_box,
-                                                            neighbors_count);
+    ffcl::knn::increment_neighbors_count_in_hyper_range(kdnode->indices_iterator_pair_.first,
+                                                        kdnode->indices_iterator_pair_.second,
+                                                        samples_first_,
+                                                        samples_last_,
+                                                        n_features_,
+                                                        query_feature_first,
+                                                        query_feature_last,
+                                                        kd_bounding_box,
+                                                        neighbors_count);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -2100,15 +2100,15 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    ffcl::knn::k_nearest_neighbors_in_kd_bounding_box(kdnode->indices_iterator_pair_.first,
-                                                      kdnode->indices_iterator_pair_.second,
-                                                      samples_first_,
-                                                      samples_last_,
-                                                      n_features_,
-                                                      query_feature_first,
-                                                      query_feature_last,
-                                                      kd_bounding_box,
-                                                      nearest_neighbors_buffer);
+    ffcl::knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_iterator_pair_.first,
+                                                  kdnode->indices_iterator_pair_.second,
+                                                  samples_first_,
+                                                  samples_last_,
+                                                  n_features_,
+                                                  query_feature_first,
+                                                  query_feature_last,
+                                                  kd_bounding_box,
+                                                  nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
