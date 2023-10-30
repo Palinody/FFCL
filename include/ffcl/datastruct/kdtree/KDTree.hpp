@@ -42,10 +42,10 @@ class KDTree {
         Options()
           : bucket_size_{40}
           , max_depth_{common::utils::infinity<ssize_t>()}
-          , axis_selection_policy_ptr_{std::make_unique<
+          , axis_selection_policy_ptr_{std::make_shared<
                 kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>>()}
           , splitting_rule_policy_ptr_{
-                std::make_unique<kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>>()} {}
+                std::make_shared<kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>>()} {}
 
         Options(const Options&) = default;
 
@@ -68,7 +68,7 @@ class KDTree {
                           "The provided axis selection policy must be derived from "
                           "kdtree::policy::AxisSelectionPolicy<IndicesIterator, SamplesIterator>");
 
-            axis_selection_policy_ptr_ = std::make_unique<AxisSelectionPolicy>(axis_selection_policy);
+            axis_selection_policy_ptr_ = std::make_shared<AxisSelectionPolicy>(axis_selection_policy);
             return *this;
         }
 
@@ -79,7 +79,7 @@ class KDTree {
                           "The provided splitting rule policy must be derived from "
                           "kdtree::policy::SplittingRulePolicy<IndicesIterator, SamplesIterator>");
 
-            splitting_rule_policy_ptr_ = std::make_unique<SplittingRulePolicy>(splitting_rule_policy);
+            splitting_rule_policy_ptr_ = std::make_shared<SplittingRulePolicy>(splitting_rule_policy);
             return *this;
         }
 
