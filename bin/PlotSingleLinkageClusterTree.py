@@ -125,7 +125,7 @@ class SLINKTree:
             linkage_matrix,
             p=1.4,
             orientation="top",
-            truncate_mode="level",
+            truncate_mode=None,# "level",
             ax=axis,
             **kwargs,
         )

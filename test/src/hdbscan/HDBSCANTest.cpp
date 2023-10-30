@@ -158,7 +158,7 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
                             .k_nearest_neighbors(10)
                             .min_cluster_size(10)
                             .return_leaf_nodes(false)
-                            .allow_single_cluster(false));
+                            .allow_single_cluster(true));
 
     timer.reset();
 
@@ -210,7 +210,7 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
                             .k_nearest_neighbors(10)
                             .min_cluster_size(10)
                             .return_leaf_nodes(false)
-                            .allow_single_cluster(false));
+                            .allow_single_cluster(true));
 
     timer.reset();
 
@@ -262,7 +262,7 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
                             .k_nearest_neighbors(10)
                             .min_cluster_size(10)
                             .return_leaf_nodes(false)
-                            .allow_single_cluster(false));
+                            .allow_single_cluster(true));
 
     timer.reset();
 
@@ -314,7 +314,7 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
                             .k_nearest_neighbors(10)
                             .min_cluster_size(10)
                             .return_leaf_nodes(false)
-                            .allow_single_cluster(false));
+                            .allow_single_cluster(true));
 
     timer.reset();
 
@@ -366,7 +366,7 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
                             .k_nearest_neighbors(10)
                             .min_cluster_size(10)
                             .return_leaf_nodes(false)
-                            .allow_single_cluster(false));
+                            .allow_single_cluster(true));
 
     timer.reset();
 
@@ -418,7 +418,7 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
                             .k_nearest_neighbors(10)
                             .min_cluster_size(10)
                             .return_leaf_nodes(false)
-                            .allow_single_cluster(false));
+                            .allow_single_cluster(true));
 
     timer.reset();
 
@@ -470,7 +470,7 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
                             .k_nearest_neighbors(10)
                             .min_cluster_size(10)
                             .return_leaf_nodes(false)
-                            .allow_single_cluster(false));
+                            .allow_single_cluster(true));
 
     timer.reset();
 
