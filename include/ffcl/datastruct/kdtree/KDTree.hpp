@@ -7,7 +7,7 @@
 
 #include "ffcl/math/random/Distributions.hpp"
 
-#include "ffcl/knn/NearestNeighbor.hpp"
+#include "ffcl/knn/NearestNeighbors.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/knn/NearestNeighbor.hpp"
+#include "ffcl/knn/NearestNeighbors.hpp"
 
 #include "Range2DBaseFixture.hpp"
 

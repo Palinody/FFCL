@@ -5,7 +5,7 @@
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
 #include "ffcl/math/random/Distributions.hpp"
 
-#include "ffcl/knn/NearestNeighbor.hpp"
+#include "ffcl/knn/NearestNeighbors.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>

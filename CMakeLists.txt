@@ -36,7 +36,7 @@ set(HEADER_FILES
     include/ffcl/kmedoids/PAMUtils.hpp
     include/ffcl/kmedoids/PAMBuild.hpp
 
-    include/ffcl/knn/NearestNeighbor.hpp
+    include/ffcl/knn/NearestNeighbors.hpp
 
     include/ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp
     include/ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp
@@ -198,13 +198,13 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
-        NearestNeighborTest
+        NearestNeighborsTest
 
         # ---
-        test/src/knn/NearestNeighborTest.cpp
+        test/src/knn/NearestNeighborsTest.cpp
     )
     target_link_libraries(
-        NearestNeighborTest
+        NearestNeighborsTest
         PUBLIC
         TBB::tbb
         GTest::gtest_main
@@ -212,8 +212,8 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        NearestNeighborTest
-        NearestNeighborTest
+        NearestNeighborsTest
+        NearestNeighborsTest
     )
 
     add_executable(
