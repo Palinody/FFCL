@@ -81,7 +81,7 @@ auto cohesion(const SamplesIterator&       samples_range_first,
 
     const auto cluster_sizes = get_cluster_sizes(cluster_labels_range_first, cluster_labels_range_last);
 
-    auto samples_cohesion_values = std::vector<FloatType>(n_samples);
+    auto samples_cohesion_scores = std::vector<FloatType>(n_samples);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
@@ -93,7 +93,7 @@ auto cohesion(const SamplesIterator&       samples_range_first,
             // compute distance only when sample is not itself and belongs to the same cluster
             if ((centroid_index == other_centroid_index) && (sample_index != other_sample_index)) {
                 // accumulate the squared distances
-                samples_cohesion_values[sample_index] +=
+                samples_cohesion_scores[sample_index] +=
                     auto_distance(samples_range_first + sample_index * n_features,
                                   samples_range_first + sample_index * n_features + n_features,
                                   samples_range_first + other_sample_index * n_features);
@@ -104,10 +104,10 @@ auto cohesion(const SamplesIterator&       samples_range_first,
         // normalise the sum of the distances from the current sample to all the other samples in the same centroid
         // divide by one if the cluster contains 0 or 1 sample
         if (cluster_size > 1) {
-            samples_cohesion_values[sample_index] /= static_cast<FloatType>(cluster_size - 1);
+            samples_cohesion_scores[sample_index] /= static_cast<FloatType>(cluster_size - 1);
         }
     }
-    return samples_cohesion_values;
+    return samples_cohesion_scores;
 }
 /**
  * @brief The separation measures the dissimilarity of a sample i from a cluster I to a cluster J, with I != J.
@@ -145,7 +145,7 @@ auto separation(const SamplesIterator&       samples_range_first,
 
     const auto cluster_sizes = get_cluster_sizes(cluster_labels_range_first, cluster_labels_range_last);
 
-    auto samples_separation_values = std::vector<FloatType>(n_samples);
+    auto samples_separation_scores = std::vector<FloatType>(n_samples);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
@@ -180,10 +180,10 @@ auto separation(const SamplesIterator&       samples_range_first,
         // set the current cluster index distance value to infinity so that it doesnt get chosen
         sample_to_other_cluster_samples_distance_mean[centroid_index] = std::numeric_limits<FloatType>::max();
         // normalise the sum of the distances from the current sample to all the other samples in the same cluster
-        samples_separation_values[sample_index] = *std::min_element(
+        samples_separation_scores[sample_index] = *std::min_element(
             sample_to_other_cluster_samples_distance_mean.begin(), sample_to_other_cluster_samples_distance_mean.end());
     }
-    return samples_separation_values;
+    return samples_separation_scores;
 }
 /**
  * @brief
@@ -223,23 +223,23 @@ auto silhouette(const SamplesIterator&       samples_range_first,
     const auto separation_values = separation(
         samples_range_first, samples_range_last, n_features, cluster_labels_range_first, cluster_labels_range_last);
 
-    auto silhouette_values = std::vector<FloatType>(n_samples);
+    auto samples_silhouette_scores = std::vector<FloatType>(n_samples);
 
-    for (std::size_t i = 0; i < n_samples; ++i) {
-        const auto coh = cohesion_values[i];
-        const auto sep = separation_values[i];
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        const auto coh = cohesion_values[sample_index];
+        const auto sep = separation_values[sample_index];
 
         if (coh < sep) {
-            silhouette_values[i] = static_cast<FloatType>(1) - coh / sep;
+            samples_silhouette_scores[sample_index] = static_cast<FloatType>(1) - coh / sep;
 
         } else if (coh > sep) {
-            silhouette_values[i] = sep / coh - static_cast<FloatType>(1);
+            samples_silhouette_scores[sample_index] = sep / coh - static_cast<FloatType>(1);
 
         } else {
-            silhouette_values[i] = 0;
+            samples_silhouette_scores[sample_index] = 0;
         }
     }
-    return silhouette_values;
+    return samples_silhouette_scores;
 }
 
 template <typename SamplesIterator>
