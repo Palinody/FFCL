@@ -220,7 +220,7 @@ auto BoruvkasAlgorithm<Indexer>::make_core_distances_ptr(const Indexer& indexer,
                                                          std::size_t    k_nearest_neighbors) const {
     auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::make_unique<ValueType[]>(indexer.n_samples()));
 
-    for (IndexType sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
+    for (std::size_t sample_index = 0; sample_index < indexer.n_samples(); ++sample_index) {
         (*core_distances_ptr)[sample_index] =
             indexer.k_nearest_neighbors_around_query_index(sample_index, k_nearest_neighbors)
                 .furthest_k_nearest_neighbor_distance();
@@ -244,7 +244,7 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
 
         // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
         // other components using the UnionFind data structure
-        auto nn_buffer = knn::NearestNeighborsBufferWithUnionFind<typename std::vector<ValueType>::iterator>(
+        auto nn_buffer = knn::NearestNeighborsBufferWithUnionFind<IndexType, ValueType>(
             forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {

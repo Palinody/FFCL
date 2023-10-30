@@ -21,9 +21,9 @@
 
 namespace ffcl {
 
-template <typename T>
+template <typename DataType>
 class KMeans {
-    static_assert(std::is_floating_point<T>::value, "KMeans only allows floating point types.");
+    static_assert(std::is_floating_point<DataType>::value, "KMeans only allows floating point types.");
 
   public:
     struct Options {
@@ -37,7 +37,7 @@ class KMeans {
             return *this;
         }
 
-        Options& tolerance(const T& tolerance) {
+        Options& tolerance(const DataType& tolerance) {
             tolerance_ = tolerance;
             return *this;
         }
@@ -64,7 +64,7 @@ class KMeans {
         std::size_t max_iter_       = 100;
         bool        early_stopping_ = true;
         std::size_t patience_       = 0;
-        T           tolerance_      = 0;
+        DataType    tolerance_      = 0;
         std::size_t n_init_         = 1;
     };
 
@@ -73,32 +73,36 @@ class KMeans {
 
     KMeans(std::size_t n_centroids, std::size_t n_features, const Options& options);
 
-    KMeans(std::size_t n_centroids, std::size_t n_features, const std::vector<T>& centroids);
+    KMeans(std::size_t n_centroids, std::size_t n_features, const std::vector<DataType>& centroids);
 
-    KMeans(std::size_t n_centroids, std::size_t n_features, const std::vector<T>& centroids, const Options& options);
+    KMeans(std::size_t                  n_centroids,
+           std::size_t                  n_features,
+           const std::vector<DataType>& centroids,
+           const Options&               options);
 
     KMeans(const KMeans&) = delete;
 
-    KMeans<T>& set_options(const Options& options);
+    KMeans<DataType>& set_options(const Options& options);
 
     template <template <typename> class KMeansAlgorithm, typename SamplesIterator, typename Function>
-    std::vector<T> fit(const SamplesIterator& samples_range_first,
-                       const SamplesIterator& samples_range_last,
-                       const Function&        centroids_initializer);
+    std::vector<DataType> fit(const SamplesIterator& samples_range_first,
+                              const SamplesIterator& samples_range_last,
+                              const Function&        centroids_initializer);
 
     template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
-    std::vector<T> fit(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last);
+    std::vector<DataType> fit(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last);
 
     template <typename SamplesIterator, typename Function>
-    std::vector<T> fit(const SamplesIterator& samples_range_first,
-                       const SamplesIterator& samples_range_last,
-                       const Function&        centroids_initializer);
+    std::vector<DataType> fit(const SamplesIterator& samples_range_first,
+                              const SamplesIterator& samples_range_last,
+                              const Function&        centroids_initializer);
 
     template <typename SamplesIterator>
-    std::vector<T> fit(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last);
+    std::vector<DataType> fit(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last);
 
     template <typename SamplesIterator>
-    std::vector<T> forward(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last) const;
+    std::vector<DataType> forward(const SamplesIterator& samples_range_first,
+                                  const SamplesIterator& samples_range_last) const;
 
     template <typename SamplesIterator>
     std::vector<std::size_t> predict(const SamplesIterator& samples_range_first,
@@ -112,52 +116,52 @@ class KMeans {
     // number of features (dimensions) that a KMeans instance should handle
     std::size_t n_features_;
     // n_centroids_ x n_features_ vectorized matrix (n_centroids_ could vary)
-    std::vector<T> centroids_;
+    std::vector<DataType> centroids_;
 
     Options options_;
 };
 
-template <typename T>
-KMeans<T>::KMeans(std::size_t n_centroids, std::size_t n_features)
+template <typename DataType>
+KMeans<DataType>::KMeans(std::size_t n_centroids, std::size_t n_features)
   : n_centroids_{n_centroids}
   , n_features_{n_features} {}
 
-template <typename T>
-KMeans<T>::KMeans(std::size_t n_centroids, std::size_t n_features, const Options& options)
+template <typename DataType>
+KMeans<DataType>::KMeans(std::size_t n_centroids, std::size_t n_features, const Options& options)
   : n_centroids_{n_centroids}
   , n_features_{n_features}
   , options_{options} {}
 
-template <typename T>
-KMeans<T>::KMeans(std::size_t n_centroids, std::size_t n_features, const std::vector<T>& centroids)
+template <typename DataType>
+KMeans<DataType>::KMeans(std::size_t n_centroids, std::size_t n_features, const std::vector<DataType>& centroids)
   : n_centroids_{n_centroids}
   , n_features_{n_features}
   , centroids_{centroids} {}
 
-template <typename T>
-KMeans<T>::KMeans(std::size_t           n_centroids,
-                  std::size_t           n_features,
-                  const std::vector<T>& centroids,
-                  const Options&        options)
+template <typename DataType>
+KMeans<DataType>::KMeans(std::size_t                  n_centroids,
+                         std::size_t                  n_features,
+                         const std::vector<DataType>& centroids,
+                         const Options&               options)
   : n_centroids_{n_centroids}
   , n_features_{n_features}
   , centroids_{centroids}
   , options_{options} {}
 
-template <typename T>
-KMeans<T>& KMeans<T>::set_options(const Options& options) {
+template <typename DataType>
+KMeans<DataType>& KMeans<DataType>::set_options(const Options& options) {
     options_ = options;
     return *this;
 }
 
-template <typename T>
+template <typename DataType>
 template <template <typename> class KMeansAlgorithm, typename SamplesIterator, typename Function>
-std::vector<T> KMeans<T>::fit(const SamplesIterator& samples_range_first,
-                              const SamplesIterator& samples_range_last,
-                              const Function&        centroids_initializer) {
+std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range_first,
+                                            const SamplesIterator& samples_range_last,
+                                            const Function&        centroids_initializer) {
     // contains the centroids for each tries which number is defined by options_.n_init_ if centroids_ werent already
     // assigned
-    auto centroids_candidates = std::vector<std::vector<T>>();
+    auto centroids_candidates = std::vector<std::vector<DataType>>();
 
     if (centroids_.empty()) {
         for (std::size_t k = 0; k < options_.n_init_; ++k) {
@@ -170,13 +174,13 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& samples_range_first,
         centroids_candidates.emplace_back(centroids_);
     }
     // make the losses buffer for each centroids candidates
-    auto candidates_losses = std::vector<T>(centroids_candidates.size());
+    auto candidates_losses = std::vector<DataType>(centroids_candidates.size());
 
     // This creates a n_candidates vector of n_centroids vectors. The elements of each vector should be initialized to
     // infinity, but since common::utils::are_containers_equal checks container sizes, it's not necessary to do so. We
     // could use only one candidate with a single thread but we make it thread safe this way we dont necessarily need to
     // initialize with vectors of infinities
-    auto centroids_candidates_prev = std::vector<std::vector<T>>(centroids_candidates.size());
+    auto centroids_candidates_prev = std::vector<std::vector<DataType>>(centroids_candidates.size());
 
 #if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for
@@ -227,46 +231,48 @@ std::vector<T> KMeans<T>::fit(const SamplesIterator& samples_range_first,
     return centroids_;
 }
 
-template <typename T>
+template <typename DataType>
 template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
-std::vector<T> KMeans<T>::fit(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last) {
+std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range_first,
+                                            const SamplesIterator& samples_range_last) {
     // execute fit function with a default initialization algorithm
     // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
     return fit<KMeansAlgorithm>(
         samples_range_first, samples_range_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
-template <typename T>
+template <typename DataType>
 template <typename SamplesIterator, typename Function>
-std::vector<T> KMeans<T>::fit(const SamplesIterator& samples_range_first,
-                              const SamplesIterator& samples_range_last,
-                              const Function&        centroids_initializer) {
+std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range_first,
+                                            const SamplesIterator& samples_range_last,
+                                            const Function&        centroids_initializer) {
     // execute fit function with a default initialization algorithm
     // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
     return fit<ffcl::Hamerly>(samples_range_first, samples_range_last, centroids_initializer);
 }
 
-template <typename T>
+template <typename DataType>
 template <typename SamplesIterator>
-std::vector<T> KMeans<T>::fit(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last) {
+std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range_first,
+                                            const SamplesIterator& samples_range_last) {
     // execute fit function with a default initialization algorithm
     // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
     return fit<ffcl::Hamerly>(
         samples_range_first, samples_range_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
-template <typename T>
+template <typename DataType>
 template <typename SamplesIterator>
-std::vector<T> KMeans<T>::forward(const SamplesIterator& samples_range_first,
-                                  const SamplesIterator& samples_range_last) const {
+std::vector<DataType> KMeans<DataType>::forward(const SamplesIterator& samples_range_first,
+                                                const SamplesIterator& samples_range_last) const {
     return kmeans::utils::samples_to_nearest_centroid_distances(
         samples_range_first, samples_range_last, n_features_, centroids_);
 }
 
-template <typename T>
+template <typename DataType>
 template <typename SamplesIterator>
-std::vector<std::size_t> KMeans<T>::predict(const SamplesIterator& samples_range_first,
-                                            const SamplesIterator& samples_range_last) const {
+std::vector<std::size_t> KMeans<DataType>::predict(const SamplesIterator& samples_range_first,
+                                                   const SamplesIterator& samples_range_last) const {
     return kmeans::utils::samples_to_nearest_centroid_indices(
         samples_range_first, samples_range_last, n_features_, centroids_);
 }

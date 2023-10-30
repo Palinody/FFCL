@@ -685,7 +685,7 @@ template <typename NearestNeighborsBufferType>
 void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_around_query_index(
     std::size_t                 query_index,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
+    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
     inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
@@ -694,7 +694,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_arou
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_index(std::size_t query_index,
                                                                                       std::size_t n_neighbors) const {
-    knn::NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer(n_neighbors);
+    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
 
     inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
 
@@ -937,7 +937,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_que
     std::size_t                 query_index,
     const DataType&             radius,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
+    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
     inner_radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
@@ -947,7 +947,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_que
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_index(std::size_t     query_index,
                                                                                 const DataType& radius) const {
-    knn::NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer;
+    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
 
@@ -1206,7 +1206,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_range_search_around_quer
     std::size_t                 query_index,
     const HyperRangeType&       kd_bounding_box,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
+    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
     const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
@@ -1226,7 +1226,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
         /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
-    knn::NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer;
+    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_range_search_around_query_index(query_index, translated_kd_bounding_box, nearest_neighbors_buffer);
 
@@ -1492,7 +1492,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_arou
     SamplesIterator             query_feature_first,
     SamplesIterator             query_feature_last,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
+    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
     inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
@@ -1503,7 +1503,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_
     SamplesIterator query_feature_first,
     SamplesIterator query_feature_last,
     std::size_t     n_neighbors) const {
-    knn::NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer(n_neighbors);
+    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
 
     inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
 
@@ -1766,7 +1766,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_que
     SamplesIterator             query_feature_last,
     const DataType&             radius,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
+    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
     inner_radius_search_around_query_sample(query_feature_first, query_feature_last, radius, nearest_neighbors_buffer);
@@ -1776,7 +1776,7 @@ template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_sample(SamplesIterator query_feature_first,
                                                                                  SamplesIterator query_feature_last,
                                                                                  const DataType& radius) const {
-    knn::NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer;
+    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_radius_search_around_query_sample(query_feature_first, query_feature_last, radius, nearest_neighbors_buffer);
 
@@ -2052,7 +2052,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_range_search_around_quer
     SamplesIterator             query_feature_last,
     const HyperRangeType&       kd_bounding_box,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<SamplesIterator>, NearestNeighborsBufferType>,
+    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
                   "Derived class must inherit from NearestNeighborsBufferBase");
 
     const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
@@ -2070,7 +2070,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_sample(
     const auto translated_kd_bounding_box = ffcl::bbox::relative_coordinates_sequence_to_range_bounding_box(
         query_feature_first, query_feature_last, kd_bounding_box);
 
-    knn::NearestNeighborsBuffer<SamplesIterator> nearest_neighbors_buffer;
+    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_range_search_around_query_sample(
         query_feature_first, query_feature_last, translated_kd_bounding_box, nearest_neighbors_buffer);

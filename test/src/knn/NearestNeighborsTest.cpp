@@ -6,7 +6,7 @@
 #include "Range2DBaseFixture.hpp"
 
 template <typename DataType>
-class NearestNeighborTestFixture : public Range2DBaseFixture<DataType> {
+class NearestNeighborsTestFixture : public Range2DBaseFixture<DataType> {
   public:
     void SetUp() override {
         if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
@@ -37,10 +37,11 @@ class NearestNeighborTestFixture : public Range2DBaseFixture<DataType> {
 };
 
 using DataTypes = ::testing::Types<int, std::size_t, float, double>;
-TYPED_TEST_SUITE(NearestNeighborTestFixture, DataTypes);
+TYPED_TEST_SUITE(NearestNeighborsTestFixture, DataTypes);
 
-TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
-    using DataType = TypeParam;
+TYPED_TEST(NearestNeighborsTestFixture, NearestNeighborsTest) {
+    using IndexType = std::size_t;
+    using DataType  = TypeParam;
 
     std::vector<DataType> data = {/*0*/ 0,
                                   /*1*/ 1,
@@ -58,8 +59,6 @@ TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
     std::size_t sample_index_query = 4;
     std::size_t n_neighbors        = 2;
 
-    using SamplesIterator = typename std::vector<DataType>::iterator;
-
     std::vector<std::size_t> nn_indices = {5, 6, 7, 9};
     std::vector<DataType>    nn_distances(nn_indices.size());
 
@@ -72,14 +71,15 @@ TYPED_TEST(NearestNeighborTestFixture, NearestNeighborsTest) {
     printf("Distances:\n");
     this->print_data(nn_distances, 1);
 
-    ffcl::knn::NearestNeighborsBufferWithMemory<SamplesIterator> nn_buffer(nn_indices, nn_distances, n_neighbors);
+    auto nn_buffer =
+        ffcl::knn::NearestNeighborsBufferWithMemory<IndexType, DataType>(nn_indices, nn_distances, n_neighbors);
 
     auto new_nn_buffer = nn_buffer;
 
     for (std::size_t i = 0; i < 5; ++i) {
         ffcl::knn::k_nearest_neighbors(
-            /**/ data.begin(),
-            /**/ data.end(),
+            /**/ nn_indices.begin(),
+            /**/ nn_indices.end(),
             /**/ data.begin(),
             /**/ data.end(),
             /**/ n_features,

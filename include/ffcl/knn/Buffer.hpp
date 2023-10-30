@@ -8,13 +8,10 @@
 
 namespace ffcl::knn {
 
-template <typename SamplesIterator>
+template <typename IndexType, typename DistanceType>
 class NearestNeighborsBufferBase {
   public:
     virtual ~NearestNeighborsBufferBase() {}
-
-    using IndexType    = std::size_t;
-    using DistanceType = typename SamplesIterator::value_type;
 
     using IndicesType   = std::vector<IndexType>;
     using DistancesType = std::vector<DistanceType>;
@@ -55,14 +52,11 @@ class NearestNeighborsBufferBase {
  *
  * @tparam SamplesIterator
  */
-template <typename SamplesIterator>
-class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<SamplesIterator> {
+template <typename IndexType, typename DistanceType>
+class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<IndexType, DistanceType> {
   private:
-    using IndexType    = typename NearestNeighborsBufferBase<SamplesIterator>::IndexType;
-    using DistanceType = typename NearestNeighborsBufferBase<SamplesIterator>::DistanceType;
-
-    using IndicesType   = typename NearestNeighborsBufferBase<SamplesIterator>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
+    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
 
   public:
     explicit NearestNeighborsBufferSorted(const IndicesType& max_capacity = common::utils::infinity<IndexType>())
@@ -137,14 +131,11 @@ class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<SamplesIt
     IndexType     max_capacity_;
 };
 
-template <typename SamplesIterator>
-class NearestNeighborsBuffer : public NearestNeighborsBufferBase<SamplesIterator> {
+template <typename IndexType, typename DistanceType>
+class NearestNeighborsBuffer : public NearestNeighborsBufferBase<IndexType, DistanceType> {
   private:
-    using IndexType    = typename NearestNeighborsBufferBase<SamplesIterator>::IndexType;
-    using DistanceType = typename NearestNeighborsBufferBase<SamplesIterator>::DistanceType;
-
-    using IndicesType   = typename NearestNeighborsBufferBase<SamplesIterator>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
+    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
 
   public:
     explicit NearestNeighborsBuffer(const IndexType& max_capacity = common::utils::infinity<IndexType>())
@@ -254,14 +245,11 @@ class NearestNeighborsBuffer : public NearestNeighborsBufferBase<SamplesIterator
     IndexType     max_capacity_;
 };
 
-template <typename SamplesIterator, typename UnionFindType = ffcl::datastruct::UnionFind<std::size_t>>
-class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<SamplesIterator> {
+template <typename IndexType, typename DistanceType, typename UnionFindType = ffcl::datastruct::UnionFind<std::size_t>>
+class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<IndexType, DistanceType> {
   private:
-    using IndexType    = typename NearestNeighborsBufferBase<SamplesIterator>::IndexType;
-    using DistanceType = typename NearestNeighborsBufferBase<SamplesIterator>::DistanceType;
-
-    using IndicesType   = typename NearestNeighborsBufferBase<SamplesIterator>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
+    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
 
   public:
     NearestNeighborsBufferWithUnionFind(const UnionFindType& union_find_ref,
@@ -386,14 +374,11 @@ class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<Sa
     IndexType            query_representative_;
 };
 
-template <typename SamplesIterator, typename VisitedIndicesType = std::unordered_set<std::size_t>>
-class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<SamplesIterator> {
+template <typename IndexType, typename DistanceType, typename VisitedIndicesType = std::unordered_set<std::size_t>>
+class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<IndexType, DistanceType> {
   private:
-    using IndexType    = typename NearestNeighborsBufferBase<SamplesIterator>::IndexType;
-    using DistanceType = typename NearestNeighborsBufferBase<SamplesIterator>::DistanceType;
-
-    using IndicesType   = typename NearestNeighborsBufferBase<SamplesIterator>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<SamplesIterator>::DistancesType;
+    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
 
     using IndicesIterator = typename std::vector<IndexType>::iterator;
 
