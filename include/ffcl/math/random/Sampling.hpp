@@ -24,8 +24,7 @@ inline std::vector<std::size_t> select_from_range(std::size_t                   
     // keeps track of the indices that have already been generated as unique objects
     std::unordered_set<std::size_t> generated_indices;
     // range: [0, n_indices-1], upper bound included
-    math::random::uniform_distribution<std::size_t> random_number_generator(indices_range.first,
-                                                                            indices_range.second - 1);
+    uniform_distribution<std::size_t> random_number_generator(indices_range.first, indices_range.second - 1);
 
     while (random_distinct_indices.size() < n_choices) {
         const auto index_candidate = random_number_generator();
@@ -62,8 +61,7 @@ inline std::vector<std::size_t> select_from_range_buffered(std::size_t          
 
     for (auto& selected_index : random_distinct_indices) {
         // range: [0, N-1], upper bound is included
-        math::random::uniform_distribution<std::size_t> random_number_generator(0,
-                                                                                initial_indices_candidates.size() - 1);
+        uniform_distribution<std::size_t> random_number_generator(0, initial_indices_candidates.size() - 1);
         // generate the index of the indices vector
         const auto index_index = random_number_generator();
         // get the actual value
@@ -84,7 +82,7 @@ std::vector<typename SamplesIterator::value_type> select_random_sample(const Sam
 
     const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     // selects an index w.r.t. an uniform random distribution [0, n_samples)
-    auto index_select = math::random::uniform_distribution<std::size_t>(0, n_samples - 1);
+    auto index_select = uniform_distribution<std::size_t>(0, n_samples - 1);
     // pick the initial index that represents the first cluster
     const std::size_t random_index = index_select();
 
@@ -184,12 +182,11 @@ std::vector<typename SamplesIterator::value_type> init_spatial_uniform(const Sam
             max_buffer[j]             = std::max(curr_elem, max_buffer[j]);
         }
     }
-    using uniform_distr_ptr = typename std::unique_ptr<math::random::uniform_distribution<FloatType>>;
+    using uniform_distr_ptr = typename std::unique_ptr<uniform_distribution<FloatType>>;
     // initialize a uniform random generatore w.r.t. each feature
     auto random_buffer = std::vector<uniform_distr_ptr>(n_features);
     for (std::size_t f = 0; f < n_features; ++f) {
-        random_buffer[f] =
-            std::make_unique<math::random::uniform_distribution<FloatType>>(min_buffer[f], max_buffer[f]);
+        random_buffer[f] = std::make_unique<uniform_distribution<FloatType>>(min_buffer[f], max_buffer[f]);
     }
     for (std::size_t k = 0; k < n_centroids; ++k) {
         for (std::size_t f = 0; f < n_features; ++f) {

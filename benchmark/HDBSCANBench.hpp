@@ -190,7 +190,7 @@ void run_point_cloud_sequences() {
     // const std::vector<std::size_t> k_nearest_neighbors = {3, 5, 10};
     const std::vector<std::size_t> k_nearest_neighbors = {5};
     // const std::vector<std::size_t> min_cluster_sizes   = {5, 10, 15, 20};
-    const std::vector<std::size_t> min_cluster_sizes = {10};
+    const std::vector<std::size_t> min_cluster_sizes = {15};
 
     const std::vector<fs::path> relative_paths = {fs::path("pointclouds_sequences/1"),
                                                   fs::path("pointclouds_sequences/2"),

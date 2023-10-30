@@ -156,13 +156,13 @@ TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         ffcl::knn::nearest_neighbor(indices.begin(),
-                                                         indices.end(),
-                                                         data.begin(),
-                                                         data.end(),
-                                                         n_features,
-                                                         indices[sample_index_query],
-                                                         current_nearest_neighbor_index,
-                                                         current_nearest_neighbor_distance);
+                                    indices.end(),
+                                    data.begin(),
+                                    data.end(),
+                                    n_features,
+                                    indices[sample_index_query],
+                                    current_nearest_neighbor_index,
+                                    current_nearest_neighbor_distance);
     }
     timer.print_elapsed_seconds(9);
 

@@ -165,12 +165,12 @@ TEST_F(KMeansErrorsTest, SilhouetteTest) {
         const auto predictions = kmeans.predict(data.begin(), data.end());
         // compute the silhouette scores for each sample
         const auto samples_silhouette_values =
-            math::heuristics::silhouette(data.begin(), data.end(), predictions.begin(), predictions.end(), n_features);
+            math::heuristics::silhouette(data.begin(), data.end(), n_features, predictions.begin(), predictions.end());
         // get the average score
-        const auto mean_silhouette_coefficient = math::heuristics::get_mean_silhouette_coefficient(
-            samples_silhouette_values.begin(), samples_silhouette_values.end());
+        const auto average_silhouette = math::heuristics::get_average_silhouette(samples_silhouette_values.begin(),
+                                                                                 samples_silhouette_values.end());
         // accumulate the current scores
-        scores[k - k_min] = mean_silhouette_coefficient;
+        scores[k - k_min] = average_silhouette;
     }
     // find the k corresponding to the number of centroids/medoids k with the best average silhouette score
     const auto best_k = k_min + math::statistics::argmax(scores.begin(), scores.end());

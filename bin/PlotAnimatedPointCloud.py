@@ -144,6 +144,9 @@ def draw_bounding_boxes_3d_2(point_cloud, labels, bounding_box_matrix_plot):
             z=[bounding_box_3d[2, i], bounding_box_3d[2, j]])
 
 def redraw_labelled_point_cloud(point_cloud_xyz, labels, points_plot):
+    point_cloud_xyz = point_cloud_xyz[labels > 0]
+    labels = labels[labels > 0]
+
     points_plot.mlab_source.reset(
                 x=point_cloud_xyz[:, 0],
                 y=point_cloud_xyz[:, 1],

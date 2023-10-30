@@ -170,19 +170,19 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::pair<IndicesIterator, IndicesIterator> quickselect(const IndicesIterator& indices_range_first,
-                                                        const IndicesIterator& indices_range_last,
-                                                        const SamplesIterator& samples_range_first,
-                                                        const SamplesIterator& samples_range_last,
-                                                        std::size_t            n_features,
-                                                        std::size_t            kth_smallest,
-                                                        std::size_t            feature_index) {
+auto quickselect(const IndicesIterator& indices_range_first,
+                 const IndicesIterator& indices_range_last,
+                 const SamplesIterator& samples_range_first,
+                 const SamplesIterator& samples_range_last,
+                 std::size_t            n_features,
+                 std::size_t            kth_smallest,
+                 std::size_t            feature_index) {
     std::size_t left_index  = 0;
     std::size_t right_index = std::distance(indices_range_first, indices_range_last) - 1;
 
     while (true) {
         if (left_index == right_index) {
-            return {indices_range_first + left_index, indices_range_first + right_index + 1};
+            return make_pair(indices_range_first + left_index, indices_range_first + right_index + 1);
         }
         std::size_t pivot_index = median_index_of_three(indices_range_first + left_index,
                                                         indices_range_first + right_index + 1,
@@ -202,7 +202,7 @@ std::pair<IndicesIterator, IndicesIterator> quickselect(const IndicesIterator& i
                                                               feature_index);
 
         if (kth_smallest == pivot_index) {
-            return {indices_range_first + pivot_index, indices_range_first + pivot_index + 1};
+            return std::make_pair(indices_range_first + pivot_index, indices_range_first + pivot_index + 1);
 
         } else if (kth_smallest < pivot_index) {
             right_index = pivot_index - 1;
@@ -238,19 +238,19 @@ std::size_t quicksort(const IndicesIterator& indices_range_first,
 
     // compute the median of the subranges
 
-    std::size_t pivot_index_subrange_left = median_index_of_three(indices_range_first,
-                                                                  indices_range_first + new_pivot_index,
-                                                                  samples_range_first,
-                                                                  samples_range_last,
-                                                                  n_features,
-                                                                  feature_index);
+    const std::size_t pivot_index_of_left_subrange = median_index_of_three(indices_range_first,
+                                                                           indices_range_first + new_pivot_index,
+                                                                           samples_range_first,
+                                                                           samples_range_last,
+                                                                           n_features,
+                                                                           feature_index);
 
-    std::size_t pivot_index_subrange_right = median_index_of_three(indices_range_first + new_pivot_index + 1,
-                                                                   indices_range_last,
-                                                                   samples_range_first,
-                                                                   samples_range_last,
-                                                                   n_features,
-                                                                   feature_index);
+    const std::size_t pivot_index_of_right_subrange = median_index_of_three(indices_range_first + new_pivot_index + 1,
+                                                                            indices_range_last,
+                                                                            samples_range_first,
+                                                                            samples_range_last,
+                                                                            n_features,
+                                                                            feature_index);
 
     // the pivot range is included in the left subrange
 
@@ -259,7 +259,7 @@ std::size_t quicksort(const IndicesIterator& indices_range_first,
               samples_range_first,
               samples_range_last,
               n_features,
-              pivot_index_subrange_left,
+              pivot_index_of_left_subrange,
               feature_index);
 
     quicksort(indices_range_first + new_pivot_index + 1,
@@ -267,7 +267,7 @@ std::size_t quicksort(const IndicesIterator& indices_range_first,
               samples_range_first,
               samples_range_last,
               n_features,
-              pivot_index_subrange_right,
+              pivot_index_of_right_subrange,
               feature_index);
 
     return new_pivot_index;

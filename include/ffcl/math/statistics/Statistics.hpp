@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/linear_algebra/Transpose.hpp"
 
 #include <algorithm>
 #include <cmath>

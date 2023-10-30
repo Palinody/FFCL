@@ -16,27 +16,34 @@ namespace math::heuristics {
  * @brief counts the number of samples associated to a centroid
  * The size of the resulting container is max_element(in_container) + 1
  * E.g.:
- *    IN: {2, 2, 1, 0, 0, 1, 0, 2, 0, 5}
- *    OUT: {4, 2, 3, 0, 0, 1}
+ * Each element is the centroid index associated with a sample:
+ *      IN: {2, 2, 1, 0, 0, 1, 0, 2, 0, 5}
+ * Each element is the count of centroid indices found for each centroid. The number of elements in the array is equal
+ * to the max centroid index found + 1:
+ *      OUT: {4, 2, 3, 0, 0, 1}
+ * WARN: this method will discard the last centroid(s) ind(ex/ices) is they don't have been associated with any sample
+ * since the function won't be able to find them by index. However, if the last centroid index has been associated with
+ * at least one sample, then the smaller centroid indices will be automatically set to 0 as in the example shown above.
  *
- * @tparam IndicesIterator
- * @param sample_to_closest_centroid_index_first
- * @param sample_to_closest_centroid_index_last
- * @return std::vector<std::size_t>
+ * @tparam ClusterLabelsIterator
+ * @param cluster_labels_range_first
+ * @param cluster_labels_range_last
+ * @return std::vector<IndexType>
  */
-template <typename IndicesIterator>
-auto get_cluster_sizes(IndicesIterator sample_to_closest_centroid_index_first,
-                       IndicesIterator sample_to_closest_centroid_index_last) {
-    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
+template <typename ClusterLabelsIterator>
+auto get_cluster_sizes(ClusterLabelsIterator cluster_labels_range_first,
+                       ClusterLabelsIterator cluster_labels_range_last) {
+    using IndexType = typename ClusterLabelsIterator::value_type;
+
+    static_assert(std::is_integral<IndexType>::value, "Cluster labels must be integer.");
 
     // n_centroids = 1 + greatest_centroid_index
-    const auto n_centroids =
-        1 + *std::max_element(sample_to_closest_centroid_index_first, sample_to_closest_centroid_index_last);
+    const auto n_centroids = 1 + *std::max_element(cluster_labels_range_first, cluster_labels_range_last);
     // n_labels = 1 + largest_label_index
-    auto labels_histogram = std::vector<std::size_t>(n_centroids);
+    auto labels_histogram = std::vector<IndexType>(n_centroids);
 
-    while (sample_to_closest_centroid_index_first != sample_to_closest_centroid_index_last) {
-        ++labels_histogram[*(sample_to_closest_centroid_index_first++)];
+    while (cluster_labels_range_first != cluster_labels_range_last) {
+        ++labels_histogram[*(cluster_labels_range_first++)];
     }
     return labels_histogram;
 }
@@ -50,47 +57,46 @@ auto get_cluster_sizes(IndicesIterator sample_to_closest_centroid_index_first,
  *    d(i, j): distance between data points i and j. We subtract 1 to the division because d(i, i) is excluded
  *
  * @tparam SamplesIterator
- * @tparam IndicesIterator
+ * @tparam ClusterLabelsIterator
  * @param samples_range_first
  * @param samples_range_last
- * @param sample_to_closest_centroid_index_first
- * @param sample_to_closest_centroid_index_last
  * @param n_features
+ * @param cluster_labels_range_first
+ * @param cluster_labels_range_last
  * @return std::vector<typename SamplesIterator::value_type>
  */
-template <typename SamplesIterator, typename IndicesIterator>
-auto cohesion(const SamplesIterator& samples_range_first,
-              const SamplesIterator& samples_range_last,
-              const IndicesIterator& sample_to_closest_centroid_index_first,
-              const IndicesIterator& sample_to_closest_centroid_index_last,
-              std::size_t            n_features) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
-                  "Data should be a floating point type.");
-    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
+template <typename SamplesIterator, typename ClusterLabelsIterator>
+auto cohesion(const SamplesIterator&       samples_range_first,
+              const SamplesIterator&       samples_range_last,
+              std::size_t                  n_features,
+              const ClusterLabelsIterator& cluster_labels_range_first,
+              const ClusterLabelsIterator& cluster_labels_range_last) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value, "Samples must be float.");
+    static_assert(std::is_integral<typename ClusterLabelsIterator::value_type>::value,
+                  "Cluster labels must be integer.");
 
     using FloatType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    const auto cluster_sizes =
-        get_cluster_sizes(sample_to_closest_centroid_index_first, sample_to_closest_centroid_index_last);
+    const auto cluster_sizes = get_cluster_sizes(cluster_labels_range_first, cluster_labels_range_last);
 
     auto samples_cohesion_values = std::vector<FloatType>(n_samples);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
-        const std::size_t centroid_index = sample_to_closest_centroid_index_first[sample_index];
+        const std::size_t centroid_index = cluster_labels_range_first[sample_index];
         // iterate over all the other data samples by skipping when i == j or C_I != C_J
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // get the centroid associated to the other sample
-            const std::size_t other_centroid_index = sample_to_closest_centroid_index_first[other_sample_index];
+            const std::size_t other_centroid_index = cluster_labels_range_first[other_sample_index];
             // compute distance only when sample is not itself and belongs to the same cluster
             if ((centroid_index == other_centroid_index) && (sample_index != other_sample_index)) {
                 // accumulate the squared distances
                 samples_cohesion_values[sample_index] +=
-                    math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
-                                                    samples_range_first + sample_index * n_features + n_features,
-                                                    samples_range_first + other_sample_index * n_features);
+                    auto_distance(samples_range_first + sample_index * n_features,
+                                  samples_range_first + sample_index * n_features + n_features,
+                                  samples_range_first + other_sample_index * n_features);
             }
         }
         // number of samples in the current centroid
@@ -115,49 +121,48 @@ auto cohesion(const SamplesIterator& samples_range_first,
  *    d(i, j): distance between data points i and j
  *
  * @tparam SamplesIterator
- * @tparam IndicesIterator
+ * @tparam ClusterLabelsIterator
  * @param samples_range_first
  * @param samples_range_last
- * @param sample_to_closest_centroid_index_first
- * @param sample_to_closest_centroid_index_last
  * @param n_features
+ * @param cluster_labels_range_first
+ * @param cluster_labels_range_last
  * @return std::vector<typename SamplesIterator::value_type>
  */
-template <typename SamplesIterator, typename IndicesIterator>
-auto separation(const SamplesIterator& samples_range_first,
-                const SamplesIterator& samples_range_last,
-                const IndicesIterator& sample_to_closest_centroid_index_first,
-                const IndicesIterator& sample_to_closest_centroid_index_last,
-                std::size_t            n_features) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
-                  "Data should be a floating point type.");
-    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
+template <typename SamplesIterator, typename ClusterLabelsIterator>
+auto separation(const SamplesIterator&       samples_range_first,
+                const SamplesIterator&       samples_range_last,
+                std::size_t                  n_features,
+                const ClusterLabelsIterator& cluster_labels_range_first,
+                const ClusterLabelsIterator& cluster_labels_range_last) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value, "Samples must be float.");
+    static_assert(std::is_integral<typename ClusterLabelsIterator::value_type>::value,
+                  "Cluster labels must be integer.");
 
     using FloatType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    const auto cluster_sizes =
-        get_cluster_sizes(sample_to_closest_centroid_index_first, sample_to_closest_centroid_index_last);
+    const auto cluster_sizes = get_cluster_sizes(cluster_labels_range_first, cluster_labels_range_last);
 
     auto samples_separation_values = std::vector<FloatType>(n_samples);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // get the centroid associated to the current sample
-        const std::size_t centroid_index = sample_to_closest_centroid_index_first[sample_index];
+        const std::size_t centroid_index = cluster_labels_range_first[sample_index];
         // the sum of distances from the current sample to other samples from different centroids
         auto sample_to_other_cluster_samples_distance_mean = std::vector<FloatType>(cluster_sizes.size());
         // iterate over all the other data samples (j) that dont belong to the same cluster
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // get the centroid associated to the other sample
-            const std::size_t other_centroid_index = sample_to_closest_centroid_index_first[other_sample_index];
+            const std::size_t other_centroid_index = cluster_labels_range_first[other_sample_index];
             // compute distance only when sample belongs to a different cluster
             if (centroid_index != other_centroid_index) {
                 // accumulate the squared distances for the correct centroid index
                 sample_to_other_cluster_samples_distance_mean[other_centroid_index] +=
-                    math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
-                                                    samples_range_first + sample_index * n_features + n_features,
-                                                    samples_range_first + other_sample_index * n_features);
+                    auto_distance(samples_range_first + sample_index * n_features,
+                                  samples_range_first + sample_index * n_features + n_features,
+                                  samples_range_first + other_sample_index * n_features);
             }
         }
         // normalize each cluster mean distance sum by each cluster's number of samples
@@ -191,38 +196,32 @@ auto separation(const SamplesIterator& samples_range_first,
  *      Thus: s[i] in [-1, 1]
  *
  * @tparam SamplesIterator
- * @tparam IndicesIterator
+ * @tparam ClusterLabelsIterator
  * @param samples_range_first
  * @param samples_range_last
- * @param sample_to_closest_centroid_index_first
- * @param sample_to_closest_centroid_index_last
  * @param n_features
+ * @param cluster_labels_range_first
+ * @param cluster_labels_range_last
  */
-template <typename SamplesIterator, typename IndicesIterator>
-auto silhouette(const SamplesIterator& samples_range_first,
-                const SamplesIterator& samples_range_last,
-                const IndicesIterator& sample_to_closest_centroid_index_first,
-                const IndicesIterator& sample_to_closest_centroid_index_last,
-                std::size_t            n_features) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
-                  "Data should be a floating point type.");
-    static_assert(std::is_integral<typename IndicesIterator::value_type>::value, "Data should be integer type.");
+template <typename SamplesIterator, typename ClusterLabelsIterator>
+auto silhouette(const SamplesIterator&       samples_range_first,
+                const SamplesIterator&       samples_range_last,
+                std::size_t                  n_features,
+                const ClusterLabelsIterator& cluster_labels_range_first,
+                const ClusterLabelsIterator& cluster_labels_range_last) {
+    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value, "Samples must be float.");
+    static_assert(std::is_integral<typename ClusterLabelsIterator::value_type>::value,
+                  "Cluster labels must be integer.");
 
     using FloatType = typename SamplesIterator::value_type;
 
     const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    const auto cohesion_values = cohesion(samples_range_first,
-                                          samples_range_last,
-                                          sample_to_closest_centroid_index_first,
-                                          sample_to_closest_centroid_index_last,
-                                          n_features);
+    const auto cohesion_values = cohesion(
+        samples_range_first, samples_range_last, n_features, cluster_labels_range_first, cluster_labels_range_last);
 
-    const auto separation_values = separation(samples_range_first,
-                                              samples_range_last,
-                                              sample_to_closest_centroid_index_first,
-                                              sample_to_closest_centroid_index_last,
-                                              n_features);
+    const auto separation_values = separation(
+        samples_range_first, samples_range_last, n_features, cluster_labels_range_first, cluster_labels_range_last);
 
     auto silhouette_values = std::vector<FloatType>(n_samples);
 
@@ -244,8 +243,8 @@ auto silhouette(const SamplesIterator& samples_range_first,
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type get_mean_silhouette_coefficient(const SamplesIterator& samples_silhouette_first,
-                                                                     const SamplesIterator& samples_silhouette_last) {
+auto get_average_silhouette(const SamplesIterator& samples_silhouette_first,
+                            const SamplesIterator& samples_silhouette_last) -> typename SamplesIterator::value_type {
     using FloatType = typename SamplesIterator::value_type;
 
     const auto n_elements = std::distance(samples_silhouette_first, samples_silhouette_last);

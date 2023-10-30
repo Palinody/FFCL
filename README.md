@@ -392,10 +392,10 @@ for (std::size_t k = k_min; k < k_max; ++k) {
     const auto predictions = kmeans.predict(data.begin(), data.end());
     // compute the silhouette scores for each sample
     const auto samples_silhouette_values =
-        math::heuristics::silhouette(data.begin(), data.end(), predictions.begin(), predictions.end(), n_features);
+        math::heuristics::silhouette(data.begin(), data.end(), n_features, predictions.begin(), predictions.end());
 
     // get the average score
-    const auto mean_silhouette_coefficient = math::heuristics::get_mean_silhouette_coefficient(
+    const auto mean_silhouette_coefficient = math::heuristics::get_average_silhouette(
         samples_silhouette_values.begin(), samples_silhouette_values.end());
     // accumulate the current scores
     scores[k - k_min] = mean_silhouette_coefficient;
