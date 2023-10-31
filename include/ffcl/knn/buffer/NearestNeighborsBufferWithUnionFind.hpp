@@ -2,6 +2,7 @@
 
 #include "ffcl/knn/buffer/NearestNeighborsBufferBase.hpp"
 
+#include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/UnionFind.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
 
