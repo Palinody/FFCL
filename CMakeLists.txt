@@ -17,8 +17,8 @@ add_compile_options(
     -fopenmp
 )
 find_package(OpenMP REQUIRED)
-find_package(TBB REQUIRED)
 
+# find_package(TBB REQUIRED)
 include_directories(
     include
 )
@@ -103,8 +103,9 @@ if(MODE STREQUAL "benchmark")
     )
     target_link_libraries(
         ${PROJECT_NAME}
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         ${PCL_LIBRARIES}
         OpenMP::OpenMP_CXX
     )
@@ -186,8 +187,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         SortingTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -205,8 +207,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         NearestNeighborsTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -217,6 +220,86 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        NearestNeighborsBufferSortedTest
+
+        # ---
+        test/src/knn/buffer/NearestNeighborsBufferSortedTest.cpp
+    )
+    target_link_libraries(
+        NearestNeighborsBufferSortedTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        NearestNeighborsBufferSortedTest
+        NearestNeighborsBufferSortedTest
+    )
+
+    add_executable(
+        NearestNeighborsBufferTest
+
+        # ---
+        test/src/knn/buffer/NearestNeighborsBufferTest.cpp
+    )
+    target_link_libraries(
+        NearestNeighborsBufferTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        NearestNeighborsBufferTest
+        NearestNeighborsBufferTest
+    )
+
+    add_executable(
+        NearestNeighborsBufferWithMemoryTest
+
+        # ---
+        test/src/knn/buffer/NearestNeighborsBufferWithMemoryTest.cpp
+    )
+    target_link_libraries(
+        NearestNeighborsBufferWithMemoryTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        NearestNeighborsBufferWithMemoryTest
+        NearestNeighborsBufferWithMemoryTest
+    )
+
+    add_executable(
+        NearestNeighborsBufferWithUnionFindTest
+
+        # ---
+        test/src/knn/buffer/NearestNeighborsBufferWithUnionFindTest.cpp
+    )
+    target_link_libraries(
+        NearestNeighborsBufferWithUnionFindTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        NearestNeighborsBufferWithUnionFindTest
+        NearestNeighborsBufferWithUnionFindTest
+    )
+
+    add_executable(
         StatisticsTest
 
         # ---
@@ -224,8 +307,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         StatisticsTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -243,8 +327,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         TransposeTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -262,8 +347,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         DistributionsTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -281,8 +367,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         UtilsTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -300,8 +387,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KMedoidsTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -319,8 +407,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KMeansTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -338,8 +427,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         DBSCANTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -357,8 +447,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         CondensedClusterTreeTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -376,8 +467,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         HDBSCANTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -395,8 +487,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KDTreeAlgorithmsTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -414,8 +507,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         SplittingRulePolicyTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -433,8 +527,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         AxisSelectionPolicyTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -452,8 +547,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         KDTreeTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -471,8 +567,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         BoruvkasAlgorithmTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -490,8 +587,9 @@ elseif(MODE STREQUAL "gtest")
     )
     target_link_libraries(
         SingleLinkageClusterTreeTest
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
         OpenMP::OpenMP_CXX
@@ -526,8 +624,9 @@ else()
     )
     target_link_libraries(
         ${PROJECT_NAME}
-        PUBLIC
-        TBB::tbb
+
+        # PUBLIC
+        # TBB::tbb
         OpenMP::OpenMP_CXX
     )
 endif()
