@@ -7,10 +7,15 @@
 
 #include "ffcl/math/random/Distributions.hpp"
 
-#include "ffcl/knn/buffer/NearestNeighborsBuffer.hpp"
-#include "ffcl/knn/buffer/NearestNeighborsBufferBase.hpp"
+#include "ffcl/knn/buffer/Base.hpp"
+#include "ffcl/knn/buffer/Unsorted.hpp"
 
-#include "ffcl/knn/NearestNeighbors.hpp"
+#include "ffcl/knn/search/KNearestNeighborsSearch.hpp"
+#include "ffcl/knn/search/NearestNeighborSearch.hpp"
+#include "ffcl/knn/search/RadiusCount.hpp"
+#include "ffcl/knn/search/RadiusSearch.hpp"
+#include "ffcl/knn/search/RangeCount.hpp"
+#include "ffcl/knn/search/RangeSearch.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
@@ -605,14 +610,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        DataType&     current_nearest_neighbor_distance,
                                                                        KDNodeViewPtr kdnode) const {
     // update the current neighbor index and distance. No op if no candidate is closer or if the ranges are empty
-    knn::nearest_neighbor(kdnode->indices_range_.first,
-                          kdnode->indices_range_.second,
-                          samples_range_first_,
-                          samples_range_last_,
-                          n_features_,
-                          query_index,
-                          current_nearest_neighbor_index,
-                          current_nearest_neighbor_distance);
+    knn::search::nearest_neighbor(kdnode->indices_range_.first,
+                                  kdnode->indices_range_.second,
+                                  samples_range_first_,
+                                  samples_range_last_,
+                                  n_features_,
+                                  query_index,
+                                  current_nearest_neighbor_index,
+                                  current_nearest_neighbor_distance);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -688,8 +693,8 @@ template <typename NearestNeighborsBufferType>
 void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_around_query_index(
     std::size_t                 query_index,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from NearestNeighborsBufferBase");
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
+                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
 
     inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
 }
@@ -697,7 +702,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_arou
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_index(std::size_t query_index,
                                                                                       std::size_t n_neighbors) const {
-    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
+    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
 
     inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
 
@@ -736,13 +741,13 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::k_nearest_neighbors(kdnode->indices_range_.first,
-                             kdnode->indices_range_.second,
-                             samples_range_first_,
-                             samples_range_last_,
-                             n_features_,
-                             query_index,
-                             nearest_neighbors_buffer);
+    knn::search::k_nearest_neighbors(kdnode->indices_range_.first,
+                                     kdnode->indices_range_.second,
+                                     samples_range_first_,
+                                     samples_range_last_,
+                                     n_features_,
+                                     query_index,
+                                     nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -856,14 +861,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        KDNodeViewPtr   kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    knn::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
-                                             kdnode->indices_range_.second,
-                                             samples_range_first_,
-                                             samples_range_last_,
-                                             n_features_,
-                                             query_index,
-                                             radius,
-                                             neighbors_count);
+    knn::search::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
+                                                     kdnode->indices_range_.second,
+                                                     samples_range_first_,
+                                                     samples_range_last_,
+                                                     n_features_,
+                                                     query_index,
+                                                     radius,
+                                                     neighbors_count);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -940,8 +945,8 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_que
     std::size_t                 query_index,
     const DataType&             radius,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from NearestNeighborsBufferBase");
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
+                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
 
     inner_radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
 }
@@ -950,7 +955,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_que
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_index(std::size_t     query_index,
                                                                                 const DataType& radius) const {
-    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
+    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
 
@@ -993,14 +998,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
-                                       kdnode->indices_range_.second,
-                                       samples_range_first_,
-                                       samples_range_last_,
-                                       n_features_,
-                                       query_index,
-                                       radius,
-                                       nearest_neighbors_buffer);
+    knn::search::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
+                                               kdnode->indices_range_.second,
+                                               samples_range_first_,
+                                               samples_range_last_,
+                                               n_features_,
+                                               query_index,
+                                               radius,
+                                               nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1121,14 +1126,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        KDNodeViewPtr         kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    knn::increment_neighbors_count_in_hyper_range(kdnode->indices_range_.first,
-                                                  kdnode->indices_range_.second,
-                                                  samples_range_first_,
-                                                  samples_range_last_,
-                                                  n_features_,
-                                                  query_index,
-                                                  kd_bounding_box,
-                                                  neighbors_count);
+    knn::search::increment_neighbors_count_in_hyper_range(kdnode->indices_range_.first,
+                                                          kdnode->indices_range_.second,
+                                                          samples_range_first_,
+                                                          samples_range_last_,
+                                                          n_features_,
+                                                          query_index,
+                                                          kd_bounding_box,
+                                                          neighbors_count);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1209,8 +1214,8 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_range_search_around_quer
     std::size_t                 query_index,
     const HyperRangeType&       kd_bounding_box,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from NearestNeighborsBufferBase");
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
+                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
 
     const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
         /**/ samples_range_first_ + query_index * n_features_,
@@ -1229,7 +1234,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
         /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
-    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
+    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_range_search_around_query_index(query_index, translated_kd_bounding_box, nearest_neighbors_buffer);
 
@@ -1272,14 +1277,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
-                                            kdnode->indices_range_.second,
-                                            samples_range_first_,
-                                            samples_range_last_,
-                                            n_features_,
-                                            query_index,
-                                            kd_bounding_box,
-                                            nearest_neighbors_buffer);
+    knn::search::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
+                                                    kdnode->indices_range_.second,
+                                                    samples_range_first_,
+                                                    samples_range_last_,
+                                                    n_features_,
+                                                    query_index,
+                                                    kd_bounding_box,
+                                                    nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1407,15 +1412,15 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
                                                                        DataType&     current_nearest_neighbor_distance,
                                                                        KDNodeViewPtr kdnode) const {
     // update the current neighbor index and distance. No op if no candidate is closer or if the ranges are empty
-    knn::nearest_neighbor(kdnode->indices_range_.first,
-                          kdnode->indices_range_.second,
-                          samples_range_first_,
-                          samples_range_last_,
-                          n_features_,
-                          query_feature_first,
-                          query_feature_last,
-                          current_nearest_neighbor_index,
-                          current_nearest_neighbor_distance);
+    knn::search::nearest_neighbor(kdnode->indices_range_.first,
+                                  kdnode->indices_range_.second,
+                                  samples_range_first_,
+                                  samples_range_last_,
+                                  n_features_,
+                                  query_feature_first,
+                                  query_feature_last,
+                                  current_nearest_neighbor_index,
+                                  current_nearest_neighbor_distance);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1495,8 +1500,8 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_arou
     SamplesIterator             query_feature_first,
     SamplesIterator             query_feature_last,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from NearestNeighborsBufferBase");
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
+                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
 
     inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
 }
@@ -1506,7 +1511,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_
     SamplesIterator query_feature_first,
     SamplesIterator query_feature_last,
     std::size_t     n_neighbors) const {
-    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
+    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
 
     inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
 
@@ -1549,14 +1554,14 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::k_nearest_neighbors(kdnode->indices_range_.first,
-                             kdnode->indices_range_.second,
-                             samples_range_first_,
-                             samples_range_last_,
-                             n_features_,
-                             query_feature_first,
-                             query_feature_last,
-                             nearest_neighbors_buffer);
+    knn::search::k_nearest_neighbors(kdnode->indices_range_.first,
+                                     kdnode->indices_range_.second,
+                                     samples_range_first_,
+                                     samples_range_last_,
+                                     n_features_,
+                                     query_feature_first,
+                                     query_feature_last,
+                                     nearest_neighbors_buffer);
 
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
@@ -1681,15 +1686,15 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
                                                                        KDNodeViewPtr   kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    knn::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
-                                             kdnode->indices_range_.second,
-                                             samples_range_first_,
-                                             samples_range_last_,
-                                             n_features_,
-                                             query_feature_first,
-                                             query_feature_last,
-                                             radius,
-                                             neighbors_count);
+    knn::search::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
+                                                     kdnode->indices_range_.second,
+                                                     samples_range_first_,
+                                                     samples_range_last_,
+                                                     n_features_,
+                                                     query_feature_first,
+                                                     query_feature_last,
+                                                     radius,
+                                                     neighbors_count);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1769,8 +1774,8 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_que
     SamplesIterator             query_feature_last,
     const DataType&             radius,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from NearestNeighborsBufferBase");
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
+                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
 
     inner_radius_search_around_query_sample(query_feature_first, query_feature_last, radius, nearest_neighbors_buffer);
 }
@@ -1779,7 +1784,7 @@ template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_sample(SamplesIterator query_feature_first,
                                                                                  SamplesIterator query_feature_last,
                                                                                  const DataType& radius) const {
-    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
+    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_radius_search_around_query_sample(query_feature_first, query_feature_last, radius, nearest_neighbors_buffer);
 
@@ -1826,15 +1831,15 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
-                                       kdnode->indices_range_.second,
-                                       samples_range_first_,
-                                       samples_range_last_,
-                                       n_features_,
-                                       query_feature_first,
-                                       query_feature_last,
-                                       radius,
-                                       nearest_neighbors_buffer);
+    knn::search::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
+                                               kdnode->indices_range_.second,
+                                               samples_range_first_,
+                                               samples_range_last_,
+                                               n_features_,
+                                               query_feature_first,
+                                               query_feature_last,
+                                               radius,
+                                               nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -1962,15 +1967,15 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIt
                                                                        KDNodeViewPtr         kdnode) const {
     // update the current neighbors count if they are inside of the radius. No op if no candidate is closer or if the
     // ranges are empty
-    knn::increment_neighbors_count_in_hyper_range(kdnode->indices_range_.first,
-                                                  kdnode->indices_range_.second,
-                                                  samples_range_first_,
-                                                  samples_range_last_,
-                                                  n_features_,
-                                                  query_feature_first,
-                                                  query_feature_last,
-                                                  kd_bounding_box,
-                                                  neighbors_count);
+    knn::search::increment_neighbors_count_in_hyper_range(kdnode->indices_range_.first,
+                                                          kdnode->indices_range_.second,
+                                                          samples_range_first_,
+                                                          samples_range_last_,
+                                                          n_features_,
+                                                          query_feature_first,
+                                                          query_feature_last,
+                                                          kd_bounding_box,
+                                                          neighbors_count);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -2055,8 +2060,8 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_range_search_around_quer
     SamplesIterator             query_feature_last,
     const HyperRangeType&       kd_bounding_box,
     NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::NearestNeighborsBufferBase<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from NearestNeighborsBufferBase");
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
+                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
 
     const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
         query_feature_first, query_feature_last, kd_bounding_box);
@@ -2073,7 +2078,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_sample(
     const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
         query_feature_first, query_feature_last, kd_bounding_box);
 
-    knn::NearestNeighborsBuffer<IndexType, DataType> nearest_neighbors_buffer;
+    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
 
     inner_range_search_around_query_sample(
         query_feature_first, query_feature_last, translated_kd_bounding_box, nearest_neighbors_buffer);
@@ -2121,15 +2126,15 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
     NearestNeighborsBufferType& nearest_neighbors_buffer,
     KDNodeViewPtr               kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
-                                            kdnode->indices_range_.second,
-                                            samples_range_first_,
-                                            samples_range_last_,
-                                            n_features_,
-                                            query_feature_first,
-                                            query_feature_last,
-                                            kd_bounding_box,
-                                            nearest_neighbors_buffer);
+    knn::search::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
+                                                    kdnode->indices_range_.second,
+                                                    samples_range_first_,
+                                                    samples_range_last_,
+                                                    n_features_,
+                                                    query_feature_first,
+                                                    query_feature_last,
+                                                    kd_bounding_box,
+                                                    nearest_neighbors_buffer);
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset

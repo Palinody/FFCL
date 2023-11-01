@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ffcl/knn/buffer/NearestNeighborsBufferWithUnionFind.hpp"
+#include "ffcl/knn/buffer/WithUnionFind.hpp"
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

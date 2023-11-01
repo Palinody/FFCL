@@ -1,12 +1,17 @@
 #include <gtest/gtest.h>
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/knn/NearestNeighbors.hpp"
+
+#include "ffcl/math/heuristics/Distances.hpp"
+
+#include "ffcl/knn/buffer/WithMemory.hpp"
+
+#include "ffcl/knn/search/KNearestNeighborsSearch.hpp"
 
 #include "Range2DBaseFixture.hpp"
 
 template <typename DataType>
-class NearestNeighborsTestFixture : public Range2DBaseFixture<DataType> {
+class KNearestNeighborsSearchTestFixture : public Range2DBaseFixture<DataType> {
   public:
     void SetUp() override {
         if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
@@ -37,9 +42,9 @@ class NearestNeighborsTestFixture : public Range2DBaseFixture<DataType> {
 };
 
 using DataTypes = ::testing::Types<int, std::size_t, float, double>;
-TYPED_TEST_SUITE(NearestNeighborsTestFixture, DataTypes);
+TYPED_TEST_SUITE(KNearestNeighborsSearchTestFixture, DataTypes);
 
-TYPED_TEST(NearestNeighborsTestFixture, NearestNeighborsTest) {
+TYPED_TEST(KNearestNeighborsSearchTestFixture, NearestNeighborsTest) {
     using IndexType = std::size_t;
     using DataType  = TypeParam;
 
@@ -71,13 +76,12 @@ TYPED_TEST(NearestNeighborsTestFixture, NearestNeighborsTest) {
     printf("Distances:\n");
     this->print_data(nn_distances, 1);
 
-    auto nn_buffer =
-        ffcl::knn::NearestNeighborsBufferWithMemory<IndexType, DataType>(nn_indices, nn_distances, n_neighbors);
+    auto nn_buffer = ffcl::knn::buffer::WithMemory<IndexType, DataType>(nn_indices, nn_distances, n_neighbors);
 
     auto new_nn_buffer = nn_buffer;
 
     for (std::size_t i = 0; i < 5; ++i) {
-        ffcl::knn::k_nearest_neighbors(
+        ffcl::knn::search::k_nearest_neighbors(
             /**/ nn_indices.begin(),
             /**/ nn_indices.end(),
             /**/ data.begin(),

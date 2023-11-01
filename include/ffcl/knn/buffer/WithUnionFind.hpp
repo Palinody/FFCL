@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/knn/buffer/NearestNeighborsBufferBase.hpp"
+#include "ffcl/knn/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/UnionFind.hpp"
@@ -14,22 +14,22 @@
 namespace ffcl::knn::buffer {
 
 template <typename IndexType, typename DistanceType, typename UnionFindType = ffcl::datastruct::UnionFind<std::size_t>>
-class NearestNeighborsBufferWithUnionFind : public NearestNeighborsBufferBase<IndexType, DistanceType> {
+class WithUnionFind : public Base<IndexType, DistanceType> {
   private:
-    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
+    using IndicesType   = typename Base<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename Base<IndexType, DistanceType>::DistancesType;
 
   public:
-    NearestNeighborsBufferWithUnionFind(const UnionFindType& union_find_ref,
-                                        const IndexType&     query_representative,
-                                        const IndexType&     max_capacity = common::utils::infinity<IndexType>())
-      : NearestNeighborsBufferWithUnionFind({}, {}, union_find_ref, query_representative, max_capacity) {}
+    WithUnionFind(const UnionFindType& union_find_ref,
+                  const IndexType&     query_representative,
+                  const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+      : WithUnionFind({}, {}, union_find_ref, query_representative, max_capacity) {}
 
-    NearestNeighborsBufferWithUnionFind(const IndicesType&   init_neighbors_indices,
-                                        const DistancesType& init_neighbors_distances,
-                                        const UnionFindType& union_find_ref,
-                                        const IndexType&     query_representative,
-                                        const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+    WithUnionFind(const IndicesType&   init_neighbors_indices,
+                  const DistancesType& init_neighbors_distances,
+                  const UnionFindType& union_find_ref,
+                  const IndexType&     query_representative,
+                  const IndexType&     max_capacity = common::utils::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
       , furthest_buffer_index_{0}

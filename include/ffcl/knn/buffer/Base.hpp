@@ -7,9 +7,9 @@
 namespace ffcl::knn::buffer {
 
 template <typename IndexType, typename DistanceType>
-class NearestNeighborsBufferBase {
+class Base {
   public:
-    virtual ~NearestNeighborsBufferBase() {}
+    virtual ~Base() {}
 
     using IndicesType   = std::vector<IndexType>;
     using DistancesType = std::vector<DistanceType>;

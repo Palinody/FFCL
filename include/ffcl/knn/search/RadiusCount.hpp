@@ -1,0 +1,68 @@
+#pragma once
+
+#include "ffcl/common/Utils.hpp"
+
+#include "ffcl/math/heuristics/Distances.hpp"
+
+#include "ffcl/knn/buffer/Base.hpp"
+
+namespace ffcl::knn::search {
+
+template <typename IndicesIterator, typename SamplesIterator>
+void increment_neighbors_count_in_radius(const IndicesIterator&                      indices_range_first,
+                                         const IndicesIterator&                      indices_range_last,
+                                         const SamplesIterator&                      samples_range_first,
+                                         const SamplesIterator&                      samples_range_last,
+                                         std::size_t                                 n_features,
+                                         std::size_t                                 sample_index_query,
+                                         const typename SamplesIterator::value_type& radius,
+                                         std::size_t&                                neighbors_count) {
+    common::utils::ignore_parameters(samples_range_last);
+
+    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+    for (std::size_t index = 0; index < n_samples; ++index) {
+        const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+        if (candidate_nearest_neighbor_index != sample_index_query) {
+            const auto candidate_nearest_neighbor_distance =
+                math::heuristics::auto_distance(samples_range_first + sample_index_query * n_features,
+                                                samples_range_first + sample_index_query * n_features + n_features,
+                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+            if (candidate_nearest_neighbor_distance < radius) {
+                ++neighbors_count;
+            }
+        }
+    }
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+void increment_neighbors_count_in_radius(const IndicesIterator&                      indices_range_first,
+                                         const IndicesIterator&                      indices_range_last,
+                                         const SamplesIterator&                      samples_range_first,
+                                         const SamplesIterator&                      samples_range_last,
+                                         std::size_t                                 n_features,
+                                         const SamplesIterator&                      feature_query_range_first,
+                                         const SamplesIterator&                      feature_query_range_last,
+                                         const typename SamplesIterator::value_type& radius,
+                                         std::size_t&                                neighbors_count) {
+    common::utils::ignore_parameters(samples_range_last);
+
+    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+    for (std::size_t index = 0; index < n_samples; ++index) {
+        const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+        const auto candidate_nearest_neighbor_distance =
+            math::heuristics::auto_distance(feature_query_range_first,
+                                            feature_query_range_last,
+                                            samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+        if (candidate_nearest_neighbor_distance < radius) {
+            ++neighbors_count;
+        }
+    }
+}
+
+}  // namespace ffcl::knn::search

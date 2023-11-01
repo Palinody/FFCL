@@ -36,7 +36,11 @@ set(HEADER_FILES
     include/ffcl/kmedoids/PAMUtils.hpp
     include/ffcl/kmedoids/PAMBuild.hpp
 
-    include/ffcl/knn/NearestNeighbors.hpp
+    include/ffcl/knn/buffer/Base.hpp
+    include/ffcl/knn/buffer/Sorted.hpp
+    include/ffcl/knn/buffer/Unsorted.hpp
+    include/ffcl/knn/buffer/WithMemory.hpp
+    include/ffcl/knn/buffer/WithUnionFind.hpp
 
     include/ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp
     include/ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp
@@ -200,13 +204,13 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
-        NearestNeighborsTest
+        SortedTest
 
         # ---
-        test/src/knn/NearestNeighborsTest.cpp
+        test/src/knn/buffer/SortedTest.cpp
     )
     target_link_libraries(
-        NearestNeighborsTest
+        SortedTest
 
         # PUBLIC
         # TBB::tbb
@@ -215,18 +219,18 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        NearestNeighborsTest
-        NearestNeighborsTest
+        SortedTest
+        SortedTest
     )
 
     add_executable(
-        NearestNeighborsBufferSortedTest
+        UnsortedTest
 
         # ---
-        test/src/knn/buffer/NearestNeighborsBufferSortedTest.cpp
+        test/src/knn/buffer/UnsortedTest.cpp
     )
     target_link_libraries(
-        NearestNeighborsBufferSortedTest
+        UnsortedTest
 
         # PUBLIC
         # TBB::tbb
@@ -235,18 +239,18 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        NearestNeighborsBufferSortedTest
-        NearestNeighborsBufferSortedTest
+        UnsortedTest
+        UnsortedTest
     )
 
     add_executable(
-        NearestNeighborsBufferTest
+        WithMemoryTest
 
         # ---
-        test/src/knn/buffer/NearestNeighborsBufferTest.cpp
+        test/src/knn/buffer/WithMemoryTest.cpp
     )
     target_link_libraries(
-        NearestNeighborsBufferTest
+        WithMemoryTest
 
         # PUBLIC
         # TBB::tbb
@@ -255,18 +259,18 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        NearestNeighborsBufferTest
-        NearestNeighborsBufferTest
+        WithMemoryTest
+        WithMemoryTest
     )
 
     add_executable(
-        NearestNeighborsBufferWithMemoryTest
+        WithUnionFindTest
 
         # ---
-        test/src/knn/buffer/NearestNeighborsBufferWithMemoryTest.cpp
+        test/src/knn/buffer/WithUnionFindTest.cpp
     )
     target_link_libraries(
-        NearestNeighborsBufferWithMemoryTest
+        WithUnionFindTest
 
         # PUBLIC
         # TBB::tbb
@@ -275,18 +279,18 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        NearestNeighborsBufferWithMemoryTest
-        NearestNeighborsBufferWithMemoryTest
+        WithUnionFindTest
+        WithUnionFindTest
     )
 
     add_executable(
-        NearestNeighborsBufferWithUnionFindTest
+        KNearestNeighborsSearchTest
 
         # ---
-        test/src/knn/buffer/NearestNeighborsBufferWithUnionFindTest.cpp
+        test/src/knn/search/KNearestNeighborsSearchTest.cpp
     )
     target_link_libraries(
-        NearestNeighborsBufferWithUnionFindTest
+        KNearestNeighborsSearchTest
 
         # PUBLIC
         # TBB::tbb
@@ -295,8 +299,108 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        NearestNeighborsBufferWithUnionFindTest
-        NearestNeighborsBufferWithUnionFindTest
+        KNearestNeighborsSearchTest
+        KNearestNeighborsSearchTest
+    )
+
+    add_executable(
+        NearestNeighborSearchTest
+
+        # ---
+        test/src/knn/search/NearestNeighborSearchTest.cpp
+    )
+    target_link_libraries(
+        NearestNeighborSearchTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        NearestNeighborSearchTest
+        NearestNeighborSearchTest
+    )
+
+    add_executable(
+        RadiusCountTest
+
+        # ---
+        test/src/knn/search/RadiusCountTest.cpp
+    )
+    target_link_libraries(
+        RadiusCountTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        RadiusCountTest
+        RadiusCountTest
+    )
+
+    add_executable(
+        RadiusSearchTest
+
+        # ---
+        test/src/knn/search/RadiusSearchTest.cpp
+    )
+    target_link_libraries(
+        RadiusSearchTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        RadiusSearchTest
+        RadiusSearchTest
+    )
+
+    add_executable(
+        RangeCountTest
+
+        # ---
+        test/src/knn/search/RangeCountTest.cpp
+    )
+    target_link_libraries(
+        RangeCountTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        RangeCountTest
+        RangeCountTest
+    )
+
+    add_executable(
+        RangeSearchTest
+
+        # ---
+        test/src/knn/search/RangeSearchTest.cpp
+    )
+    target_link_libraries(
+        RangeSearchTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        RangeSearchTest
+        RangeSearchTest
     )
 
     add_executable(

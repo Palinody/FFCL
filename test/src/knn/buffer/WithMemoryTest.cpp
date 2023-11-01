@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ffcl/knn/buffer/NearestNeighborsBufferWithMemory.hpp"
+#include "ffcl/knn/buffer/WithMemory.hpp"
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

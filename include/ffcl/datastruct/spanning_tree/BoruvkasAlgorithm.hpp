@@ -6,6 +6,8 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
+#include "ffcl/knn/buffer/WithUnionFind.hpp"
+
 #include <cassert>
 #include <cstddef>
 #include <functional>
@@ -244,7 +246,7 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
 
         // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
         // other components using the UnionFind data structure
-        auto nn_buffer = knn::NearestNeighborsBufferWithUnionFind<IndexType, ValueType>(
+        auto nn_buffer = knn::buffer::WithUnionFind<IndexType, ValueType>(
             forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {

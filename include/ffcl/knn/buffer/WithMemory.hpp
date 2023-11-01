@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/knn/buffer/NearestNeighborsBufferBase.hpp"
+#include "ffcl/knn/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
@@ -13,44 +13,44 @@
 namespace ffcl::knn::buffer {
 
 template <typename IndexType, typename DistanceType, typename VisitedIndicesType = std::unordered_set<std::size_t>>
-class NearestNeighborsBufferWithMemory : public NearestNeighborsBufferBase<IndexType, DistanceType> {
+class WithMemory : public Base<IndexType, DistanceType> {
   private:
-    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
+    using IndicesType   = typename Base<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename Base<IndexType, DistanceType>::DistancesType;
 
     using IndicesIterator = typename std::vector<IndexType>::iterator;
 
   public:
-    explicit NearestNeighborsBufferWithMemory(const IndexType& max_capacity = common::utils::infinity<IndexType>())
-      : NearestNeighborsBufferWithMemory({}, {}, max_capacity) {}
+    explicit WithMemory(const IndexType& max_capacity = common::utils::infinity<IndexType>())
+      : WithMemory({}, {}, max_capacity) {}
 
-    NearestNeighborsBufferWithMemory(const VisitedIndicesType& visited_indices_reference,
-                                     const IndexType&          max_capacity = common::utils::infinity<IndexType>())
+    WithMemory(const VisitedIndicesType& visited_indices_reference,
+               const IndexType&          max_capacity = common::utils::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_reference_{visited_indices_reference} {}
 
-    NearestNeighborsBufferWithMemory(VisitedIndicesType&& visited_indices,
-                                     const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+    WithMemory(VisitedIndicesType&& visited_indices,
+               const IndexType&     max_capacity = common::utils::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_{std::move(visited_indices)}
       , visited_indices_reference_{visited_indices_} {}
 
-    NearestNeighborsBufferWithMemory(const IndicesIterator& visited_indices_first,
-                                     const IndicesIterator& visited_indices_last,
-                                     const IndexType&       max_capacity = common::utils::infinity<IndexType>())
+    WithMemory(const IndicesIterator& visited_indices_first,
+               const IndicesIterator& visited_indices_last,
+               const IndexType&       max_capacity = common::utils::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_{VisitedIndicesType(visited_indices_first, visited_indices_last)}
       , visited_indices_reference_{visited_indices_} {}
 
-    NearestNeighborsBufferWithMemory(const IndicesType&   init_neighbors_indices,
-                                     const DistancesType& init_neighbors_distances,
-                                     const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+    WithMemory(const IndicesType&   init_neighbors_indices,
+               const DistancesType& init_neighbors_distances,
+               const IndexType&     max_capacity = common::utils::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
       , furthest_buffer_index_{0}

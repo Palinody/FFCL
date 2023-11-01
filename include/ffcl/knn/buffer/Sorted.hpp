@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/knn/buffer/NearestNeighborsBufferBase.hpp"
+#include "ffcl/knn/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
 
@@ -23,13 +23,13 @@ namespace ffcl::knn::buffer {
  * @tparam SamplesIterator
  */
 template <typename IndexType, typename DistanceType>
-class NearestNeighborsBufferSorted : public NearestNeighborsBufferBase<IndexType, DistanceType> {
+class Sorted : public Base<IndexType, DistanceType> {
   private:
-    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
+    using IndicesType   = typename Base<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename Base<IndexType, DistanceType>::DistancesType;
 
   public:
-    explicit NearestNeighborsBufferSorted(const IndicesType& max_capacity = common::utils::infinity<IndexType>())
+    explicit Sorted(const IndicesType& max_capacity = common::utils::infinity<IndexType>())
       : max_capacity_{max_capacity} {}
 
     std::size_t size() const {

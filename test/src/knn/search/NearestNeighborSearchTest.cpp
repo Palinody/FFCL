@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ffcl/knn/buffer/NearestNeighborsBuffer.hpp"
+#include "ffcl/knn/search/NearestNeighborSearch.hpp"
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

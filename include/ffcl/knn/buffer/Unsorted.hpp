@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/knn/buffer/NearestNeighborsBufferBase.hpp"
+#include "ffcl/knn/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/math/statistics/Statistics.hpp"
@@ -13,18 +13,18 @@
 namespace ffcl::knn::buffer {
 
 template <typename IndexType, typename DistanceType>
-class NearestNeighborsBuffer : public NearestNeighborsBufferBase<IndexType, DistanceType> {
+class Unsorted : public Base<IndexType, DistanceType> {
   private:
-    using IndicesType   = typename NearestNeighborsBufferBase<IndexType, DistanceType>::IndicesType;
-    using DistancesType = typename NearestNeighborsBufferBase<IndexType, DistanceType>::DistancesType;
+    using IndicesType   = typename Base<IndexType, DistanceType>::IndicesType;
+    using DistancesType = typename Base<IndexType, DistanceType>::DistancesType;
 
   public:
-    explicit NearestNeighborsBuffer(const IndexType& max_capacity = common::utils::infinity<IndexType>())
-      : NearestNeighborsBuffer({}, {}, max_capacity) {}
+    explicit Unsorted(const IndexType& max_capacity = common::utils::infinity<IndexType>())
+      : Unsorted({}, {}, max_capacity) {}
 
-    explicit NearestNeighborsBuffer(const IndicesType&   init_neighbors_indices,
-                                    const DistancesType& init_neighbors_distances,
-                                    const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+    explicit Unsorted(const IndicesType&   init_neighbors_indices,
+                      const DistancesType& init_neighbors_distances,
+                      const IndexType&     max_capacity = common::utils::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
       , furthest_buffer_index_{0}
