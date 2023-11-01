@@ -27,16 +27,18 @@ class Singleton : public Base<IndexType, DistanceType> {
         return common::utils::equality(index_, common::utils::infinity<IndexType>()) ? 1 : 0;
     }
 
+    bool empty() const {
+        return common::utils::equality(index_, common::utils::infinity<IndexType>());
+    }
+
     IndexType furthest_k_nearest_neighbor_index() const {
+        assert(common::utils::inequality(index_, common::utils::infinity<IndexType>()));
         return index_;
     }
 
     DistanceType furthest_k_nearest_neighbor_distance() const {
+        assert(common::utils::inequality(index_, common::utils::infinity<IndexType>()));
         return distance_;
-    }
-
-    bool empty() const {
-        return common::utils::equality(index_, common::utils::infinity<IndexType>());
     }
 
     IndicesType indices() const {
@@ -68,6 +70,10 @@ class Singleton : public Base<IndexType, DistanceType> {
             index_    = index_candidate;
             distance_ = distance_candidate;
         }
+    }
+
+    void print() const {
+        std::cout << "(" << index_ << ", " << distance_ << ")\n";
     }
 
   private:
