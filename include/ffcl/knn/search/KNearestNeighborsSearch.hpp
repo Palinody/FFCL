@@ -8,6 +8,14 @@
 
 namespace ffcl::knn::search {
 
+template <typename IndexType, typename ValueType>
+class KNearestNeighborsSearch {
+  public:
+    KNearestNeighborsSearch();
+
+  private:
+};
+
 template <typename IndicesIterator, typename SamplesIterator>
 void k_nearest_neighbors(const IndicesIterator& indices_range_first,
                          const IndicesIterator& indices_range_last,

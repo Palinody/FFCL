@@ -17,10 +17,10 @@ namespace kdtree::algorithms {
 template <typename SamplesIterator>
 ssize_t select_axis_with_largest_bounding_box_difference(
     const ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) {
-    const auto cmp = [](const auto& lhs, const auto& rhs) {
+    const auto comparison = [](const auto& lhs, const auto& rhs) {
         return common::utils::abs(lhs.first - lhs.second) < common::utils::abs(rhs.first - rhs.second);
     };
-    const auto it = std::max_element(kd_bounding_box.begin(), kd_bounding_box.end(), cmp);
+    const auto it = std::max_element(kd_bounding_box.begin(), kd_bounding_box.end(), comparison);
     return std::distance(kd_bounding_box.begin(), it);
 }
 
@@ -53,13 +53,13 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator& indices_range_f
                                           const SamplesIterator& samples_range_first,
                                           const SamplesIterator& samples_range_last,
                                           std::size_t            n_features,
-                                          double                 n_samples_fraction) {
-    assert(n_samples_fraction >= 0 && n_samples_fraction <= 1);
+                                          double                 n_samples_rate) {
+    assert(n_samples_rate >= 0 && n_samples_rate <= 1);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
     // set the number of samples as a fraction of the input
-    const std::size_t n_choices = n_samples_fraction * n_samples;
+    const std::size_t n_choices = n_samples_rate * n_samples;
 
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
@@ -95,14 +95,14 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          indice
                                           const SamplesIterator&          samples_range_first,
                                           const SamplesIterator&          samples_range_last,
                                           std::size_t                     n_features,
-                                          double                          n_samples_fraction,
+                                          double                          n_samples_rate,
                                           const std::vector<std::size_t>& feature_mask) {
-    assert(0 <= n_samples_fraction && n_samples_fraction <= 1);
+    assert(0 <= n_samples_rate && n_samples_rate <= 1);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
     // set the number of samples as a fraction of the input
-    const std::size_t n_choices = n_samples_fraction * n_samples;
+    const std::size_t n_choices = n_samples_rate * n_samples;
 
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {

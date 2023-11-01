@@ -204,6 +204,26 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        SingletonTest
+
+        # ---
+        test/src/knn/buffer/SingletonTest.cpp
+    )
+    target_link_libraries(
+        SingletonTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        SingletonTest
+        SingletonTest
+    )
+
+    add_executable(
         SortedTest
 
         # ---
