@@ -229,7 +229,7 @@ class KDTree {
 
     // existing samples
 
-    // (2)
+    // (1) & (2)
     template <typename NearestNeighborsBufferType>
     void inner_k_nearest_neighbors_around_query_index(std::size_t                 query_index,
                                                       NearestNeighborsBufferType& nearest_neighbors_buffer,
@@ -315,24 +315,6 @@ class KDTree {
 
     // new samples
 
-    // (7)
-    void inner_nearest_neighbor_around_query_sample(SamplesIterator query_feature_first,
-                                                    SamplesIterator query_feature_last,
-                                                    ssize_t&        current_nearest_neighbor_index,
-                                                    DataType&       current_nearest_neighbor_distance,
-                                                    KDNodeViewPtr   kdnode = nullptr) const;
-    // (7)
-    KDNodeViewPtr recurse_to_closest_leaf_node(SamplesIterator query_feature_first,
-                                               SamplesIterator query_feature_last,
-                                               ssize_t&        current_nearest_neighbor_index,
-                                               DataType&       current_nearest_neighbor_distance,
-                                               KDNodeViewPtr   kdnode) const;
-    // (7)
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(SamplesIterator query_feature_first,
-                                                          SamplesIterator query_feature_last,
-                                                          ssize_t&        current_nearest_neighbor_index,
-                                                          DataType&       current_nearest_neighbor_distance,
-                                                          KDNodeViewPtr   kdnode) const;
     // (7) & (8)
     template <typename NearestNeighborsBufferType>
     void inner_k_nearest_neighbors_around_query_sample(SamplesIterator             query_feature_first,
