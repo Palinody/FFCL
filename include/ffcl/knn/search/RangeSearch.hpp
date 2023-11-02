@@ -17,7 +17,6 @@ void k_nearest_neighbors_in_hyper_range(const IndicesIterator&                  
                                         const SamplesIterator&                              samples_range_last,
                                         std::size_t                                         n_features,
                                         std::size_t                                         sample_index_query,
-                                        const bbox::HyperRangeType<SamplesIterator>&        kd_bounding_box,
                                         buffer::Base<typename IndicesIterator::value_type,
                                                      typename SamplesIterator::value_type>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(samples_range_last);
@@ -27,11 +26,7 @@ void k_nearest_neighbors_in_hyper_range(const IndicesIterator&                  
     for (std::size_t index = 0; index < n_samples; ++index) {
         const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
-        if (candidate_nearest_neighbor_index != sample_index_query &&
-            bbox::is_sample_in_kd_bounding_box(
-                samples_range_first + candidate_nearest_neighbor_index * n_features,
-                samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
-                kd_bounding_box)) {
+        if (candidate_nearest_neighbor_index != sample_index_query) {
             const auto candidate_nearest_neighbor_distance =
                 math::heuristics::auto_distance(samples_range_first + sample_index_query * n_features,
                                                 samples_range_first + sample_index_query * n_features + n_features,
@@ -50,7 +45,6 @@ void k_nearest_neighbors_in_hyper_range(const IndicesIterator&                  
                                         std::size_t                                         n_features,
                                         const SamplesIterator&                              feature_query_range_first,
                                         const SamplesIterator&                              feature_query_range_last,
-                                        const bbox::HyperRangeType<SamplesIterator>&        kd_bounding_box,
                                         buffer::Base<typename IndicesIterator::value_type,
                                                      typename SamplesIterator::value_type>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(samples_range_last);
@@ -60,17 +54,12 @@ void k_nearest_neighbors_in_hyper_range(const IndicesIterator&                  
     for (std::size_t index = 0; index < n_samples; ++index) {
         const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
-        if (bbox::is_sample_in_kd_bounding_box(
-                samples_range_first + candidate_nearest_neighbor_index * n_features,
-                samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
-                kd_bounding_box)) {
-            const auto candidate_nearest_neighbor_distance =
-                math::heuristics::auto_distance(feature_query_range_first,
-                                                feature_query_range_last,
-                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
+        const auto candidate_nearest_neighbor_distance =
+            math::heuristics::auto_distance(feature_query_range_first,
+                                            feature_query_range_last,
+                                            samples_range_first + candidate_nearest_neighbor_index * n_features);
 
-            nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
-        }
+        nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
     }
 }
 

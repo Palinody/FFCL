@@ -57,8 +57,13 @@ class Unsorted : public Base<IndexType, DistanceType> {
         return indices_[furthest_buffer_index_];
     }
 
-    DistanceType furthest_k_nearest_neighbor_distance() const {
+    DistanceType upper_bound() const {
         return furthest_k_nearest_neighbor_distance_;
+    }
+
+    DistanceType upper_bound(const IndexType& feature_index) const {
+        common::utils::ignore_parameters(feature_index);
+        return this->upper_bound();
     }
 
     IndicesType indices() const {
@@ -86,14 +91,14 @@ class Unsorted : public Base<IndexType, DistanceType> {
         if (this->n_free_slots()) {
             indices_.emplace_back(index_candidate);
             distances_.emplace_back(distance_candidate);
-            if (distance_candidate > furthest_k_nearest_neighbor_distance_) {
+            if (distance_candidate > this->upper_bound()) {
                 // update the new index position of the furthest in the buffer
                 furthest_buffer_index_                = indices_.size() - 1;
                 furthest_k_nearest_neighbor_distance_ = distance_candidate;
             }
         }
         // populate if the max capacity is reached and the candidate has a closer distance
-        else if (distance_candidate < furthest_k_nearest_neighbor_distance_) {
+        else if (distance_candidate < this->upper_bound()) {
             // replace the previous greatest distance now that the vectors overflow the max capacity
             indices_[furthest_buffer_index_]   = index_candidate;
             distances_[furthest_buffer_index_] = distance_candidate;
@@ -101,6 +106,13 @@ class Unsorted : public Base<IndexType, DistanceType> {
             std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
                 math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
         }
+    }
+
+    void update(const IndexType&    index_candidate,
+                const DistanceType& distance_candidate,
+                const IndexType&    feature_index) {
+        common::utils::ignore_parameters(feature_index);
+        this->update(index_candidate, distance_candidate);
     }
 
     void reset_buffers_except_memory() {

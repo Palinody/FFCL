@@ -15,7 +15,6 @@ void k_nearest_neighbors_in_radius(const IndicesIterator&                       
                                    const SamplesIterator&                              samples_range_last,
                                    std::size_t                                         n_features,
                                    std::size_t                                         sample_index_query,
-                                   const typename SamplesIterator::value_type&         radius,
                                    buffer::Base<typename IndicesIterator::value_type,
                                                 typename SamplesIterator::value_type>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(samples_range_last);
@@ -31,9 +30,7 @@ void k_nearest_neighbors_in_radius(const IndicesIterator&                       
                                                 samples_range_first + sample_index_query * n_features + n_features,
                                                 samples_range_first + candidate_nearest_neighbor_index * n_features);
 
-            if (candidate_nearest_neighbor_distance < radius) {
-                nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
-            }
+            nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
         }
     }
 }
@@ -46,7 +43,6 @@ void k_nearest_neighbors_in_radius(const IndicesIterator&                       
                                    std::size_t                                         n_features,
                                    const SamplesIterator&                              feature_query_range_first,
                                    const SamplesIterator&                              feature_query_range_last,
-                                   const typename SamplesIterator::value_type&         radius,
                                    buffer::Base<typename IndicesIterator::value_type,
                                                 typename SamplesIterator::value_type>& nearest_neighbors_buffer) {
     common::utils::ignore_parameters(samples_range_last);
@@ -61,9 +57,7 @@ void k_nearest_neighbors_in_radius(const IndicesIterator&                       
                                             feature_query_range_last,
                                             samples_range_first + candidate_nearest_neighbor_index * n_features);
 
-        if (candidate_nearest_neighbor_distance < radius) {
-            nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
-        }
+        nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
     }
 }
 

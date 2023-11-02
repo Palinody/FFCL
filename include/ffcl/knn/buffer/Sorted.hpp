@@ -48,8 +48,13 @@ class Sorted : public Base<IndexType, DistanceType> {
         return indices_.back();
     }
 
-    DistanceType furthest_k_nearest_neighbor_distance() const {
+    DistanceType upper_bound() const {
         return distances_.back();
+    }
+
+    DistanceType upper_bound(const IndexType& feature_index) const {
+        common::utils::ignore_parameters(feature_index);
+        return this->upper_bound();
     }
 
     IndicesType indices() const {
@@ -87,6 +92,13 @@ class Sorted : public Base<IndexType, DistanceType> {
             indices_.pop_back();
             distances_.pop_back();
         }
+    }
+
+    void update(const IndexType&    index_candidate,
+                const DistanceType& distance_candidate,
+                const IndexType&    feature_index) {
+        common::utils::ignore_parameters(feature_index);
+        this->update(index_candidate, distance_candidate);
     }
 
     void print() const {

@@ -22,7 +22,9 @@ class Base {
 
     virtual IndexType furthest_k_nearest_neighbor_index() const = 0;
 
-    virtual DistanceType furthest_k_nearest_neighbor_distance() const = 0;
+    virtual DistanceType upper_bound() const = 0;
+
+    virtual DistanceType upper_bound(const IndexType& feature_index) const = 0;
 
     virtual IndicesType indices() const = 0;
 
@@ -35,6 +37,10 @@ class Base {
     virtual std::tuple<IndicesType, DistancesType> move_data_to_indices_distances_pair() = 0;
 
     virtual void update(const IndexType& index_candidate, const DistanceType& distance_candidate) = 0;
+
+    virtual void update(const IndexType&    index_candidate,
+                        const DistanceType& distance_candidate,
+                        const IndexType&    feature_index) = 0;
 
     virtual void print() const = 0;
 };

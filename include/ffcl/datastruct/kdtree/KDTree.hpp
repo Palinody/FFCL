@@ -8,6 +8,8 @@
 #include "ffcl/math/random/Distributions.hpp"
 
 #include "ffcl/knn/buffer/Base.hpp"
+#include "ffcl/knn/buffer/Radius.hpp"
+#include "ffcl/knn/buffer/Range.hpp"
 #include "ffcl/knn/buffer/Singleton.hpp"
 #include "ffcl/knn/buffer/Unsorted.hpp"
 
@@ -136,7 +138,7 @@ class KDTree {
     // (1)
     auto nearest_neighbor_around_query_index(std::size_t query_index) const;
 
-    // (2)
+    // (2) & (4) & (6)
     template <typename NearestNeighborsBufferType>
     void buffered_k_nearest_neighbors_around_query_index(std::size_t                 query_index,
                                                          NearestNeighborsBufferType& nearest_neighbors_buffer) const;
@@ -147,22 +149,12 @@ class KDTree {
     std::size_t radius_count_around_query_index(std::size_t query_index, const DataType& radius) const;
 
     // (4)
-    template <typename NearestNeighborsBufferType>
-    void buffered_radius_search_around_query_index(std::size_t                 query_index,
-                                                   const DataType&             radius,
-                                                   NearestNeighborsBufferType& nearest_neighbors_buffer) const;
-
     auto radius_search_around_query_index(std::size_t query_index, const DataType& radius) const;
 
     // (5)
     std::size_t range_count_around_query_index(std::size_t query_index, const HyperRangeType& kd_bounding_box) const;
 
     // (6)
-    template <typename NearestNeighborsBufferType>
-    void buffered_range_search_around_query_index(std::size_t                 query_index,
-                                                  const HyperRangeType&       kd_bounding_box,
-                                                  NearestNeighborsBufferType& nearest_neighbors_buffer) const;
-
     auto range_search_around_query_index(std::size_t query_index, const HyperRangeType& kd_bounding_box) const;
 
     // new samples
@@ -171,13 +163,13 @@ class KDTree {
     auto nearest_neighbor_around_query_sample(SamplesIterator query_feature_first,
                                               SamplesIterator query_feature_last) const;
 
-    // (7) & (8)
+    // (7) & (8) & (10) & (12)
     template <typename NearestNeighborsBufferType>
     void buffered_k_nearest_neighbors_around_query_sample(SamplesIterator             query_feature_first,
                                                           SamplesIterator             query_feature_last,
                                                           NearestNeighborsBufferType& nearest_neighbors_buffer) const;
 
-    // (7) & (8)
+    // (7) & (8) & (10) & (12)
     auto k_nearest_neighbors_around_query_sample(SamplesIterator query_feature_first,
                                                  SamplesIterator query_feature_last,
                                                  std::size_t     n_neighbors) const;
@@ -186,13 +178,6 @@ class KDTree {
     std::size_t radius_count_around_query_sample(SamplesIterator query_feature_first,
                                                  SamplesIterator query_feature_last,
                                                  const DataType& radius) const;
-
-    // (10)
-    template <typename NearestNeighborsBufferType>
-    void buffered_radius_search_around_query_sample(SamplesIterator             query_feature_first,
-                                                    SamplesIterator             query_feature_last,
-                                                    const DataType&             radius,
-                                                    NearestNeighborsBufferType& nearest_neighbors_buffer) const;
 
     auto radius_search_around_query_sample(SamplesIterator query_feature_first,
                                            SamplesIterator query_feature_last,
@@ -204,12 +189,6 @@ class KDTree {
                                                 const HyperRangeType& kd_bounding_box) const;
 
     // (12)
-    template <typename NearestNeighborsBufferType>
-    void buffered_range_search_around_query_sample(SamplesIterator             query_feature_first,
-                                                   SamplesIterator             query_feature_last,
-                                                   const HyperRangeType&       kd_bounding_box,
-                                                   NearestNeighborsBufferType& nearest_neighbors_buffer) const;
-
     auto range_search_around_query_sample(SamplesIterator       query_feature_first,
                                           SamplesIterator       query_feature_last,
                                           const HyperRangeType& kd_bounding_box) const;
@@ -229,17 +208,17 @@ class KDTree {
 
     // existing samples
 
-    // (1) & (2)
+    // (1) & (2) & (4) & (6)
     template <typename NearestNeighborsBufferType>
     void inner_k_nearest_neighbors_around_query_index(std::size_t                 query_index,
                                                       NearestNeighborsBufferType& nearest_neighbors_buffer,
                                                       KDNodeViewPtr               kdnode = nullptr) const;
-    // (1) & (2)
+    // (1) & (2) & (4) & (6)
     template <typename NearestNeighborsBufferType>
     KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t                 query_index,
                                                NearestNeighborsBufferType& nearest_neighbors_buffer,
                                                KDNodeViewPtr               kdnode) const;
-    // (1) & (2)
+    // (1) & (2) & (4) & (6)
     template <typename NearestNeighborsBufferType>
     KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t                 query_index,
                                                           NearestNeighborsBufferType& nearest_neighbors_buffer,
@@ -259,24 +238,6 @@ class KDTree {
                                                           const DataType& radius,
                                                           std::size_t&    neighbors_count,
                                                           KDNodeViewPtr   kdnode) const;
-    // (4)
-    template <typename NearestNeighborsBufferType>
-    void inner_radius_search_around_query_index(std::size_t                 query_index,
-                                                const DataType&             radius,
-                                                NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                KDNodeViewPtr               kdnode = nullptr) const;
-    // (4)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t                 query_index,
-                                               const DataType&             radius,
-                                               NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                               KDNodeViewPtr               kdnode) const;
-    // (4)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t                 query_index,
-                                                          const DataType&             radius,
-                                                          NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                          KDNodeViewPtr               kdnode) const;
 
     // (5)
     void inner_range_count_around_query_index(std::size_t           query_index,
@@ -294,40 +255,21 @@ class KDTree {
                                                           std::size_t&          neighbors_count,
                                                           KDNodeViewPtr         kdnode) const;
 
-    // (6)
-    template <typename NearestNeighborsBufferType>
-    void inner_range_search_around_query_index(std::size_t                 query_index,
-                                               const HyperRangeType&       kd_bounding_box,
-                                               NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                               KDNodeViewPtr               kdnode = nullptr) const;
-    // (6)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t                 query_index,
-                                               const HyperRangeType&       kd_bounding_box,
-                                               NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                               KDNodeViewPtr               kdnode) const;
-    // (6)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t                 query_index,
-                                                          const HyperRangeType&       kd_bounding_box,
-                                                          NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                          KDNodeViewPtr               kdnode) const;
-
     // new samples
 
-    // (7) & (8)
+    // (7) & (8) & (10) & (12)
     template <typename NearestNeighborsBufferType>
     void inner_k_nearest_neighbors_around_query_sample(SamplesIterator             query_feature_first,
                                                        SamplesIterator             query_feature_last,
                                                        NearestNeighborsBufferType& nearest_neighbors_buffer,
                                                        KDNodeViewPtr               kdnode = nullptr) const;
-    // (7) & (8)
+    // (7) & (8) & (10) & (12)
     template <typename NearestNeighborsBufferType>
     KDNodeViewPtr recurse_to_closest_leaf_node(SamplesIterator             query_feature_first,
                                                SamplesIterator             query_feature_last,
                                                NearestNeighborsBufferType& nearest_neighbors_buffer,
                                                KDNodeViewPtr               kdnode) const;
-    // (7) & (8)
+    // (7) & (8) & (10) & (12)
     template <typename NearestNeighborsBufferType>
     KDNodeViewPtr get_parent_node_after_sibling_traversal(SamplesIterator             query_feature_first,
                                                           SamplesIterator             query_feature_last,
@@ -351,27 +293,7 @@ class KDTree {
                                                           const DataType& radius,
                                                           std::size_t&    neighbors_count,
                                                           KDNodeViewPtr   kdnode) const;
-    // (10)
-    template <typename NearestNeighborsBufferType>
-    void inner_radius_search_around_query_sample(SamplesIterator             query_feature_first,
-                                                 SamplesIterator             query_feature_last,
-                                                 const DataType&             radius,
-                                                 NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                 KDNodeViewPtr               kdnode = nullptr) const;
-    // (10)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr recurse_to_closest_leaf_node(SamplesIterator             query_feature_first,
-                                               SamplesIterator             query_feature_last,
-                                               const DataType&             radius,
-                                               NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                               KDNodeViewPtr               kdnode) const;
-    // (10)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(SamplesIterator             query_feature_first,
-                                                          SamplesIterator             query_feature_last,
-                                                          const DataType&             radius,
-                                                          NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                          KDNodeViewPtr               kdnode) const;
+
     // (11)
     void inner_range_count_around_query_sample(SamplesIterator       query_feature_first,
                                                SamplesIterator       query_feature_last,
@@ -390,27 +312,6 @@ class KDTree {
                                                           const HyperRangeType& kd_bounding_box,
                                                           std::size_t&          neighbors_count,
                                                           KDNodeViewPtr         kdnode) const;
-    // (12)
-    template <typename NearestNeighborsBufferType>
-    void inner_range_search_around_query_sample(SamplesIterator             query_feature_first,
-                                                SamplesIterator             query_feature_last,
-                                                const HyperRangeType&       kd_bounding_box,
-                                                NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                KDNodeViewPtr               kdnode = nullptr) const;
-    // (12)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr recurse_to_closest_leaf_node(SamplesIterator             query_feature_first,
-                                               SamplesIterator             query_feature_last,
-                                               const HyperRangeType&       kd_bounding_box,
-                                               NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                               KDNodeViewPtr               kdnode) const;
-    // (12)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(SamplesIterator             query_feature_first,
-                                                          SamplesIterator             query_feature_last,
-                                                          const HyperRangeType&       kd_bounding_box,
-                                                          NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                          KDNodeViewPtr               kdnode) const;
 
     // Options used to configure the indexing structure.
     Options options_;
@@ -656,10 +557,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
         bool visit_sibling = kdnode->is_left_child()
                                  ? nearest_neighbors_buffer.n_free_slots() ||
                                        common::utils::abs(pivot_split_value - query_split_value) <=
-                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance()
+                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_)
                                  : nearest_neighbors_buffer.n_free_slots() ||
                                        common::utils::abs(pivot_split_value - query_split_value) <
-                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance();
+                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_);
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -796,143 +697,14 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
     return kdnode_parent;
 }
 
-// /*
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_query_index(
-    std::size_t                 query_index,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
-
-    inner_radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
-}
-// */
-
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_index(std::size_t     query_index,
                                                                                 const DataType& radius) const {
-    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
+    auto nearest_neighbors_buffer = knn::buffer::Radius<IndexType, DataType>(radius);
 
-    inner_radius_search_around_query_index(query_index, radius, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
 
     return nearest_neighbors_buffer;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::inner_radius_search_around_query_index(
-    std::size_t                 query_index,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
-    auto current_kdnode = recurse_to_closest_leaf_node(
-        /**/ query_index,
-        /**/ radius,
-        /**/ nearest_neighbors_buffer,
-        /**/ kdnode == nullptr ? root_ : kdnode);
-
-    // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
-    // kdnode parameter is a subtree. A search through the entire tree
-    while (current_kdnode != kdnode) {
-        // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
-        // (nullptr otherwise)
-        current_kdnode = get_parent_node_after_sibling_traversal(
-            /**/ query_index,
-            /**/ radius,
-            /**/ nearest_neighbors_buffer,
-            /**/ current_kdnode);
-    }
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
-    std::size_t                 query_index,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::search::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
-                                               kdnode->indices_range_.second,
-                                               samples_range_first_,
-                                               samples_range_last_,
-                                               n_features_,
-                                               query_index,
-                                               radius,
-                                               nearest_neighbors_buffer);
-    // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
-    if (!kdnode->is_leaf()) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
-
-        // traverse either the left or right child node depending on where the target sample is located relatively to
-        // the cut value
-        if (query_split_value < pivot_split_value) {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_index,
-                /**/ radius,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->left_);
-        } else {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_index,
-                /**/ radius,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->right_);
-        }
-    }
-    return kdnode;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(
-    std::size_t                 query_index,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    auto kdnode_parent = kdnode->parent_.lock();
-    // if kdnode has a parent
-    if (kdnode_parent) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value =
-            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value =
-            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
-        // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a nearest
-        // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
-        // right
-        bool visit_sibling = kdnode->is_left_child()
-                                 ? common::utils::abs(pivot_split_value - query_split_value) <= radius
-                                 : common::utils::abs(pivot_split_value - query_split_value) < radius;
-        // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
-        // closer to the query sample than the current nearest neighbor
-        if (visit_sibling) {
-            // if the sibling kdnode is not nullptr
-            if (auto sibling_node = kdnode->get_sibling_node()) {
-                // get the nearest neighbor from the sibling node
-                inner_radius_search_around_query_index(
-                    /**/ query_index,
-                    /**/ radius,
-                    /**/ nearest_neighbors_buffer,
-                    /**/ sibling_node);
-            }
-        }
-    }
-    // returns nullptr if kdnode doesnt have parent (or is root)
-    return kdnode_parent;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -1067,23 +839,6 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::buffered_range_search_around_query_index(
-    std::size_t                 query_index,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
-
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
-        /**/ samples_range_first_ + query_index * n_features_,
-        /**/ samples_range_first_ + query_index * n_features_ + n_features_,
-        /**/ kd_bounding_box);
-
-    inner_range_search_around_query_index(query_index, translated_kd_bounding_box, nearest_neighbors_buffer);
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
     std::size_t           query_index,
     const HyperRangeType& kd_bounding_box) const {
@@ -1092,131 +847,11 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
         /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
-    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
+    auto nearest_neighbors_buffer = knn::buffer::Range<IndexType, DataType>(translated_kd_bounding_box);
 
-    inner_range_search_around_query_index(query_index, translated_kd_bounding_box, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
 
     return nearest_neighbors_buffer;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::inner_range_search_around_query_index(
-    std::size_t                 query_index,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
-    auto current_kdnode = recurse_to_closest_leaf_node(
-        /**/ query_index,
-        /**/ kd_bounding_box,
-        /**/ nearest_neighbors_buffer,
-        /**/ kdnode == nullptr ? root_ : kdnode);
-
-    // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
-    // kdnode parameter is a subtree. A search through the entire tree
-    while (current_kdnode != kdnode) {
-        // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
-        // (nullptr otherwise)
-        current_kdnode = get_parent_node_after_sibling_traversal(
-            /**/ query_index,
-            /**/ kd_bounding_box,
-            /**/ nearest_neighbors_buffer,
-            /**/ current_kdnode);
-    }
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
-    std::size_t                 query_index,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::search::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
-                                                    kdnode->indices_range_.second,
-                                                    samples_range_first_,
-                                                    samples_range_last_,
-                                                    n_features_,
-                                                    query_index,
-                                                    kd_bounding_box,
-                                                    nearest_neighbors_buffer);
-    // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
-    if (!kdnode->is_leaf()) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value = samples_range_first_[query_index * n_features_ + kdnode->cut_feature_index_];
-
-        // traverse either the left or right child node depending on where the target sample is located relatively to
-        // the cut value
-        if (query_split_value < pivot_split_value) {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_index,
-                /**/ kd_bounding_box,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->left_);
-        } else {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_index,
-                /**/ kd_bounding_box,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->right_);
-        }
-    }
-    return kdnode;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(
-    std::size_t                 query_index,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    auto kdnode_parent = kdnode->parent_.lock();
-    // if kdnode has a parent
-    if (kdnode_parent) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value =
-            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value =
-            samples_range_first_[query_index * n_features_ + kdnode_parent->cut_feature_index_];
-        // if the axiswise distance is equal to size of the bounding box divided by 2 along the current cut dimension
-        // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
-        // hyperrectangle since the values that are equal to the pivot are put to the right
-        bool visit_sibling = kdnode->is_left_child() ? common::utils::abs(pivot_split_value - query_split_value) <=
-                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
-                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
-                                                               2
-                                                     : common::utils::abs(pivot_split_value - query_split_value) <
-                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
-                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
-                                                               2;
-        // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
-        // closer to the query sample than the current nearest neighbor
-        if (visit_sibling) {
-            // if the sibling kdnode is not nullptr
-            if (auto sibling_node = kdnode->get_sibling_node()) {
-                // get the nearest neighbor from the sibling node
-                inner_range_search_around_query_index(
-                    /**/ query_index,
-                    /**/ kd_bounding_box,
-                    /**/ nearest_neighbors_buffer,
-                    /**/ sibling_node);
-            }
-        }
-    }
-    // returns nullptr if kdnode doesnt have parent (or is root)
-    return kdnode_parent;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -1352,10 +987,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
         bool visit_sibling = kdnode->is_left_child()
                                  ? nearest_neighbors_buffer.n_free_slots() ||
                                        common::utils::abs(pivot_split_value - query_split_value) <=
-                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance()
+                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_)
                                  : nearest_neighbors_buffer.n_free_slots() ||
                                        common::utils::abs(pivot_split_value - query_split_value) <
-                                           nearest_neighbors_buffer.furthest_k_nearest_neighbor_distance();
+                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_);
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -1505,150 +1140,14 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::buffered_radius_search_around_query_sample(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
-
-    inner_radius_search_around_query_sample(query_feature_first, query_feature_last, radius, nearest_neighbors_buffer);
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_sample(SamplesIterator query_feature_first,
                                                                                  SamplesIterator query_feature_last,
                                                                                  const DataType& radius) const {
-    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
+    auto nearest_neighbors_buffer = knn::buffer::Radius<IndexType, DataType>(radius);
 
-    inner_radius_search_around_query_sample(query_feature_first, query_feature_last, radius, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
 
     return nearest_neighbors_buffer;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::inner_radius_search_around_query_sample(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
-    auto current_kdnode = recurse_to_closest_leaf_node(
-        /**/ query_feature_first,
-        /**/ query_feature_last,
-        /**/ radius,
-        /**/ nearest_neighbors_buffer,
-        /**/ kdnode == nullptr ? root_ : kdnode);
-
-    // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
-    // kdnode parameter is a subtree. A search through the entire tree
-    while (current_kdnode != kdnode) {
-        // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
-        // (nullptr otherwise)
-        current_kdnode = get_parent_node_after_sibling_traversal(
-            /**/ query_feature_first,
-            /**/ query_feature_last,
-            /**/ radius,
-            /**/ nearest_neighbors_buffer,
-            /**/ current_kdnode);
-    }
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::search::k_nearest_neighbors_in_radius(kdnode->indices_range_.first,
-                                               kdnode->indices_range_.second,
-                                               samples_range_first_,
-                                               samples_range_last_,
-                                               n_features_,
-                                               query_feature_first,
-                                               query_feature_last,
-                                               radius,
-                                               nearest_neighbors_buffer);
-    // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
-    if (!kdnode->is_leaf()) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
-
-        // traverse either the left or right child node depending on where the target sample is located relatively to
-        // the cut value
-        if (query_split_value < pivot_split_value) {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_feature_first,
-                /**/ query_feature_last,
-                /**/ radius,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->left_);
-        } else {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_feature_first,
-                /**/ query_feature_last,
-                /**/ radius,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->right_);
-        }
-    }
-    return kdnode;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const DataType&             radius,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    auto kdnode_parent = kdnode->parent_.lock();
-    // if kdnode has a parent
-    if (kdnode_parent) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value =
-            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
-        // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a nearest
-        // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
-        // right
-        bool visit_sibling = kdnode->is_left_child()
-                                 ? common::utils::abs(pivot_split_value - query_split_value) <= radius
-                                 : common::utils::abs(pivot_split_value - query_split_value) < radius;
-        // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
-        // closer to the query sample than the current nearest neighbor
-        if (visit_sibling) {
-            // if the sibling kdnode is not nullptr
-            if (auto sibling_node = kdnode->get_sibling_node()) {
-                // get the nearest neighbor from the sibling node
-                inner_radius_search_around_query_sample(
-                    /**/ query_feature_first,
-                    /**/ query_feature_last,
-                    /**/ radius,
-                    /**/ nearest_neighbors_buffer,
-                    /**/ sibling_node);
-            }
-        }
-    }
-    // returns nullptr if kdnode doesnt have parent (or is root)
-    return kdnode_parent;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -1791,23 +1290,6 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::buffered_range_search_around_query_sample(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "Derived class must inherit from knn::buffer::Base<IndexType, DataType>");
-
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
-        query_feature_first, query_feature_last, kd_bounding_box);
-
-    inner_range_search_around_query_sample(
-        query_feature_first, query_feature_last, translated_kd_bounding_box, nearest_neighbors_buffer);
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_sample(
     SamplesIterator       query_feature_first,
     SamplesIterator       query_feature_last,
@@ -1815,140 +1297,11 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_sample(
     const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
         query_feature_first, query_feature_last, kd_bounding_box);
 
-    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer;
+    auto nearest_neighbors_buffer = knn::buffer::Range<IndexType, DataType>(translated_kd_bounding_box);
 
-    inner_range_search_around_query_sample(
-        query_feature_first, query_feature_last, translated_kd_bounding_box, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
 
     return nearest_neighbors_buffer;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-void KDTree<IndicesIterator, SamplesIterator>::inner_range_search_around_query_sample(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
-    auto current_kdnode = recurse_to_closest_leaf_node(
-        /**/ query_feature_first,
-        /**/ query_feature_last,
-        /**/ kd_bounding_box,
-        /**/ nearest_neighbors_buffer,
-        /**/ kdnode == nullptr ? root_ : kdnode);
-
-    // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
-    // kdnode parameter is a subtree. A search through the entire tree
-    while (current_kdnode != kdnode) {
-        // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
-        // (nullptr otherwise)
-        current_kdnode = get_parent_node_after_sibling_traversal(
-            /**/ query_feature_first,
-            /**/ query_feature_last,
-            /**/ kd_bounding_box,
-            /**/ nearest_neighbors_buffer,
-            /**/ current_kdnode);
-    }
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    knn::search::k_nearest_neighbors_in_hyper_range(kdnode->indices_range_.first,
-                                                    kdnode->indices_range_.second,
-                                                    samples_range_first_,
-                                                    samples_range_last_,
-                                                    n_features_,
-                                                    query_feature_first,
-                                                    query_feature_last,
-                                                    kd_bounding_box,
-                                                    nearest_neighbors_buffer);
-    // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
-    if (!kdnode->is_leaf()) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value = samples_range_first_[pivot_index * n_features_ + kdnode->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value = query_feature_first[kdnode->cut_feature_index_];
-
-        // traverse either the left or right child node depending on where the target sample is located relatively to
-        // the cut value
-        if (query_split_value < pivot_split_value) {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_feature_first,
-                /**/ query_feature_last,
-                /**/ kd_bounding_box,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->left_);
-        } else {
-            kdnode = recurse_to_closest_leaf_node(
-                /**/ query_feature_first,
-                /**/ query_feature_last,
-                /**/ kd_bounding_box,
-                /**/ nearest_neighbors_buffer,
-                /**/ kdnode->right_);
-        }
-    }
-    return kdnode;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    const HyperRangeType&       kd_bounding_box,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
-    auto kdnode_parent = kdnode->parent_.lock();
-    // if kdnode has a parent
-    if (kdnode_parent) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = kdnode_parent->indices_range_.first[0];
-        // get the split value according to the current split dimension
-        const auto pivot_split_value =
-            samples_range_first_[pivot_index * n_features_ + kdnode_parent->cut_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value = query_feature_first[kdnode_parent->cut_feature_index_];
-        // if the axiswise distance is equal to size of the bounding box divided by 2 along the current cut dimension
-        // (the query is at the center of the bounding box), there could be a nearest neighbor to the other side of the
-        // hyperrectangle since the values that are equal to the pivot are put to the right
-        bool visit_sibling = kdnode->is_left_child() ? common::utils::abs(pivot_split_value - query_split_value) <=
-                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
-                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
-                                                               2
-                                                     : common::utils::abs(pivot_split_value - query_split_value) <
-                                                           (kd_bounding_box[kdnode_parent->cut_feature_index_].second -
-                                                            kd_bounding_box[kdnode_parent->cut_feature_index_].first) /
-                                                               2;
-        // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
-        // closer to the query sample than the current nearest neighbor
-        if (visit_sibling) {
-            // if the sibling kdnode is not nullptr
-            if (auto sibling_node = kdnode->get_sibling_node()) {
-                // get the nearest neighbor from the sibling node
-                inner_range_search_around_query_sample(
-                    /**/ query_feature_first,
-                    /**/ query_feature_last,
-                    /**/ kd_bounding_box,
-                    /**/ nearest_neighbors_buffer,
-                    /**/ sibling_node);
-            }
-        }
-    }
-    // returns nullptr if kdnode doesnt have parent (or is root)
-    return kdnode_parent;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
