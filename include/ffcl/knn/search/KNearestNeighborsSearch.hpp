@@ -17,14 +17,14 @@ class KNearestNeighborsSearch {
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-void k_nearest_neighbors(const IndicesIterator& indices_range_first,
-                         const IndicesIterator& indices_range_last,
-                         const SamplesIterator& samples_range_first,
-                         const SamplesIterator& samples_range_last,
-                         std::size_t            n_features,
-                         std::size_t            sample_index_query,
-                         buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>&
-                             nearest_neighbors_buffer) {
+void k_nearest_neighbors(
+    const IndicesIterator&                                                                    indices_range_first,
+    const IndicesIterator&                                                                    indices_range_last,
+    const SamplesIterator&                                                                    samples_range_first,
+    const SamplesIterator&                                                                    samples_range_last,
+    std::size_t                                                                               n_features,
+    std::size_t                                                                               sample_index_query,
+    buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
     common::utils::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -38,21 +38,21 @@ void k_nearest_neighbors(const IndicesIterator& indices_range_first,
                                                 samples_range_first + sample_index_query * n_features + n_features,
                                                 samples_range_first + candidate_nearest_neighbor_index * n_features);
 
-            nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+            buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
         }
     }
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void k_nearest_neighbors(const IndicesIterator& indices_range_first,
-                         const IndicesIterator& indices_range_last,
-                         const SamplesIterator& samples_range_first,
-                         const SamplesIterator& samples_range_last,
-                         std::size_t            n_features,
-                         const SamplesIterator& feature_query_range_first,
-                         const SamplesIterator& feature_query_range_last,
-                         buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>&
-                             nearest_neighbors_buffer) {
+void k_nearest_neighbors(
+    const IndicesIterator&                                                                    indices_range_first,
+    const IndicesIterator&                                                                    indices_range_last,
+    const SamplesIterator&                                                                    samples_range_first,
+    const SamplesIterator&                                                                    samples_range_last,
+    std::size_t                                                                               n_features,
+    const SamplesIterator&                                                                    feature_query_range_first,
+    const SamplesIterator&                                                                    feature_query_range_last,
+    buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
     common::utils::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -65,7 +65,7 @@ void k_nearest_neighbors(const IndicesIterator& indices_range_first,
                                             feature_query_range_last,
                                             samples_range_first + candidate_nearest_neighbor_index * n_features);
 
-        nearest_neighbors_buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+        buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
     }
 }
 
