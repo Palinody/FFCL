@@ -12,13 +12,16 @@
 
 namespace ffcl::knn::buffer {
 
-template <typename IndexType, typename DistanceType>
-class Radius : public Base<IndexType, DistanceType> {
-  private:
-    using IndicesType   = typename Base<IndexType, DistanceType>::IndicesType;
-    using DistancesType = typename Base<IndexType, DistanceType>::DistancesType;
-
+template <typename IndicesIterator, typename DistancesIterator>
+class Radius : public Base<IndicesIterator, DistancesIterator> {
   public:
+    using IndexType     = typename Base<IndicesIterator, DistancesIterator>::IndexType;
+    using DistanceType  = typename Base<IndicesIterator, DistancesIterator>::DistanceType;
+    using IndicesType   = typename Base<IndicesIterator, DistancesIterator>::IndicesType;
+    using DistancesType = typename Base<IndicesIterator, DistancesIterator>::DistancesType;
+
+    using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
+
     explicit Radius(const DistanceType& radius)
       : Radius(radius, {}, {}) {}
 
@@ -82,22 +85,12 @@ class Radius : public Base<IndexType, DistanceType> {
         }
     }
 
-    void update(const IndexType&    index_candidate,
-                const DistanceType& distance_candidate,
-                const IndexType&    feature_index) {
-        common::utils::ignore_parameters(feature_index);
-        this->update(index_candidate, distance_candidate);
-    }
-
-    /*
-    template <typename IndicesIterator, typename SamplesIterator>
     void operator()(const IndicesIterator& indices_range_first,
                     const IndicesIterator& indices_range_last,
                     const SamplesIterator& samples_range_first,
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
-                    std::size_t            sample_index_query,
-                    buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
+                    std::size_t            sample_index_query) {
         common::utils::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -116,15 +109,13 @@ class Radius : public Base<IndexType, DistanceType> {
         }
     }
 
-    template <typename IndicesIterator, typename SamplesIterator>
     void operator()(const IndicesIterator& indices_range_first,
                     const IndicesIterator& indices_range_last,
                     const SamplesIterator& samples_range_first,
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
-                    const SamplesIterator& feature_query_range_last,
-                    buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
+                    const SamplesIterator& feature_query_range_last) {
         common::utils::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -140,7 +131,6 @@ class Radius : public Base<IndexType, DistanceType> {
             this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
         }
     }
-    */
 
     void print() const {
         for (std::size_t index = 0; index < std::min(indices_.size(), distances_.size()); ++index) {

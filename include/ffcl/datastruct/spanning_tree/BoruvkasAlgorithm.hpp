@@ -26,8 +26,10 @@ namespace ffcl {
 template <typename Indexer>
 class BoruvkasAlgorithm {
   public:
-    using IndexType = typename Indexer::IndexType;
-    using ValueType = typename Indexer::DataType;
+    using IndexType           = typename Indexer::IndexType;
+    using ValueType           = typename Indexer::DataType;
+    using IndicesIteratorType = typename Indexer::IndicesIteratorType;
+    using SamplesIteratorType = typename Indexer::SamplesIteratorType;
 
     using ComponentType = std::unordered_set<IndexType>;
     using ForestType    = std::map<IndexType, ComponentType>;
@@ -245,7 +247,7 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
 
         // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
         // other components using the UnionFind data structure
-        auto nn_buffer = knn::buffer::WithUnionFind<IndexType, ValueType>(
+        auto nn_buffer = knn::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
             forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {

@@ -160,9 +160,8 @@ class KDTree {
     auto nearest_neighbor_around_query_index(std::size_t query_index) const;
 
     // (2) & (4) & (6)
-    template <typename NearestNeighborsBufferType>
-    void buffered_k_nearest_neighbors_around_query_index(std::size_t                 query_index,
-                                                         NearestNeighborsBufferType& nearest_neighbors_buffer) const;
+    template <typename BufferType>
+    void buffered_k_nearest_neighbors_around_query_index(std::size_t query_index, BufferType& buffer) const;
 
     auto k_nearest_neighbors_around_query_index(std::size_t query_index, std::size_t n_neighbors) const;
 
@@ -185,10 +184,10 @@ class KDTree {
                                               SamplesIterator query_feature_last) const;
 
     // (7) & (8) & (9) & (10) & (12)
-    template <typename NearestNeighborsBufferType>
-    void buffered_k_nearest_neighbors_around_query_sample(SamplesIterator             query_feature_first,
-                                                          SamplesIterator             query_feature_last,
-                                                          NearestNeighborsBufferType& nearest_neighbors_buffer) const;
+    template <typename BufferType>
+    void buffered_k_nearest_neighbors_around_query_sample(SamplesIterator query_feature_first,
+                                                          SamplesIterator query_feature_last,
+                                                          BufferType&     buffer) const;
 
     // (7) & (8) & (9) & (10) & (12)
     auto k_nearest_neighbors_around_query_sample(SamplesIterator query_feature_first,
@@ -231,41 +230,39 @@ class KDTree {
     // existing samples
 
     // (1) & (2) & (3) & (4) & (5) & (6)
-    template <typename NearestNeighborsBufferType>
-    void inner_k_nearest_neighbors_around_query_index(std::size_t                 query_index,
-                                                      NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                      KDNodeViewPtr               kdnode = nullptr) const;
+    template <typename BufferType>
+    void inner_k_nearest_neighbors_around_query_index(std::size_t   query_index,
+                                                      BufferType&   buffer,
+                                                      KDNodeViewPtr kdnode = nullptr) const;
     // (1) & (2) & (3) & (4) & (5) & (6)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t                 query_index,
-                                               NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                               KDNodeViewPtr               kdnode) const;
+    template <typename BufferType>
+    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t query_index, BufferType& buffer, KDNodeViewPtr kdnode) const;
     // (1) & (2) & (3) & (4) & (5) & (6)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t                 query_index,
-                                                          NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                          KDNodeViewPtr               kdnode) const;
+    template <typename BufferType>
+    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t   query_index,
+                                                          BufferType&   buffer,
+                                                          KDNodeViewPtr kdnode) const;
 
     // new samples
 
     // (7) & (8) & (9) & (10) & (11) & (12)
-    template <typename NearestNeighborsBufferType>
-    void inner_k_nearest_neighbors_around_query_sample(SamplesIterator             query_feature_first,
-                                                       SamplesIterator             query_feature_last,
-                                                       NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                       KDNodeViewPtr               kdnode = nullptr) const;
+    template <typename BufferType>
+    void inner_k_nearest_neighbors_around_query_sample(SamplesIterator query_feature_first,
+                                                       SamplesIterator query_feature_last,
+                                                       BufferType&     buffer,
+                                                       KDNodeViewPtr   kdnode = nullptr) const;
     // (7) & (8) & (9) & (10) & (11) & (12)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr recurse_to_closest_leaf_node(SamplesIterator             query_feature_first,
-                                               SamplesIterator             query_feature_last,
-                                               NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                               KDNodeViewPtr               kdnode) const;
+    template <typename BufferType>
+    KDNodeViewPtr recurse_to_closest_leaf_node(SamplesIterator query_feature_first,
+                                               SamplesIterator query_feature_last,
+                                               BufferType&     buffer,
+                                               KDNodeViewPtr   kdnode) const;
     // (7) & (8) & (9) & (10) & (11) & (12)
-    template <typename NearestNeighborsBufferType>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(SamplesIterator             query_feature_first,
-                                                          SamplesIterator             query_feature_last,
-                                                          NearestNeighborsBufferType& nearest_neighbors_buffer,
-                                                          KDNodeViewPtr               kdnode) const;
+    template <typename BufferType>
+    KDNodeViewPtr get_parent_node_after_sibling_traversal(SamplesIterator query_feature_first,
+                                                          SamplesIterator query_feature_last,
+                                                          BufferType&     buffer,
+                                                          KDNodeViewPtr   kdnode) const;
 
     // Options used to configure the indexing structure.
     Options options_;
@@ -394,46 +391,46 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_index(std::size_t query_index) const {
-    auto nearest_neighbors_buffer = knn::buffer::Singleton<IndexType, DataType>();
+    auto buffer = knn::buffer::Singleton<IndicesIterator, SamplesIterator>();
 
-    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer, root_);
+    inner_k_nearest_neighbors_around_query_index(query_index, buffer, root_);
 
-    return nearest_neighbors_buffer.closest_neighbor_index_distance_pair();
+    return buffer.closest_neighbor_index_distance_pair();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_around_query_index(
-    std::size_t                 query_index,
-    NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType> ||
-                      std::is_base_of_v<knn::count::Base<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "NearestNeighborsBufferType must inherit from knn::buffer::Base<IndexType, DataType> or "
-                  "knn::count::Base<IndexType, DataType>");
+    std::size_t query_index,
+    BufferType& buffer) const {
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIterator, SamplesIterator>, BufferType> ||
+                      std::is_base_of_v<knn::count::Base<IndicesIterator, SamplesIterator>, BufferType>,
+                  "BufferType must inherit from knn::buffer::Base<IndicesIterator, SamplesIterator> or "
+                  "knn::count::Base<IndicesIterator, SamplesIterator>");
 
-    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_index(std::size_t query_index,
                                                                                       std::size_t n_neighbors) const {
-    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
+    knn::buffer::Unsorted<IndicesIterator, SamplesIterator> buffer(n_neighbors);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
 
-    return nearest_neighbors_buffer;
+    return buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 void KDTree<IndicesIterator, SamplesIterator>::inner_k_nearest_neighbors_around_query_index(
-    std::size_t                 query_index,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
+    std::size_t   query_index,
+    BufferType&   buffer,
+    KDNodeViewPtr kdnode) const {
     // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
     auto current_kdnode = recurse_to_closest_leaf_node(
         /**/ query_index,
-        /**/ nearest_neighbors_buffer,
+        /**/ buffer,
         /**/ kdnode == nullptr ? root_ : kdnode);
 
     // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
@@ -443,39 +440,25 @@ void KDTree<IndicesIterator, SamplesIterator>::inner_k_nearest_neighbors_around_
         // (nullptr otherwise)
         current_kdnode = get_parent_node_after_sibling_traversal(
             /**/ query_index,
-            /**/ nearest_neighbors_buffer,
+            /**/ buffer,
             /**/ current_kdnode);
     }
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
-    std::size_t                 query_index,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
+KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size_t   query_index,
+                                                                       BufferType&   buffer,
+                                                                       KDNodeViewPtr kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    if constexpr (std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>) {
-        knn::search::k_nearest_neighbors(kdnode->indices_range_.first,
-                                         kdnode->indices_range_.second,
-                                         samples_range_first_,
-                                         samples_range_last_,
-                                         n_features_,
-                                         query_index,
-                                         nearest_neighbors_buffer);
+    buffer(kdnode->indices_range_.first,
+           kdnode->indices_range_.second,
+           samples_range_first_,
+           samples_range_last_,
+           n_features_,
+           query_index);
 
-    } else if constexpr (std::is_base_of_v<knn::count::Base<IndexType, DataType>, NearestNeighborsBufferType>) {
-        knn::count::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
-                                                        kdnode->indices_range_.second,
-                                                        samples_range_first_,
-                                                        samples_range_last_,
-                                                        n_features_,
-                                                        query_index,
-                                                        nearest_neighbors_buffer);
-    } else {
-        throw;
-    }
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
         // get the pivot sample index in the dataset
@@ -490,12 +473,12 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
         if (query_split_value < pivot_split_value) {
             kdnode = recurse_to_closest_leaf_node(
                 /**/ query_index,
-                /**/ nearest_neighbors_buffer,
+                /**/ buffer,
                 /**/ kdnode->left_);
         } else {
             kdnode = recurse_to_closest_leaf_node(
                 /**/ query_index,
-                /**/ nearest_neighbors_buffer,
+                /**/ buffer,
                 /**/ kdnode->right_);
         }
     }
@@ -503,12 +486,11 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(
-    std::size_t                 query_index,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
+KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(std::size_t   query_index,
+                                                                                  BufferType&   buffer,
+                                                                                  KDNodeViewPtr kdnode) const {
     auto kdnode_parent = kdnode->parent_.lock();
     // if kdnode has a parent
     if (kdnode_parent) {
@@ -524,12 +506,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
         bool visit_sibling = kdnode->is_left_child()
-                                 ? nearest_neighbors_buffer.n_free_slots() ||
-                                       common::utils::abs(pivot_split_value - query_split_value) <=
-                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_)
-                                 : nearest_neighbors_buffer.n_free_slots() ||
-                                       common::utils::abs(pivot_split_value - query_split_value) <
-                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_);
+                                 ? buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <=
+                                                                buffer.upper_bound(kdnode_parent->cut_feature_index_)
+                                 : buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <
+                                                                buffer.upper_bound(kdnode_parent->cut_feature_index_);
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -538,7 +518,7 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
                 // get the nearest neighbor from the sibling node
                 inner_k_nearest_neighbors_around_query_index(
                     /**/ query_index,
-                    /**/ nearest_neighbors_buffer,
+                    /**/ buffer,
                     /**/ sibling_node);
             }
         }
@@ -550,79 +530,78 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::radius_count_around_query_index(std::size_t     query_index,
                                                                                       const DataType& radius) const {
-    auto nearest_neighbors_buffer = knn::count::Radius<IndexType, DataType>(radius);
+    auto buffer = knn::count::Radius<IndicesIterator, SamplesIterator>(radius);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
 
-    return nearest_neighbors_buffer.count();
+    return buffer.count();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_index(std::size_t     query_index,
                                                                                 const DataType& radius) const {
-    auto nearest_neighbors_buffer = knn::buffer::Radius<IndexType, DataType>(radius);
+    auto buffer = knn::buffer::Radius<IndicesIterator, SamplesIterator>(radius);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
 
-    return nearest_neighbors_buffer;
+    return buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_index(
     std::size_t           query_index,
     const HyperRangeType& kd_bounding_box) const {
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = bbox::relative_to_absolute_coordinates(
         /**/ samples_range_first_ + query_index * n_features_,
         /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
-    auto nearest_neighbors_buffer = knn::count::Range<IndexType, DataType>(translated_kd_bounding_box);
+    auto buffer = knn::count::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
 
-    return nearest_neighbors_buffer.count();
+    return buffer.count();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
     std::size_t           query_index,
     const HyperRangeType& kd_bounding_box) const {
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
+    const auto translated_kd_bounding_box = bbox::relative_to_absolute_coordinates(
         /**/ samples_range_first_ + query_index * n_features_,
         /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
-    auto nearest_neighbors_buffer = knn::buffer::Range<IndexType, DataType>(translated_kd_bounding_box);
+    auto buffer = knn::buffer::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
 
-    return nearest_neighbors_buffer;
+    return buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_sample(
     SamplesIterator query_feature_first,
     SamplesIterator query_feature_last) const {
-    auto nearest_neighbors_buffer = knn::buffer::Singleton<IndexType, DataType>();
+    auto buffer = knn::buffer::Singleton<IndicesIterator, SamplesIterator>();
 
-    inner_k_nearest_neighbors_around_query_sample(
-        query_feature_first, query_feature_last, nearest_neighbors_buffer, root_);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, buffer, root_);
 
-    return nearest_neighbors_buffer.closest_neighbor_index_distance_pair();
+    return buffer.closest_neighbor_index_distance_pair();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_around_query_sample(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    NearestNeighborsBufferType& nearest_neighbors_buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType> ||
-                      std::is_base_of_v<knn::count::Base<IndexType, DataType>, NearestNeighborsBufferType>,
-                  "NearestNeighborsBufferType must inherit from knn::buffer::Base<IndexType, DataType> or "
-                  "knn::count::Base<IndexType, DataType>");
+    SamplesIterator query_feature_first,
+    SamplesIterator query_feature_last,
+    BufferType&     buffer) const {
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIterator, SamplesIterator>, BufferType> ||
+                      std::is_base_of_v<knn::count::Base<IndicesIterator, SamplesIterator>, BufferType>,
+                  "BufferType must inherit from knn::buffer::Base<IndicesIterator, SamplesIterator> or "
+                  "knn::count::Base<IndicesIterator, SamplesIterator>");
 
-    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, buffer);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -630,25 +609,25 @@ auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_
     SamplesIterator query_feature_first,
     SamplesIterator query_feature_last,
     std::size_t     n_neighbors) const {
-    knn::buffer::Unsorted<IndexType, DataType> nearest_neighbors_buffer(n_neighbors);
+    knn::buffer::Unsorted<IndicesIterator, SamplesIterator> buffer(n_neighbors);
 
-    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, buffer);
 
-    return nearest_neighbors_buffer;
+    return buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 void KDTree<IndicesIterator, SamplesIterator>::inner_k_nearest_neighbors_around_query_sample(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
+    SamplesIterator query_feature_first,
+    SamplesIterator query_feature_last,
+    BufferType&     buffer,
+    KDNodeViewPtr   kdnode) const {
     // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
     auto current_kdnode = recurse_to_closest_leaf_node(
         /**/ query_feature_first,
         /**/ query_feature_last,
-        /**/ nearest_neighbors_buffer,
+        /**/ buffer,
         /**/ kdnode == nullptr ? root_ : kdnode);
 
     // performs a nearest neighbor search one step at a time from the leaf node until the input kdnode is reached if
@@ -659,42 +638,26 @@ void KDTree<IndicesIterator, SamplesIterator>::inner_k_nearest_neighbors_around_
         current_kdnode = get_parent_node_after_sibling_traversal(
             /**/ query_feature_first,
             /**/ query_feature_last,
-            /**/ nearest_neighbors_buffer,
+            /**/ buffer,
             /**/ current_kdnode);
     }
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
+KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(SamplesIterator query_feature_first,
+                                                                       SamplesIterator query_feature_last,
+                                                                       BufferType&     buffer,
+                                                                       KDNodeViewPtr   kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    if constexpr (std::is_base_of_v<knn::buffer::Base<IndexType, DataType>, NearestNeighborsBufferType>) {
-        knn::search::k_nearest_neighbors(kdnode->indices_range_.first,
-                                         kdnode->indices_range_.second,
-                                         samples_range_first_,
-                                         samples_range_last_,
-                                         n_features_,
-                                         query_feature_first,
-                                         query_feature_last,
-                                         nearest_neighbors_buffer);
-
-    } else if constexpr (std::is_base_of_v<knn::count::Base<IndexType, DataType>, NearestNeighborsBufferType>) {
-        knn::count::increment_neighbors_count_in_radius(kdnode->indices_range_.first,
-                                                        kdnode->indices_range_.second,
-                                                        samples_range_first_,
-                                                        samples_range_last_,
-                                                        n_features_,
-                                                        query_feature_first,
-                                                        query_feature_last,
-                                                        nearest_neighbors_buffer);
-    } else {
-        throw;
-    }
+    buffer(kdnode->indices_range_.first,
+           kdnode->indices_range_.second,
+           samples_range_first_,
+           samples_range_last_,
+           n_features_,
+           query_feature_first,
+           query_feature_last);
 
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
@@ -711,13 +674,13 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
             kdnode = recurse_to_closest_leaf_node(
                 /**/ query_feature_first,
                 /**/ query_feature_last,
-                /**/ nearest_neighbors_buffer,
+                /**/ buffer,
                 /**/ kdnode->left_);
         } else {
             kdnode = recurse_to_closest_leaf_node(
                 /**/ query_feature_first,
                 /**/ query_feature_last,
-                /**/ nearest_neighbors_buffer,
+                /**/ buffer,
                 /**/ kdnode->right_);
         }
     }
@@ -725,13 +688,12 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-template <typename NearestNeighborsBufferType>
+template <typename BufferType>
 typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(
-    SamplesIterator             query_feature_first,
-    SamplesIterator             query_feature_last,
-    NearestNeighborsBufferType& nearest_neighbors_buffer,
-    KDNodeViewPtr               kdnode) const {
+KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversal(SamplesIterator query_feature_first,
+                                                                                  SamplesIterator query_feature_last,
+                                                                                  BufferType&     buffer,
+                                                                                  KDNodeViewPtr   kdnode) const {
     auto kdnode_parent = kdnode->parent_.lock();
     // if kdnode has a parent
     if (kdnode_parent) {
@@ -746,12 +708,10 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
         bool visit_sibling = kdnode->is_left_child()
-                                 ? nearest_neighbors_buffer.n_free_slots() ||
-                                       common::utils::abs(pivot_split_value - query_split_value) <=
-                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_)
-                                 : nearest_neighbors_buffer.n_free_slots() ||
-                                       common::utils::abs(pivot_split_value - query_split_value) <
-                                           nearest_neighbors_buffer.upper_bound(kdnode_parent->cut_feature_index_);
+                                 ? buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <=
+                                                                buffer.upper_bound(kdnode_parent->cut_feature_index_)
+                                 : buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <
+                                                                buffer.upper_bound(kdnode_parent->cut_feature_index_);
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
         if (visit_sibling) {
@@ -761,7 +721,7 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
                 inner_k_nearest_neighbors_around_query_sample(
                     /**/ query_feature_first,
                     /**/ query_feature_last,
-                    /**/ nearest_neighbors_buffer,
+                    /**/ buffer,
                     /**/ sibling_node);
             }
         }
@@ -775,22 +735,22 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::radius_count_around_query_
     SamplesIterator query_feature_first,
     SamplesIterator query_feature_last,
     const DataType& radius) const {
-    auto nearest_neighbors_buffer = knn::count::Radius<IndexType, DataType>(radius);
+    auto buffer = knn::count::Radius<IndicesIterator, SamplesIterator>(radius);
 
-    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, buffer);
 
-    return nearest_neighbors_buffer.count();
+    return buffer.count();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_sample(SamplesIterator query_feature_first,
                                                                                  SamplesIterator query_feature_last,
                                                                                  const DataType& radius) const {
-    auto nearest_neighbors_buffer = knn::buffer::Radius<IndexType, DataType>(radius);
+    auto buffer = knn::buffer::Radius<IndicesIterator, SamplesIterator>(radius);
 
-    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, buffer);
 
-    return nearest_neighbors_buffer;
+    return buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -798,14 +758,14 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_s
     SamplesIterator       query_feature_first,
     SamplesIterator       query_feature_last,
     const HyperRangeType& kd_bounding_box) const {
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
-        query_feature_first, query_feature_last, kd_bounding_box);
+    const auto translated_kd_bounding_box =
+        bbox::relative_to_absolute_coordinates(query_feature_first, query_feature_last, kd_bounding_box);
 
-    auto nearest_neighbors_buffer = knn::count::Range<IndexType, DataType>(translated_kd_bounding_box);
+    auto buffer = knn::count::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
-    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, buffer);
 
-    return nearest_neighbors_buffer.count();
+    return buffer.count();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -813,14 +773,14 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_sample(
     SamplesIterator       query_feature_first,
     SamplesIterator       query_feature_last,
     const HyperRangeType& kd_bounding_box) const {
-    const auto translated_kd_bounding_box = bbox::relative_coordinates_sequence_to_range_bounding_box(
-        query_feature_first, query_feature_last, kd_bounding_box);
+    const auto translated_kd_bounding_box =
+        bbox::relative_to_absolute_coordinates(query_feature_first, query_feature_last, kd_bounding_box);
 
-    auto nearest_neighbors_buffer = knn::buffer::Range<IndexType, DataType>(translated_kd_bounding_box);
+    auto buffer = knn::buffer::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
-    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, nearest_neighbors_buffer);
+    inner_k_nearest_neighbors_around_query_sample(query_feature_first, query_feature_last, buffer);
 
-    return nearest_neighbors_buffer;
+    return buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>

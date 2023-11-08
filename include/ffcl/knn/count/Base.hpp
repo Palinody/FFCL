@@ -1,14 +1,21 @@
 #pragma once
 
+#include "ffcl/math/heuristics/Distances.hpp"
+
 #include <cstddef>
 #include <tuple>
 #include <vector>
 
 namespace ffcl::knn::count {
 
-template <typename IndexType, typename DistanceType>
+template <typename IndicesIterator, typename DistancesIterator>
 class Base {
   public:
+    using IndexType    = typename IndicesIterator::value_type;
+    using DistanceType = typename DistancesIterator::value_type;
+
+    using SamplesIterator = typename std::vector<DistanceType>::iterator;
+
     virtual ~Base() {}
 
     virtual DistanceType upper_bound() const = 0;
@@ -21,9 +28,20 @@ class Base {
 
     virtual void update(const IndexType& index_candidate, const DistanceType& distance_candidate) = 0;
 
-    virtual void update(const IndexType&    index_candidate,
-                        const DistanceType& distance_candidate,
-                        const IndexType&    feature_index) = 0;
+    virtual void operator()(const IndicesIterator& indices_range_first,
+                            const IndicesIterator& indices_range_last,
+                            const SamplesIterator& samples_range_first,
+                            const SamplesIterator& samples_range_last,
+                            std::size_t            n_features,
+                            std::size_t            sample_index_query) = 0;
+
+    virtual void operator()(const IndicesIterator& indices_range_first,
+                            const IndicesIterator& indices_range_last,
+                            const SamplesIterator& samples_range_first,
+                            const SamplesIterator& samples_range_last,
+                            std::size_t            n_features,
+                            const SamplesIterator& feature_query_range_first,
+                            const SamplesIterator& feature_query_range_last) = 0;
 
     virtual void print() const = 0;
 };

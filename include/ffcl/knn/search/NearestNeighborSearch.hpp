@@ -8,15 +8,15 @@
 
 namespace ffcl::knn::search {
 
+/*
 template <typename IndicesIterator, typename SamplesIterator>
-void nearest_neighbor(
-    const IndicesIterator&                                                                    indices_range_first,
-    const IndicesIterator&                                                                    indices_range_last,
-    const SamplesIterator&                                                                    samples_range_first,
-    const SamplesIterator&                                                                    samples_range_last,
-    std::size_t                                                                               n_features,
-    std::size_t                                                                               sample_index_query,
-    buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
+void nearest_neighbor(const IndicesIterator&                          indices_range_first,
+                      const IndicesIterator&                          indices_range_last,
+                      const SamplesIterator&                          samples_range_first,
+                      const SamplesIterator&                          samples_range_last,
+                      std::size_t                                     n_features,
+                      std::size_t                                     sample_index_query,
+                      buffer::Base<IndicesIterator, SamplesIterator>& buffer) {
     common::utils::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -36,15 +36,14 @@ void nearest_neighbor(
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void nearest_neighbor(
-    const IndicesIterator&                                                                    indices_range_first,
-    const IndicesIterator&                                                                    indices_range_last,
-    const SamplesIterator&                                                                    samples_range_first,
-    const SamplesIterator&                                                                    samples_range_last,
-    std::size_t                                                                               n_features,
-    const SamplesIterator&                                                                    feature_query_range_first,
-    const SamplesIterator&                                                                    feature_query_range_last,
-    buffer::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
+void nearest_neighbor(const IndicesIterator&                          indices_range_first,
+                      const IndicesIterator&                          indices_range_last,
+                      const SamplesIterator&                          samples_range_first,
+                      const SamplesIterator&                          samples_range_last,
+                      std::size_t                                     n_features,
+                      const SamplesIterator&                          feature_query_range_first,
+                      const SamplesIterator&                          feature_query_range_last,
+                      buffer::Base<IndicesIterator, SamplesIterator>& buffer) {
     common::utils::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -60,5 +59,6 @@ void nearest_neighbor(
         buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
     }
 }
+*/
 
 }  // namespace ffcl::knn::search

@@ -162,10 +162,9 @@ bool is_sample_in_kd_bounding_box(const SamplesIterator&                 feature
 }
 
 template <typename SamplesIterator>
-auto relative_coordinates_sequence_to_range_bounding_box(
-    const SamplesIterator&                 feature_first,
-    const SamplesIterator&                 feature_last,
-    const HyperRangeType<SamplesIterator>& relative_coordinates_sequence) {
+auto relative_to_absolute_coordinates(const SamplesIterator&                 feature_first,
+                                      const SamplesIterator&                 feature_last,
+                                      const HyperRangeType<SamplesIterator>& relative_coordinates_sequence) {
     const std::size_t n_features = std::distance(feature_first, feature_last);
 
     // make a copy that will be the translated version

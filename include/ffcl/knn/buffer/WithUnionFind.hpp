@@ -13,21 +13,26 @@
 
 namespace ffcl::knn::buffer {
 
-template <typename IndexType, typename DistanceType, typename UnionFindType = ffcl::datastruct::UnionFind<std::size_t>>
-class WithUnionFind : public Base<IndexType, DistanceType> {
-  private:
-    using IndicesType   = typename Base<IndexType, DistanceType>::IndicesType;
-    using DistancesType = typename Base<IndexType, DistanceType>::DistancesType;
-
+template <typename IndicesIterator,
+          typename DistancesIterator,
+          typename UnionFind = ffcl::datastruct::UnionFind<std::size_t>>
+class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
   public:
-    WithUnionFind(const UnionFindType& union_find_ref,
-                  const IndexType&     query_representative,
-                  const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+    using IndexType     = typename Base<IndicesIterator, DistancesIterator>::IndexType;
+    using DistanceType  = typename Base<IndicesIterator, DistancesIterator>::DistanceType;
+    using IndicesType   = typename Base<IndicesIterator, DistancesIterator>::IndicesType;
+    using DistancesType = typename Base<IndicesIterator, DistancesIterator>::DistancesType;
+
+    using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
+
+    WithUnionFind(const UnionFind& union_find_ref,
+                  const IndexType& query_representative,
+                  const IndexType& max_capacity = common::utils::infinity<IndexType>())
       : WithUnionFind({}, {}, union_find_ref, query_representative, max_capacity) {}
 
     WithUnionFind(const IndicesType&   init_neighbors_indices,
                   const DistancesType& init_neighbors_distances,
-                  const UnionFindType& union_find_ref,
+                  const UnionFind&     union_find_ref,
                   const IndexType&     query_representative,
                   const IndexType&     max_capacity = common::utils::infinity<IndexType>())
       : indices_{init_neighbors_indices}
@@ -121,11 +126,51 @@ class WithUnionFind : public Base<IndexType, DistanceType> {
         }
     }
 
-    void update(const IndexType&    index_candidate,
-                const DistanceType& distance_candidate,
-                const IndexType&    feature_index) {
-        common::utils::ignore_parameters(feature_index);
-        this->update(index_candidate, distance_candidate);
+    void operator()(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    std::size_t            sample_index_query) {
+        common::utils::ignore_parameters(samples_range_last);
+
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+            if (candidate_nearest_neighbor_index != sample_index_query) {
+                const auto candidate_nearest_neighbor_distance = math::heuristics::auto_distance(
+                    samples_range_first + sample_index_query * n_features,
+                    samples_range_first + sample_index_query * n_features + n_features,
+                    samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+                this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+            }
+        }
+    }
+
+    void operator()(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    const SamplesIterator& feature_query_range_first,
+                    const SamplesIterator& feature_query_range_last) {
+        common::utils::ignore_parameters(samples_range_last);
+
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+            const auto candidate_nearest_neighbor_distance =
+                math::heuristics::auto_distance(feature_query_range_first,
+                                                feature_query_range_last,
+                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+            this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+        }
     }
 
     void reset_buffers_except_memory() {
@@ -150,8 +195,8 @@ class WithUnionFind : public Base<IndexType, DistanceType> {
     DistanceType              furthest_k_nearest_neighbor_distance_;
     IndexType                 max_capacity_;
 
-    const UnionFindType& union_find_ref_;
-    IndexType            query_representative_;
+    const UnionFind& union_find_ref_;
+    IndexType        query_representative_;
 };
 
 }  // namespace ffcl::knn::buffer

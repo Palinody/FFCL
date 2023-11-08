@@ -13,12 +13,16 @@
 
 namespace ffcl::knn::count {
 
-template <typename IndexType, typename DistanceType>
-class Range : public Base<IndexType, DistanceType> {
-  private:
+template <typename IndicesIterator, typename DistancesIterator>
+class Range : public Base<IndicesIterator, DistancesIterator> {
+  public:
+    using IndexType    = typename Base<IndicesIterator, DistancesIterator>::IndexType;
+    using DistanceType = typename Base<IndicesIterator, DistancesIterator>::DistanceType;
+
     using HyperRangeType = bbox::HyperRangeType<typename std::vector<DistanceType>::iterator>;
 
-  public:
+    using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
+
     explicit Range(const HyperRangeType& kd_bounding_box)
       : kd_bounding_box_{kd_bounding_box} {}
 
@@ -41,16 +45,62 @@ class Range : public Base<IndexType, DistanceType> {
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         common::utils::ignore_parameters(index_candidate, distance_candidate);
-        throw std::runtime_error("Cannot update this buffer without specifying a dimension to operate on.");
+        ++count_;
     }
 
-    void update(const IndexType&    index_candidate,
-                const DistanceType& distance_candidate,
-                const IndexType&    feature_index) {
-        // should be replaced by bounding box check
-        common::utils::ignore_parameters(index_candidate);
-        if (distance_candidate < upper_bound(feature_index)) {
-            ++count_;
+    void operator()(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    std::size_t            sample_index_query) {
+        common::utils::ignore_parameters(samples_range_last);
+
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+            if (candidate_nearest_neighbor_index != sample_index_query &&
+                bbox::is_sample_in_kd_bounding_box(
+                    samples_range_first + candidate_nearest_neighbor_index * n_features,
+                    samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
+                    kd_bounding_box_)) {
+                const auto candidate_nearest_neighbor_distance = math::heuristics::auto_distance(
+                    samples_range_first + sample_index_query * n_features,
+                    samples_range_first + sample_index_query * n_features + n_features,
+                    samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+                this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+            }
+        }
+    }
+
+    void operator()(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    const SamplesIterator& feature_query_range_first,
+                    const SamplesIterator& feature_query_range_last) {
+        common::utils::ignore_parameters(samples_range_last);
+
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+            const auto candidate_nearest_neighbor_distance =
+                math::heuristics::auto_distance(feature_query_range_first,
+                                                feature_query_range_last,
+                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+            if (bbox::is_sample_in_kd_bounding_box(
+                    samples_range_first + candidate_nearest_neighbor_index * n_features,
+                    samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
+                    kd_bounding_box_)) {
+                this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+            }
         }
     }
 

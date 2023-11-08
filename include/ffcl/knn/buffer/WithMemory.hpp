@@ -12,27 +12,29 @@
 
 namespace ffcl::knn::buffer {
 
-template <typename IndexType, typename DistanceType, typename VisitedIndicesType = std::unordered_set<std::size_t>>
-class WithMemory : public Base<IndexType, DistanceType> {
-  private:
-    using IndicesType   = typename Base<IndexType, DistanceType>::IndicesType;
-    using DistancesType = typename Base<IndexType, DistanceType>::DistancesType;
-
-    using IndicesIterator = typename std::vector<IndexType>::iterator;
-
+template <typename IndicesIterator,
+          typename DistancesIterator,
+          typename VisitedIndices = std::unordered_set<std::size_t>>
+class WithMemory : public Base<IndicesIterator, DistancesIterator> {
   public:
+    using IndexType     = typename Base<IndicesIterator, DistancesIterator>::IndexType;
+    using DistanceType  = typename Base<IndicesIterator, DistancesIterator>::DistanceType;
+    using IndicesType   = typename Base<IndicesIterator, DistancesIterator>::IndicesType;
+    using DistancesType = typename Base<IndicesIterator, DistancesIterator>::DistancesType;
+
+    using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
+
     explicit WithMemory(const IndexType& max_capacity = common::utils::infinity<IndexType>())
       : WithMemory({}, {}, max_capacity) {}
 
-    WithMemory(const VisitedIndicesType& visited_indices_reference,
-               const IndexType&          max_capacity = common::utils::infinity<IndexType>())
+    WithMemory(const VisitedIndices& visited_indices_reference,
+               const IndexType&      max_capacity = common::utils::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_reference_{visited_indices_reference} {}
 
-    WithMemory(VisitedIndicesType&& visited_indices,
-               const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+    WithMemory(VisitedIndices&& visited_indices, const IndexType& max_capacity = common::utils::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
@@ -45,7 +47,7 @@ class WithMemory : public Base<IndexType, DistanceType> {
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
-      , visited_indices_{VisitedIndicesType(visited_indices_first, visited_indices_last)}
+      , visited_indices_{VisitedIndices(visited_indices_first, visited_indices_last)}
       , visited_indices_reference_{visited_indices_} {}
 
     WithMemory(const IndicesType&   init_neighbors_indices,
@@ -56,7 +58,7 @@ class WithMemory : public Base<IndexType, DistanceType> {
       , furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity > indices_.size() ? max_capacity : indices_.size()}
-      , visited_indices_{VisitedIndicesType(indices_.begin(), indices_.end())}
+      , visited_indices_{VisitedIndices(indices_.begin(), indices_.end())}
       , visited_indices_reference_{visited_indices_} {
         if (indices_.size()) {
             if (indices_.size() == distances_.size()) {
@@ -155,11 +157,51 @@ class WithMemory : public Base<IndexType, DistanceType> {
         }
     }
 
-    void update(const IndexType&    index_candidate,
-                const DistanceType& distance_candidate,
-                const IndexType&    feature_index) {
-        common::utils::ignore_parameters(feature_index);
-        this->update(index_candidate, distance_candidate);
+    void operator()(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    std::size_t            sample_index_query) {
+        common::utils::ignore_parameters(samples_range_last);
+
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+            if (candidate_nearest_neighbor_index != sample_index_query) {
+                const auto candidate_nearest_neighbor_distance = math::heuristics::auto_distance(
+                    samples_range_first + sample_index_query * n_features,
+                    samples_range_first + sample_index_query * n_features + n_features,
+                    samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+                this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+            }
+        }
+    }
+
+    void operator()(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    const SamplesIterator& feature_query_range_first,
+                    const SamplesIterator& feature_query_range_last) {
+        common::utils::ignore_parameters(samples_range_last);
+
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+
+            const auto candidate_nearest_neighbor_distance =
+                math::heuristics::auto_distance(feature_query_range_first,
+                                                feature_query_range_last,
+                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
+
+            this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+        }
     }
 
     void print() const {
@@ -175,8 +217,8 @@ class WithMemory : public Base<IndexType, DistanceType> {
     DistanceType  furthest_k_nearest_neighbor_distance_;
     IndexType     max_capacity_;
 
-    VisitedIndicesType        visited_indices_;
-    const VisitedIndicesType& visited_indices_reference_;
+    VisitedIndices        visited_indices_;
+    const VisitedIndices& visited_indices_reference_;
 };
 
 }  // namespace ffcl::knn::buffer

@@ -10,19 +10,19 @@
 
 #include "Range2DBaseFixture.hpp"
 
-template <typename DataType>
-class KNearestNeighborsSearchTestFixture : public Range2DBaseFixture<DataType> {
+template <typename ValueType>
+class KNearestNeighborsSearchTestFixture : public Range2DBaseFixture<ValueType> {
   public:
     void SetUp() override {
-        if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
+        if constexpr (std::is_integral_v<ValueType> && std::is_signed_v<ValueType>) {
             lower_bound_ = -1;
             upper_bound_ = 1;
 
-        } else if constexpr (std::is_integral_v<DataType> && std::is_unsigned_v<DataType>) {
+        } else if constexpr (std::is_integral_v<ValueType> && std::is_unsigned_v<ValueType>) {
             lower_bound_ = 0;
             upper_bound_ = 1;
 
-        } else if constexpr (std::is_floating_point_v<DataType>) {
+        } else if constexpr (std::is_floating_point_v<ValueType>) {
             lower_bound_ = -1;
             upper_bound_ = 1;
         }
@@ -33,8 +33,8 @@ class KNearestNeighborsSearchTestFixture : public Range2DBaseFixture<DataType> {
     }
 
   protected:
-    DataType    lower_bound_;
-    DataType    upper_bound_;
+    ValueType   lower_bound_;
+    ValueType   upper_bound_;
     std::size_t min_n_samples_;
     std::size_t max_n_samples_;
     std::size_t n_features_;
@@ -45,29 +45,33 @@ using DataTypes = ::testing::Types<int, std::size_t, float, double>;
 TYPED_TEST_SUITE(KNearestNeighborsSearchTestFixture, DataTypes);
 
 TYPED_TEST(KNearestNeighborsSearchTestFixture, NearestNeighborsTest) {
-    using IndexType = std::size_t;
-    using DataType  = TypeParam;
+    using IndexType           = std::size_t;
+    using ValueType           = TypeParam;
+    using IndicesType         = std::vector<IndexType>;
+    using ValuesType          = std::vector<ValueType>;
+    using IndicesIteratorType = typename IndicesType::iterator;
+    using ValuesIteratorType  = typename ValuesType::iterator;
 
-    std::vector<DataType> data = {/*0*/ 0,
-                                  /*1*/ 1,
-                                  /*2*/ 2,
-                                  /*3*/ 3,
-                                  /*4*/ 1,
-                                  /*5*/ 4,
-                                  /*6*/ 8,
-                                  /*7*/ 9,
-                                  /*8*/ 2,
-                                  /*9*/ 4,
-                                  /*10*/ 3};
+    std::vector<ValueType> data = {/*0*/ 0,
+                                   /*1*/ 1,
+                                   /*2*/ 2,
+                                   /*3*/ 3,
+                                   /*4*/ 1,
+                                   /*5*/ 4,
+                                   /*6*/ 8,
+                                   /*7*/ 9,
+                                   /*8*/ 2,
+                                   /*9*/ 4,
+                                   /*10*/ 3};
 
     std::size_t n_features         = 1;
     std::size_t sample_index_query = 4;
     std::size_t n_neighbors        = 2;
 
-    std::vector<std::size_t> nn_indices = {5, 6, 7, 9};
-    std::vector<DataType>    nn_distances(nn_indices.size());
+    IndicesType nn_indices = {5, 6, 7, 9};
+    ValuesType  nn_distances(nn_indices.size());
 
-    std::transform(nn_indices.begin(), nn_indices.end(), nn_distances.begin(), [&](std::size_t nn_index) {
+    std::transform(nn_indices.begin(), nn_indices.end(), nn_distances.begin(), [&](const auto& nn_index) {
         return math::heuristics::auto_distance(data.begin() + sample_index_query * n_features,
                                                data.begin() + sample_index_query * n_features + n_features,
                                                data.begin() + nn_index * n_features);
@@ -76,19 +80,19 @@ TYPED_TEST(KNearestNeighborsSearchTestFixture, NearestNeighborsTest) {
     printf("Distances:\n");
     this->print_data(nn_distances, 1);
 
-    auto nn_buffer = ffcl::knn::buffer::WithMemory<IndexType, DataType>(nn_indices, nn_distances, n_neighbors);
+    auto nn_buffer =
+        ffcl::knn::buffer::WithMemory<IndicesIteratorType, ValuesIteratorType>(nn_indices, nn_distances, n_neighbors);
 
     auto new_nn_buffer = nn_buffer;
 
     for (std::size_t i = 0; i < 5; ++i) {
-        ffcl::knn::search::k_nearest_neighbors(
+        new_nn_buffer(
             /**/ nn_indices.begin(),
             /**/ nn_indices.end(),
             /**/ data.begin(),
             /**/ data.end(),
             /**/ n_features,
-            /**/ sample_index_query,
-            /**/ new_nn_buffer);
+            /**/ sample_index_query);
     }
     new_nn_buffer.print();
 }

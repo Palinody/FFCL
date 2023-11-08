@@ -8,15 +8,15 @@
 
 namespace ffcl::knn::count {
 
+/*
 template <typename IndicesIterator, typename SamplesIterator>
-void increment_neighbors_count_in_radius(
-    const IndicesIterator&                                                                   indices_range_first,
-    const IndicesIterator&                                                                   indices_range_last,
-    const SamplesIterator&                                                                   samples_range_first,
-    const SamplesIterator&                                                                   samples_range_last,
-    std::size_t                                                                              n_features,
-    std::size_t                                                                              sample_index_query,
-    count::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
+void increment_neighbors_count_in_radius(const IndicesIterator&                         indices_range_first,
+                                         const IndicesIterator&                         indices_range_last,
+                                         const SamplesIterator&                         samples_range_first,
+                                         const SamplesIterator&                         samples_range_last,
+                                         std::size_t                                    n_features,
+                                         std::size_t                                    sample_index_query,
+                                         count::Base<IndicesIterator, SamplesIterator>& buffer) {
     common::utils::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -36,15 +36,14 @@ void increment_neighbors_count_in_radius(
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void increment_neighbors_count_in_radius(
-    const IndicesIterator&                                                                   indices_range_first,
-    const IndicesIterator&                                                                   indices_range_last,
-    const SamplesIterator&                                                                   samples_range_first,
-    const SamplesIterator&                                                                   samples_range_last,
-    std::size_t                                                                              n_features,
-    const SamplesIterator&                                                                   feature_query_range_first,
-    const SamplesIterator&                                                                   feature_query_range_last,
-    count::Base<typename IndicesIterator::value_type, typename SamplesIterator::value_type>& buffer) {
+void increment_neighbors_count_in_radius(const IndicesIterator&                         indices_range_first,
+                                         const IndicesIterator&                         indices_range_last,
+                                         const SamplesIterator&                         samples_range_first,
+                                         const SamplesIterator&                         samples_range_last,
+                                         std::size_t                                    n_features,
+                                         const SamplesIterator&                         feature_query_range_first,
+                                         const SamplesIterator&                         feature_query_range_last,
+                                         count::Base<IndicesIterator, SamplesIterator>& buffer) {
     common::utils::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -60,6 +59,7 @@ void increment_neighbors_count_in_radius(
         buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
     }
 }
+*/
 
 template <typename KDTreePtr>
 class SingleTreeTraverser {
@@ -114,13 +114,12 @@ class SingleTreeTraverser {
     auto recurse_to_closest_leaf_node(std::size_t                                     query_index,
                                       BufferType&                                     buffer,
                                       typename KDTreePtr::element_type::KDNodeViewPtr node) {
-        knn::count::increment_neighbors_count_in_radius(node->indices_range_.first,
-                                                        node->indices_range_.second,
-                                                        query_kdtree_ptr_->begin(),
-                                                        query_kdtree_ptr_->end(),
-                                                        query_kdtree_ptr_->n_features(),
-                                                        query_index,
-                                                        buffer);
+        buffer(node->indices_range_.first,
+               node->indices_range_.second,
+               query_kdtree_ptr_->begin(),
+               query_kdtree_ptr_->end(),
+               query_kdtree_ptr_->n_features(),
+               query_index);
 
         // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
         if (!node->is_leaf()) {
@@ -222,14 +221,13 @@ class SingleTreeTraverser {
                                       const SamplesIteratorType&                      query_feature_last,
                                       BufferType&                                     buffer,
                                       typename KDTreePtr::element_type::KDNodeViewPtr node) {
-        knn::count::increment_neighbors_count_in_radius(node->indices_range_.first,
-                                                        node->indices_range_.second,
-                                                        query_kdtree_ptr_->begin(),
-                                                        query_kdtree_ptr_->end(),
-                                                        query_kdtree_ptr_->n_features(),
-                                                        query_feature_first,
-                                                        query_feature_last,
-                                                        buffer);
+        buffer(node->indices_range_.first,
+               node->indices_range_.second,
+               query_kdtree_ptr_->begin(),
+               query_kdtree_ptr_->end(),
+               query_kdtree_ptr_->n_features(),
+               query_feature_first,
+               query_feature_last);
 
         // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
         if (!node->is_leaf()) {
@@ -306,29 +304,31 @@ class SingleTreeTraverser {
 };
 
 template <typename KDTreePtr>
-class Counter {
+class RadiusCounter {
   public:
     using IndexType           = typename KDTreePtr::element_type::IndexType;
     using DataType            = typename KDTreePtr::element_type::DataType;
     using IndicesIteratorType = typename KDTreePtr::element_type::IndicesIteratorType;
     using SamplesIteratorType = typename KDTreePtr::element_type::SamplesIteratorType;
 
-    Counter(KDTreePtr query_kdtree_ptr, const knn::count::Radius<IndexType, DataType>& counter)
+    using CountType = knn::count::Radius<IndicesIteratorType, SamplesIteratorType>;
+
+    RadiusCounter(KDTreePtr query_kdtree_ptr, const CountType& counter)
       : query_kdtree_ptr_{query_kdtree_ptr}
       , counter_{counter} {}
 
-    knn::count::Radius<IndexType, DataType> operator()(std::size_t query_index) const {
+    CountType operator()(std::size_t query_index) const {
         return SingleTreeTraverser(query_kdtree_ptr_)(query_index, counter_);
     }
 
-    knn::count::Radius<IndexType, DataType> operator()(const SamplesIteratorType& query_feature_first,
-                                                       const SamplesIteratorType& query_feature_last) const {
+    CountType operator()(const SamplesIteratorType& query_feature_first,
+                         const SamplesIteratorType& query_feature_last) const {
         return SingleTreeTraverser(query_kdtree_ptr_)(query_feature_first, query_feature_last, counter_);
     }
 
   private:
-    KDTreePtr                               query_kdtree_ptr_;
-    knn::count::Radius<IndexType, DataType> counter_;
+    KDTreePtr query_kdtree_ptr_;
+    CountType counter_;
 };
 
 }  // namespace ffcl::knn::count
