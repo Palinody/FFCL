@@ -68,7 +68,7 @@ struct DurationsSummary {
     }
 
     DurationsSummary& operator/=(long double divisor) {
-        if (common::utils::inequality(divisor, 0)) {
+        if (ffcl::common::utils::inequality(divisor, 0)) {
             n_samples /= divisor;
             n_features /= divisor;
             indexer_build_duration /= divisor;
@@ -121,7 +121,7 @@ template <typename SamplesIterator>
 void cartesian_to_polar_inplace(const SamplesIterator& samples_first,
                                 const SamplesIterator& samples_last,
                                 std::size_t            n_features) {
-    const std::size_t n_samples = common::utils::get_n_samples(samples_first, samples_last, n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(samples_first, samples_last, n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         const auto x = samples_first[sample_index * n_features];

@@ -1,9 +1,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "ffcl/common/math/random/Sampling.hpp"
+#include "ffcl/common/math/random/VosesAliasMethod.hpp"
 #include "ffcl/kmedoids/KMedoids.hpp"
-#include "ffcl/math/random/Sampling.hpp"
-#include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>

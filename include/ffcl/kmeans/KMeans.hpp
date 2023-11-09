@@ -1,13 +1,13 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/random/Distributions.hpp"
+#include "ffcl/common/math/random/Sampling.hpp"
+#include "ffcl/common/math/statistics/Statistics.hpp"
 #include "ffcl/kmeans/Hamerly.hpp"
 #include "ffcl/kmeans/KMeansPlusPlus.hpp"
 #include "ffcl/kmeans/Lloyd.hpp"
-#include "ffcl/math/heuristics/Distances.hpp"
-#include "ffcl/math/random/Distributions.hpp"
-#include "ffcl/math/random/Sampling.hpp"
-#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -224,7 +224,8 @@ std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range
         candidates_losses[k] = kmeans_algorithm.total_deviation();
     }
     // find the index of the centroids container with the lowest loss
-    const std::size_t min_loss_index = math::statistics::argmin(candidates_losses.begin(), candidates_losses.end());
+    const std::size_t min_loss_index =
+        common::math::statistics::argmin(candidates_losses.begin(), candidates_losses.end());
     // return best centroids accordingly to the lowest loss
     centroids_ = centroids_candidates[min_loss_index];
 
@@ -236,9 +237,9 @@ template <template <typename> class KMeansAlgorithm, typename SamplesIterator>
 std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range_first,
                                             const SamplesIterator& samples_range_last) {
     // execute fit function with a default initialization algorithm
-    // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
+    // kmeansplusplus::make_centroids || common::math::random::init_uniform
     return fit<KMeansAlgorithm>(
-        samples_range_first, samples_range_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
+        samples_range_first, samples_range_last, kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename DataType>
@@ -247,8 +248,8 @@ std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range
                                             const SamplesIterator& samples_range_last,
                                             const Function&        centroids_initializer) {
     // execute fit function with a default initialization algorithm
-    // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
-    return fit<ffcl::Hamerly>(samples_range_first, samples_range_last, centroids_initializer);
+    // kmeansplusplus::make_centroids || common::math::random::init_uniform
+    return fit<Hamerly>(samples_range_first, samples_range_last, centroids_initializer);
 }
 
 template <typename DataType>
@@ -256,9 +257,8 @@ template <typename SamplesIterator>
 std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range_first,
                                             const SamplesIterator& samples_range_last) {
     // execute fit function with a default initialization algorithm
-    // ffcl::kmeansplusplus::make_centroids || math::random::init_uniform
-    return fit<ffcl::Hamerly>(
-        samples_range_first, samples_range_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
+    // kmeansplusplus::make_centroids || common::math::random::init_uniform
+    return fit<Hamerly>(samples_range_first, samples_range_last, kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename DataType>

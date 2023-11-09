@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 namespace kmeans::utils {
 
@@ -13,7 +13,8 @@ std::vector<std::size_t> samples_to_nearest_centroid_indices(
     const std::vector<typename SamplesIterator::value_type>& centroids) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples   = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
 
     // contains the indices from each sample to the nearest centroid
@@ -21,14 +22,14 @@ std::vector<std::size_t> samples_to_nearest_centroid_indices(
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // distance buffer for a given data sample to each cluster
-        auto        min_distance = common::utils::infinity<DataType>();
+        auto        min_distance = ffcl::common::utils::infinity<DataType>();
         std::size_t min_index    = 0;
 
         for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
-            const DataType sample_to_centroid_distance =
-                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
-                                                samples_range_first + sample_index * n_features + n_features,
-                                                centroids.begin() + centroid_index * n_features);
+            const DataType sample_to_centroid_distance = ffcl::common::math::heuristics::auto_distance(
+                samples_range_first + sample_index * n_features,
+                samples_range_first + sample_index * n_features + n_features,
+                centroids.begin() + centroid_index * n_features);
 
             if (sample_to_centroid_distance < min_distance) {
                 min_distance = sample_to_centroid_distance;
@@ -48,20 +49,21 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_centroid_di
     const std::vector<typename SamplesIterator::value_type>& centroids) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples   = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
 
     // contains the distances from each sample to the nearest centroid
     auto nearest_centroid_distances = std::vector<DataType>(n_samples);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        auto min_distance = common::utils::infinity<DataType>();
+        auto min_distance = ffcl::common::utils::infinity<DataType>();
 
         for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
-            const auto nearest_candidate =
-                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
-                                                samples_range_first + sample_index * n_features + n_features,
-                                                centroids.begin() + centroid_index * n_features);
+            const auto nearest_candidate = ffcl::common::math::heuristics::auto_distance(
+                samples_range_first + sample_index * n_features,
+                samples_range_first + sample_index * n_features + n_features,
+                centroids.begin() + centroid_index * n_features);
 
             if (nearest_candidate < min_distance) {
                 min_distance = nearest_candidate;
@@ -80,7 +82,8 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_cent
     const std::vector<typename SamplesIterator::value_type>& centroids) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples   = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     const std::size_t n_centroids = centroids.size() / n_features;
 
     // the vector that will contain the distances from each sample to the nearest centroid
@@ -92,17 +95,17 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_cent
         auto second_min_distance = std::numeric_limits<DataType>::max();
         // iterate over the centroids indices
         for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
-            const auto second_nearest_candidate =
-                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
-                                                samples_range_first + sample_index * n_features + n_features,
-                                                centroids.begin() + centroid_index * n_features);
+            const auto second_nearest_candidate = ffcl::common::math::heuristics::auto_distance(
+                samples_range_first + sample_index * n_features,
+                samples_range_first + sample_index * n_features + n_features,
+                centroids.begin() + centroid_index * n_features);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
                 first_min_distance  = second_nearest_candidate;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
             }
         }
@@ -122,7 +125,7 @@ std::vector<std::size_t> compute_cluster_sizes(const IndicesIterator& samples_to
     auto cluster_sizes = std::vector<std::size_t>(n_centroids);
 
     for (auto centroid_index_iter = samples_to_nearest_centroid_indices_first;
-         common::utils::inequality(centroid_index_iter, samples_to_nearest_centroid_indices_last);
+         ffcl::common::utils::inequality(centroid_index_iter, samples_to_nearest_centroid_indices_last);
          ++centroid_index_iter) {
         ++cluster_sizes[*centroid_index_iter];
     }
@@ -138,7 +141,8 @@ std::vector<typename SamplesIterator::value_type> compute_cluster_positions_sum(
     std::size_t            n_features) {
     static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Input elements type should be integral.");
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // accumulate the positions of each sample in each cluster
     auto cluster_positions_sum = std::vector<typename SamplesIterator::value_type>(n_centroids * n_features);
@@ -161,20 +165,20 @@ std::vector<typename SamplesIterator::value_type> nearest_neighbor_distances(con
                                                                              std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_rows = common::utils::get_n_samples(data_first, data_last, n_features);
+    const std::size_t n_rows = ffcl::common::utils::get_n_samples(data_first, data_last, n_features);
 
     // contains the distances from each data d_i to its nearest data d_j with i != j
     auto neighbor_distances = std::vector<DataType>(n_rows);
 
     for (std::size_t row_index = 0; row_index < n_rows; ++row_index) {
-        auto min_distance = common::utils::infinity<DataType>();
+        auto min_distance = ffcl::common::utils::infinity<DataType>();
 
         for (std::size_t other_row_index = 0; other_row_index < n_rows; ++other_row_index) {
             if (row_index != other_row_index) {
                 const auto nearest_candidate =
-                    math::heuristics::auto_distance(data_first + row_index * n_features,
-                                                    data_first + row_index * n_features + n_features,
-                                                    data_first + other_row_index * n_features);
+                    ffcl::common::math::heuristics::auto_distance(data_first + row_index * n_features,
+                                                                  data_first + row_index * n_features + n_features,
+                                                                  data_first + other_row_index * n_features);
 
                 if (nearest_candidate < min_distance) {
                     min_distance = nearest_candidate;

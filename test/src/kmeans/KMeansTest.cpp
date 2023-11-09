@@ -1,12 +1,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "ffcl/common/math/heuristics/SilhouetteMethod.hpp"
+#include "ffcl/common/math/random/VosesAliasMethod.hpp"
+#include "ffcl/common/math/statistics/Statistics.hpp"
 #include "ffcl/kmeans/Hamerly.hpp"
 #include "ffcl/kmeans/KMeans.hpp"
 #include "ffcl/kmeans/Lloyd.hpp"
-#include "ffcl/math/heuristics/SilhouetteMethod.hpp"
-#include "ffcl/math/random/VosesAliasMethod.hpp"
-#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -164,16 +164,16 @@ TEST_F(KMeansErrorsTest, SilhouetteTest) {
         // map the samples to their closest centroid/medoid
         const auto predictions = kmeans.predict(data.begin(), data.end());
         // compute the silhouette scores for each sample
-        const auto samples_silhouette_values =
-            math::heuristics::silhouette(data.begin(), data.end(), n_features, predictions.begin(), predictions.end());
+        const auto samples_silhouette_values = ffcl::common::math::heuristics::silhouette(
+            data.begin(), data.end(), n_features, predictions.begin(), predictions.end());
         // get the average score
-        const auto average_silhouette = math::heuristics::get_average_silhouette(samples_silhouette_values.begin(),
-                                                                                 samples_silhouette_values.end());
+        const auto average_silhouette = ffcl::common::math::heuristics::get_average_silhouette(
+            samples_silhouette_values.begin(), samples_silhouette_values.end());
         // accumulate the current scores
         scores[k - k_min] = average_silhouette;
     }
     // find the k corresponding to the number of centroids/medoids k with the best average silhouette score
-    const auto best_k = k_min + math::statistics::argmax(scores.begin(), scores.end());
+    const auto best_k = k_min + ffcl::common::math::statistics::argmax(scores.begin(), scores.end());
 
     std::cout << "best k: " << best_k << "\n";
 }

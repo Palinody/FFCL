@@ -1,12 +1,12 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/common/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <vector>
 
-namespace math::random {
+namespace ffcl::common::math::random {
 
 /**
  * @brief might have overlaps when n_choices is close to the range size
@@ -80,7 +80,7 @@ std::vector<typename SamplesIterator::value_type> select_random_sample(const Sam
                                                                        std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     // selects an index w.r.t. an uniform random distribution [0, n_samples)
     auto index_select = uniform_distribution<std::size_t>(0, n_samples - 1);
     // pick the initial index that represents the first cluster
@@ -97,7 +97,7 @@ std::vector<typename SamplesIterator::value_type> select_n_random_samples(const 
                                                                           std::size_t            n_choices) {
     using DataType = typename SamplesIterator::value_type;
 
-    const auto n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
     // clip n_choices to prevent overflows
     n_choices = std::min(n_choices, n_samples);
     // return n_choices distinctive indices from the pool of indices defined by the desired indices range
@@ -123,7 +123,7 @@ std::vector<typename SamplesIterator::value_type> select_n_random_samples_from_i
     std::size_t            n_choices) {
     using DataType = typename SamplesIterator::value_type;
 
-    common::utils::ignore_parameters(samples_range_last);
+    utils::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(index_first, index_last);
     // clip n_choices to prevent overflows
@@ -168,7 +168,7 @@ std::vector<typename SamplesIterator::value_type> init_spatial_uniform(const Sam
                                                                        std::size_t            n_features) {
     using FloatType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     auto centroids = std::vector<FloatType>(n_centroids * n_features);
 
@@ -204,7 +204,7 @@ std::vector<typename SamplesIterator::value_type> init_uniform(const SamplesIter
                                                                std::size_t            n_features) {
     using FloatType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     auto centroids = std::vector<FloatType>(n_centroids * n_features);
 
@@ -219,4 +219,4 @@ std::vector<typename SamplesIterator::value_type> init_uniform(const SamplesIter
     return centroids;
 }
 
-}  // namespace math::random
+}  // namespace ffcl::common::math::random

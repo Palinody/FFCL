@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/common/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace math::random {
+namespace ffcl::common::math::random {
 
 template <typename FloatType = float>
 class VosesAliasMethod {
@@ -106,4 +106,4 @@ std::int64_t VosesAliasMethod<FloatType>::operator()() {
     return sample();
 }
 
-}  // namespace math::random
+}  // namespace ffcl::common::math::random

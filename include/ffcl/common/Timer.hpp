@@ -8,7 +8,7 @@
 #include <omp.h>
 #endif
 
-namespace common::timer {
+namespace ffcl::common {
 
 using Seconds      = std::chrono::seconds;
 using Milliseconds = std::chrono::milliseconds;
@@ -17,53 +17,53 @@ using Nanoseconds  = std::chrono::nanoseconds;
 
 template <typename DurationType = std::chrono::seconds>
 class Timer {
-    using clock_t = std::chrono::system_clock;
+    using ClockType = std::chrono::system_clock;
 
   public:
     Timer();
 
-    inline std::uint64_t getNow();
+    inline std::uint64_t get_now() const;
 
     inline void reset();
 
-    inline std::uint64_t elapsed();
+    inline std::uint64_t elapsed() const;
 
     template <typename SleepDurationType>
-    inline void sleep(std::uint64_t duration);
+    inline void sleep(std::uint64_t duration) const;
 
-    inline void print_elapsed_seconds(const std::uint8_t n_decimals = 3);
+    inline void print_elapsed_seconds(std::uint8_t n_decimals = 3) const;
 
   private:
-    std::uint64_t now_;
+    std::uint64_t timestamp_;
 };
 
 template <typename DurationType>
 Timer<DurationType>::Timer()
-  : now_{getNow()} {}
+  : timestamp_{get_now()} {}
 
 template <typename DurationType>
-std::uint64_t Timer<DurationType>::getNow() {
-    return std::chrono::duration_cast<DurationType>(clock_t::now().time_since_epoch()).count();
+std::uint64_t Timer<DurationType>::get_now() const {
+    return std::chrono::duration_cast<DurationType>(ClockType::now().time_since_epoch()).count();
 }
 
 template <typename DurationType>
 void Timer<DurationType>::reset() {
-    now_ = getNow();
+    timestamp_ = get_now();
 }
 
 template <typename DurationType>
-std::uint64_t Timer<DurationType>::elapsed() {
-    return getNow() - now_;
+std::uint64_t Timer<DurationType>::elapsed() const {
+    return get_now() - timestamp_;
 }
 
 template <typename DurationType>
 template <typename SleepDurationType>
-void Timer<DurationType>::sleep(std::uint64_t duration) {
+void Timer<DurationType>::sleep(std::uint64_t duration) const {
     std::this_thread::sleep_for(static_cast<SleepDurationType>(duration));
 }
 
 template <typename DurationType>
-void Timer<DurationType>::print_elapsed_seconds(const std::uint8_t n_decimals) {
+void Timer<DurationType>::print_elapsed_seconds(std::uint8_t n_decimals) const {
     const std::uint64_t elapsed = this->elapsed();
 
     if constexpr (std::is_same_v<DurationType, Seconds>) {
@@ -84,4 +84,4 @@ void Timer<DurationType>::print_elapsed_seconds(const std::uint8_t n_decimals) {
     }
 }
 
-}  // namespace common::timer
+}  // namespace ffcl::common

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "ffcl/math/random/Distributions.hpp"
-
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>  // std::size_t
 #include <limits>
 #include <stdexcept>
@@ -13,7 +12,7 @@
 
 #include <iostream>
 
-namespace common::utils {
+namespace ffcl::common::utils {
 
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}
@@ -277,4 +276,4 @@ void print_flattened_vector_as_matrix(const std::vector<DataType>& data, std::si
     }
 }
 
-}  // namespace common::utils
+}  // namespace ffcl::common::utils

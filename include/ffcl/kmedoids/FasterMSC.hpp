@@ -1,12 +1,12 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/random/Distributions.hpp"
+#include "ffcl/common/math/statistics/Statistics.hpp"
 #include "ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp"
 #include "ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp"
 #include "ffcl/kmedoids/PAMUtils.hpp"
-#include "ffcl/math/heuristics/Distances.hpp"
-#include "ffcl/math/random/Distributions.hpp"
-#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -239,7 +239,7 @@ std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIt
     }
     // i ← argmin(∆TD_i), with i: index of medoids elements
     const auto [best_swap_index, best_swap_distance] =
-        math::statistics::get_max_index_value_pair(delta_td_mi.begin(), delta_td_mi.end());
+        common::math::statistics::get_max_index_value_pair(delta_td_mi.begin(), delta_td_mi.end());
 
     return {delta_td_xc + best_swap_distance, best_swap_index};
 }
@@ -278,7 +278,7 @@ std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIt
     }
     // i ← argmin(∆TD_i), with i: index of medoids elements
     const auto [best_swap_index, best_swap_distance] =
-        math::statistics::get_min_index_value_pair(delta_td_mi.begin(), delta_td_mi.end());
+        common::math::statistics::get_min_index_value_pair(delta_td_mi.begin(), delta_td_mi.end());
 
     return {delta_td_xc + best_swap_distance, best_swap_index};
 }

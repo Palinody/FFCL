@@ -118,13 +118,13 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
 }
 
 TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "noisy_circles.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -174,13 +174,13 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 }
 
 TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "noisy_moons.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -230,13 +230,13 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 }
 
 TEST_F(DBSCANErrorsTest, VariedTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -286,13 +286,13 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 }
 
 TEST_F(DBSCANErrorsTest, AnisoTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "aniso.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -342,13 +342,13 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 }
 
 TEST_F(DBSCANErrorsTest, BlobsTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "blobs.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -398,13 +398,13 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 }
 
 TEST_F(DBSCANErrorsTest, NoStructureTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "no_structure.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -454,13 +454,13 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 }
 
 TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "unbalanced_blobs.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 

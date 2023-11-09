@@ -9,7 +9,7 @@
 #include <memory>
 #include <random>
 
-namespace math::random {
+namespace ffcl::common::math::random {
 
 static inline std::mt19937& thread_local_mersenne_engine() {
     static thread_local std::random_device rnd_device;
@@ -92,4 +92,4 @@ class normal_distribution {
     NormalDistributionType distribution_;
 };
 
-}  // namespace math::random
+}  // namespace ffcl::common::math::random

@@ -1,4 +1,4 @@
-#include "ffcl/algorithms/Sorting.hpp"
+#include "ffcl/common/algorithms/Sorting.hpp"
 #include "ffcl/common/Utils.hpp"
 
 #include "Range2DBaseFixture.hpp"
@@ -63,7 +63,7 @@ TYPED_TEST(SortingTestFixture, MedianIndexOfThreeRangesTest) {
 
                 // test on all the possible feature data_indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto index = ffcl::algorithms::median_index_of_three(
+                    const auto index = ffcl::common::algorithms::median_index_of_three(
                         data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
@@ -88,7 +88,7 @@ TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeRangesTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [row_first, row_last] = ffcl::algorithms::median_values_range_of_three(
+                    const auto [row_first, row_last] = ffcl::common::algorithms::median_values_range_of_three(
                         data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [first_row_candidate_first, first_row_candidate_last] =
@@ -128,7 +128,7 @@ TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [index, range] = ffcl::algorithms::median_index_and_values_range_of_three(
+                    const auto [index, range] = ffcl::common::algorithms::median_index_and_values_range_of_three(
                         data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [row_first, row_last] = range;
@@ -174,13 +174,14 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
                     // check on all the possible pivot indices
                     for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
-                        const auto new_pivot_index = ffcl::algorithms::partition_around_nth_index(data_indices.begin(),
-                                                                                                  data_indices.end(),
-                                                                                                  data.begin(),
-                                                                                                  data.end(),
-                                                                                                  features,
-                                                                                                  pivot_index,
-                                                                                                  feature_index);
+                        const auto new_pivot_index =
+                            ffcl::common::algorithms::partition_around_nth_index(data_indices.begin(),
+                                                                                 data_indices.end(),
+                                                                                 data.begin(),
+                                                                                 data.end(),
+                                                                                 features,
+                                                                                 pivot_index,
+                                                                                 feature_index);
 
                         // the values before the pivot according to the feature_index dimension should be less
                         // the values after the pivot according to the feature_index dimension should be greater or
@@ -242,13 +243,13 @@ TYPED_TEST(SortingTestFixture, QuickselectRangeTest) {
                             ascending_elements_array.begin(), ascending_elements_array.end(), features);
 
                         const auto [kth_smallest_index_begin, kth_smallest_index_end] =
-                            ffcl::algorithms::quickselect(data_indices.begin(),
-                                                          data_indices.end(),
-                                                          shuffled_ascending_elements_array.begin(),
-                                                          shuffled_ascending_elements_array.end(),
-                                                          features,
-                                                          kth_smallest_index,
-                                                          feature_index);
+                            ffcl::common::algorithms::quickselect(data_indices.begin(),
+                                                                  data_indices.end(),
+                                                                  shuffled_ascending_elements_array.begin(),
+                                                                  shuffled_ascending_elements_array.end(),
+                                                                  features,
+                                                                  kth_smallest_index,
+                                                                  feature_index);
 
                         // the range returned from quickselect should be the same as in the sorted dataset at index
                         // kth_smallest_index
@@ -293,17 +294,17 @@ TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
 
                         // new_pivot_index indicates where the original pivot has moved after quicksort
                         const auto new_pivot_index =
-                            ffcl::algorithms::quicksort(data_indices.begin(),
-                                                        data_indices.end(),
-                                                        shuffled_ascending_elements_array.begin(),
-                                                        shuffled_ascending_elements_array.end(),
-                                                        features,
-                                                        pivot_index,
-                                                        feature_index);
+                            ffcl::common::algorithms::quicksort(data_indices.begin(),
+                                                                data_indices.end(),
+                                                                shuffled_ascending_elements_array.begin(),
+                                                                shuffled_ascending_elements_array.end(),
+                                                                features,
+                                                                pivot_index,
+                                                                feature_index);
 
                         // sort the shuffled_ascending_elements_array with the index vector remapped inplace by
                         // quicksort
-                        shuffled_ascending_elements_array = common::utils::remap_ranges_from_indices(
+                        shuffled_ascending_elements_array = ffcl::common::utils::remap_ranges_from_indices(
                             data_indices, shuffled_ascending_elements_array, features);
 
                         // the data sorted by quickselect should now be the same as the original dataset

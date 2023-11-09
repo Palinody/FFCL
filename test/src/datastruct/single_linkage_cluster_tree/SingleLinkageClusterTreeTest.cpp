@@ -163,13 +163,13 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "noisy_circles.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -225,13 +225,13 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "noisy_moons.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -287,13 +287,13 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -349,13 +349,13 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "aniso.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -411,13 +411,13 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "blobs.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -473,13 +473,13 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "no_structure.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -535,13 +535,13 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "unbalanced_blobs.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -597,7 +597,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 }
 
 TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto data = std::vector<float>({/**/ 1,
                                     2,
@@ -617,7 +617,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
                                     2});
 
     const std::size_t n_features = 2;
-    const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 

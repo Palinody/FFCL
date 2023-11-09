@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 #include "ffcl/knn/count/Radius.hpp"
 
@@ -26,7 +26,7 @@ void increment_neighbors_count_in_radius(const IndicesIterator&                 
 
         if (candidate_nearest_neighbor_index != sample_index_query) {
             const auto candidate_nearest_neighbor_distance =
-                math::heuristics::auto_distance(samples_range_first + sample_index_query * n_features,
+                common::math::heuristics::auto_distance(samples_range_first + sample_index_query * n_features,
                                                 samples_range_first + sample_index_query * n_features + n_features,
                                                 samples_range_first + candidate_nearest_neighbor_index * n_features);
 
@@ -52,7 +52,7 @@ void increment_neighbors_count_in_radius(const IndicesIterator&                 
         const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
         const auto candidate_nearest_neighbor_distance =
-            math::heuristics::auto_distance(feature_query_range_first,
+            common::math::heuristics::auto_distance(feature_query_range_first,
                                             feature_query_range_last,
                                             samples_range_first + candidate_nearest_neighbor_index * n_features);
 

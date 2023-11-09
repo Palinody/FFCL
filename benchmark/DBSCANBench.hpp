@@ -13,8 +13,6 @@
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
 #include "ffcl/dbscan/DBSCAN.hpp"
 
-#include "ffcl/math/statistics/Statistics.hpp"
-
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
 #include <fstream>
@@ -32,7 +30,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
                                    const std::optional<fs::path>& predictions_filepath,
                                    std::size_t                    min_samples,
                                    float                          radius) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -43,7 +41,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -122,7 +120,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
                                    const std::optional<fs::path>& predictions_filepath,
                                    std::size_t                    min_samples,
                                    float                          radius) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -133,7 +131,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -201,7 +199,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
                                    const std::optional<fs::path>& predictions_filepath,
                                    std::size_t                    min_samples,
                                    float                          radius) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -212,7 +210,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -338,7 +336,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 }
 
 void run_point_cloud_sequences() {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     const std::vector<std::size_t>         min_samples_choices = {3, 5, 10};
     const std::vector<bench::io::DataType> radiuses            = {0.1, 0.3, 0.5, 1.0};

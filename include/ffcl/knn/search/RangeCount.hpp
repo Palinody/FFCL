@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 #include "ffcl/knn/count/Range.hpp"
 

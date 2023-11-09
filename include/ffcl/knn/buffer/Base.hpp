@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 #include <cstddef>
 #include <tuple>

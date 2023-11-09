@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 #include "ffcl/knn/buffer/WithMemory.hpp"
 
@@ -72,9 +72,10 @@ TYPED_TEST(KNearestNeighborsSearchTestFixture, NearestNeighborsTest) {
     ValuesType  nn_distances(nn_indices.size());
 
     std::transform(nn_indices.begin(), nn_indices.end(), nn_distances.begin(), [&](const auto& nn_index) {
-        return math::heuristics::auto_distance(data.begin() + sample_index_query * n_features,
-                                               data.begin() + sample_index_query * n_features + n_features,
-                                               data.begin() + nn_index * n_features);
+        return ffcl::common::math::heuristics::auto_distance(
+            data.begin() + sample_index_query * n_features,
+            data.begin() + sample_index_query * n_features + n_features,
+            data.begin() + nn_index * n_features);
     });
 
     printf("Distances:\n");

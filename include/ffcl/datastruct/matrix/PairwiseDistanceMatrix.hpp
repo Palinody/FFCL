@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -103,9 +103,9 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_paralle
 
         for (std::size_t column_index = 0; column_index < row_index; ++column_index) {
             low_triangle_distance_matrix[flat_index + column_index] =
-                math::heuristics::auto_distance(samples_range_first + row_index * n_features,
-                                                samples_range_first + row_index * n_features + n_features,
-                                                samples_range_first + column_index * n_features);
+                common::math::heuristics::auto_distance(samples_range_first + row_index * n_features,
+                                                        samples_range_first + row_index * n_features + n_features,
+                                                        samples_range_first + column_index * n_features);
         }
     }
     return low_triangle_distance_matrix;
@@ -125,9 +125,9 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_sequent
 
         for (std::size_t column_index = 0; column_index < row_index; ++column_index) {
             low_triangle_distance_matrix[flat_index + column_index] =
-                math::heuristics::auto_distance(samples_range_first + row_index * n_features,
-                                                samples_range_first + row_index * n_features + n_features,
-                                                samples_range_first + column_index * n_features);
+                common::math::heuristics::auto_distance(samples_range_first + row_index * n_features,
+                                                        samples_range_first + row_index * n_features + n_features,
+                                                        samples_range_first + column_index * n_features);
         }
     }
     return low_triangle_distance_matrix;

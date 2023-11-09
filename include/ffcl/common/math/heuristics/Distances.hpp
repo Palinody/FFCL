@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace math::heuristics {
+namespace ffcl::common::math::heuristics {
 
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto squared_euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
@@ -107,7 +107,7 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
                                                            right_features_range_first,
                                                            static_cast<ResultType>(0)));
     // returns "infinity" if the denominator is zero
-    return common::utils::division(dot_product, magnitude_1 * magnitude_2, common::utils::infinity<ResultType>());
+    return utils::division(dot_product, magnitude_1 * magnitude_2, utils::infinity<ResultType>());
 }
 
 // Iterative with two matrix rows https://en.wikipedia.org/wiki/Levenshtein_distance
@@ -176,4 +176,4 @@ auto auto_distance(const LeftFeaturesIterator&  left_features_range_first,
     }
 }
 
-}  // namespace math::heuristics
+}  // namespace ffcl::common::math::heuristics

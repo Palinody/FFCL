@@ -2,13 +2,13 @@
 #include <gtest/gtest.h>
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/random/Distributions.hpp"
+#include "ffcl/common/math/random/Distributions.hpp"
 
 #include <map>
 
 template <typename DataType>
 void print_sequence(std::size_t sequence_length) {
-    math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
+    ffcl::common::math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
 
     for (std::size_t i = 0; i < sequence_length; ++i) {
         std::cout << uniform_distribution_number_generator() << " ";
@@ -18,7 +18,7 @@ void print_sequence(std::size_t sequence_length) {
 
 template <typename DataType>
 void print_sequence(std::size_t sequence_length, std::size_t seed) {
-    math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
+    ffcl::common::math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
 
     for (std::size_t i = 0; i < sequence_length; ++i) {
         std::cout << uniform_distribution_number_generator(seed) << " ";
@@ -28,7 +28,7 @@ void print_sequence(std::size_t sequence_length, std::size_t seed) {
 
 template <typename DataType>
 void print_thread_sequence(std::size_t thread_id, std::size_t sequence_length) {
-    math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
+    ffcl::common::math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
 
     // std::cout << thread_id << ": ";
 
@@ -40,7 +40,7 @@ void print_thread_sequence(std::size_t thread_id, std::size_t sequence_length) {
 
 template <typename DataType>
 void print_thread_sequence(std::size_t thread_id, std::size_t sequence_length, std::size_t seed) {
-    math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
+    ffcl::common::math::random::normal_distribution<DataType> uniform_distribution_number_generator(5, 0.5);
 
     // std::cout << thread_id << ": ";
     static_cast<void>(thread_id);
@@ -53,7 +53,7 @@ void print_thread_sequence(std::size_t thread_id, std::size_t sequence_length, s
 
 template <typename DataType>
 void map_hist() {
-    math::random::normal_distribution<DataType> uniform_distribution_number_generator(10, 0.1);
+    ffcl::common::math::random::normal_distribution<DataType> uniform_distribution_number_generator(10, 0.1);
 
     std::map<DataType, DataType> hist;
 
@@ -68,7 +68,7 @@ void map_hist() {
 
 template <typename DataType>
 void thread_func(std::size_t thread_id) {
-    math::random::normal_distribution<DataType> uniform_distribution_number_generator(10, 0.1);
+    ffcl::common::math::random::normal_distribution<DataType> uniform_distribution_number_generator(10, 0.1);
 
     for (int i = 0; i < 10; ++i) {
         std::cout << "Thread " << thread_id << ": " << uniform_distribution_number_generator() << "\n";

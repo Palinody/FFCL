@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/random/Distributions.hpp"
 #include "ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp"
-#include "ffcl/math/heuristics/Distances.hpp"
-#include "ffcl/math/random/Distributions.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -28,15 +28,16 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const SamplesIterator
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the indices from each sample to the nearest medoid
     auto nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
-                                               samples_range_first + left_idx * n_features + n_features,
-                                               samples_range_first + right_idx * n_features);
+        return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                                             samples_range_first + left_idx * n_features + n_features,
+                                                             samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -99,15 +100,16 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const SamplesI
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the indices from each sample to the second nearest medoid
     auto second_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
-                                               samples_range_first + left_idx * n_features + n_features,
-                                               samples_range_first + right_idx * n_features);
+        return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                                             samples_range_first + left_idx * n_features + n_features,
+                                                             samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -126,7 +128,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const SamplesI
                 first_min_index     = idx;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
                 second_min_index    = idx;
             }
@@ -168,7 +170,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
                 first_min_index     = idx;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
                 second_min_index    = idx;
             }
@@ -189,15 +191,16 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const SamplesIt
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the indices from each sample to the third nearest medoid
     auto third_nearest_medoid_indices = std::vector<std::size_t>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
-                                               samples_range_first + left_idx * n_features + n_features,
-                                               samples_range_first + right_idx * n_features);
+        return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                                             samples_range_first + left_idx * n_features + n_features,
+                                                             samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -220,15 +223,15 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const SamplesIt
                 first_min_index     = idx;
 
             } else if (third_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 third_min_index     = second_min_index;
                 second_min_distance = third_nearest_candidate;
                 second_min_index    = idx;
 
             } else if (third_nearest_candidate < third_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
-                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       ffcl::common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
                 third_min_index    = idx;
             }
@@ -274,15 +277,15 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
                 first_min_index     = idx;
 
             } else if (third_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 third_min_index     = second_min_index;
                 second_min_distance = third_nearest_candidate;
                 second_min_index    = idx;
 
             } else if (third_nearest_candidate < third_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
-                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       ffcl::common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
                 third_min_index    = idx;
             }
@@ -357,15 +360,16 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_dist
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
-                                               samples_range_first + left_idx * n_features + n_features,
-                                               samples_range_first + right_idx * n_features);
+        return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                                             samples_range_first + left_idx * n_features + n_features,
+                                                             samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -426,15 +430,16 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medo
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto second_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
-                                               samples_range_first + left_idx * n_features + n_features,
-                                               samples_range_first + right_idx * n_features);
+        return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                                             samples_range_first + left_idx * n_features + n_features,
+                                                             samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -449,7 +454,7 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medo
                 first_min_distance  = second_nearest_candidate;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
             }
         }
@@ -486,7 +491,7 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medo
                 first_min_distance  = second_nearest_candidate;
 
             } else if (second_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(second_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(second_nearest_candidate, first_min_distance)) {
                 second_min_distance = second_nearest_candidate;
             }
         }
@@ -507,15 +512,16 @@ std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoi
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
     }
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the vector that will contain the distances from each sample to the nearest medoid
     auto third_nearest_medoid_distances = std::vector<DataType>(n_samples);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
-        return math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
-                                               samples_range_first + left_idx * n_features + n_features,
-                                               samples_range_first + right_idx * n_features);
+        return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
+                                                             samples_range_first + left_idx * n_features + n_features,
+                                                             samples_range_first + right_idx * n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -532,13 +538,13 @@ std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoi
                 first_min_distance  = third_nearest_candidate;
 
             } else if (third_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 second_min_distance = third_nearest_candidate;
 
             } else if (third_nearest_candidate < third_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
-                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       ffcl::common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
             }
         }
@@ -577,13 +583,13 @@ std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoi
                 first_min_distance  = third_nearest_candidate;
 
             } else if (third_nearest_candidate < second_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance)) {
                 third_min_distance  = second_min_distance;
                 second_min_distance = third_nearest_candidate;
 
             } else if (third_nearest_candidate < third_min_distance &&
-                       common::utils::inequality(third_nearest_candidate, first_min_distance) &&
-                       common::utils::inequality(third_nearest_candidate, second_min_distance)) {
+                       ffcl::common::utils::inequality(third_nearest_candidate, first_min_distance) &&
+                       ffcl::common::utils::inequality(third_nearest_candidate, second_min_distance)) {
                 third_min_distance = third_nearest_candidate;
             }
         }
@@ -693,10 +699,10 @@ std::vector<DataType> compute_losses_with_silhouette_medoid_removal(
         // distance from the current sample to its third nearest medoid
         const auto distance_3 = third_nearest_medoid_distances[sample_index];
         // accumulate the variation in total deviation for the correct medoid index
-        delta_td_mi[index_1] +=
-            common::utils::division(distance_1, distance_2) - common::utils::division(distance_2, distance_3);
-        delta_td_mi[index_2] +=
-            common::utils::division(distance_1, distance_2) - common::utils::division(distance_1, distance_3);
+        delta_td_mi[index_1] += ffcl::common::utils::division(distance_1, distance_2) -
+                                ffcl::common::utils::division(distance_2, distance_3);
+        delta_td_mi[index_2] += ffcl::common::utils::division(distance_1, distance_2) -
+                                ffcl::common::utils::division(distance_1, distance_3);
     }
     return delta_td_mi;
 }
@@ -708,10 +714,11 @@ std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_ind
     std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples =
+        ffcl::common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     std::size_t selected_medoid = 0;
-    auto        total_deviation = common::utils::infinity<DataType>();
+    auto        total_deviation = ffcl::common::utils::infinity<DataType>();
     // choose the first medoid
     for (std::size_t medoid_candidate_idx = 0; medoid_candidate_idx < n_samples; ++medoid_candidate_idx) {
         // total deviation accumulator w.r.t. current candidate medoid and all the other points
@@ -719,10 +726,10 @@ std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_ind
         for (std::size_t other_sample_index = 0; other_sample_index < n_samples; ++other_sample_index) {
             // the following should be done if other_sample_index != medoid_candidate_idx
             // but the distance would be 0 anyway with dist(other_sample, medoid_candidate)
-            loss_acc +=
-                math::heuristics::auto_distance(samples_range_first + medoid_candidate_idx * n_features,
-                                                samples_range_first + medoid_candidate_idx * n_features + n_features,
-                                                samples_range_first + other_sample_index * n_features);
+            loss_acc += ffcl::common::math::heuristics::auto_distance(
+                samples_range_first + medoid_candidate_idx * n_features,
+                samples_range_first + medoid_candidate_idx * n_features + n_features,
+                samples_range_first + other_sample_index * n_features);
         }
         // if the candidate total deviation is lower than the current total deviation
         if (loss_acc < total_deviation) {
@@ -743,7 +750,7 @@ std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_ind
     const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
     std::size_t selected_medoid = 0;
-    auto        total_deviation = common::utils::infinity<DataType>();
+    auto        total_deviation = ffcl::common::utils::infinity<DataType>();
     // choose the first medoid
     for (std::size_t medoid_candidate_idx = 0; medoid_candidate_idx < n_samples; ++medoid_candidate_idx) {
         // total deviation accumulator w.r.t. current candidate medoid and all the other points
@@ -769,7 +776,7 @@ std::vector<typename SamplesIterator::value_type> medoids_to_centroids(const Sam
                                                                        const SamplesIterator& samples_range_last,
                                                                        std::size_t            n_features,
                                                                        const std::vector<std::size_t>& medoids) {
-    common::utils::ignore_parameters(samples_range_last);
+    ffcl::common::utils::ignore_parameters(samples_range_last);
 
     const auto n_medoids = medoids.size();
     auto       clusters  = std::vector<typename SamplesIterator::value_type>(n_medoids * n_features);

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/random/Distributions.hpp"
+#include "ffcl/common/math/random/Sampling.hpp"
+#include "ffcl/common/math/random/VosesAliasMethod.hpp"
 #include "ffcl/kmeans/KMeansUtils.hpp"
-#include "ffcl/math/heuristics/Distances.hpp"
-#include "ffcl/math/random/Distributions.hpp"
-#include "ffcl/math/random/Sampling.hpp"
-#include "ffcl/math/random/VosesAliasMethod.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -45,14 +45,14 @@ std::vector<typename SamplesIterator::value_type> make_centroids(const SamplesIt
     static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
                   "Data should be a floating point type.");
 
-    auto centroids = math::random::select_random_sample(samples_range_first, samples_range_last, n_features);
+    auto centroids = common::math::random::select_random_sample(samples_range_first, samples_range_last, n_features);
 
     for (std::size_t centroid_index = 1; centroid_index < n_centroids; ++centroid_index) {
         // recompute the distances from each sample to its closest centroid
         auto nearest_centroid_distances = kmeans::utils::samples_to_nearest_centroid_distances(
             samples_range_first, samples_range_last, n_features, centroids);
         // use these distances as weighted probabilities
-        auto alias_method = math::random::VosesAliasMethod(nearest_centroid_distances);
+        auto alias_method = common::math::random::VosesAliasMethod(nearest_centroid_distances);
 
         const auto random_index = alias_method();
 
@@ -87,7 +87,8 @@ std::vector<typename SamplesIterator::value_type> make_centroids_from_previous_c
     static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
                   "Data should be a floating point type.");
 
-    auto previous_centroid = math::random::select_random_sample(samples_range_first, samples_range_last, n_features);
+    auto previous_centroid =
+        common::math::random::select_random_sample(samples_range_first, samples_range_last, n_features);
 
     auto centroids = previous_centroid;
 
@@ -96,7 +97,7 @@ std::vector<typename SamplesIterator::value_type> make_centroids_from_previous_c
         auto previous_centroid_distances = kmeans::utils::samples_to_nearest_centroid_distances(
             samples_range_first, samples_range_last, n_features, previous_centroid);
         // use these distances as weighted probabilities
-        auto alias_method = math::random::VosesAliasMethod(previous_centroid_distances);
+        auto alias_method = common::math::random::VosesAliasMethod(previous_centroid_distances);
 
         const auto random_index = alias_method();
 

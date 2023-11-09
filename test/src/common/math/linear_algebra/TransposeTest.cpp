@@ -4,7 +4,7 @@
 #include "Range2DBaseFixture.hpp"
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/linear_algebra/Transpose.hpp"
+#include "ffcl/common/math/linear_algebra/Transpose.hpp"
 
 #include <vector>
 
@@ -47,13 +47,13 @@ TYPED_TEST(TransposeTestFixture, TransposeSerialTest) {
             this->n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
 
         const auto [transposed_data, n_samples_transposed, n_features_transposed] =
-            math::linear_algebra::transpose(data.begin(), data.end(), this->n_features_);
+            ffcl::common::math::linear_algebra::transpose(data.begin(), data.end(), this->n_features_);
 
         ASSERT_EQ(data.size(), transposed_data.size());
 
         // retrieve the original data
-        const auto [orig_data, n_samples_orig, n_features_orig] =
-            math::linear_algebra::transpose(transposed_data.begin(), transposed_data.end(), n_features_transposed);
+        const auto [orig_data, n_samples_orig, n_features_orig] = ffcl::common::math::linear_algebra::transpose(
+            transposed_data.begin(), transposed_data.end(), n_features_transposed);
 
         ASSERT_EQ(n_samples_orig, this->n_samples_);
         ASSERT_EQ(n_features_orig, this->n_features_);
@@ -77,13 +77,14 @@ TYPED_TEST(TransposeTestFixture, TransposeOpenMPTest) {
             this->n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
 
         const auto [transposed_data, n_samples_transposed, n_features_transposed] =
-            math::linear_algebra::transpose_parallel_openmp(data.begin(), data.end(), this->n_features_);
+            ffcl::common::math::linear_algebra::transpose_parallel_openmp(data.begin(), data.end(), this->n_features_);
 
         ASSERT_EQ(data.size(), transposed_data.size());
 
         // retrieve the original data
-        const auto [orig_data, n_samples_orig, n_features_orig] = math::linear_algebra::transpose_parallel_openmp(
-            transposed_data.begin(), transposed_data.end(), n_features_transposed);
+        const auto [orig_data, n_samples_orig, n_features_orig] =
+            ffcl::common::math::linear_algebra::transpose_parallel_openmp(
+                transposed_data.begin(), transposed_data.end(), n_features_transposed);
 
         ASSERT_EQ(n_samples_orig, this->n_samples_);
         ASSERT_EQ(n_features_orig, this->n_features_);

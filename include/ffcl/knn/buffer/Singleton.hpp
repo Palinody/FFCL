@@ -1,7 +1,7 @@
 #include "ffcl/knn/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/statistics/Statistics.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 #include <iostream>
 #include <stdexcept>  // std::runtime_error
@@ -94,7 +94,7 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
             const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
             if (candidate_nearest_neighbor_index != sample_index_query) {
-                const auto candidate_nearest_neighbor_distance = math::heuristics::auto_distance(
+                const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
                     samples_range_first + sample_index_query * n_features,
                     samples_range_first + sample_index_query * n_features + n_features,
                     samples_range_first + candidate_nearest_neighbor_index * n_features);
@@ -118,10 +118,10 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
         for (std::size_t index = 0; index < n_samples; ++index) {
             const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
-            const auto candidate_nearest_neighbor_distance =
-                math::heuristics::auto_distance(feature_query_range_first,
-                                                feature_query_range_last,
-                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
+            const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
+                feature_query_range_first,
+                feature_query_range_last,
+                samples_range_first + candidate_nearest_neighbor_index * n_features);
 
             this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
         }

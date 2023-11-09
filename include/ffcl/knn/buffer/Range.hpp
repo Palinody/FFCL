@@ -3,7 +3,7 @@
 #include "ffcl/knn/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/statistics/Statistics.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
 
 #include "ffcl/datastruct/BoundingBox.hpp"
 
@@ -105,7 +105,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                     samples_range_first + candidate_nearest_neighbor_index * n_features,
                     samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
                     kd_bounding_box_)) {
-                const auto candidate_nearest_neighbor_distance = math::heuristics::auto_distance(
+                const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
                     samples_range_first + sample_index_query * n_features,
                     samples_range_first + sample_index_query * n_features + n_features,
                     samples_range_first + candidate_nearest_neighbor_index * n_features);
@@ -129,10 +129,10 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
         for (std::size_t index = 0; index < n_samples; ++index) {
             const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
-            const auto candidate_nearest_neighbor_distance =
-                math::heuristics::auto_distance(feature_query_range_first,
-                                                feature_query_range_last,
-                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
+            const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
+                feature_query_range_first,
+                feature_query_range_last,
+                samples_range_first + candidate_nearest_neighbor_index * n_features);
 
             if (bbox::is_sample_in_kd_bounding_box(
                     samples_range_first + candidate_nearest_neighbor_index * n_features,

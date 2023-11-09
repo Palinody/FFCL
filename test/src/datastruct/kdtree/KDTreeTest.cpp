@@ -3,7 +3,6 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
-#include "ffcl/math/random/Distributions.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -133,14 +132,14 @@ void print_data(const std::vector<Type>& data, std::size_t n_features) {
 
 /*
 TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+   ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -149,7 +148,7 @@ TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
     std::cout << "n_features: " << n_features << "\n";
 
     ssize_t current_nearest_neighbor_index    = -1;
-    auto    current_nearest_neighbor_distance = common::utils::infinity<dType>();
+    auto    current_nearest_neighbor_distance = ffcl::common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -169,14 +168,14 @@ TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
 */
 
 TEST_F(KDTreeErrorsTest, NearestNeighborIndexTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -206,7 +205,7 @@ TEST_F(KDTreeErrorsTest, NearestNeighborIndexTest) {
     timer.print_elapsed_seconds(9);
 
     ssize_t nn_index    = -1;
-    auto    nn_distance = common::utils::infinity<dType>();
+    auto    nn_distance = ffcl::common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -218,14 +217,14 @@ TEST_F(KDTreeErrorsTest, NearestNeighborIndexTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KNearestNeighborsIndexTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -254,7 +253,7 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsIndexTest) {
     timer.print_elapsed_seconds(9);
 
     ssize_t nn_index    = -1;
-    auto    nn_distance = common::utils::infinity<dType>();
+    auto    nn_distance = ffcl::common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -282,14 +281,14 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsIndexTest) {
 }
 
 TEST_F(KDTreeErrorsTest, RadiusCountIndexTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -338,14 +337,14 @@ TEST_F(KDTreeErrorsTest, RadiusCountIndexTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KNearestNeighborsInRadiusIndexTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -390,14 +389,14 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsInRadiusIndexTest) {
 }
 
 TEST_F(KDTreeErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -427,7 +426,7 @@ TEST_F(KDTreeErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {
     timer.print_elapsed_seconds(9);
 
     ssize_t nn_index    = -1;
-    auto    nn_distance = common::utils::infinity<dType>();
+    auto    nn_distance = ffcl::common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -441,14 +440,14 @@ TEST_F(KDTreeErrorsTest, NearestNeighborIndexWithUnknownSampleTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KNearestNeighborsSampleTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -477,7 +476,7 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsSampleTest) {
     timer.print_elapsed_seconds(9);
 
     ssize_t nn_index    = -1;
-    auto    nn_distance = common::utils::infinity<dType>();
+    auto    nn_distance = ffcl::common::utils::infinity<dType>();
 
     timer.reset();
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
@@ -511,14 +510,14 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsSampleTest) {
 }
 
 TEST_F(KDTreeErrorsTest, RadiusCountSampleTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -568,14 +567,14 @@ TEST_F(KDTreeErrorsTest, RadiusCountSampleTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KNearestNeighborsInRadiusSampleTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -630,14 +629,14 @@ TEST_F(KDTreeErrorsTest, KNearestNeighborsInRadiusSampleTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KDBoundingBoxCountIndexTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -684,14 +683,14 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxCountIndexTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KDBoundingBoxSearchIndexTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -746,14 +745,14 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxSearchIndexTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KDBoundingBoxCountSampleTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -803,14 +802,14 @@ TEST_F(KDTreeErrorsTest, KDBoundingBoxCountSampleTest) {
 }
 
 TEST_F(KDTreeErrorsTest, KDBoundingBoxSearchSampleTest) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -872,7 +871,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -880,7 +879,7 @@ TEST_F(KDTreeErrorsTest, MNISTTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices         = generate_indices(n_samples);
     auto feature_indices = generate_indices(n_features);
@@ -913,7 +912,7 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -921,7 +920,7 @@ TEST_F(KDTreeErrorsTest, NoisyCirclesTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices = generate_indices(n_samples);
 
@@ -956,7 +955,7 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -964,7 +963,7 @@ TEST_F(KDTreeErrorsTest, NoisyMoonsTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices = generate_indices(n_samples);
 
@@ -999,7 +998,7 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -1007,7 +1006,7 @@ TEST_F(KDTreeErrorsTest, VariedTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices = generate_indices(n_samples);
 
@@ -1042,7 +1041,7 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -1050,7 +1049,7 @@ TEST_F(KDTreeErrorsTest, AnisoTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices = generate_indices(n_samples);
 
@@ -1085,7 +1084,7 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -1093,7 +1092,7 @@ TEST_F(KDTreeErrorsTest, BlobsTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices = generate_indices(n_samples);
 
@@ -1128,7 +1127,7 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -1136,7 +1135,7 @@ TEST_F(KDTreeErrorsTest, NoStructureTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices = generate_indices(n_samples);
 
@@ -1171,7 +1170,7 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
 
-    const std::size_t n_samples = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     std::cout << "n_elements: " << data.size() << "\n";
     std::cout << "n_samples: " << n_samples << "\n";
@@ -1179,7 +1178,7 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     printf("Making the kdtree:\n");
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     auto indices = generate_indices(n_samples);
 

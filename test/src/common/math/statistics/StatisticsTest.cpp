@@ -4,7 +4,7 @@
 #include "Range2DBaseFixture.hpp"
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/math/statistics/Statistics.hpp"
+#include "ffcl/common/math/statistics/Statistics.hpp"
 
 #include <vector>
 
@@ -48,7 +48,7 @@ TYPED_TEST(MathStatisticsTestFixture, ComputeMeanPerFeature) {
     const std::vector<DataType>  expected_mean = {4, 5, 6};
     static constexpr std::size_t n_features    = 3;
 
-    const auto result = math::statistics::compute_mean_per_feature(data.begin(), data.end(), n_features);
+    const auto result = ffcl::common::math::statistics::compute_mean_per_feature(data.begin(), data.end(), n_features);
 
     ASSERT_EQ(result.size(), n_features);
 
@@ -62,7 +62,8 @@ TYPED_TEST(MathStatisticsTestFixture, ComputeVariancePerFeature) {
     const std::vector<DataType>  expected_variance = {9, 9, 9};
     static constexpr std::size_t n_features        = 3;
 
-    const auto result = math::statistics::compute_variance_per_feature(data.begin(), data.end(), n_features);
+    const auto result =
+        ffcl::common::math::statistics::compute_variance_per_feature(data.begin(), data.end(), n_features);
 
     ASSERT_EQ(result.size(), n_features);
 
@@ -76,8 +77,8 @@ TYPED_TEST(MathStatisticsTestFixture, ComputeVariance) {
     const std::vector<DataType> data              = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     const DataType              expected_variance = 7.5;
 
-    const auto result1 = math::statistics::compute_variance_per_feature(data.begin(), data.end(), 1)[0];
-    const auto result2 = math::statistics::compute_variance(data.begin(), data.end());
+    const auto result1 = ffcl::common::math::statistics::compute_variance_per_feature(data.begin(), data.end(), 1)[0];
+    const auto result2 = ffcl::common::math::statistics::compute_variance(data.begin(), data.end());
 
     EXPECT_DOUBLE_EQ(result1, static_cast<DataType>(expected_variance));
     EXPECT_DOUBLE_EQ(result2, static_cast<DataType>(expected_variance));
@@ -89,10 +90,11 @@ TYPED_TEST(MathStatisticsTestFixture, ArgmaxVariancePerFeature) {
             this->n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
 
         const auto var_per_feat =
-            math::statistics::compute_variance_per_feature(data.begin(), data.end(), this->n_features_);
-        const auto argmax1 = math::statistics::argmax(var_per_feat.begin(), var_per_feat.end());
+            ffcl::common::math::statistics::compute_variance_per_feature(data.begin(), data.end(), this->n_features_);
+        const auto argmax1 = ffcl::common::math::statistics::argmax(var_per_feat.begin(), var_per_feat.end());
 
-        const auto argmax2 = math::statistics::argmax_variance_per_feature(data.begin(), data.end(), this->n_features_);
+        const auto argmax2 =
+            ffcl::common::math::statistics::argmax_variance_per_feature(data.begin(), data.end(), this->n_features_);
 
         EXPECT_EQ(argmax1, argmax2);
     }

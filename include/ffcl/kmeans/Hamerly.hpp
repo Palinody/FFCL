@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/common/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/statistics/Statistics.hpp"
 #include "ffcl/kmeans/KMeansUtils.hpp"
-#include "ffcl/math/heuristics/Distances.hpp"
-#include "ffcl/math/statistics/Statistics.hpp"
 
 #include <tuple>
 #include <vector>
@@ -140,9 +140,9 @@ void Hamerly<SamplesIterator>::swap_bounds() {
             const auto [samples_range_first, samples_range_last, n_features] = dataset_descriptor_;
             // tighten upper bound
             auto upper_bound =
-                math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
-                                                samples_range_first + sample_index * n_features + n_features,
-                                                centroids_.begin() + assigned_centroid_index * n_features);
+                common::math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
+                                                        samples_range_first + sample_index * n_features + n_features,
+                                                        centroids_.begin() + assigned_centroid_index * n_features);
 
             const auto previous_assigned_centroid_distance = samples_to_nearest_centroid_distances[sample_index];
 
@@ -157,7 +157,7 @@ void Hamerly<SamplesIterator>::swap_bounds() {
 
                 for (std::size_t other_centroid_index = 0; other_centroid_index < n_centroids; ++other_centroid_index) {
                     if (other_centroid_index != assigned_centroid_index) {
-                        const auto other_nearest_candidate = math::heuristics::auto_distance(
+                        const auto other_nearest_candidate = common::math::heuristics::auto_distance(
                             samples_range_first + sample_index * n_features,
                             samples_range_first + sample_index * n_features + n_features,
                             centroids_.begin() + other_centroid_index * n_features);
@@ -247,22 +247,22 @@ void Hamerly<SamplesIterator>::update_centroids_velocities(const std::vector<Dat
 
     // compute the distances between the non updated and updated centroids
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
-        centroid_velocities[centroid_index] =
-            math::heuristics::auto_distance(previous_centroids.begin() + centroid_index * n_features,
-                                            previous_centroids.begin() + centroid_index * n_features + n_features,
-                                            centroids_.begin() + centroid_index * n_features);
+        centroid_velocities[centroid_index] = common::math::heuristics::auto_distance(
+            previous_centroids.begin() + centroid_index * n_features,
+            previous_centroids.begin() + centroid_index * n_features + n_features,
+            centroids_.begin() + centroid_index * n_features);
     }
 }
 
 template <typename SamplesIterator>
 auto Hamerly<SamplesIterator>::update_bounds() {
     const auto [furthest_moving_centroid_index, furthest_moving_centroid_distance] =
-        math::statistics::get_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
-                                                   buffers_ptr_->centroid_velocities_.end());
+        common::math::statistics::get_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
+                                                           buffers_ptr_->centroid_velocities_.end());
 
     const auto [second_furthest_moving_centroid_index, second_furthest_moving_centroid_distance] =
-        math::statistics::get_second_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
-                                                          buffers_ptr_->centroid_velocities_.end());
+        common::math::statistics::get_second_max_index_value_pair(buffers_ptr_->centroid_velocities_.begin(),
+                                                                  buffers_ptr_->centroid_velocities_.end());
 
     const auto& samples_to_nearest_centroid_indices    = buffers_ptr_->samples_to_nearest_centroid_indices_;
     auto&       samples_to_nearest_centroid_distances  = buffers_ptr_->samples_to_nearest_centroid_distances_;

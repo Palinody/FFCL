@@ -8,8 +8,6 @@
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
 #include "ffcl/hdbscan/HDBSCAN.hpp"
 
-#include "ffcl/math/statistics/Statistics.hpp"
-
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
 #include <fstream>
@@ -27,7 +25,7 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
                                     const std::optional<fs::path>& predictions_filepath,
                                     std::size_t                    k_nearest_neighbors,
                                     std::size_t                    min_cluster_size) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -38,7 +36,7 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -185,7 +183,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 }
 
 void run_point_cloud_sequences() {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     // const std::vector<std::size_t> k_nearest_neighbors = {3, 5, 10};
     const std::vector<std::size_t> k_nearest_neighbors = {5};

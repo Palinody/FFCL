@@ -5,8 +5,8 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
+#include "ffcl/common/math/random/VosesAliasMethod.hpp"
 #include "ffcl/kmeans/KMeans.hpp"
-#include "ffcl/math/random/VosesAliasMethod.hpp"
 
 namespace kmeans::benchmark {
 
@@ -23,7 +23,7 @@ void fit_once(const SamplesIterator& samples_first,
 
     std::cout << "KMeans: \n";
 
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     kmeans.fit(samples_first, samples_last);
 

@@ -6,7 +6,6 @@
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
-#include "ffcl/math/random/Sampling.hpp"
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -21,7 +20,7 @@ namespace kdtree::benchmark {
 namespace ffcl_ {
 
 utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -32,7 +31,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -97,7 +96,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
 
 utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
                                                                             std::size_t     k_nearest_neighbors) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -108,7 +107,7 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -177,7 +176,7 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
 namespace pcl_ {
 
 utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -188,7 +187,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -251,7 +250,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
 
 utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
                                                                             std::size_t     k_nearest_neighbors) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -262,7 +261,7 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -326,7 +325,7 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
 namespace flann_ {
 
 utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -337,7 +336,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -400,7 +399,7 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
 
 utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
                                                                             std::size_t     k_nearest_neighbors) {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -411,7 +410,7 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -623,7 +622,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 }
 
 void run_radius_search_benchmarks_on_point_cloud_sequences() {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     const std::vector<bench::io::DataType> radiuses = {0.1, 0.3, 0.5, 1.0};
 
@@ -661,7 +660,7 @@ void run_radius_search_benchmarks_on_point_cloud_sequences() {
 }
 
 void run_k_nearest_neighbors_search_benchmarks_on_point_cloud_sequences() {
-    common::timer::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     const std::vector<std::size_t> n_neighbors_choices = {1, 3, 5, 10};
 

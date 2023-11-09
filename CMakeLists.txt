@@ -187,7 +187,7 @@ elseif(MODE STREQUAL "gtest")
         SortingTest
 
         # ---
-        test/src/algorithms/SortingTest.cpp
+        test/src/common/algorithms/SortingTest.cpp
     )
     target_link_libraries(
         SortingTest
@@ -427,7 +427,7 @@ elseif(MODE STREQUAL "gtest")
         StatisticsTest
 
         # ---
-        test/src/math/statistics/StatisticsTest.cpp
+        test/src/common/math/statistics/StatisticsTest.cpp
     )
     target_link_libraries(
         StatisticsTest
@@ -447,7 +447,7 @@ elseif(MODE STREQUAL "gtest")
         TransposeTest
 
         # ---
-        test/src/math/linear_algebra/TransposeTest.cpp
+        test/src/common/math/linear_algebra/TransposeTest.cpp
     )
     target_link_libraries(
         TransposeTest
@@ -467,7 +467,7 @@ elseif(MODE STREQUAL "gtest")
         DistributionsTest
 
         # ---
-        test/src/math/random/DistributionsTest.cpp
+        test/src/common/math/random/DistributionsTest.cpp
     )
     target_link_libraries(
         DistributionsTest
