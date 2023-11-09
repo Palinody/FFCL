@@ -66,7 +66,7 @@ auto PairwiseDistanceMatrixDynamic<SamplesIterator>::operator()(std::size_t row_
 
 template <typename SamplesIterator>
 std::size_t PairwiseDistanceMatrixDynamic<SamplesIterator>::n_rows() const {
-    return common::utils::get_n_samples(samples_first_, samples_last_, n_features_);
+    return common::get_n_samples(samples_first_, samples_last_, n_features_);
 }
 
 template <typename SamplesIterator>

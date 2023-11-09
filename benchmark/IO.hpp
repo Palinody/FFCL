@@ -156,7 +156,7 @@ std::tuple<std::vector<ElementsType>, std::size_t, std::size_t> decode(std::size
         std::cout << "Could not load data from file at: " << filepath << std::endl;
         abort();
     }
-    const std::size_t n_samples = ffcl::common::utils::get_n_samples(xyzr.begin(), xyzr.end(), n_features);
+    const std::size_t n_samples = ffcl::common::get_n_samples(xyzr.begin(), xyzr.end(), n_features);
     return {xyzr, n_samples, n_features};
 }
 

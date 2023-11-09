@@ -177,7 +177,7 @@ std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range
     auto candidates_losses = std::vector<DataType>(centroids_candidates.size());
 
     // This creates a n_candidates vector of n_centroids vectors. The elements of each vector should be initialized to
-    // infinity, but since common::utils::are_containers_equal checks container sizes, it's not necessary to do so. We
+    // infinity, but since common::are_containers_equal checks container sizes, it's not necessary to do so. We
     // could use only one candidate with a single thread but we make it thread safe this way we dont necessarily need to
     // initialize with vectors of infinities
     auto centroids_candidates_prev = std::vector<std::vector<DataType>>(centroids_candidates.size());
@@ -203,7 +203,7 @@ std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range
             centroids_candidates[k] = kmeans_algorithm.step();
 
             if (options_.early_stopping_ &&
-                common::utils::are_containers_equal(
+                common::are_containers_equal(
                     centroids_candidates[k], centroids_candidates_prev[k], options_.tolerance_)) {
                 if (patience_iter == options_.patience_) {
                     break;

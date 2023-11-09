@@ -33,7 +33,7 @@ class Sorted : public Base<IndicesIterator, DistancesIterator> {
 
     using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
 
-    explicit Sorted(const IndicesType& max_capacity = common::utils::infinity<IndexType>())
+    explicit Sorted(const IndicesType& max_capacity = common::infinity<IndexType>())
       : max_capacity_{max_capacity} {}
 
     std::size_t size() const {
@@ -57,7 +57,7 @@ class Sorted : public Base<IndicesIterator, DistancesIterator> {
     }
 
     DistanceType upper_bound(const IndexType& feature_index) const {
-        common::utils::ignore_parameters(feature_index);
+        common::ignore_parameters(feature_index);
         return this->upper_bound();
     }
 
@@ -104,7 +104,7 @@ class Sorted : public Base<IndicesIterator, DistancesIterator> {
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     std::size_t            sample_index_query) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -129,7 +129,7 @@ class Sorted : public Base<IndicesIterator, DistancesIterator> {
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
                     const SamplesIterator& feature_query_range_last) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

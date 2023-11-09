@@ -43,7 +43,7 @@ class BaseIndexer {
     BaseIndexer(SamplesIterator data_first, SamplesIterator data_last, std::size_t n_features)
       : data_first_{data_first}
       , data_last_{data_last}
-      , n_samples_{ffcl::common::utils::get_n_samples(data_first, data_last, n_features)}
+      , n_samples_{ffcl::common::get_n_samples(data_first, data_last, n_features)}
       , n_features_{n_features} {}
 
     virtual ~BaseIndexer() = default;

@@ -41,7 +41,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
     }
 
     std::size_t n_free_slots() const {
-        return common::utils::infinity<IndexType>();
+        return common::infinity<IndexType>();
     }
 
     bool empty() const {
@@ -93,7 +93,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     std::size_t            sample_index_query) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -122,7 +122,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
                     const SamplesIterator& feature_query_range_last) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

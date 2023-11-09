@@ -21,10 +21,10 @@ namespace hdbscan::benchmark {
 
 namespace ffcl_ {
 
-utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
-                                    const std::optional<fs::path>& predictions_filepath,
-                                    std::size_t                    k_nearest_neighbors,
-                                    std::size_t                    min_cluster_size) {
+DurationsSummary run_hdbscan(const fs::path&                filepath,
+                             const std::optional<fs::path>& predictions_filepath,
+                             std::size_t                    k_nearest_neighbors,
+                             std::size_t                    min_cluster_size) {
     ffcl::common::Timer<common::timer::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
@@ -36,7 +36,7 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
     } else if (filepath.extension().string() == ".txt") {
         data       = bench::io::txt::load_data<bench::io::DataType>(filepath, ' ');
         n_features = bench::io::txt::get_num_features_in_file(filepath);
-        n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+        n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     } else {
         char message[100];
@@ -44,7 +44,7 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
         throw std::runtime_error(message);
     }
 
-    utils::DurationsSummary bench_summary;
+    DurationsSummary bench_summary;
 
     static constexpr std::size_t n_features_target = 3;
 
@@ -60,7 +60,7 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
         data_xyz[sample_index * n_features_target + 2] = data[sample_index * n_features + 2];
     }
 
-    auto indices = utils::generate_indices(n_samples);
+    auto indices = generate_indices(n_samples);
 
     using IndicesIterator         = decltype(indices)::iterator;
     using SamplesIterator         = decltype(data_xyz)::iterator;
@@ -133,10 +133,10 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
     long double to_seconds = 1e-9;
 
     // the sequence object that will be used to compute the variance
-    std::vector<utils::DurationsSummary> bench_summary_vector;
+    std::vector<DurationsSummary> bench_summary_vector;
     bench_summary_vector.reserve(filenames.size());
     // the object that will be used to compute the mean
-    utils::DurationsSummary bench_summary_mean;
+    DurationsSummary bench_summary_mean;
 
     for (std::size_t file_index = 0; file_index < filenames.size(); ++file_index) {
         const auto& filename = filenames[file_index];
@@ -153,11 +153,11 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 
         bench_summary_vector.emplace_back(std::move(bench_summary));
 
-        utils::print_progress_bar(file_index, filenames.size());
+        print_progress_bar(file_index, filenames.size());
     }
     bench_summary_mean /= filenames.size();
 
-    utils::DurationsSummary bench_summary_variance;
+    DurationsSummary bench_summary_variance;
 
     for (auto& bench_summary : bench_summary_vector) {
         bench_summary -= bench_summary_mean;

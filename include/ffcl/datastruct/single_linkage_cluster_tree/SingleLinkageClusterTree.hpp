@@ -52,7 +52,7 @@ class SingleLinkageClusterTree {
             return *this;
         }
 
-        ValueType   cut_level_        = common::utils::infinity<ValueType>();
+        ValueType   cut_level_        = common::infinity<ValueType>();
         std::size_t min_cluster_size_ = 1;
     };
 

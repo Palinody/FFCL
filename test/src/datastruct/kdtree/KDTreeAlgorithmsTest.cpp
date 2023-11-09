@@ -69,8 +69,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
                     const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
 
-                    ASSERT_TRUE(ffcl::common::utils::equality(min, target_min) &&
-                                ffcl::common::utils::equality(max, target_max));
+                    ASSERT_TRUE(ffcl::common::equality(min, target_min) && ffcl::common::equality(max, target_max));
                 }
             }
         }
@@ -98,8 +97,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxIndexedTest) {
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
                     const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
 
-                    ASSERT_TRUE(ffcl::common::utils::equality(min, target_min) &&
-                                ffcl::common::utils::equality(max, target_max));
+                    ASSERT_TRUE(ffcl::common::equality(min, target_min) && ffcl::common::equality(max, target_max));
                 }
             }
         }
@@ -126,8 +124,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxTest) {
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
                     const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
 
-                    ASSERT_TRUE(ffcl::common::utils::equality(min, target_min) &&
-                                ffcl::common::utils::equality(max, target_max));
+                    ASSERT_TRUE(ffcl::common::equality(min, target_min) && ffcl::common::equality(max, target_max));
                 }
             }
         }
@@ -157,8 +154,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxIndexedTest) {
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
                     const auto target_max    = *std::max_element(target_column.begin(), target_column.end());
 
-                    ASSERT_TRUE(ffcl::common::utils::equality(min, target_min) &&
-                                ffcl::common::utils::equality(max, target_max));
+                    ASSERT_TRUE(ffcl::common::equality(min, target_min) && ffcl::common::equality(max, target_max));
                 }
             }
         }
@@ -231,12 +227,11 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
                             features);
 
                         printf("---\nRemapped dataset with pivot_index: %ld\n", kth_smallest_index);
-                        const auto remapped_shuffled_ascending_elements_array =
-                            ffcl::common::utils::remap_ranges_from_indices(
-                                std::vector(data_indices.begin(), data_indices.end()),
-                                std::vector(shuffled_ascending_elements_array.begin(),
-                                            shuffled_ascending_elements_array.end()),
-                                features);
+                        const auto remapped_shuffled_ascending_elements_array = ffcl::common::remap_ranges_from_indices(
+                            std::vector(data_indices.begin(), data_indices.end()),
+                            std::vector(shuffled_ascending_elements_array.begin(),
+                                        shuffled_ascending_elements_array.end()),
+                            features);
 
                         this->print_data(remapped_shuffled_ascending_elements_array, features);
                     }

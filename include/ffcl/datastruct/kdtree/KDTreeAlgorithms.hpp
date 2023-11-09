@@ -18,7 +18,7 @@ template <typename SamplesIterator>
 ssize_t select_axis_with_largest_bounding_box_difference(
     const ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) {
     const auto comparison = [](const auto& lhs, const auto& rhs) {
-        return ffcl::common::utils::abs(lhs.first - lhs.second) < ffcl::common::utils::abs(rhs.first - rhs.second);
+        return ffcl::common::abs(lhs.first - lhs.second) < ffcl::common::abs(rhs.first - rhs.second);
     };
     const auto it = std::max_element(kd_bounding_box.begin(), kd_bounding_box.end(), comparison);
     return std::distance(kd_bounding_box.begin(), it);
@@ -37,7 +37,7 @@ ssize_t select_axis_with_largest_bounding_box_difference(
     // "feature_index"s are only the ones specified in the feature_mask
     for (std::size_t feature_index : feature_mask) {
         const auto max_range_candidate =
-            ffcl::common::utils::abs(kd_bounding_box[feature_index].first - kd_bounding_box[feature_index].second);
+            ffcl::common::abs(kd_bounding_box[feature_index].first - kd_bounding_box[feature_index].second);
 
         if (max_range_candidate > current_max_range) {
             current_max_range_feature_index = feature_index;
@@ -153,7 +153,7 @@ shift_median_to_leftmost_equal_value(std::size_t                                
                                      const SamplesIterator&                        samples_range_last,
                                      std::size_t                                   n_features,
                                      std::size_t                                   feature_index) {
-    ffcl::common::utils::ignore_parameters(samples_range_last);
+    ffcl::common::ignore_parameters(samples_range_last);
 
     const auto left_range_length = std::distance(left_indices_range.first, left_indices_range.second);
 
@@ -170,8 +170,8 @@ shift_median_to_leftmost_equal_value(std::size_t                                
     // decrement the iterators while the left range isnt empty and the neighbor value at the left of the median is still
     // equal to the cut value at the corresponding feature index
     while (std::distance(left_indices_range.first, left_neighbor_value_it) >= 0 &&
-           ffcl::common::utils::equality(samples_range_first[left_neighbor_value_it[0] * n_features + feature_index],
-                                         cut_value)) {
+           ffcl::common::equality(samples_range_first[left_neighbor_value_it[0] * n_features + feature_index],
+                                  cut_value)) {
         --left_neighbor_value_it;
         --median_indices_range.first;
     }

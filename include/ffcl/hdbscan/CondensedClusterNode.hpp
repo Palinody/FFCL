@@ -51,7 +51,7 @@ CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
     SingleLinkageClusterNodePtr single_linkage_cluster_node)
   : single_linkage_cluster_node_first_{single_linkage_cluster_node}
   , lambda_min_{single_linkage_cluster_node_first_->has_parent()
-                    ? common::utils::division(1, single_linkage_cluster_node_first_->parent_->level_)
+                    ? common::division(1, single_linkage_cluster_node_first_->parent_->level_)
                     : 0}
   , stability_{0}
   , is_selected_{false} {}

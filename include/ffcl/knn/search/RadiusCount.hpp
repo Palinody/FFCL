@@ -17,7 +17,7 @@ void increment_neighbors_count_in_radius(const IndicesIterator&                 
                                          std::size_t                                    n_features,
                                          std::size_t                                    sample_index_query,
                                          count::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -44,7 +44,7 @@ void increment_neighbors_count_in_radius(const IndicesIterator&                 
                                          const SamplesIterator&                         feature_query_range_first,
                                          const SamplesIterator&                         feature_query_range_last,
                                          count::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -167,12 +167,11 @@ class SingleTreeTraverser {
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
             // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
             // put to the right
-            bool visit_sibling =
-                node->is_left_child()
-                    ? buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <=
-                                                   buffer.upper_bound(parent_node->cut_feature_index_)
-                    : buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <
-                                                   buffer.upper_bound(parent_node->cut_feature_index_);
+            bool visit_sibling = node->is_left_child()
+                                     ? buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <=
+                                                                    buffer.upper_bound(parent_node->cut_feature_index_)
+                                     : buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <
+                                                                    buffer.upper_bound(parent_node->cut_feature_index_);
             // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
             // closer to the query sample than the current nearest neighbor
             if (visit_sibling) {
@@ -276,12 +275,11 @@ class SingleTreeTraverser {
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
             // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
             // put to the right
-            bool visit_sibling =
-                node->is_left_child()
-                    ? buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <=
-                                                   buffer.upper_bound(parent_node->cut_feature_index_)
-                    : buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <
-                                                   buffer.upper_bound(parent_node->cut_feature_index_);
+            bool visit_sibling = node->is_left_child()
+                                     ? buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <=
+                                                                    buffer.upper_bound(parent_node->cut_feature_index_)
+                                     : buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <
+                                                                    buffer.upper_bound(parent_node->cut_feature_index_);
             // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
             // closer to the query sample than the current nearest neighbor
             if (visit_sibling) {

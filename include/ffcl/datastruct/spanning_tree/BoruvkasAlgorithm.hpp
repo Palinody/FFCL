@@ -241,9 +241,8 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
 
     for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
-        components_closest_edge[component_representative] = EdgeType{common::utils::infinity<IndexType>(),
-                                                                     common::utils::infinity<IndexType>(),
-                                                                     common::utils::infinity<ValueType>()};
+        components_closest_edge[component_representative] =
+            EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
 
         // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
         // other components using the UnionFind data structure
@@ -282,8 +281,8 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
     }
     // merge components based on the best edges found in each component so far
     for (const auto& [component_representative, edge] : components_closest_edge) {
-        assert(std::get<2>(edge) < common::utils::infinity<ValueType>());
-        common::utils::ignore_parameters(component_representative);
+        assert(std::get<2>(edge) < common::infinity<ValueType>());
+        common::ignore_parameters(component_representative);
         forest.merge_components(edge);
     }
 }

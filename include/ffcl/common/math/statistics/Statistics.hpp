@@ -152,7 +152,7 @@ auto compute_mean_per_feature(SamplesIterator samples_range_first,
                               std::size_t     n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     assert(n_samples > 0);
 
@@ -178,7 +178,7 @@ auto compute_mean_per_feature(IndicesIterator indices_range_first,
                               SamplesIterator samples_range_first,
                               SamplesIterator samples_range_last,
                               std::size_t     n_features) {
-    utils::ignore_parameters(samples_range_last);
+    ignore_parameters(samples_range_last);
 
     using DataType = typename SamplesIterator::value_type;
 
@@ -207,7 +207,7 @@ auto compute_mean_per_feature(IndicesIterator                 indices_range_firs
                               SamplesIterator                 samples_range_last,
                               std::size_t                     n_features,
                               const std::vector<std::size_t>& feature_mask) {
-    utils::ignore_parameters(samples_range_last);
+    ignore_parameters(samples_range_last);
 
     using DataType = typename SamplesIterator::value_type;
 
@@ -236,7 +236,7 @@ auto compute_variance_per_feature(SamplesIterator samples_range_first,
                                   std::size_t     n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     assert(n_samples > 1);
 
@@ -354,7 +354,7 @@ std::size_t argmax_variance_per_feature(SamplesIterator samples_range_first,
                                         std::size_t     n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     assert(n_samples > 1);
 

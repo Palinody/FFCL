@@ -64,7 +64,7 @@ class Lloyd {
 
 template <typename SamplesIterator>
 Lloyd<SamplesIterator>::Lloyd(const DatasetDescriptorType& dataset_descriptor, const std::vector<DataType>& centroids)
-  : Lloyd<SamplesIterator>::Lloyd(dataset_descriptor, centroids, common::utils::infinity<DataType>()) {
+  : Lloyd<SamplesIterator>::Lloyd(dataset_descriptor, centroids, common::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::reduce(buffers_ptr_->samples_to_nearest_centroid_distances_.begin(),
                         buffers_ptr_->samples_to_nearest_centroid_distances_.end(),
@@ -77,9 +77,9 @@ Lloyd<SamplesIterator>::Lloyd(const DatasetDescriptorType& dataset_descriptor,
                               const std::vector<DataType>& centroids,
                               const DataType&              loss)
   : dataset_descriptor_{dataset_descriptor}
-  , n_samples_{common::utils::get_n_samples(std::get<0>(dataset_descriptor_),
-                                            std::get<1>(dataset_descriptor_),
-                                            std::get<2>(dataset_descriptor_))}
+  , n_samples_{common::get_n_samples(std::get<0>(dataset_descriptor_),
+                                     std::get<1>(dataset_descriptor_),
+                                     std::get<2>(dataset_descriptor_))}
   , centroids_{centroids}
   , buffers_ptr_{std::make_unique<Buffers>(dataset_descriptor, centroids_)}
   , loss_{loss} {}

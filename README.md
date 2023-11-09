@@ -263,7 +263,7 @@ fs::path filename = "unbalanced_blobs.txt";
 std::vector<dType> data = load_data<dType>(inputs_folder_ / filename, ' ');
 // the number of features is needed to use the flattened vector
 const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-const std::size_t n_samples  = common::utils::get_n_samples(data.begin(), data.end(), n_features);
+const std::size_t n_samples  = common::get_n_samples(data.begin(), data.end(), n_features);
 // the vector of indices that will be rearranged by the indexer: {0, 1, ..., n_samples-1}
 auto indices = generate_indices(n_samples);
 

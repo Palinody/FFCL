@@ -55,7 +55,7 @@ class KDTree {
     struct Options {
         Options()
           : bucket_size_{40}
-          , max_depth_{common::utils::infinity<ssize_t>()}
+          , max_depth_{common::infinity<ssize_t>()}
           , axis_selection_policy_ptr_{std::make_shared<
                 kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>>()}
           , splitting_rule_policy_ptr_{
@@ -307,7 +307,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::n_samples() const {
-    return common::utils::get_n_samples(samples_range_first_, samples_range_last_, n_features_);
+    return common::get_n_samples(samples_range_first_, samples_range_last_, n_features_);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -504,9 +504,9 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
         bool visit_sibling = kdnode->is_left_child()
-                                 ? buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <=
+                                 ? buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <=
                                                                 buffer.upper_bound(kdnode_parent->cut_feature_index_)
-                                 : buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <
+                                 : buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <
                                                                 buffer.upper_bound(kdnode_parent->cut_feature_index_);
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
@@ -706,9 +706,9 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
         // neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are put to the
         // right
         bool visit_sibling = kdnode->is_left_child()
-                                 ? buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <=
+                                 ? buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <=
                                                                 buffer.upper_bound(kdnode_parent->cut_feature_index_)
-                                 : buffer.n_free_slots() || common::utils::abs(pivot_split_value - query_split_value) <
+                                 : buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <
                                                                 buffer.upper_bound(kdnode_parent->cut_feature_index_);
         // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
         // closer to the query sample than the current nearest neighbor
@@ -821,7 +821,7 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepat
     writer.StartObject();
     {
         writer.String("n_samples");
-        writer.Int64(common::utils::get_n_samples(samples_range_first_, samples_range_last_, n_features_));
+        writer.Int64(common::get_n_samples(samples_range_first_, samples_range_last_, n_features_));
 
         writer.String("n_features");
         writer.Int64(n_features_);

@@ -17,7 +17,7 @@ void nearest_neighbor(const IndicesIterator&                          indices_ra
                       std::size_t                                     n_features,
                       std::size_t                                     sample_index_query,
                       buffer::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -44,7 +44,7 @@ void nearest_neighbor(const IndicesIterator&                          indices_ra
                       const SamplesIterator&                          feature_query_range_first,
                       const SamplesIterator&                          feature_query_range_last,
                       buffer::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

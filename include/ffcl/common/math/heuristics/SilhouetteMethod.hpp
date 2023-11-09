@@ -76,7 +76,7 @@ auto cohesion(const SamplesIterator&       samples_range_first,
 
     using FloatType = typename SamplesIterator::value_type;
 
-    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     const auto cluster_sizes = get_cluster_sizes(cluster_labels_range_first, cluster_labels_range_last);
 
@@ -140,7 +140,7 @@ auto separation(const SamplesIterator&       samples_range_first,
 
     using FloatType = typename SamplesIterator::value_type;
 
-    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     const auto cluster_sizes = get_cluster_sizes(cluster_labels_range_first, cluster_labels_range_last);
 
@@ -214,7 +214,7 @@ auto silhouette(const SamplesIterator&       samples_range_first,
 
     using FloatType = typename SamplesIterator::value_type;
 
-    const auto n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     const auto cohesion_values = cohesion(
         samples_range_first, samples_range_last, n_features, cluster_labels_range_first, cluster_labels_range_last);

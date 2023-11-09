@@ -21,7 +21,7 @@ auto transpose_sequential(const SamplesIterator& samples_range_first,
                           std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     std::vector<DataType> transposed(n_samples * n_features);
 
@@ -41,7 +41,7 @@ auto transpose_parallel_openmp(const SamplesIterator& samples_range_first,
                                std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
     std::vector<DataType> transposed(n_samples * n_features);
     std::size_t           output_n_samples  = n_features;

@@ -153,7 +153,7 @@ void KDNodeView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Writer<r
     writer.StartArray();
     const auto [indices_range_first, indices_range_last] = indices_range_;
 
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

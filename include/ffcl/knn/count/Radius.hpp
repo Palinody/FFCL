@@ -24,7 +24,7 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
       : radius_{radius} {}
 
     std::size_t n_free_slots() const {
-        return common::utils::infinity<IndexType>();
+        return common::infinity<IndexType>();
     }
 
     DistanceType upper_bound() const {
@@ -32,7 +32,7 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
     }
 
     DistanceType upper_bound(const IndexType& feature_index) const {
-        common::utils::ignore_parameters(feature_index);
+        common::ignore_parameters(feature_index);
         return this->upper_bound();
     }
 
@@ -42,7 +42,7 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // should be replaced by radius check
-        common::utils::ignore_parameters(index_candidate);
+        common::ignore_parameters(index_candidate);
         if (distance_candidate < this->upper_bound()) {
             ++count_;
         }
@@ -54,7 +54,7 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     std::size_t            sample_index_query) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -79,7 +79,7 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
                     const SamplesIterator& feature_query_range_last) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

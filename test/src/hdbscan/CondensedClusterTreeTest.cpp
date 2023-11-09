@@ -184,7 +184,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -263,7 +263,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -342,7 +342,7 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -421,7 +421,7 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -500,7 +500,7 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -579,7 +579,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -658,7 +658,7 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 

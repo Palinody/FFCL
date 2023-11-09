@@ -15,7 +15,7 @@ std::size_t median_index_of_three(const IndicesIterator& indices_range_first,
                                   const SamplesIterator& samples_range_last,
                                   std::size_t            n_features,
                                   std::size_t            feature_index) {
-    utils::ignore_parameters(samples_range_last);
+    ignore_parameters(samples_range_last);
 
     const std::size_t n_samples    = std::distance(indices_range_first, indices_range_last);
     std::size_t       middle_index = n_samples / 2;
@@ -81,7 +81,7 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
                                        std::size_t            feature_index) {
     static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Index input should be integral.");
 
-    utils::ignore_parameters(samples_range_last);
+    ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -126,8 +126,8 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
         */
         // /*
         // if the values at the pivot and at the right index are not equal
-        if (utils::inequality(pivot_value,
-                              samples_range_first[indices_range_first[right_index] * n_features + feature_index])) {
+        if (inequality(pivot_value,
+                       samples_range_first[indices_range_first[right_index] * n_features + feature_index])) {
             // swap the ranges at the left index and right index
             std::iter_swap(indices_range_first + left_index, indices_range_first + right_index);
             // if the pivot was swapped because left index was equal to pivot index, update it to the index it was
@@ -142,8 +142,8 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
         // the values at the pivot and the right index are equal
         else {
             // if the value at the left index is equal to the value at the pivot index
-            if (utils::equality(samples_range_first[indices_range_first[left_index] * n_features + feature_index],
-                                pivot_value)) {
+            if (equality(samples_range_first[indices_range_first[left_index] * n_features + feature_index],
+                         pivot_value)) {
                 // dont swap if the left range and pivot range are actually confounded
                 if (static_cast<std::size_t>(left_index) != pivot_index) {
                     // swap the ranges so that the range of the left index is put at the right of the pivot

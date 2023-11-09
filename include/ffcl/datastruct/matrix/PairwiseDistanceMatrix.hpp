@@ -64,14 +64,14 @@ template <typename SamplesIterator>
 PairwiseDistanceMatrix<SamplesIterator>::PairwiseDistanceMatrix(const SamplesIterator& samples_range_first,
                                                                 const SamplesIterator& samples_range_last,
                                                                 std::size_t            n_features)
-  : n_samples_{common::utils::get_n_samples(samples_range_first, samples_range_last, n_features)}
+  : n_samples_{common::get_n_samples(samples_range_first, samples_range_last, n_features)}
   , data_{compute_pairwise_distances(samples_range_first, samples_range_last, n_features)} {}
 
 template <typename SamplesIterator>
 PairwiseDistanceMatrix<SamplesIterator>::PairwiseDistanceMatrix(const DatasetDescriptorType& dataset_descriptor)
-  : n_samples_{common::utils::get_n_samples(std::get<0>(dataset_descriptor),
-                                            std::get<1>(dataset_descriptor),
-                                            std::get<2>(dataset_descriptor))}
+  : n_samples_{common::get_n_samples(std::get<0>(dataset_descriptor),
+                                     std::get<1>(dataset_descriptor),
+                                     std::get<2>(dataset_descriptor))}
   , data_{compute_pairwise_distances(dataset_descriptor)} {}
 
 template <typename SamplesIterator>
@@ -93,7 +93,7 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_paralle
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last,
     std::size_t            n_features) {
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     auto low_triangle_distance_matrix = std::vector<ValueType>(n_samples * (n_samples - 1) / 2);
 
@@ -116,7 +116,7 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_sequent
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last,
     std::size_t            n_features) {
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     auto low_triangle_distance_matrix = std::vector<ValueType>(n_samples * (n_samples - 1) / 2);
 

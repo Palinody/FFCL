@@ -56,7 +56,7 @@ class Range2DBaseFixture : public ::testing::Test {
                                                                  SamplesIterator samples_last,
                                                                  std::size_t     n_features,
                                                                  std::size_t     target_row) {
-        ffcl::common::utils::ignore_parameters(samples_last);
+        ffcl::common::ignore_parameters(samples_last);
 
         return {samples_first + target_row * n_features, samples_first + target_row * n_features + n_features};
     }
@@ -66,7 +66,7 @@ class Range2DBaseFixture : public ::testing::Test {
                                                                  SamplesIterator samples_last,
                                                                  std::size_t     n_features,
                                                                  std::size_t     target_column) {
-        const std::size_t n_samples = ffcl::common::utils::get_n_samples(samples_first, samples_last, n_features);
+        const std::size_t n_samples = ffcl::common::get_n_samples(samples_first, samples_last, n_features);
 
         auto column = std::vector<typename SamplesIterator::value_type>(n_samples);
 
@@ -85,7 +85,7 @@ class Range2DBaseFixture : public ::testing::Test {
         if (std::distance(samples_first, samples_last) != std::distance(other_element_first, other_element_last)) {
             return false;
         }
-        return ffcl::common::utils::are_containers_equal(samples_first, samples_last, other_element_first);
+        return ffcl::common::are_containers_equal(samples_first, samples_last, other_element_first);
     }
 
     template <typename SamplesIterator>
@@ -95,7 +95,7 @@ class Range2DBaseFixture : public ::testing::Test {
         std::size_t     n_features,
         std::size_t     pivot_index,
         std::size_t     feature_index) {
-        const std::size_t n_samples = ffcl::common::utils::get_n_samples(samples_first, samples_last, n_features);
+        const std::size_t n_samples = ffcl::common::get_n_samples(samples_first, samples_last, n_features);
 
         if (pivot_index == 0 && n_samples == 1) {
             return std::nullopt;
@@ -129,7 +129,7 @@ class Range2DBaseFixture : public ::testing::Test {
         std::size_t     n_features,
         std::size_t     pivot_index,
         std::size_t     feature_index) {
-        ffcl::common::utils::ignore_parameters(samples_last);
+        ffcl::common::ignore_parameters(samples_last);
 
         const std::size_t n_samples = std::distance(indices_first, indices_last);
 
@@ -161,15 +161,14 @@ class Range2DBaseFixture : public ::testing::Test {
     std::vector<typename SamplesIterator::value_type> shuffle_by_row(SamplesIterator samples_first,
                                                                      SamplesIterator samples_last,
                                                                      std::size_t     n_features) {
-        const std::size_t n_samples = ffcl::common::utils::get_n_samples(samples_first, samples_last, n_features);
+        const std::size_t n_samples = ffcl::common::get_n_samples(samples_first, samples_last, n_features);
 
         std::vector<std::size_t> indices(n_samples);
         std::iota(indices.begin(), indices.end(), static_cast<DataType>(0));
 
         std::shuffle(indices.begin(), indices.end(), std::mt19937{std::random_device{}()});
 
-        return ffcl::common::utils::remap_ranges_from_indices(
-            indices, std::vector(samples_first, samples_last), n_features);
+        return ffcl::common::remap_ranges_from_indices(indices, std::vector(samples_first, samples_last), n_features);
     }
 
     template <typename Type = DataType>

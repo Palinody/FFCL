@@ -304,7 +304,7 @@ TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
 
                         // sort the shuffled_ascending_elements_array with the index vector remapped inplace by
                         // quicksort
-                        shuffled_ascending_elements_array = ffcl::common::utils::remap_ranges_from_indices(
+                        shuffled_ascending_elements_array = ffcl::common::remap_ranges_from_indices(
                             data_indices, shuffled_ascending_elements_array, features);
 
                         // the data sorted by quickselect should now be the same as the original dataset

@@ -124,7 +124,7 @@ std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
     std::size_t                                  n_features,
     ssize_t                                      depth,
     ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const {
-    ffcl::common::utils::ignore_parameters(
+    ffcl::common::ignore_parameters(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, kd_bounding_box);
     if (feature_mask_.empty()) {
         // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
@@ -144,7 +144,7 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
     std::size_t                                  n_features,
     ssize_t                                      depth,
     ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const {
-    ffcl::common::utils::ignore_parameters(depth, kd_bounding_box);
+    ffcl::common::ignore_parameters(depth, kd_bounding_box);
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most variance
@@ -175,7 +175,7 @@ std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
     std::size_t                                  n_features,
     ssize_t                                      depth,
     ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) const {
-    ffcl::common::utils::ignore_parameters(
+    ffcl::common::ignore_parameters(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, depth);
 
     if (feature_mask_.empty()) {

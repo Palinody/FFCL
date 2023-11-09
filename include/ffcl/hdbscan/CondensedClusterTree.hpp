@@ -137,7 +137,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         const bool is_right_child_split_candidate =
             single_linkage_cluster_node->right_->size() >= options_.min_cluster_size_;
 
-        const auto lambda_value = common::utils::division(1, single_linkage_cluster_node->level_);
+        const auto lambda_value = common::division(1, single_linkage_cluster_node->level_);
 
         // if both children are split candidates (they hold enough samples to be considered as their own cluster), we
         // consider the event as a true split and split the condensed cluster node in two new condensed cluster nodes
@@ -238,7 +238,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_clustering_f
 
     } else {
         // assert that single_linkage_cluster_node is indeed a leaf  by checking if its level in the tree is zero
-        assert(common::utils::equality(single_linkage_cluster_node->level_, 0));
+        assert(common::equality(single_linkage_cluster_node->level_, 0));
 
         // assign the cluster label to the sample index (which is its own node at level 0)
         flat_cluster[single_linkage_cluster_node->representative_] = cluster_label;

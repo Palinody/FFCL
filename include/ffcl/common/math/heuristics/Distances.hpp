@@ -107,7 +107,7 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
                                                            right_features_range_first,
                                                            static_cast<ResultType>(0)));
     // returns "infinity" if the denominator is zero
-    return utils::division(dot_product, magnitude_1 * magnitude_2, utils::infinity<ResultType>());
+    return division(dot_product, magnitude_1 * magnitude_2, infinity<ResultType>());
 }
 
 // Iterative with two matrix rows https://en.wikipedia.org/wiki/Levenshtein_distance

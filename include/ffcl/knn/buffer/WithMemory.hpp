@@ -25,17 +25,17 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
 
     using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
 
-    explicit WithMemory(const IndexType& max_capacity = common::utils::infinity<IndexType>())
+    explicit WithMemory(const IndexType& max_capacity = common::infinity<IndexType>())
       : WithMemory({}, {}, max_capacity) {}
 
     WithMemory(const VisitedIndices& visited_indices_reference,
-               const IndexType&      max_capacity = common::utils::infinity<IndexType>())
+               const IndexType&      max_capacity = common::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_reference_{visited_indices_reference} {}
 
-    WithMemory(VisitedIndices&& visited_indices, const IndexType& max_capacity = common::utils::infinity<IndexType>())
+    WithMemory(VisitedIndices&& visited_indices, const IndexType& max_capacity = common::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
@@ -44,7 +44,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
 
     WithMemory(const IndicesIterator& visited_indices_first,
                const IndicesIterator& visited_indices_last,
-               const IndexType&       max_capacity = common::utils::infinity<IndexType>())
+               const IndexType&       max_capacity = common::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
@@ -53,7 +53,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
 
     WithMemory(const IndicesType&   init_neighbors_indices,
                const DistancesType& init_neighbors_distances,
-               const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+               const IndexType&     max_capacity = common::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
       , furthest_buffer_index_{0}
@@ -89,7 +89,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
     }
 
     DistanceType upper_bound(const IndexType& feature_index) const {
-        common::utils::ignore_parameters(feature_index);
+        common::ignore_parameters(feature_index);
         return this->upper_bound();
     }
 
@@ -164,7 +164,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     std::size_t            sample_index_query) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -189,7 +189,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
                     const SamplesIterator& feature_query_range_last) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

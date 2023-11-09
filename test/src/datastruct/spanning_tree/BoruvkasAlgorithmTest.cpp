@@ -168,7 +168,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -217,7 +217,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -266,7 +266,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -315,7 +315,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -364,7 +364,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -413,7 +413,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -462,7 +462,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -509,7 +509,7 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
 
     auto              data       = std::vector<float>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
     const std::size_t n_features = 2;
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 

@@ -124,7 +124,7 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -180,7 +180,7 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -236,7 +236,7 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -292,7 +292,7 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -348,7 +348,7 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -404,7 +404,7 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -460,7 +460,7 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 

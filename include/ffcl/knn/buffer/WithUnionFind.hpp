@@ -28,14 +28,14 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
 
     WithUnionFind(const UnionFind& union_find_ref,
                   const IndexType& query_representative,
-                  const IndexType& max_capacity = common::utils::infinity<IndexType>())
+                  const IndexType& max_capacity = common::infinity<IndexType>())
       : WithUnionFind({}, {}, union_find_ref, query_representative, max_capacity) {}
 
     WithUnionFind(const IndicesType&   init_neighbors_indices,
                   const DistancesType& init_neighbors_distances,
                   const UnionFind&     union_find_ref,
                   const IndexType&     query_representative,
-                  const IndexType&     max_capacity = common::utils::infinity<IndexType>())
+                  const IndexType&     max_capacity = common::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
       , furthest_buffer_index_{0}
@@ -75,7 +75,7 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
     }
 
     DistanceType upper_bound(const IndexType& feature_index) const {
-        common::utils::ignore_parameters(feature_index);
+        common::ignore_parameters(feature_index);
         return this->upper_bound();
     }
 
@@ -133,7 +133,7 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     std::size_t            sample_index_query) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -158,7 +158,7 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
                     const SamplesIterator& feature_query_range_last) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

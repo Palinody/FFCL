@@ -20,7 +20,7 @@ void increment_neighbors_count_in_hyper_range(const IndicesIterator&            
                                               std::size_t                                  sample_index_query,
                                               const bbox::HyperRangeType<SamplesIterator>& kd_bounding_box,
                                               std::size_t&                                 neighbors_count) {
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -47,7 +47,7 @@ void increment_neighbors_count_in_hyper_range(const IndicesIterator&            
                                               const SamplesIterator&                       feature_query_range_last,
                                               const bbox::HyperRangeType<SamplesIterator>& kd_bounding_box,
                                               std::size_t&                                 neighbors_count) {
-    common::utils::ignore_parameters(samples_range_last, feature_query_range_first, feature_query_range_last);
+    common::ignore_parameters(samples_range_last, feature_query_range_first, feature_query_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

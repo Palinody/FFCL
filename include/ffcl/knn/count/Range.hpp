@@ -28,7 +28,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
       : kd_bounding_box_{kd_bounding_box} {}
 
     std::size_t n_free_slots() const {
-        return common::utils::infinity<IndexType>();
+        return common::infinity<IndexType>();
     }
 
     DistanceType upper_bound() const {
@@ -45,7 +45,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
     }
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        common::utils::ignore_parameters(index_candidate, distance_candidate);
+        common::ignore_parameters(index_candidate, distance_candidate);
         ++count_;
     }
 
@@ -55,7 +55,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     std::size_t            sample_index_query) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -84,7 +84,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
                     const SamplesIterator& feature_query_range_last) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

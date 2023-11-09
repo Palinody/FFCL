@@ -12,7 +12,7 @@
 
 #include <iostream>
 
-namespace ffcl::common::utils {
+namespace ffcl::common {
 
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}
@@ -276,4 +276,4 @@ void print_flattened_vector_as_matrix(const std::vector<DataType>& data, std::si
     }
 }
 
-}  // namespace ffcl::common::utils
+}  // namespace ffcl::common

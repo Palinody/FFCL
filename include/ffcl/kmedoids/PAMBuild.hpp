@@ -19,7 +19,7 @@ build(const SamplesIterator& samples_range_first,
       std::size_t            n_features) {
     using DataType = typename SamplesIterator::value_type;
 
-    const std::size_t n_samples = common::utils::get_n_samples(samples_range_first, samples_range_last, n_features);
+    const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
     // the first medoid chosen associated with the current total deviation cost
     auto [total_deviation, medoid_index_first] =
@@ -40,33 +40,31 @@ build(const SamplesIterator& samples_range_first,
     // select the remaining medoids
     for (std::size_t medoid_index = 1; medoid_index < n_medoids; ++medoid_index) {
         // (∆TD*, x∗) ← (∞, null);
-        auto selected_deviation_candidate = common::utils::infinity<DataType>();
+        auto selected_deviation_candidate = common::infinity<DataType>();
         // the index of the next chosen medoid
         std::size_t selected_medoid_index = 0;
         // foreach x_c !∈ {m_1 , ..., m_i}
         for (std::size_t medoid_candidate_idx = 0; medoid_candidate_idx < n_samples; ++medoid_candidate_idx) {
             // execute only if the current candidate is not already selected as a medoid
-            if (common::utils::is_element_not_in(
-                    medoids_indices.begin(), medoids_indices.end(), medoid_candidate_idx)) {
-                DataType loss_acc = 0;
+            if (common::is_element_not_in(medoids_indices.begin(), medoids_indices.end(), medoid_candidate_idx)) {
+                DataType loss_accumulator = 0;
 
                 // foreach x_o !∈ {m_0, ..., m_i, x c}
                 for (std::size_t other_sample_idx = 0; other_sample_idx < n_samples; ++other_sample_idx) {
                     if (medoid_candidate_idx != other_sample_idx &&
-                        common::utils::is_element_not_in(
-                            medoids_indices.begin(), medoids_indices.end(), other_sample_idx)) {
+                        common::is_element_not_in(medoids_indices.begin(), medoids_indices.end(), other_sample_idx)) {
                         const auto candidate_to_other_distance =
                             compute_distance(medoid_candidate_idx, other_sample_idx);
 
                         if (candidate_to_other_distance < samples_to_nearest_medoid_distance[other_sample_idx]) {
                             // "-" to accumulate positive loss (acc of reduction of total deviation)
-                            loss_acc -=
+                            loss_accumulator -=
                                 candidate_to_other_distance - samples_to_nearest_medoid_distance[other_sample_idx];
                         }
                     }
                 }
-                if (loss_acc < selected_deviation_candidate) {
-                    selected_deviation_candidate = loss_acc;
+                if (loss_accumulator < selected_deviation_candidate) {
+                    selected_deviation_candidate = loss_accumulator;
                     selected_medoid_index        = medoid_candidate_idx;
                 }
             }
@@ -103,33 +101,31 @@ build(const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_
     // select the remaining medoids
     for (std::size_t medoid_index = 1; medoid_index < n_medoids; ++medoid_index) {
         // (∆TD*, x∗) ← (∞, null);
-        auto selected_deviation_candidate = common::utils::infinity<DataType>();
+        auto selected_deviation_candidate = common::infinity<DataType>();
         // the index of the next chosen medoid
         std::size_t selected_medoid_index = 0;
         // foreach x_c !∈ {m_1 , ..., m_i}
         for (std::size_t medoid_candidate_idx = 0; medoid_candidate_idx < n_samples; ++medoid_candidate_idx) {
             // execute only if the current candidate is not already selected as a medoid
-            if (common::utils::is_element_not_in(
-                    medoids_indices.begin(), medoids_indices.end(), medoid_candidate_idx)) {
-                DataType loss_acc = 0;
+            if (common::is_element_not_in(medoids_indices.begin(), medoids_indices.end(), medoid_candidate_idx)) {
+                DataType loss_accumulator = 0;
 
                 // foreach x_o !∈ {m_0, ..., m_i, x c}
                 for (std::size_t other_sample_idx = 0; other_sample_idx < n_samples; ++other_sample_idx) {
                     if (medoid_candidate_idx != other_sample_idx &&
-                        common::utils::is_element_not_in(
-                            medoids_indices.begin(), medoids_indices.end(), other_sample_idx)) {
+                        common::is_element_not_in(medoids_indices.begin(), medoids_indices.end(), other_sample_idx)) {
                         const auto candidate_to_other_distance =
                             pairwise_distance_matrix(medoid_candidate_idx, other_sample_idx);
 
                         if (candidate_to_other_distance < samples_to_nearest_medoid_distance[other_sample_idx]) {
                             // "-" to accumulate positive loss (acc of reduction of total deviation)
-                            loss_acc -=
+                            loss_accumulator -=
                                 candidate_to_other_distance - samples_to_nearest_medoid_distance[other_sample_idx];
                         }
                     }
                 }
-                if (loss_acc < selected_deviation_candidate) {
-                    selected_deviation_candidate = loss_acc;
+                if (loss_accumulator < selected_deviation_candidate) {
+                    selected_deviation_candidate = loss_accumulator;
                     selected_medoid_index        = medoid_candidate_idx;
                 }
             }

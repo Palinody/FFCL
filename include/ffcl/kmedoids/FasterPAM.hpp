@@ -92,7 +92,7 @@ class FasterPAM {
 template <typename SamplesIterator>
 FasterPAM<SamplesIterator>::FasterPAM(const DatasetDescriptorType&    dataset_descriptor,
                                       const std::vector<std::size_t>& medoids)
-  : FasterPAM<SamplesIterator>::FasterPAM(dataset_descriptor, medoids, common::utils::infinity<DataType>()) {
+  : FasterPAM<SamplesIterator>::FasterPAM(dataset_descriptor, medoids, common::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),
@@ -112,7 +112,7 @@ FasterPAM<SamplesIterator>::FasterPAM(const DatasetDescriptorType&    dataset_de
 template <typename SamplesIterator>
 FasterPAM<SamplesIterator>::FasterPAM(const SecondVariantType&        pairwise_distance_matrix,
                                       const std::vector<std::size_t>& medoids)
-  : FasterPAM<SamplesIterator>::FasterPAM(pairwise_distance_matrix, medoids, common::utils::infinity<DataType>()) {
+  : FasterPAM<SamplesIterator>::FasterPAM(pairwise_distance_matrix, medoids, common::infinity<DataType>()) {
     // compute initial loss
     loss_ = std::accumulate(buffers_ptr_->samples_to_nearest_medoid_distances_.begin(),
                             buffers_ptr_->samples_to_nearest_medoid_distances_.end(),

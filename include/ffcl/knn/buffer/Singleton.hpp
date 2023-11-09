@@ -20,23 +20,23 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
     using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
 
     Singleton()
-      : index_{common::utils::infinity<IndexType>()}
-      , distance_{common::utils::infinity<DistanceType>()} {}
+      : index_{common::infinity<IndexType>()}
+      , distance_{common::infinity<DistanceType>()} {}
 
     std::size_t size() const {
-        return common::utils::equality(index_, common::utils::infinity<IndexType>()) ? 0 : 1;
+        return common::equality(index_, common::infinity<IndexType>()) ? 0 : 1;
     }
 
     std::size_t n_free_slots() const {
-        return common::utils::equality(index_, common::utils::infinity<IndexType>()) ? 1 : 0;
+        return common::equality(index_, common::infinity<IndexType>()) ? 1 : 0;
     }
 
     bool empty() const {
-        return common::utils::equality(index_, common::utils::infinity<IndexType>());
+        return common::equality(index_, common::infinity<IndexType>());
     }
 
     IndexType furthest_k_nearest_neighbor_index() const {
-        assert(common::utils::inequality(index_, common::utils::infinity<IndexType>()));
+        assert(common::inequality(index_, common::infinity<IndexType>()));
         return index_;
     }
 
@@ -45,7 +45,7 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
     }
 
     DistanceType upper_bound(const IndexType& feature_index) const {
-        common::utils::ignore_parameters(feature_index);
+        common::ignore_parameters(feature_index);
         return this->upper_bound();
     }
 
@@ -86,7 +86,7 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
                     std::size_t            sample_index_query) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -111,7 +111,7 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
                     std::size_t            n_features,
                     const SamplesIterator& feature_query_range_first,
                     const SamplesIterator& feature_query_range_last) {
-        common::utils::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

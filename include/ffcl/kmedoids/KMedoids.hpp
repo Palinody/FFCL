@@ -182,7 +182,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
     auto candidates_losses = std::vector<DataType>(medoids_candidates.size());
 
     // creates a n_candidates vector of vectors (of n_medoids size with each elements initialized to infinity if we
-    // wanted to be precise but common::utils::are_containers_equal checks for datastruct sizes. So we dont need to do
+    // wanted to be precise but common::are_containers_equal checks for datastruct sizes. So we dont need to do
     // it). We could use only one candidate with a single thread but we make it thread safe this way we dont necessarily
     // need to initialize with vectors of infinities because
     auto medoids_candidates_prev = std::vector<std::vector<std::size_t>>(medoids_candidates.size());
@@ -213,7 +213,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
             medoids_candidates[k] = kmedoids_algorithm.step();
 
             if (options_.early_stopping_ &&
-                common::utils::are_containers_equal(medoids_candidates[k], medoids_candidates_prev[k])) {
+                common::are_containers_equal(medoids_candidates[k], medoids_candidates_prev[k])) {
                 if (patience_iter == options_.patience_) {
                     break;
                 }
@@ -277,7 +277,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
     auto candidates_losses = std::vector<DataType>(medoids_candidates.size());
 
     // creates a n_candidates vector of vectors (of n_medoids size with each elements initialized to infinity if we
-    // wanted to be precise but common::utils::are_containers_equal checks for datastruct sizes. So we dont need to do
+    // wanted to be precise but common::are_containers_equal checks for datastruct sizes. So we dont need to do
     // it). We could use only one candidate with a single thread but we make it thread safe this way we dont necessarily
     // need to initialize with vectors of infinities because
     auto medoids_candidates_prev = std::vector<std::vector<std::size_t>>(medoids_candidates.size());
@@ -299,7 +299,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
             medoids_candidates[k] = kmedoids_algorithm.step();
 
             if (options_.early_stopping_ &&
-                common::utils::are_containers_equal(medoids_candidates[k], medoids_candidates_prev[k])) {
+                common::are_containers_equal(medoids_candidates[k], medoids_candidates_prev[k])) {
                 if (patience_iter == options_.patience_) {
                     break;
                 }

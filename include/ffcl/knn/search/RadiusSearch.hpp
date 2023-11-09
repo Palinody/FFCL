@@ -17,7 +17,7 @@ void k_nearest_neighbors_in_radius(const IndicesIterator&                       
                                    std::size_t                                     n_features,
                                    std::size_t                                     sample_index_query,
                                    buffer::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -44,7 +44,7 @@ void k_nearest_neighbors_in_radius(const IndicesIterator&                       
                                    const SamplesIterator&                          feature_query_range_first,
                                    const SamplesIterator&                          feature_query_range_last,
                                    buffer::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::utils::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 

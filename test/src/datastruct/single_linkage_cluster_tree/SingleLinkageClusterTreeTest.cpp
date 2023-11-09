@@ -169,7 +169,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -231,7 +231,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -293,7 +293,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -355,7 +355,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -417,7 +417,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -479,7 +479,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -541,7 +541,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
@@ -617,7 +617,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
                                     2});
 
     const std::size_t n_features = 2;
-    const std::size_t n_samples  = ffcl::common::utils::get_n_samples(data.begin(), data.end(), n_features);
+    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
     auto indices = generate_indices(n_samples);
 
