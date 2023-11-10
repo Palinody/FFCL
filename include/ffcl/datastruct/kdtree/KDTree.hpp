@@ -5,6 +5,8 @@
 #include "ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp"
 #include "ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp"
 
+#include "ffcl/common/math/random/Distributions.hpp"
+
 #include "ffcl/knn/buffer/Base.hpp"
 #include "ffcl/knn/buffer/Radius.hpp"
 #include "ffcl/knn/buffer/Range.hpp"

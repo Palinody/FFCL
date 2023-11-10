@@ -26,7 +26,7 @@ class Base {
 
     virtual bool empty() const = 0;
 
-    virtual IndexType furthest_k_nearest_neighbor_index() const = 0;
+    virtual IndexType upper_bound_index() const = 0;
 
     virtual DistanceType upper_bound() const = 0;
 

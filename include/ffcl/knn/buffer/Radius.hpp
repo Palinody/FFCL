@@ -44,7 +44,7 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
         return indices_.empty();
     }
 
-    IndexType furthest_k_nearest_neighbor_index() const {
+    IndexType upper_bound_index() const {
         throw std::runtime_error("No furthest index to return for this type of buffer.");
         return IndexType{};
     }

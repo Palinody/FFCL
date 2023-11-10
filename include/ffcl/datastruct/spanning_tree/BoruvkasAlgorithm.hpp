@@ -253,7 +253,7 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
             indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer);
 
             // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-            const auto nearest_neighbor_index    = nn_buffer.furthest_k_nearest_neighbor_index();
+            const auto nearest_neighbor_index    = nn_buffer.upper_bound_index();
             const auto nearest_neighbor_distance = nn_buffer.upper_bound();
 
             const auto current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);

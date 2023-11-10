@@ -35,7 +35,7 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
         return common::equality(index_, common::infinity<IndexType>());
     }
 
-    IndexType furthest_k_nearest_neighbor_index() const {
+    IndexType upper_bound_index() const {
         assert(common::inequality(index_, common::infinity<IndexType>()));
         return index_;
     }

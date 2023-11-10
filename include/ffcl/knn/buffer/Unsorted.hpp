@@ -57,7 +57,7 @@ class Unsorted : public Base<IndicesIterator, DistancesIterator> {
         return indices_.empty();
     }
 
-    IndexType furthest_k_nearest_neighbor_index() const {
+    IndexType upper_bound_index() const {
         return indices_[furthest_buffer_index_];
     }
 
