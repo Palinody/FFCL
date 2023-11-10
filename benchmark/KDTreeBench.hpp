@@ -19,8 +19,8 @@ namespace kdtree::benchmark {
 
 namespace ffcl_ {
 
-DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -39,7 +39,7 @@ DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -48,14 +48,16 @@ DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath
 
     timer.reset();
 
-    auto indices = generate_indices(n_samples);
+    auto indices = utils::generate_indices(n_samples);
 
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
     auto indexer = IndexerType(indices.begin(),
@@ -94,9 +96,9 @@ DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath
     return bench_summary;
 }
 
-DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
-                                                                     std::size_t     k_nearest_neighbors) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
+                                                                            std::size_t     k_nearest_neighbors) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -115,7 +117,7 @@ DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::p
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -124,14 +126,16 @@ DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::p
 
     timer.reset();
 
-    auto indices = generate_indices(n_samples);
+    auto indices = utils::generate_indices(n_samples);
 
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
     auto indexer = IndexerType(indices.begin(),
@@ -175,8 +179,8 @@ DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::p
 
 namespace pcl_ {
 
-DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -195,7 +199,7 @@ DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -248,9 +252,9 @@ DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath
     return bench_summary;
 }
 
-DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
-                                                                     std::size_t     k_nearest_neighbors) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
+                                                                            std::size_t     k_nearest_neighbors) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -269,7 +273,7 @@ DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::p
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -324,8 +328,8 @@ DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::p
 
 namespace flann_ {
 
-DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath, float radius) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -344,7 +348,7 @@ DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -397,9 +401,9 @@ DurationsSummary radius_search_around_query_index_bench(const fs::path& filepath
     return bench_summary;
 }
 
-DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
-                                                                     std::size_t     k_nearest_neighbors) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::path& filepath,
+                                                                            std::size_t     k_nearest_neighbors) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -418,7 +422,7 @@ DurationsSummary k_nearest_neighbors_search_around_query_index_bench(const fs::p
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -576,10 +580,10 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
     long double to_seconds = 1e-9;
 
     // the sequence object that will be used to compute the variance
-    std::vector<DurationsSummary> bench_summary_vector;
+    std::vector<utils::DurationsSummary> bench_summary_vector;
     bench_summary_vector.reserve(filenames.size());
     // the object that will be used to compute the mean
-    DurationsSummary bench_summary_mean;
+    utils::DurationsSummary bench_summary_mean;
 
     for (std::size_t file_index = 0; file_index < filenames.size(); ++file_index) {
         const auto& filename = filenames[file_index];
@@ -592,11 +596,11 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 
         bench_summary_vector.emplace_back(std::move(bench_summary));
 
-        print_progress_bar(file_index, filenames.size());
+        utils::print_progress_bar(file_index, filenames.size());
     }
     bench_summary_mean /= filenames.size();
 
-    DurationsSummary bench_summary_variance;
+    utils::DurationsSummary bench_summary_variance;
 
     for (auto& bench_summary : bench_summary_vector) {
         bench_summary -= bench_summary_mean;
@@ -622,7 +626,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 }
 
 void run_radius_search_benchmarks_on_point_cloud_sequences() {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     const std::vector<bench::io::DataType> radiuses = {0.1, 0.3, 0.5, 1.0};
 
@@ -660,7 +664,7 @@ void run_radius_search_benchmarks_on_point_cloud_sequences() {
 }
 
 void run_k_nearest_neighbors_search_benchmarks_on_point_cloud_sequences() {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     const std::vector<std::size_t> n_neighbors_choices = {1, 3, 5, 10};
 

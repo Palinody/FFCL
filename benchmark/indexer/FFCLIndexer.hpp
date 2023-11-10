@@ -17,10 +17,12 @@ class FFCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
 
     using IndicesIterator = typename IndexContainer::iterator;
 
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = typename IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexerType = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType = typename IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     FFCLIndexer(IndicesIterator indices_first,
                 IndicesIterator indices_last,

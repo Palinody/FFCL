@@ -26,7 +26,7 @@ void dynamic_fit(const SamplesIterator& samples_first,
 
     std::cout << "Dynamic kmedoids: \n";
 
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     kmedoids.fit<ffcl::FasterPAM>(samples_first, samples_last);
 
@@ -48,7 +48,7 @@ void precomputed_fit(const SamplesIterator& samples_first,
 
     std::cout << "Pairwise distances matrix: \n";
 
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     const auto pairwise_distance_matrix =
         ffcl::datastruct::PairwiseDistanceMatrix(samples_first, samples_last, n_features);
@@ -70,7 +70,7 @@ void distance_matrix_mnist() {
     const auto        data = bench::io::txt::load_data<bench::io::DataType>(bench::io::inputs_folder / filename, ' ');
     const std::size_t n_features = bench::io::txt::get_num_features_in_file(bench::io::inputs_folder / filename);
 
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     ffcl::datastruct::PairwiseDistanceMatrix<decltype(data.begin())>(data.begin(), data.end(), n_features);
 

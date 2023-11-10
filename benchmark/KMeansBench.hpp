@@ -23,7 +23,7 @@ void fit_once(const SamplesIterator& samples_first,
 
     std::cout << "KMeans: \n";
 
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     kmeans.fit(samples_first, samples_last);
 

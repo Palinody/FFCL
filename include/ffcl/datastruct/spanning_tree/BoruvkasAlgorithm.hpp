@@ -250,7 +250,7 @@ auto BoruvkasAlgorithm<Indexer>::step(const Indexer&               indexer,
             forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {
-            indexer.buffered_k_nearest_neighbors_around_query_index(sample_index, nn_buffer);
+            indexer.buffer_search_around_query_index(sample_index, nn_buffer);
 
             // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
             const auto nearest_neighbor_index    = nn_buffer.upper_bound_index();

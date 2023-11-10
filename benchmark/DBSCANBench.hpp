@@ -26,11 +26,11 @@ namespace dbscan::benchmark {
 
 namespace ffcl_ {
 
-DurationsSummary run_dbscan(const fs::path&                filepath,
-                            const std::optional<fs::path>& predictions_filepath,
-                            std::size_t                    min_samples,
-                            float                          radius) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary run_dbscan(const fs::path&                filepath,
+                                   const std::optional<fs::path>& predictions_filepath,
+                                   std::size_t                    min_samples,
+                                   float                          radius) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -49,7 +49,7 @@ DurationsSummary run_dbscan(const fs::path&                filepath,
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     static constexpr std::size_t n_features_target = 3;
 
@@ -65,7 +65,7 @@ DurationsSummary run_dbscan(const fs::path&                filepath,
         data_xyz[sample_index * n_features_target + 2] = data[sample_index * n_features + 2];
     }
 
-    auto indices = generate_indices(n_samples);
+    auto indices = utils::generate_indices(n_samples);
 
     // using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data_xyz)::iterator;
@@ -116,11 +116,11 @@ DurationsSummary run_dbscan(const fs::path&                filepath,
 
 namespace pcl_flann_ {
 
-DurationsSummary run_dbscan(const fs::path&                filepath,
-                            const std::optional<fs::path>& predictions_filepath,
-                            std::size_t                    min_samples,
-                            float                          radius) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary run_dbscan(const fs::path&                filepath,
+                                   const std::optional<fs::path>& predictions_filepath,
+                                   std::size_t                    min_samples,
+                                   float                          radius) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -139,7 +139,7 @@ DurationsSummary run_dbscan(const fs::path&                filepath,
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -195,11 +195,11 @@ DurationsSummary run_dbscan(const fs::path&                filepath,
 
 namespace pcl_ {
 
-DurationsSummary run_dbscan(const fs::path&                filepath,
-                            const std::optional<fs::path>& predictions_filepath,
-                            std::size_t                    min_samples,
-                            float                          radius) {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+utils::DurationsSummary run_dbscan(const fs::path&                filepath,
+                                   const std::optional<fs::path>& predictions_filepath,
+                                   std::size_t                    min_samples,
+                                   float                          radius) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     std::vector<bench::io::DataType> data;
     std::size_t                      n_samples, n_features;
@@ -218,7 +218,7 @@ DurationsSummary run_dbscan(const fs::path&                filepath,
         throw std::runtime_error(message);
     }
 
-    DurationsSummary bench_summary;
+    utils::DurationsSummary bench_summary;
 
     n_features = 3;
 
@@ -286,10 +286,10 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
     long double to_seconds = 1e-9;
 
     // the sequence object that will be used to compute the variance
-    std::vector<DurationsSummary> bench_summary_vector;
+    std::vector<utils::DurationsSummary> bench_summary_vector;
     bench_summary_vector.reserve(filenames.size());
     // the object that will be used to compute the mean
-    DurationsSummary bench_summary_mean;
+    utils::DurationsSummary bench_summary_mean;
 
     for (std::size_t file_index = 0; file_index < filenames.size(); ++file_index) {
         const auto& filename = filenames[file_index];
@@ -306,11 +306,11 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 
         bench_summary_vector.emplace_back(std::move(bench_summary));
 
-        print_progress_bar(file_index, filenames.size());
+        utils::print_progress_bar(file_index, filenames.size());
     }
     bench_summary_mean /= filenames.size();
 
-    DurationsSummary bench_summary_variance;
+    utils::DurationsSummary bench_summary_variance;
 
     for (auto& bench_summary : bench_summary_vector) {
         bench_summary -= bench_summary_mean;
@@ -336,7 +336,7 @@ void run_pointclouds_sequences_benchmark(const Function&    function,
 }
 
 void run_point_cloud_sequences() {
-    ffcl::common::Timer<common::timer::Nanoseconds> timer;
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     const std::vector<std::size_t>         min_samples_choices = {3, 5, 10};
     const std::vector<bench::io::DataType> radiuses            = {0.1, 0.3, 0.5, 1.0};

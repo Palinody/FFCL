@@ -58,11 +58,11 @@ set(HEADER_FILES
 
     include/ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp
 
-    include/ffcl/math/random/Distributions.hpp
-    include/ffcl/math/random/VosesAliasMethod.hpp
+    include/ffcl/common/math/random/Distributions.hpp
+    include/ffcl/common/math/random/VosesAliasMethod.hpp
 
-    include/ffcl/math/heuristics/Distances.hpp
-    include/ffcl/math/heuristics/SilhouetteMethod.hpp
+    include/ffcl/common/math/heuristics/Distances.hpp
+    include/ffcl/common/math/heuristics/SilhouetteMethod.hpp
 
     include/ffcl/common/Utils.hpp
     include/ffcl/common/Timer.hpp
