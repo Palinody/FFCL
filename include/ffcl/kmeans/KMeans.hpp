@@ -164,7 +164,7 @@ std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range
     auto centroids_candidates = std::vector<std::vector<DataType>>();
 
     if (centroids_.empty()) {
-        for (std::size_t k = 0; k < options_.n_init_; ++k) {
+        for (std::size_t centroid_index = 0; centroid_index < options_.n_init_; ++centroid_index) {
             // default initialization of the centroids if not initialized
             centroids_candidates.emplace_back(
                 centroids_initializer(samples_range_first, samples_range_last, n_centroids_, n_features_));
@@ -185,43 +185,43 @@ std::vector<DataType> KMeans<DataType>::fit(const SamplesIterator& samples_range
 #if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for
 #endif
-    for (std::size_t k = 0; k < centroids_candidates.size(); ++k) {
+    for (std::size_t centroid_index = 0; centroid_index < centroids_candidates.size(); ++centroid_index) {
 #if defined(VERBOSE) && VERBOSE == true
-        printf("---\nAttempt(%ld/%ld): ", k + 1, centroids_candidates.size());
+        printf("---\nAttempt(%ld/%ld): ", centroid_index + 1, centroids_candidates.size());
 #endif
         auto kmeans_algorithm = KMeansAlgorithm(std::make_tuple(samples_range_first, samples_range_last, n_features_),
-                                                centroids_candidates[k]);
+                                                centroids_candidates[centroid_index]);
 
-        std::size_t patience_iter = 0;
+        std::size_t patience_iteration = 0;
 
-        for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
+        for (std::size_t iteration = 0; iteration < options_.max_iter_; ++iteration) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
             printf("%.3f, ", kmeans_algorithm.total_deviation());
 #endif
 
-            centroids_candidates[k] = kmeans_algorithm.step();
+            centroids_candidates[centroid_index] = kmeans_algorithm.step();
 
-            if (options_.early_stopping_ &&
-                common::are_containers_equal(
-                    centroids_candidates[k], centroids_candidates_prev[k], options_.tolerance_)) {
-                if (patience_iter == options_.patience_) {
+            if (options_.early_stopping_ && common::are_containers_equal(centroids_candidates[centroid_index],
+                                                                         centroids_candidates_prev[centroid_index],
+                                                                         options_.tolerance_)) {
+                if (patience_iteration == options_.patience_) {
                     break;
                 }
-                ++patience_iter;
+                ++patience_iteration;
 
             } else {
-                patience_iter = 0;
+                patience_iteration = 0;
             }
             // save the results from the current step
-            centroids_candidates_prev[k] = centroids_candidates[k];
+            centroids_candidates_prev[centroid_index] = centroids_candidates[centroid_index];
         }
 #if defined(VERBOSE) && VERBOSE == true
         // final loss
         printf("%.3f\n", kmeans_algorithm.total_deviation());
 #endif
         // save the loss for each candidate
-        candidates_losses[k] = kmeans_algorithm.total_deviation();
+        candidates_losses[centroid_index] = kmeans_algorithm.total_deviation();
     }
     // find the index of the centroids container with the lowest loss
     const std::size_t min_loss_index =

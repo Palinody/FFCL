@@ -4,6 +4,7 @@
 #include "ffcl/common/math/random/Sampling.hpp"
 #include "ffcl/common/math/random/VosesAliasMethod.hpp"
 #include "ffcl/kmedoids/KMedoids.hpp"
+#include "ffcl/kmedoids/PAMBuild.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>

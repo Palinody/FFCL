@@ -167,7 +167,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
 
     // default initialization of the medoids if not initialized
     if (medoids_.empty()) {
-        for (std::size_t k = 0; k < options_.n_init_; ++k) {
+        for (std::size_t medoid_index = 0; medoid_index < options_.n_init_; ++medoid_index) {
             const auto random_medoids = common::math::random::select_from_range(
                 n_medoids_, {0, std::distance(samples_range_first, samples_range_last) / n_features_});
 
@@ -197,34 +197,35 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
 #if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for
 #endif
-    for (std::size_t k = 0; k < medoids_candidates.size(); ++k) {
-        auto kmedoids_algorithm = PrecomputePairwiseDistanceMatrix
-                                      ? KMedoidsAlgorithm(*pairwise_distance_matrix_ptr, medoids_candidates[k])
-                                      : KMedoidsAlgorithm(dataset_descriptor, medoids_candidates[k]);
+    for (std::size_t medoid_index = 0; medoid_index < medoids_candidates.size(); ++medoid_index) {
+        auto kmedoids_algorithm =
+            PrecomputePairwiseDistanceMatrix
+                ? KMedoidsAlgorithm(*pairwise_distance_matrix_ptr, medoids_candidates[medoid_index])
+                : KMedoidsAlgorithm(dataset_descriptor, medoids_candidates[medoid_index]);
 
-        std::size_t patience_iter = 0;
+        std::size_t patience_iteration = 0;
 
-        for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
+        for (std::size_t iteration = 0; iteration < options_.max_iter_; ++iteration) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
             std::cout << kmedoids_algorithm.total_deviation() << " ";
 #endif
 
-            medoids_candidates[k] = kmedoids_algorithm.step();
+            medoids_candidates[medoid_index] = kmedoids_algorithm.step();
 
             if (options_.early_stopping_ &&
-                common::are_containers_equal(medoids_candidates[k], medoids_candidates_prev[k])) {
-                if (patience_iter == options_.patience_) {
+                common::are_containers_equal(medoids_candidates[medoid_index], medoids_candidates_prev[medoid_index])) {
+                if (patience_iteration == options_.patience_) {
                     break;
                 }
-                ++patience_iter;
+                ++patience_iteration;
 
             } else {
                 // reset the patience iteration to zero if the medoids have changed
-                patience_iter = 0;
+                patience_iteration = 0;
             }
             // save the results from the current step
-            medoids_candidates_prev[k] = medoids_candidates[k];
+            medoids_candidates_prev[medoid_index] = medoids_candidates[medoid_index];
         }
 #if defined(VERBOSE) && VERBOSE == true
         // final loss
@@ -232,7 +233,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
         std::cout << "\n";
 #endif
         // save the loss for each candidate
-        candidates_losses[k] = kmedoids_algorithm.total_deviation();
+        candidates_losses[medoid_index] = kmedoids_algorithm.total_deviation();
     }
     // find the index of the medoids indices container with the lowest loss
     const std::size_t min_loss_index =
@@ -262,7 +263,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
 
     // default initialization of the medoids if not initialized
     if (medoids_.empty()) {
-        for (std::size_t k = 0; k < options_.n_init_; ++k) {
+        for (std::size_t medoid_index = 0; medoid_index < options_.n_init_; ++medoid_index) {
             const auto random_medoids =
                 common::math::random::select_from_range(n_medoids_, {0, pairwise_distance_matrix.n_rows()});
 
@@ -285,32 +286,32 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
 #if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for
 #endif
-    for (std::size_t k = 0; k < medoids_candidates.size(); ++k) {
-        auto kmedoids_algorithm = KMedoidsAlgorithm(pairwise_distance_matrix, medoids_candidates[k]);
+    for (std::size_t medoid_index = 0; medoid_index < medoids_candidates.size(); ++medoid_index) {
+        auto kmedoids_algorithm = KMedoidsAlgorithm(pairwise_distance_matrix, medoids_candidates[medoid_index]);
 
-        std::size_t patience_iter = 0;
+        std::size_t patience_iteration = 0;
 
-        for (std::size_t iter = 0; iter < options_.max_iter_; ++iter) {
+        for (std::size_t iteration = 0; iteration < options_.max_iter_; ++iteration) {
 #if defined(VERBOSE) && VERBOSE == true
             // loss before step to also get the initial loss
             std::cout << kmedoids_algorithm.total_deviation() << " ";
 #endif
 
-            medoids_candidates[k] = kmedoids_algorithm.step();
+            medoids_candidates[medoid_index] = kmedoids_algorithm.step();
 
             if (options_.early_stopping_ &&
-                common::are_containers_equal(medoids_candidates[k], medoids_candidates_prev[k])) {
-                if (patience_iter == options_.patience_) {
+                common::are_containers_equal(medoids_candidates[medoid_index], medoids_candidates_prev[medoid_index])) {
+                if (patience_iteration == options_.patience_) {
                     break;
                 }
-                ++patience_iter;
+                ++patience_iteration;
 
             } else {
                 // reset the patience iteration to zero if the medoids have changed
-                patience_iter = 0;
+                patience_iteration = 0;
             }
             // save the results from the current step
-            medoids_candidates_prev[k] = medoids_candidates[k];
+            medoids_candidates_prev[medoid_index] = medoids_candidates[medoid_index];
         }
 #if defined(VERBOSE) && VERBOSE == true
         // last loss
@@ -318,7 +319,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
         std::cout << "\n";
 #endif
         // save the loss for each candidate
-        candidates_losses[k] = kmedoids_algorithm.total_deviation();
+        candidates_losses[medoid_index] = kmedoids_algorithm.total_deviation();
     }
     // find the index of the medoids indices container with the lowest loss
     const std::size_t min_loss_index =
