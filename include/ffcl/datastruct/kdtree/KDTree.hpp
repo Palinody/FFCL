@@ -46,13 +46,16 @@ namespace fs = std::filesystem;
 template <typename IndicesIterator, typename SamplesIterator>
 class KDTree {
   public:
-    using IndexType           = typename IndicesIterator::value_type;
-    using DataType            = typename SamplesIterator::value_type;
+    using IndexType = typename IndicesIterator::value_type;
+    using DataType  = typename SamplesIterator::value_type;
+
     using IndicesIteratorType = IndicesIterator;
     using SamplesIteratorType = SamplesIterator;
-    using KDNodeViewType      = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewType;
-    using KDNodeViewPtr       = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr;
-    using HyperRangeType      = ffcl::bbox::HyperRangeType<SamplesIterator>;
+
+    using KDNodeViewType = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewType;
+    using KDNodeViewPtr  = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr;
+
+    using HyperRangeType = ffcl::bbox::HyperRangeType<SamplesIterator>;
 
     struct Options {
         Options()
@@ -79,8 +82,8 @@ class KDTree {
 
         template <typename AxisSelectionPolicy>
         Options& axis_selection_policy(const AxisSelectionPolicy& axis_selection_policy) {
-            static_assert(std::is_base_of<kdtree::policy::AxisSelectionPolicy<IndicesIterator, SamplesIterator>,
-                                          AxisSelectionPolicy>::value,
+            static_assert(std::is_base_of_v<kdtree::policy::AxisSelectionPolicy<IndicesIterator, SamplesIterator>,
+                                            AxisSelectionPolicy>,
                           "The provided axis selection policy must be derived from "
                           "kdtree::policy::AxisSelectionPolicy<IndicesIterator, SamplesIterator>");
 
@@ -90,8 +93,8 @@ class KDTree {
 
         template <typename SplittingRulePolicy>
         Options& splitting_rule_policy(const SplittingRulePolicy& splitting_rule_policy) {
-            static_assert(std::is_base_of<kdtree::policy::SplittingRulePolicy<IndicesIterator, SamplesIterator>,
-                                          SplittingRulePolicy>::value,
+            static_assert(std::is_base_of_v<kdtree::policy::SplittingRulePolicy<IndicesIterator, SamplesIterator>,
+                                            SplittingRulePolicy>,
                           "The provided splitting rule policy must be derived from "
                           "kdtree::policy::SplittingRulePolicy<IndicesIterator, SamplesIterator>");
 
@@ -231,9 +234,7 @@ class KDTree {
 
     // (1) & (2) & (3) & (4) & (5) & (6)
     template <typename BufferType>
-    void inner_k_nearest_neighbors_around_query_index(std::size_t   query_index,
-                                                      BufferType&   buffer,
-                                                      KDNodeViewPtr kdnode = nullptr) const;
+    void searcher(std::size_t query_index, BufferType& buffer, KDNodeViewPtr kdnode = nullptr) const;
     // (1) & (2) & (3) & (4) & (5) & (6)
     template <typename BufferType>
     KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t query_index, BufferType& buffer, KDNodeViewPtr kdnode) const;
@@ -393,7 +394,7 @@ template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_index(std::size_t query_index) const {
     auto buffer = knn::buffer::Singleton<IndicesIterator, SamplesIterator>();
 
-    inner_k_nearest_neighbors_around_query_index(query_index, buffer, root_);
+    searcher(query_index, buffer, root_);
 
     return buffer.closest_neighbor_index_distance_pair();
 }
@@ -408,7 +409,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffered_k_nearest_neighbors_arou
                   "BufferType must inherit from knn::buffer::Base<IndicesIterator, SamplesIterator> or "
                   "knn::count::Base<IndicesIterator, SamplesIterator>");
 
-    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
+    searcher(query_index, buffer);
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -416,17 +417,16 @@ auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_
                                                                                       std::size_t n_neighbors) const {
     knn::buffer::Unsorted<IndicesIterator, SamplesIterator> buffer(n_neighbors);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
+    searcher(query_index, buffer);
 
     return buffer;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 template <typename BufferType>
-void KDTree<IndicesIterator, SamplesIterator>::inner_k_nearest_neighbors_around_query_index(
-    std::size_t   query_index,
-    BufferType&   buffer,
-    KDNodeViewPtr kdnode) const {
+void KDTree<IndicesIterator, SamplesIterator>::searcher(std::size_t   query_index,
+                                                        BufferType&   buffer,
+                                                        KDNodeViewPtr kdnode) const {
     // current_node is currently a leaf node (and root in the special case where the entire tree is in a single node)
     auto current_kdnode = recurse_to_closest_leaf_node(
         /**/ query_index,
@@ -516,7 +516,7 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
             // if the sibling kdnode is not nullptr
             if (auto sibling_node = kdnode->get_sibling_node()) {
                 // get the nearest neighbor from the sibling node
-                inner_k_nearest_neighbors_around_query_index(
+                searcher(
                     /**/ query_index,
                     /**/ buffer,
                     /**/ sibling_node);
@@ -532,7 +532,7 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::radius_count_around_query_
                                                                                       const DataType& radius) const {
     auto buffer = knn::count::Radius<IndicesIterator, SamplesIterator>(radius);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
+    searcher(query_index, buffer);
 
     return buffer.count();
 }
@@ -542,7 +542,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_index(
                                                                                 const DataType& radius) const {
     auto buffer = knn::buffer::Radius<IndicesIterator, SamplesIterator>(radius);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
+    searcher(query_index, buffer);
 
     return buffer;
 }
@@ -558,7 +558,7 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_i
 
     auto buffer = knn::count::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
+    searcher(query_index, buffer);
 
     return buffer.count();
 }
@@ -574,7 +574,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
 
     auto buffer = knn::buffer::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
-    inner_k_nearest_neighbors_around_query_index(query_index, buffer);
+    searcher(query_index, buffer);
 
     return buffer;
 }

@@ -12,7 +12,7 @@
 #include <limits>
 #include <vector>
 
-namespace kdtree::algorithms {
+namespace ffcl::datastruct::kdtree::algorithms {
 
 template <typename SamplesIterator>
 ssize_t select_axis_with_largest_bounding_box_difference(
@@ -223,4 +223,4 @@ quickselect_median(const IndicesIterator& indices_range_first,
                                                 feature_index);
 }
 
-}  // namespace kdtree::algorithms
+}  // namespace ffcl::datastruct::kdtree::algorithms

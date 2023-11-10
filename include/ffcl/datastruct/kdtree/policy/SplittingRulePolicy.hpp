@@ -2,7 +2,7 @@
 
 #include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
 
-namespace kdtree::policy {
+namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 struct SplittingRulePolicy {
@@ -34,9 +34,9 @@ struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, Samp
                std::size_t     feature_index) const;
 };
 
-}  // namespace kdtree::policy
+}  // namespace ffcl::datastruct::kdtree::policy
 
-namespace kdtree::policy {
+namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::tuple<std::size_t,
@@ -58,4 +58,4 @@ QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(IndicesIter
         /**/ feature_index);
 }
 
-}  // namespace kdtree::policy
+}  // namespace ffcl::datastruct::kdtree::policy

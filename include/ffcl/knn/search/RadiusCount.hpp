@@ -4,7 +4,8 @@
 
 #include "ffcl/common/math/heuristics/Distances.hpp"
 
-#include "ffcl/knn/count/Radius.hpp"
+#include "ffcl/knn/buffer/Base.hpp"
+#include "ffcl/knn/count/Base.hpp"
 
 namespace ffcl::knn::count {
 
@@ -297,32 +298,37 @@ class SingleTreeTraverser {
     KDTreePtr query_kdtree_ptr_;
 };
 
-template <typename KDTreePtr>
-class RadiusCounter {
+template <typename KDTreePtr, typename BufferType>
+class Searcher {
   public:
     using IndexType           = typename KDTreePtr::element_type::IndexType;
     using DataType            = typename KDTreePtr::element_type::DataType;
     using IndicesIteratorType = typename KDTreePtr::element_type::IndicesIteratorType;
     using SamplesIteratorType = typename KDTreePtr::element_type::SamplesIteratorType;
 
-    using CountType = knn::count::Radius<IndicesIteratorType, SamplesIteratorType>;
+  private:
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIteratorType, SamplesIteratorType>, BufferType> ||
+                      std::is_base_of_v<knn::count::Base<IndicesIteratorType, SamplesIteratorType>, BufferType>,
+                  "BufferType must inherit from knn::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
+                  "knn::count::Base<IndicesIteratorType, SamplesIteratorType>");
 
-    RadiusCounter(KDTreePtr query_kdtree_ptr, const CountType& counter)
+  public:
+    Searcher(KDTreePtr query_kdtree_ptr, const BufferType& buffer)
       : query_kdtree_ptr_{query_kdtree_ptr}
-      , counter_{counter} {}
+      , buffer_{buffer} {}
 
-    CountType operator()(std::size_t query_index) const {
-        return SingleTreeTraverser(query_kdtree_ptr_)(query_index, counter_);
+    BufferType operator()(std::size_t query_index) {
+        return SingleTreeTraverser(query_kdtree_ptr_)(query_index, buffer_);
     }
 
-    CountType operator()(const SamplesIteratorType& query_feature_first,
-                         const SamplesIteratorType& query_feature_last) const {
-        return SingleTreeTraverser(query_kdtree_ptr_)(query_feature_first, query_feature_last, counter_);
+    BufferType operator()(const SamplesIteratorType& query_feature_first,
+                          const SamplesIteratorType& query_feature_last) {
+        return SingleTreeTraverser(query_kdtree_ptr_)(query_feature_first, query_feature_last, buffer_);
     }
 
   private:
-    KDTreePtr query_kdtree_ptr_;
-    CountType counter_;
+    KDTreePtr  query_kdtree_ptr_;
+    BufferType buffer_;
 };
 
 }  // namespace ffcl::knn::count

@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace kdtree::policy {
+namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 class AxisSelectionPolicy {
@@ -111,9 +111,9 @@ class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIt
     std::vector<std::size_t> feature_mask_;
 };
 
-}  // namespace kdtree::policy
+}  // namespace ffcl::datastruct::kdtree::policy
 
-namespace kdtree::policy {
+namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
@@ -186,4 +186,4 @@ std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
                                                                                                  feature_mask_);
 }
 
-}  // namespace kdtree::policy
+}  // namespace ffcl::datastruct::kdtree::policy

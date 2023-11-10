@@ -188,14 +188,16 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
 
     auto indices = generate_indices(n_samples);
 
-    using IndexType               = std::size_t /*decltype(indices[0])*/;
-    using ValueType               = dType /*decltype(data[0])*/;
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexType       = std::size_t /*decltype(indices[0])*/;
+    using ValueType       = dType /*decltype(data[0])*/;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     printf("Indexer build:\n");
     timer.reset();
@@ -267,14 +269,16 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
 
     auto indices = generate_indices(n_samples);
 
-    using IndexType               = std::size_t /*decltype(indices[0])*/;
-    using ValueType               = dType /*decltype(data[0])*/;
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexType       = std::size_t /*decltype(indices[0])*/;
+    using ValueType       = dType /*decltype(data[0])*/;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     printf("Indexer build:\n");
     timer.reset();
@@ -346,14 +350,16 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
 
     auto indices = generate_indices(n_samples);
 
-    using IndexType               = std::size_t /*decltype(indices[0])*/;
-    using ValueType               = dType /*decltype(data[0])*/;
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexType       = std::size_t /*decltype(indices[0])*/;
+    using ValueType       = dType /*decltype(data[0])*/;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     printf("Indexer build:\n");
     timer.reset();
@@ -425,14 +431,16 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
 
     auto indices = generate_indices(n_samples);
 
-    using IndexType               = std::size_t /*decltype(indices[0])*/;
-    using ValueType               = dType /*decltype(data[0])*/;
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexType       = std::size_t /*decltype(indices[0])*/;
+    using ValueType       = dType /*decltype(data[0])*/;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     printf("Indexer build:\n");
     timer.reset();
@@ -504,14 +512,16 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
 
     auto indices = generate_indices(n_samples);
 
-    using IndexType               = std::size_t /*decltype(indices[0])*/;
-    using ValueType               = dType /*decltype(data[0])*/;
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexType       = std::size_t /*decltype(indices[0])*/;
+    using ValueType       = dType /*decltype(data[0])*/;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     printf("Indexer build:\n");
     timer.reset();
@@ -583,14 +593,16 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
 
     auto indices = generate_indices(n_samples);
 
-    using IndexType               = std::size_t /*decltype(indices[0])*/;
-    using ValueType               = dType /*decltype(data[0])*/;
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexType       = std::size_t /*decltype(indices[0])*/;
+    using ValueType       = dType /*decltype(data[0])*/;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     printf("Indexer build:\n");
     timer.reset();
@@ -662,14 +674,16 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     auto indices = generate_indices(n_samples);
 
-    using IndexType               = std::size_t /*decltype(indices[0])*/;
-    using ValueType               = dType /*decltype(data[0])*/;
-    using IndicesIterator         = decltype(indices)::iterator;
-    using SamplesIterator         = decltype(data)::iterator;
-    using IndexerType             = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType             = IndexerType::Options;
-    using AxisSelectionPolicyType = kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType = kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    using IndexType       = std::size_t /*decltype(indices[0])*/;
+    using ValueType       = dType /*decltype(data[0])*/;
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     printf("Indexer build:\n");
     timer.reset();
