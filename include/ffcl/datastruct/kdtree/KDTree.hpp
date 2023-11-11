@@ -161,7 +161,7 @@ class KDTree {
         return root_;
     }
 
-    constexpr SamplesIterator operator[](std::size_t sample_index) const {
+    constexpr auto operator[](std::size_t sample_index) const {
         return samples_range_first_ + sample_index * n_features_;
     }
 
@@ -232,11 +232,11 @@ class KDTree {
     void serialize(const fs::path& filepath) const;
 
   private:
-    KDNodeViewPtr build(IndicesIterator indices_range_first,
-                        IndicesIterator indices_range_last,
-                        ssize_t         cut_feature_index,
-                        ssize_t         depth,
-                        HyperRangeType& kd_bounding_box);
+    KDNodeViewPtr build(const IndicesIterator& indices_range_first,
+                        const IndicesIterator& indices_range_last,
+                        ssize_t                cut_feature_index,
+                        ssize_t                depth,
+                        HyperRangeType&        kd_bounding_box);
 
     // existing samples
 
@@ -328,11 +328,11 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::n_features() const {
 
 template <typename IndicesIterator, typename SamplesIterator>
 typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesIterator, SamplesIterator>::build(
-    IndicesIterator indices_range_first,
-    IndicesIterator indices_range_last,
-    ssize_t         cut_feature_index,
-    ssize_t         depth,
-    HyperRangeType& kd_bounding_box) {
+    const IndicesIterator& indices_range_first,
+    const IndicesIterator& indices_range_last,
+    ssize_t                cut_feature_index,
+    ssize_t                depth,
+    HyperRangeType&        kd_bounding_box) {
     KDNodeViewPtr kdnode;
     // number of samples in the current node
     const std::size_t n_node_samples = std::distance(indices_range_first, indices_range_last);

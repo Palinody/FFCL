@@ -16,6 +16,7 @@ except:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "hdbscan"])
     import hdbscan
 
+
 def plot_predictions(datapath, filename, axis=None):
     standalone_plot = axis is None
 
@@ -37,7 +38,7 @@ def plot_predictions(datapath, filename, axis=None):
     # Separate the points based on their predictions
     noise_points = data[predictions == 0]
 
-    axis.set_facecolor('lightgray')
+    axis.set_facecolor("lightgray")
 
     axis.scatter(
         noise_points[:, 0],
@@ -70,6 +71,7 @@ def plot_predictions(datapath, filename, axis=None):
     if standalone_plot:
         plt.show()
 
+
 def plot_hdbscan_predictions(datapath, filename, axis=None):
     standalone_plot = axis is None
 
@@ -91,20 +93,20 @@ def plot_hdbscan_predictions(datapath, filename, axis=None):
     )
 
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=10,
-        min_samples=11,
+        min_cluster_size=20,
+        min_samples=10,
         cluster_selection_epsilon=0,
         gen_min_span_tree=True,
         approx_min_span_tree=True,
         core_dist_n_jobs=1,
-        allow_single_cluster=True
+        allow_single_cluster=True,
     )
     predictions = clusterer.fit_predict(data)
 
     # Separate the points based on their predictions
     noise_points = data[predictions == -1]
 
-    axis.set_facecolor('lightgray')
+    axis.set_facecolor("lightgray")
 
     axis.scatter(
         noise_points[:, 0],
@@ -136,6 +138,7 @@ def plot_hdbscan_predictions(datapath, filename, axis=None):
 
     if standalone_plot:
         plt.show()
+
 
 def main():
     """noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""

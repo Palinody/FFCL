@@ -91,7 +91,7 @@ class SingleTreeTraverser {
 
   private:
     template <typename BufferType>
-    void single_tree_traversal(std::size_t query_index, BufferType& buffer, KDNodeViewPtr node) {
+    void single_tree_traversal(std::size_t query_index, BufferType& buffer, const KDNodeViewPtr& node) {
         // current_node is currently a leaf node (and root in the special case where the entire tree is in a single
         // node)
         auto current_kdnode = recurse_to_closest_leaf_node(
@@ -112,7 +112,7 @@ class SingleTreeTraverser {
     }
 
     template <typename BufferType>
-    auto recurse_to_closest_leaf_node(std::size_t query_index, BufferType& buffer, KDNodeViewPtr node) {
+    auto recurse_to_closest_leaf_node(std::size_t query_index, BufferType& buffer, const KDNodeViewPtr& node) {
         buffer(node->indices_range_.first,
                node->indices_range_.second,
                query_kdtree_ptr_->begin(),
@@ -147,7 +147,9 @@ class SingleTreeTraverser {
     }
 
     template <typename BufferType>
-    auto get_parent_node_after_sibling_traversal(std::size_t query_index, BufferType& buffer, KDNodeViewPtr node) {
+    auto get_parent_node_after_sibling_traversal(std::size_t          query_index,
+                                                 BufferType&          buffer,
+                                                 const KDNodeViewPtr& node) {
         auto parent_node = node->parent_.lock();
         // if node has a parent
         if (parent_node) {
@@ -186,7 +188,7 @@ class SingleTreeTraverser {
     void single_tree_traversal(const SamplesIteratorType& query_feature_first,
                                const SamplesIteratorType& query_feature_last,
                                BufferType&                buffer,
-                               KDNodeViewPtr              node) {
+                               const KDNodeViewPtr&       node) {
         // current_node is currently a leaf node (and root in the special case where the entire tree is in a single
         // node)
         auto current_kdnode = recurse_to_closest_leaf_node(
@@ -212,7 +214,7 @@ class SingleTreeTraverser {
     auto recurse_to_closest_leaf_node(const SamplesIteratorType& query_feature_first,
                                       const SamplesIteratorType& query_feature_last,
                                       BufferType&                buffer,
-                                      KDNodeViewPtr              node) {
+                                      const KDNodeViewPtr&       node) {
         buffer(node->indices_range_.first,
                node->indices_range_.second,
                query_kdtree_ptr_->begin(),
@@ -253,7 +255,7 @@ class SingleTreeTraverser {
     auto get_parent_node_after_sibling_traversal(const SamplesIteratorType& query_feature_first,
                                                  const SamplesIteratorType& query_feature_last,
                                                  BufferType&                buffer,
-                                                 KDNodeViewPtr              node) {
+                                                 const KDNodeViewPtr&       node) {
         auto parent_node = node->parent_.lock();
         // if node has a parent
         if (parent_node) {

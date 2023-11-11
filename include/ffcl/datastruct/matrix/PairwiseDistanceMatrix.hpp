@@ -52,8 +52,7 @@ class PairwiseDistanceMatrix {
                                     const SamplesIterator& samples_range_last,
                                     std::size_t            n_features);
 
-    auto compute_pairwise_distances(
-        const std::tuple<SamplesIterator, SamplesIterator, std::size_t>& dataset_descriptor);
+    auto compute_pairwise_distances(const DatasetDescriptorType& dataset_descriptor);
 
     std::size_t n_samples_;
 
@@ -146,7 +145,7 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances(const S
 
 template <typename SamplesIterator>
 auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances(
-    const std::tuple<SamplesIterator, SamplesIterator, std::size_t>& dataset_descriptor) {
+    const DatasetDescriptorType& dataset_descriptor) {
     return compute_pairwise_distances(
         std::get<0>(dataset_descriptor), std::get<1>(dataset_descriptor), std::get<2>(dataset_descriptor));
 }
