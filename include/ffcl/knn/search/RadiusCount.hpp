@@ -125,11 +125,9 @@ class SingleTreeTraverser {
             // get the pivot sample index in the dataset
             const auto pivot_index = node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value =
-                (*query_kdtree_ptr_)[pivot_index * query_kdtree_ptr_->n_features() + node->cut_feature_index_];
+            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][node->cut_feature_index_];
             // get the value of the query according to the split dimension
-            const auto query_split_value =
-                (*query_kdtree_ptr_)[query_index * query_kdtree_ptr_->n_features() + node->cut_feature_index_];
+            const auto query_split_value = (*query_kdtree_ptr_)[query_index][node->cut_feature_index_];
 
             // traverse either the left or right child node depending on where the target sample is located relatively
             // to the cut value
@@ -156,11 +154,9 @@ class SingleTreeTraverser {
             // get the pivot sample index in the dataset
             const auto pivot_index = parent_node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value =
-                (*query_kdtree_ptr_)[pivot_index * query_kdtree_ptr_->n_features() + parent_node->cut_feature_index_];
+            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][parent_node->cut_feature_index_];
             // get the value of the query according to the split dimension
-            const auto query_split_value =
-                (*query_kdtree_ptr_)[query_index * query_kdtree_ptr_->n_features() + parent_node->cut_feature_index_];
+            const auto query_split_value = (*query_kdtree_ptr_)[query_index][parent_node->cut_feature_index_];
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
             // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
             // put to the right
@@ -230,8 +226,7 @@ class SingleTreeTraverser {
             // get the pivot sample index in the dataset
             const auto pivot_index = node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value =
-                (*query_kdtree_ptr_)[pivot_index * query_kdtree_ptr_->n_features() + node->cut_feature_index_];
+            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = query_feature_first[node->cut_feature_index_];
 
@@ -265,8 +260,7 @@ class SingleTreeTraverser {
             // get the pivot sample index in the dataset
             const auto pivot_index = parent_node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value =
-                (*query_kdtree_ptr_)[pivot_index * query_kdtree_ptr_->n_features() + parent_node->cut_feature_index_];
+            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][parent_node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = query_feature_first[parent_node->cut_feature_index_];
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a

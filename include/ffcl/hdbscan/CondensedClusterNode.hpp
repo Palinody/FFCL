@@ -74,7 +74,7 @@ bool CondensedClusterNode<IndexType, ValueType>::is_selected() const {
 template <typename IndexType, typename ValueType>
 std::size_t CondensedClusterNode<IndexType, ValueType>::size() const {
     // takes into account only the initiating node of the branch that persists along different lambda values
-    return single_linkage_cluster_node_first_->cluster_size_;
+    return single_linkage_cluster_node_first_->size();
 }
 
 template <typename IndexType, typename ValueType>

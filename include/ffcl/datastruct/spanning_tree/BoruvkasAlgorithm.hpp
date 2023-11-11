@@ -31,13 +31,7 @@ class BoruvkasAlgorithm {
     using IndicesIteratorType = typename Indexer::IndicesIteratorType;
     using SamplesIteratorType = typename Indexer::SamplesIteratorType;
 
-    using ComponentType = std::unordered_set<IndexType>;
-    using ForestType    = std::map<IndexType, ComponentType>;
-
-    using EdgeType                = mst::Edge<IndexType, ValueType>;
-    using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
-
-    using UnionFindType = datastruct::UnionFind<IndexType>;
+    using EdgeType = mst::Edge<IndexType, ValueType>;
 
     using CoreDistancesArray    = std::unique_ptr<ValueType[]>;
     using CoreDistancesArrayPtr = std::shared_ptr<CoreDistancesArray>;
@@ -62,8 +56,13 @@ class BoruvkasAlgorithm {
 
     class Forest {
       public:
-        using ForestIterator      = typename ForestType::iterator;
-        using ConstForestIterator = typename ForestType::const_iterator;
+        using ComponentType = std::unordered_set<IndexType>;
+
+        using ForestType = std::map<IndexType, ComponentType>;
+
+        using UnionFindType = datastruct::UnionFind<IndexType>;
+
+        using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
 
         Forest(std::size_t n_samples)
           : n_samples_{n_samples}
@@ -77,10 +76,6 @@ class BoruvkasAlgorithm {
             }
         }
 
-        auto n_elements() const {
-            return n_samples_;
-        }
-
         std::size_t n_components() const {
             return std::distance(components_.begin(), components_.end());
         }
@@ -89,27 +84,27 @@ class BoruvkasAlgorithm {
             return union_find_;
         }
 
-        ForestIterator begin() {
+        constexpr auto begin() {
             return components_.begin();
         }
 
-        ForestIterator end() {
+        constexpr auto end() {
             return components_.end();
         }
 
-        ConstForestIterator begin() const {
+        constexpr auto begin() const {
             return components_.begin();
         }
 
-        ConstForestIterator end() const {
+        constexpr auto end() const {
             return components_.end();
         }
 
-        ConstForestIterator cbegin() const {
+        constexpr auto cbegin() const {
             return components_.cbegin();
         }
 
-        ConstForestIterator cend() const {
+        constexpr auto cend() const {
             return components_.cend();
         }
 
@@ -150,8 +145,8 @@ class BoruvkasAlgorithm {
                     : std::make_pair(component_label_2, component_label_1);
 
             // move the indices from the component that will be discarded to the final one
-            components_[final_component].insert(std::make_move_iterator(components_[discarded_component].begin()),
-                                                std::make_move_iterator(components_[discarded_component].end()));
+            components_[final_component].insert(std::make_move_iterator(components_[discarded_component].cbegin()),
+                                                std::make_move_iterator(components_[discarded_component].cend()));
 
             // now that the old component has been merged with the final one, clear it
             components_.erase(discarded_component);

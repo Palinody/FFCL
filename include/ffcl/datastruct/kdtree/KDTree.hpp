@@ -141,20 +141,28 @@ class KDTree {
 
     std::size_t n_features() const;
 
-    SamplesIterator begin() {
+    constexpr auto begin() const {
         return samples_range_first_;
     }
 
-    SamplesIterator end() {
+    constexpr auto end() const {
         return samples_range_last_;
     }
 
-    KDNodeViewPtr root() {
+    constexpr auto cbegin() const {
+        return samples_range_first_;
+    }
+
+    constexpr auto cend() const {
+        return samples_range_last_;
+    }
+
+    constexpr auto root() const {
         return root_;
     }
 
-    DataType operator()(std::size_t sample_index) const {
-        return samples_range_first_[sample_index];
+    constexpr SamplesIterator operator[](std::size_t sample_index) const {
+        return samples_range_first_ + sample_index * n_features_;
     }
 
     // existing samples
@@ -340,6 +348,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
             /**/ depth,
             /**/ kd_bounding_box);
 
+        // left_partition_range, middle_partition_range, right_partition_range
         auto [cut_index, left_indices_range, cut_indices_range, right_indices_range] =
             (*options_.splitting_rule_policy_ptr_)(
                 /**/ indices_range_first,

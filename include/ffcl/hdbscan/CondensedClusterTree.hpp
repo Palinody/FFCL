@@ -65,17 +65,16 @@ class CondensedClusterTree {
 
     CondensedClusterTree(const Options& options);
 
-    auto extract_flat_cluster() const;
+    auto extract_flat_clusters() const;
 
     auto predict() const;
 
   private:
     auto build(const SingleLinkageClusterNodePtr& slink_root_node);
 
-    void preorder_traversal_clustering_from_single_linkage_node(
-        const ClusterIndexType&            cluster_label,
-        const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
-        std::vector<ClusterIndexType>&     flat_cluster) const;
+    void preorder_traversal_single_linkage_clustering(const ClusterIndexType&            cluster_label,
+                                                      const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
+                                                      std::vector<ClusterIndexType>&     flat_cluster) const;
 
     void preorder_traversal_build(CondensedClusterNodePtr            condensed_cluster_node,
                                   const SingleLinkageClusterNodePtr& single_linkage_cluster_node);
@@ -137,6 +136,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
         const bool is_right_child_split_candidate =
             single_linkage_cluster_node->right_->size() >= options_.min_cluster_size_;
 
+        // the lambda value needs to be computed for any of the if/else branches
         const auto lambda_value = common::division(1, single_linkage_cluster_node->level_);
 
         // if both children are split candidates (they hold enough samples to be considered as their own cluster), we
@@ -198,12 +198,15 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
     // if single_linkage_cluster_node is a leaf node, then we simply mark the current condensed_cluster_node as selected
     // as its also a leaf node
     else {
+        // theres no need to compute the excess of mass here since falling in that branch means that either the parent
+        // node already added the right excess of mass or the condensed cluster node is root. In the latter case,
+        // there's no need to compute the excess of mass so we just flag the condensed cluster as selected
         condensed_cluster_node->is_selected() = true;
     }
 }
 
 template <typename IndexType, typename ValueType>
-auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
+auto CondensedClusterTree<IndexType, ValueType>::extract_flat_clusters() const {
     // the flat cluster represented as an array vector of labels mapping each sample to their respective cluster label
     auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
     // The cluster hierarchy for each condensed cluster node will be assigned consecutive cluster labels beginning from
@@ -212,7 +215,7 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
     for (const auto& condensed_cluster_node : return_shallowest_cluster_selection()) {
         // assign all descendant samples in the node hierarchy with the same cluster label
         // then increment the cluster label for the next non-overlapping cluster
-        preorder_traversal_clustering_from_single_linkage_node(
+        preorder_traversal_single_linkage_clustering(
             cluster_label++, condensed_cluster_node->single_linkage_cluster_node_first_, flat_cluster);
     }
     return flat_cluster;
@@ -220,21 +223,19 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
 
 template <typename IndexType, typename ValueType>
 auto CondensedClusterTree<IndexType, ValueType>::predict() const {
-    return extract_flat_cluster();
+    return extract_flat_clusters();
 }
 
 template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_clustering_from_single_linkage_node(
+void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_single_linkage_clustering(
     const ClusterIndexType&            cluster_label,
     const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
     std::vector<ClusterIndexType>&     flat_cluster) const {
     // continue to traverse the tree if the current node is not leaf
     // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
     if (!single_linkage_cluster_node->is_leaf()) {
-        preorder_traversal_clustering_from_single_linkage_node(
-            cluster_label, single_linkage_cluster_node->left_, flat_cluster);
-        preorder_traversal_clustering_from_single_linkage_node(
-            cluster_label, single_linkage_cluster_node->right_, flat_cluster);
+        preorder_traversal_single_linkage_clustering(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
+        preorder_traversal_single_linkage_clustering(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
 
     } else {
         // assert that single_linkage_cluster_node is indeed a leaf  by checking if its level in the tree is zero

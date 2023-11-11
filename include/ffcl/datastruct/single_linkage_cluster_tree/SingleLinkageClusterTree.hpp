@@ -66,9 +66,11 @@ class SingleLinkageClusterTree {
 
     SingleLinkageClusterTree<IndexType, ValueType>& set_options(const Options& options);
 
-    auto root() const;
+    constexpr auto root() const;
 
-    auto extract_flat_cluster() const;
+    auto extract_flat_clusters() const;
+
+    auto predict() const;
 
     void print() const;
 
@@ -77,7 +79,7 @@ class SingleLinkageClusterTree {
   private:
     auto build();
 
-    void single_linkage_preorder_traversal_clustering(ClusterIndexType                   cluster_label,
+    void preorder_traversal_single_linkage_clustering(ClusterIndexType                   cluster_label,
                                                       const SingleLinkageClusterNodePtr& kdnode,
                                                       std::vector<ClusterIndexType>&     flat_cluster) const;
 
@@ -124,21 +126,26 @@ SingleLinkageClusterTree<IndexType, ValueType>& SingleLinkageClusterTree<IndexTy
 }
 
 template <typename IndexType, typename ValueType>
-auto SingleLinkageClusterTree<IndexType, ValueType>::root() const {
+constexpr auto SingleLinkageClusterTree<IndexType, ValueType>::root() const {
     return root_;
 }
 
 template <typename IndexType, typename ValueType>
-auto SingleLinkageClusterTree<IndexType, ValueType>::extract_flat_cluster() const {
+auto SingleLinkageClusterTree<IndexType, ValueType>::extract_flat_clusters() const {
     auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
 
-    single_linkage_preorder_traversal_clustering(root_->representative_, root_, flat_cluster);
+    preorder_traversal_single_linkage_clustering(root_->representative_, root_, flat_cluster);
 
     return flat_cluster;
 }
 
 template <typename IndexType, typename ValueType>
-void SingleLinkageClusterTree<IndexType, ValueType>::single_linkage_preorder_traversal_clustering(
+auto SingleLinkageClusterTree<IndexType, ValueType>::predict() const {
+    return extract_flat_clusters();
+}
+
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::preorder_traversal_single_linkage_clustering(
     ClusterIndexType                   cluster_label,
     const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
     std::vector<ClusterIndexType>&     flat_cluster) const {
@@ -157,8 +164,8 @@ void SingleLinkageClusterTree<IndexType, ValueType>::single_linkage_preorder_tra
     // continue to traverse the tree if the current node is not leaf
     // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
     if (!single_linkage_cluster_node->is_leaf()) {
-        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
-        single_linkage_preorder_traversal_clustering(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
+        preorder_traversal_single_linkage_clustering(cluster_label, single_linkage_cluster_node->left_, flat_cluster);
+        preorder_traversal_single_linkage_clustering(cluster_label, single_linkage_cluster_node->right_, flat_cluster);
 
     } else {
         // assign the cluster label to the sample index (which is its own node at level 0)

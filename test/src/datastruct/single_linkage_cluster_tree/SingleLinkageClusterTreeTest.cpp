@@ -221,7 +221,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 
     single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 
-    const auto predictions = single_linkage_cluster_tree.extract_flat_cluster();
+    const auto predictions = single_linkage_cluster_tree.predict();
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -285,7 +285,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
 
     single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 
-    const auto predictions = single_linkage_cluster_tree.extract_flat_cluster();
+    const auto predictions = single_linkage_cluster_tree.predict();
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -349,7 +349,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 
     single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 
-    const auto predictions = single_linkage_cluster_tree.extract_flat_cluster();
+    const auto predictions = single_linkage_cluster_tree.predict();
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -413,7 +413,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
 
     single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 
-    const auto predictions = single_linkage_cluster_tree.extract_flat_cluster();
+    const auto predictions = single_linkage_cluster_tree.predict();
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -477,7 +477,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 
     single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 
-    const auto predictions = single_linkage_cluster_tree.extract_flat_cluster();
+    const auto predictions = single_linkage_cluster_tree.predict();
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -541,7 +541,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 
     single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 
-    const auto predictions = single_linkage_cluster_tree.extract_flat_cluster();
+    const auto predictions = single_linkage_cluster_tree.predict();
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -605,7 +605,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
 
-    const auto predictions = single_linkage_cluster_tree.extract_flat_cluster();
+    const auto predictions = single_linkage_cluster_tree.predict();
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
