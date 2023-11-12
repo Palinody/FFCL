@@ -164,7 +164,7 @@ class KDTree {
     // (1)
     auto nearest_neighbor_around_query_index(std::size_t query_index) const;
 
-    // (2) & (4) & (6)
+    // (1) & (2) & (3) & (4) & (5) & (6)
     template <typename BufferType>
     void buffer_search_around_query_index(std::size_t query_index, BufferType& buffer) const;
 
@@ -186,7 +186,7 @@ class KDTree {
 
     // (7)
     auto nearest_neighbor_around_query_sample(const SamplesIterator& query_feature_first,
-                                              SamplesIterator        query_feature_last) const;
+                                              const SamplesIterator& query_feature_last) const;
 
     // (7) & (8) & (9) & (10) & (12)
     template <typename BufferType>
@@ -210,14 +210,14 @@ class KDTree {
                                            const DataType&        radius) const;
 
     // (11)
-    std::size_t range_count_around_query_sample(SamplesIterator       query_feature_first,
-                                                SamplesIterator       query_feature_last,
-                                                const HyperRangeType& kd_bounding_box) const;
+    std::size_t range_count_around_query_sample(const SamplesIterator& query_feature_first,
+                                                const SamplesIterator& query_feature_last,
+                                                const HyperRangeType&  kd_bounding_box) const;
 
     // (12)
-    auto range_search_around_query_sample(SamplesIterator       query_feature_first,
-                                          SamplesIterator       query_feature_last,
-                                          const HyperRangeType& kd_bounding_box) const;
+    auto range_search_around_query_sample(const SamplesIterator& query_feature_first,
+                                          const SamplesIterator& query_feature_last,
+                                          const HyperRangeType&  kd_bounding_box) const;
 
     // serialization
 
@@ -584,7 +584,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_sample(
     const SamplesIterator& query_feature_first,
-    SamplesIterator        query_feature_last) const {
+    const SamplesIterator& query_feature_last) const {
     auto buffer = knn::buffer::Singleton<IndicesIterator, SamplesIterator>();
 
     traversal(query_feature_first, query_feature_last, buffer, root_);
@@ -758,9 +758,9 @@ auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_sample
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_sample(
-    SamplesIterator       query_feature_first,
-    SamplesIterator       query_feature_last,
-    const HyperRangeType& kd_bounding_box) const {
+    const SamplesIterator& query_feature_first,
+    const SamplesIterator& query_feature_last,
+    const HyperRangeType&  kd_bounding_box) const {
     const auto translated_kd_bounding_box =
         bbox::relative_to_absolute_coordinates(query_feature_first, query_feature_last, kd_bounding_box);
 
@@ -773,9 +773,9 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_s
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_sample(
-    SamplesIterator       query_feature_first,
-    SamplesIterator       query_feature_last,
-    const HyperRangeType& kd_bounding_box) const {
+    const SamplesIterator& query_feature_first,
+    const SamplesIterator& query_feature_last,
+    const HyperRangeType&  kd_bounding_box) const {
     const auto translated_kd_bounding_box =
         bbox::relative_to_absolute_coordinates(query_feature_first, query_feature_last, kd_bounding_box);
 
