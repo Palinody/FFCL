@@ -260,7 +260,8 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const Indexer& indexer, Forest&
 
             const auto current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);
 
-            // otherwise just use the distance of the kth nearest neighbor
+            // update the current shortest edge if the nearest_neighbor_distance is indeed shortest than the current
+            // shortest edge distance
             if (nearest_neighbor_distance < current_closest_edge_distance) {
                 components_closest_edge[component_representative] =
                     EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
@@ -307,8 +308,8 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const Indexer&               in
                                                                   (*core_distances)[nearest_neighbor_index],
                                                                   nearest_neighbor_distance});
 
-            // then update the current shortest edge if the k_mutual_reachability_distance is indeed
-            // shortest than the current shortest edge distance
+            // update the current shortest edge if the k_mutual_reachability_distance is indeed shortest than the
+            // current shortest edge distance
             if (k_mutual_reachability_distance < current_closest_edge_distance) {
                 components_closest_edge[component_representative] =
                     EdgeType{sample_index, nearest_neighbor_index, k_mutual_reachability_distance};
@@ -355,8 +356,8 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const Indexer& i
 
         const auto current_closest_edge_distance = std::get<2>(closest_edge);
 
-        // then update the current shortest edge if the k_mutual_reachability_distance is indeed
-        // shortest than the current shortest edge distance
+        // update the current shortest edge if the nearest_neighbor_distance is indeed shortest than the current
+        // shortest edge distance
         if (nearest_neighbor_distance < current_closest_edge_distance) {
             closest_edge = EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
         }
@@ -402,8 +403,8 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const Indexer&  
         const auto k_mutual_reachability_distance = std::max(
             {(*core_distances)[sample_index], (*core_distances)[nearest_neighbor_index], nearest_neighbor_distance});
 
-        // then update the current shortest edge if the k_mutual_reachability_distance is indeed
-        // shortest than the current shortest edge distance
+        // update the current shortest edge if the k_mutual_reachability_distance is indeed shortest than the current
+        // shortest edge distance
         if (k_mutual_reachability_distance < current_closest_edge_distance) {
             closest_edge = EdgeType{sample_index, nearest_neighbor_index, k_mutual_reachability_distance};
         }

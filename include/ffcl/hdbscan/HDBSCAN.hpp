@@ -87,24 +87,24 @@ HDBSCAN<Indexer>& HDBSCAN<Indexer>::set_options(const Options& options) {
 
 template <typename Indexer>
 auto HDBSCAN<Indexer>::predict(const Indexer& indexer) const {
-    using BoruvkasAlgorithmOptionsType    = typename ffcl::BoruvkasAlgorithm<Indexer>::Options;
-    using CondensedClusterTreeOptionsType = typename ffcl::CondensedClusterTree<IndexType, ValueType>::Options;
+    using BoruvkasAlgorithmOptionsType    = typename BoruvkasAlgorithm<Indexer>::Options;
+    using CondensedClusterTreeOptionsType = typename CondensedClusterTree<IndexType, ValueType>::Options;
 
-    const auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<Indexer>(
-        BoruvkasAlgorithmOptionsType().k_nearest_neighbors(options_.k_nearest_neighbors_));
+    const auto boruvkas_algorithm =
+        BoruvkasAlgorithm<Indexer>(BoruvkasAlgorithmOptionsType().k_nearest_neighbors(options_.k_nearest_neighbors_));
 
     const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
 
-    const auto single_linkage_cluster_tree = ffcl::SingleLinkageClusterTree(std::move(minimum_spanning_tree));
+    const auto single_linkage_cluster_tree = SingleLinkageClusterTree(std::move(minimum_spanning_tree));
 
     const auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
 
     const auto condensed_cluster_tree =
-        ffcl::CondensedClusterTree<IndexType, ValueType>(single_linkage_cluster_tree_root,
-                                                         CondensedClusterTreeOptionsType()
-                                                             .min_cluster_size(options_.min_cluster_size_)
-                                                             .return_leaf_nodes(options_.return_leaf_nodes_)
-                                                             .allow_single_cluster(options_.allow_single_cluster_));
+        CondensedClusterTree<IndexType, ValueType>(single_linkage_cluster_tree_root,
+                                                   CondensedClusterTreeOptionsType()
+                                                       .min_cluster_size(options_.min_cluster_size_)
+                                                       .return_leaf_nodes(options_.return_leaf_nodes_)
+                                                       .allow_single_cluster(options_.allow_single_cluster_));
 
     return condensed_cluster_tree.predict();
 }
