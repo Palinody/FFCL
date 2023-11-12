@@ -63,7 +63,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
                     const auto [min, max] =
-                        ffcl::bbox::make_1d_bounding_box(data.begin(), data.end(), features, feature_index);
+                        ffcl::datastruct::bbox::make_1d_bounding_box(data.begin(), data.end(), features, feature_index);
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
@@ -90,7 +90,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxIndexedTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [min, max] = ffcl::bbox::make_1d_bounding_box(
+                    const auto [min, max] = ffcl::datastruct::bbox::make_1d_bounding_box(
                         data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
@@ -114,7 +114,8 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxTest) {
                 const auto data =
                     this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
-                const auto kd_bounding_box = ffcl::bbox::make_kd_bounding_box(data.begin(), data.end(), features);
+                const auto kd_bounding_box =
+                    ffcl::datastruct::bbox::make_kd_bounding_box(data.begin(), data.end(), features);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -143,7 +144,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxIndexedTest) {
 
                 auto data_indices = this->generate_indices(samples);
 
-                const auto kd_bounding_box = ffcl::bbox::make_kd_bounding_box(
+                const auto kd_bounding_box = ffcl::datastruct::bbox::make_kd_bounding_box(
                     data_indices.begin(), data_indices.end(), data.begin(), data.end(), features);
 
                 // test on all the possible feature indices

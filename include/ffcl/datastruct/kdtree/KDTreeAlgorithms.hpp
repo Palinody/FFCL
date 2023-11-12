@@ -15,8 +15,7 @@
 namespace ffcl::datastruct::kdtree::algorithms {
 
 template <typename SamplesIterator>
-ssize_t select_axis_with_largest_bounding_box_difference(
-    const ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) {
+ssize_t select_axis_with_largest_bounding_box_difference(const bbox::HyperRangeType<SamplesIterator>& kd_bounding_box) {
     const auto comparison = [](const auto& lhs, const auto& rhs) {
         return ffcl::common::abs(lhs.first - lhs.second) < ffcl::common::abs(rhs.first - rhs.second);
     };
@@ -25,9 +24,8 @@ ssize_t select_axis_with_largest_bounding_box_difference(
 }
 
 template <typename SamplesIterator>
-ssize_t select_axis_with_largest_bounding_box_difference(
-    const ffcl::bbox::HyperRangeType<SamplesIterator>& kd_bounding_box,
-    const std::vector<std::size_t>&                    feature_mask) {
+ssize_t select_axis_with_largest_bounding_box_difference(const bbox::HyperRangeType<SamplesIterator>& kd_bounding_box,
+                                                         const std::vector<std::size_t>&              feature_mask) {
     using DataType = typename SamplesIterator::value_type;
 
     // feature index of the greatest range dimension in the kd bounding box at the indices of the feature_mask
@@ -81,8 +79,7 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator& indices_range_f
     // select the axis according to the dimension with the most spread between 2 points
     if (n_samples == 2) {
         // otherwise apply the bounding box method
-        const auto kd_bounding_box =
-            ffcl::bbox::make_kd_bounding_box(samples_range_first, samples_range_last, n_features);
+        const auto kd_bounding_box = bbox::make_kd_bounding_box(samples_range_first, samples_range_last, n_features);
         return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box);
     }
     // return a random axis if theres only one sample left
@@ -132,8 +129,7 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          indice
     // select the axis according to the dimension with the most spread between 2 points
     if (n_samples == 2) {
         // otherwise apply the bounding box method
-        const auto kd_bounding_box =
-            ffcl::bbox::make_kd_bounding_box(samples_range_first, samples_range_last, n_features);
+        const auto kd_bounding_box = bbox::make_kd_bounding_box(samples_range_first, samples_range_last, n_features);
         return select_axis_with_largest_bounding_box_difference<SamplesIterator>(kd_bounding_box, feature_mask);
     }
     // return a random axis if theres only one sample left
@@ -142,17 +138,17 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          indice
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::tuple<std::size_t,
-           ffcl::bbox::IteratorPairType<IndicesIterator>,
-           ffcl::bbox::IteratorPairType<IndicesIterator>,
-           ffcl::bbox::IteratorPairType<IndicesIterator>>
-shift_median_to_leftmost_equal_value(std::size_t                                   median_index,
-                                     ffcl::bbox::IteratorPairType<IndicesIterator> left_indices_range,
-                                     ffcl::bbox::IteratorPairType<IndicesIterator> median_indices_range,
-                                     ffcl::bbox::IteratorPairType<IndicesIterator> right_indices_range,
-                                     const SamplesIterator&                        samples_range_first,
-                                     const SamplesIterator&                        samples_range_last,
-                                     std::size_t                                   n_features,
-                                     std::size_t                                   feature_index) {
+           bbox::IteratorPairType<IndicesIterator>,
+           bbox::IteratorPairType<IndicesIterator>,
+           bbox::IteratorPairType<IndicesIterator>>
+shift_median_to_leftmost_equal_value(std::size_t                             median_index,
+                                     bbox::IteratorPairType<IndicesIterator> left_indices_range,
+                                     bbox::IteratorPairType<IndicesIterator> median_indices_range,
+                                     bbox::IteratorPairType<IndicesIterator> right_indices_range,
+                                     const SamplesIterator&                  samples_range_first,
+                                     const SamplesIterator&                  samples_range_last,
+                                     std::size_t                             n_features,
+                                     std::size_t                             feature_index) {
     ffcl::common::ignore_parameters(samples_range_last);
 
     const auto left_range_length = std::distance(left_indices_range.first, left_indices_range.second);
@@ -186,9 +182,9 @@ shift_median_to_leftmost_equal_value(std::size_t                                
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::tuple<std::size_t,
-           ffcl::bbox::IteratorPairType<IndicesIterator>,
-           ffcl::bbox::IteratorPairType<IndicesIterator>,
-           ffcl::bbox::IteratorPairType<IndicesIterator>>
+           bbox::IteratorPairType<IndicesIterator>,
+           bbox::IteratorPairType<IndicesIterator>,
+           bbox::IteratorPairType<IndicesIterator>>
 quickselect_median(const IndicesIterator& indices_range_first,
                    const IndicesIterator& indices_range_last,
                    const SamplesIterator& samples_range_first,

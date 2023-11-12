@@ -17,12 +17,12 @@ struct KDNodeView {
     using KDNodeViewType = KDNodeView<IndicesIterator, SamplesIterator>;
     using KDNodeViewPtr  = std::shared_ptr<KDNodeViewType>;
 
-    KDNodeView(const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_range,
-               const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box);
+    KDNodeView(const bbox::IteratorPairType<IndicesIterator>& indices_range,
+               const bbox::RangeType<SamplesIterator>&        kd_bounding_box);
 
-    KDNodeView(const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_range,
-               ssize_t                                              cut_feature_index,
-               const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box);
+    KDNodeView(const bbox::IteratorPairType<IndicesIterator>& indices_range,
+               ssize_t                                        cut_feature_index,
+               const bbox::RangeType<SamplesIterator>&        kd_bounding_box);
 
     KDNodeView(const KDNodeView&) = delete;
 
@@ -49,13 +49,13 @@ struct KDNodeView {
 
     // A pair of iterators representing a window in the index array, referring to samples in the dataset.
     // This window can represent various ranges: empty, a 1 value range for pivot, or 1+ values range for a leaf node.
-    ffcl::bbox::IteratorPairType<IndicesIterator> indices_range_;
+    bbox::IteratorPairType<IndicesIterator> indices_range_;
     // The index of the feature dimension selected for cutting the dataset at this node. -1 means no cut (leaf node)
     ssize_t cut_feature_index_;
     // A 1D bounding box window that stores the actual dataset values referred to by the indices_range_.
     // The first value in this range represents the minimum value, while the second value represents the maximum value
-    // within the dataset along the chosen dimension for this node.
-    ffcl::bbox::RangeType<SamplesIterator> kd_bounding_box_;
+    // within the dataset along the cut dimension for this node.
+    bbox::RangeType<SamplesIterator> cut_feature_range_;
     // A child node representing the left partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
     KDNodeViewPtr left_;
@@ -67,21 +67,19 @@ struct KDNodeView {
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(
-    const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_range,
-    const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box)
+KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(const bbox::IteratorPairType<IndicesIterator>& indices_range,
+                                                         const bbox::RangeType<SamplesIterator>&        kd_bounding_box)
   : indices_range_{indices_range}
   , cut_feature_index_{-1}
-  , kd_bounding_box_{kd_bounding_box} {}
+  , cut_feature_range_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
-KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(
-    const ffcl::bbox::IteratorPairType<IndicesIterator>& indices_range,
-    ssize_t                                              cut_feature_index,
-    const ffcl::bbox::RangeType<SamplesIterator>&        kd_bounding_box)
+KDNodeView<IndicesIterator, SamplesIterator>::KDNodeView(const bbox::IteratorPairType<IndicesIterator>& indices_range,
+                                                         ssize_t                                 cut_feature_index,
+                                                         const bbox::RangeType<SamplesIterator>& kd_bounding_box)
   : indices_range_{indices_range}
   , cut_feature_index_{cut_feature_index}
-  , kd_bounding_box_{kd_bounding_box} {}
+  , cut_feature_range_{kd_bounding_box} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::is_empty() const {
@@ -145,7 +143,7 @@ void KDNodeView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Writer<r
                                                              const SamplesIterator& samples_range_first,
                                                              const SamplesIterator& samples_range_last,
                                                              std::size_t            n_features) const {
-    using DataType = ffcl::bbox::DataType<SamplesIterator>;
+    using DataType = bbox::DataType<SamplesIterator>;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdnode serialization");

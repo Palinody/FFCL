@@ -20,7 +20,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
     using IndexType    = typename Base<IndicesIterator, DistancesIterator>::IndexType;
     using DistanceType = typename Base<IndicesIterator, DistancesIterator>::DistanceType;
 
-    using HyperRangeType = bbox::HyperRangeType<typename std::vector<DistanceType>::iterator>;
+    using HyperRangeType = datastruct::bbox::HyperRangeType<typename std::vector<DistanceType>::iterator>;
 
     using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
 
@@ -63,7 +63,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
             const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
             if (candidate_nearest_neighbor_index != sample_index_query &&
-                bbox::is_sample_in_kd_bounding_box(
+                datastruct::bbox::is_sample_in_kd_bounding_box(
                     samples_range_first + candidate_nearest_neighbor_index * n_features,
                     samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
                     kd_bounding_box_)) {
@@ -96,7 +96,7 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                 feature_query_range_last,
                 samples_range_first + candidate_nearest_neighbor_index * n_features);
 
-            if (bbox::is_sample_in_kd_bounding_box(
+            if (datastruct::bbox::is_sample_in_kd_bounding_box(
                     samples_range_first + candidate_nearest_neighbor_index * n_features,
                     samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
                     kd_bounding_box_)) {

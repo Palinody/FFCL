@@ -49,7 +49,7 @@ class KDTree {
     using KDNodeViewType = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewType;
     using KDNodeViewPtr  = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr;
 
-    using HyperRangeType = ffcl::bbox::HyperRangeType<SamplesIterator>;
+    using HyperRangeType = bbox::HyperRangeType<SamplesIterator>;
 
     struct Options {
         Options()
@@ -369,7 +369,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
             kdnode->left_->parent_ = kdnode;
 
             // reset the right bound of the bounding box to the current kdnode right bound
-            kd_bounding_box[cut_feature_index].second = kdnode->kd_bounding_box_.second;
+            kd_bounding_box[cut_feature_index].second = kdnode->cut_feature_range_.second;
         }
         {
             // set the left bound of the right child to the cut value
@@ -384,7 +384,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
             kdnode->right_->parent_ = kdnode;
 
             // reset the left bound of the bounding box to the current kdnode left bound
-            kd_bounding_box[cut_feature_index].first = kdnode->kd_bounding_box_.first;
+            kd_bounding_box[cut_feature_index].first = kdnode->cut_feature_range_.first;
         }
     } else {
         kdnode = std::make_shared<KDNodeViewType>(std::make_pair(indices_range_first, indices_range_last),

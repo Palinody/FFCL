@@ -9,9 +9,9 @@ struct SplittingRulePolicy {
     SplittingRulePolicy() = default;
 
     inline virtual std::tuple<std::size_t,
-                              ffcl::bbox::IteratorPairType<IndicesIterator>,
-                              ffcl::bbox::IteratorPairType<IndicesIterator>,
-                              ffcl::bbox::IteratorPairType<IndicesIterator>>
+                              bbox::IteratorPairType<IndicesIterator>,
+                              bbox::IteratorPairType<IndicesIterator>,
+                              bbox::IteratorPairType<IndicesIterator>>
     operator()(IndicesIterator indices_range_first,
                IndicesIterator indices_range_last,
                SamplesIterator samples_range_first,
@@ -23,9 +23,9 @@ struct SplittingRulePolicy {
 template <typename IndicesIterator, typename SamplesIterator>
 struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, SamplesIterator> {
     inline std::tuple<std::size_t,
-                      ffcl::bbox::IteratorPairType<IndicesIterator>,
-                      ffcl::bbox::IteratorPairType<IndicesIterator>,
-                      ffcl::bbox::IteratorPairType<IndicesIterator>>
+                      bbox::IteratorPairType<IndicesIterator>,
+                      bbox::IteratorPairType<IndicesIterator>,
+                      bbox::IteratorPairType<IndicesIterator>>
     operator()(IndicesIterator indices_range_first,
                IndicesIterator indices_range_last,
                SamplesIterator samples_range_first,
@@ -40,9 +40,9 @@ namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::tuple<std::size_t,
-           ffcl::bbox::IteratorPairType<IndicesIterator>,
-           ffcl::bbox::IteratorPairType<IndicesIterator>,
-           ffcl::bbox::IteratorPairType<IndicesIterator>>
+           bbox::IteratorPairType<IndicesIterator>,
+           bbox::IteratorPairType<IndicesIterator>,
+           bbox::IteratorPairType<IndicesIterator>>
 QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(IndicesIterator indices_range_first,
                                                                      IndicesIterator indices_range_last,
                                                                      SamplesIterator samples_range_first,
