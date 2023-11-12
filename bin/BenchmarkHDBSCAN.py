@@ -26,17 +26,17 @@ def read_dataset(filepath: str):
     return np.loadtxt(filepath, dtype=np.float32, delimiter=" ")
 
 
-def TestHDBSCAN(points: np.ndarray, min_samples):
+def TestHDBSCAN(points: np.ndarray, min_samples, min_cluster_size):
     # np.random.shuffle(points)
 
     clustering = hdbscan.HDBSCAN(
-        min_cluster_size=15,
+        min_cluster_size=min_cluster_size,
         min_samples=min_samples,
         cluster_selection_epsilon=0,
         gen_min_span_tree=True,
         approx_min_span_tree=False,
         core_dist_n_jobs=1,
-        allow_single_cluster=True
+        allow_single_cluster=True,
     )
 
     start_time = time.process_time()
@@ -66,19 +66,27 @@ def run_all():
         "unbalanced_blobs.txt",
     ]
 
-    datasets_parameters = [(10), (10), (10), (10), (10), (10), (10)]
+    datasets_parameters = [
+        (10, 15),
+        (10, 15),
+        (10, 15),
+        (10, 15),
+        (10, 15),
+        (10, 15),
+        (10, 15),
+    ]
 
     for filename, dataset_parameters in zip(file_names, datasets_parameters):
         input_path = root_folder + filename
         dataset = read_dataset(input_path)
-        min_samples = dataset_parameters
+        min_samples, min_cluster_size = dataset_parameters
 
         print("---")
         print(f"Dataset name: '{filename}'")
         print(f"Dataset shape: {dataset.shape}")
         print(f"HDBSCAN parameters: MinSamples: {min_samples}")
 
-        TestHDBSCAN(dataset, min_samples=min_samples)
+        TestHDBSCAN(dataset, min_samples, min_cluster_size)
 
 
 if __name__ == "__main__":
