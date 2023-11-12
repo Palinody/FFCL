@@ -87,12 +87,12 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
         distances_.emplace_back(distance_candidate);
     }
 
-    void operator()(const IndicesIterator& indices_range_first,
-                    const IndicesIterator& indices_range_last,
-                    const SamplesIterator& samples_range_first,
-                    const SamplesIterator& samples_range_last,
-                    std::size_t            n_features,
-                    std::size_t            sample_index_query) {
+    void search(const IndicesIterator& indices_range_first,
+                const IndicesIterator& indices_range_last,
+                const SamplesIterator& samples_range_first,
+                const SamplesIterator& samples_range_last,
+                std::size_t            n_features,
+                std::size_t            sample_index_query) {
         common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
@@ -115,13 +115,13 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
         }
     }
 
-    void operator()(const IndicesIterator& indices_range_first,
-                    const IndicesIterator& indices_range_last,
-                    const SamplesIterator& samples_range_first,
-                    const SamplesIterator& samples_range_last,
-                    std::size_t            n_features,
-                    const SamplesIterator& feature_query_range_first,
-                    const SamplesIterator& feature_query_range_last) {
+    void search(const IndicesIterator& indices_range_first,
+                const IndicesIterator& indices_range_last,
+                const SamplesIterator& samples_range_first,
+                const SamplesIterator& samples_range_last,
+                std::size_t            n_features,
+                const SamplesIterator& feature_query_range_first,
+                const SamplesIterator& feature_query_range_last) {
         common::ignore_parameters(samples_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);

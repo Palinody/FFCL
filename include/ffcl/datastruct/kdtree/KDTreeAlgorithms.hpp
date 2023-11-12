@@ -35,7 +35,7 @@ ssize_t select_axis_with_largest_bounding_box_difference(const bbox::HyperRangeT
     // "feature_index"s are only the ones specified in the feature_mask
     for (std::size_t feature_index : feature_mask) {
         const auto max_range_candidate =
-            ffcl::common::abs(kd_bounding_box[feature_index].first - kd_bounding_box[feature_index].second);
+            ffcl::common::abs(kd_bounding_box[feature_index].second - kd_bounding_box[feature_index].first);
 
         if (max_range_candidate > current_max_range) {
             current_max_range_feature_index = feature_index;

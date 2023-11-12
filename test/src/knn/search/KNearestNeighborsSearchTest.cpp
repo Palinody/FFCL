@@ -87,7 +87,7 @@ TYPED_TEST(KNearestNeighborsSearchTestFixture, NearestNeighborsTest) {
     auto new_nn_buffer = nn_buffer;
 
     for (std::size_t i = 0; i < 5; ++i) {
-        new_nn_buffer(
+        new_nn_buffer.search(
             /**/ nn_indices.begin(),
             /**/ nn_indices.end(),
             /**/ data.begin(),

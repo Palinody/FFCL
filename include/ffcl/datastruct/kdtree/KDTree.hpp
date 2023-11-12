@@ -454,12 +454,12 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(std::size
                                                                        BufferType&   buffer,
                                                                        KDNodeViewPtr kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    buffer(kdnode->indices_range_.first,
-           kdnode->indices_range_.second,
-           samples_range_first_,
-           samples_range_last_,
-           n_features_,
-           query_index);
+    buffer.search(kdnode->indices_range_.first,
+                  kdnode->indices_range_.second,
+                  samples_range_first_,
+                  samples_range_last_,
+                  n_features_,
+                  query_index);
 
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {
@@ -652,13 +652,13 @@ KDTree<IndicesIterator, SamplesIterator>::recurse_to_closest_leaf_node(const Sam
                                                                        BufferType&            buffer,
                                                                        KDNodeViewPtr          kdnode) const {
     // update the current k neighbors indices and distances. No op if no candidate is closer or if the ranges are empty
-    buffer(kdnode->indices_range_.first,
-           kdnode->indices_range_.second,
-           samples_range_first_,
-           samples_range_last_,
-           n_features_,
-           query_feature_first,
-           query_feature_last);
+    buffer.search(kdnode->indices_range_.first,
+                  kdnode->indices_range_.second,
+                  samples_range_first_,
+                  samples_range_last_,
+                  n_features_,
+                  query_feature_first,
+                  query_feature_last);
 
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!kdnode->is_leaf()) {

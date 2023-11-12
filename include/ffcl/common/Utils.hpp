@@ -79,8 +79,11 @@ std::vector<TargetType> to_type(const DataIterator& data_range_first, const Data
     }
     // Input is not of type TargetType, convert to TargetType and return the result
     auto result = std::vector<TargetType>(std::distance(data_range_first, data_range_last));
-    std::transform(
-        data_range_first, data_range_last, result.begin(), [](const auto& x) { return static_cast<TargetType>(x); });
+
+    std::transform(data_range_first, data_range_last, result.begin(), [](const auto& data) {
+        return static_cast<TargetType>(data);
+    });
+
     return result;
 }
 
