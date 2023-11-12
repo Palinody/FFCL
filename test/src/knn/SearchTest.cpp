@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ffcl/knn/search/RangeCount.hpp"
+#include "ffcl/knn//Search.hpp"
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -308,13 +308,13 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
-        KNearestNeighborsSearchTest
+        SearchTest
 
         # ---
-        test/src/knn/search/KNearestNeighborsSearchTest.cpp
+        test/src/knn/SearchTest.cpp
     )
     target_link_libraries(
-        KNearestNeighborsSearchTest
+        SearchTest
 
         # PUBLIC
         # TBB::tbb
@@ -323,108 +323,8 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        KNearestNeighborsSearchTest
-        KNearestNeighborsSearchTest
-    )
-
-    add_executable(
-        NearestNeighborSearchTest
-
-        # ---
-        test/src/knn/search/NearestNeighborSearchTest.cpp
-    )
-    target_link_libraries(
-        NearestNeighborSearchTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        NearestNeighborSearchTest
-        NearestNeighborSearchTest
-    )
-
-    add_executable(
-        RadiusCountTest
-
-        # ---
-        test/src/knn/search/RadiusCountTest.cpp
-    )
-    target_link_libraries(
-        RadiusCountTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        RadiusCountTest
-        RadiusCountTest
-    )
-
-    add_executable(
-        RadiusSearchTest
-
-        # ---
-        test/src/knn/search/RadiusSearchTest.cpp
-    )
-    target_link_libraries(
-        RadiusSearchTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        RadiusSearchTest
-        RadiusSearchTest
-    )
-
-    add_executable(
-        RangeCountTest
-
-        # ---
-        test/src/knn/search/RangeCountTest.cpp
-    )
-    target_link_libraries(
-        RangeCountTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        RangeCountTest
-        RangeCountTest
-    )
-
-    add_executable(
-        RangeSearchTest
-
-        # ---
-        test/src/knn/search/RangeSearchTest.cpp
-    )
-    target_link_libraries(
-        RangeSearchTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        RangeSearchTest
-        RangeSearchTest
+        SearchTest
+        SearchTest
     )
 
     add_executable(

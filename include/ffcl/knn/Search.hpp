@@ -9,75 +9,22 @@
 
 namespace ffcl::knn::count {
 
-/*
-template <typename IndicesIterator, typename SamplesIterator>
-void increment_neighbors_count_in_radius(const IndicesIterator&                         indices_range_first,
-                                         const IndicesIterator&                         indices_range_last,
-                                         const SamplesIterator&                         samples_range_first,
-                                         const SamplesIterator&                         samples_range_last,
-                                         std::size_t                                    n_features,
-                                         std::size_t                                    sample_index_query,
-                                         count::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::ignore_parameters(samples_range_last);
-
-    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
-    for (std::size_t index = 0; index < n_samples; ++index) {
-        const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
-
-        if (candidate_nearest_neighbor_index != sample_index_query) {
-            const auto candidate_nearest_neighbor_distance =
-                common::math::heuristics::auto_distance(samples_range_first + sample_index_query * n_features,
-                                                samples_range_first + sample_index_query * n_features + n_features,
-                                                samples_range_first + candidate_nearest_neighbor_index * n_features);
-
-            buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
-        }
-    }
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-void increment_neighbors_count_in_radius(const IndicesIterator&                         indices_range_first,
-                                         const IndicesIterator&                         indices_range_last,
-                                         const SamplesIterator&                         samples_range_first,
-                                         const SamplesIterator&                         samples_range_last,
-                                         std::size_t                                    n_features,
-                                         const SamplesIterator&                         feature_query_range_first,
-                                         const SamplesIterator&                         feature_query_range_last,
-                                         count::Base<IndicesIterator, SamplesIterator>& buffer) {
-    common::ignore_parameters(samples_range_last);
-
-    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
-    for (std::size_t index = 0; index < n_samples; ++index) {
-        const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
-
-        const auto candidate_nearest_neighbor_distance =
-            common::math::heuristics::auto_distance(feature_query_range_first,
-                                            feature_query_range_last,
-                                            samples_range_first + candidate_nearest_neighbor_index * n_features);
-
-        buffer.update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
-    }
-}
-*/
-
-template <typename KDTreePtr>
+template <typename IndexerPtr>
 class SingleTreeTraverser {
   public:
-    using IndexType           = typename KDTreePtr::element_type::IndexType;
-    using DataType            = typename KDTreePtr::element_type::DataType;
-    using IndicesIteratorType = typename KDTreePtr::element_type::IndicesIteratorType;
-    using SamplesIteratorType = typename KDTreePtr::element_type::SamplesIteratorType;
+    using IndexType           = typename IndexerPtr::element_type::IndexType;
+    using DataType            = typename IndexerPtr::element_type::DataType;
+    using IndicesIteratorType = typename IndexerPtr::element_type::IndicesIteratorType;
+    using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
 
-    using KDNodeViewPtr = typename KDTreePtr::element_type::KDNodeViewPtr;
+    using KDNodeViewPtr = typename IndexerPtr::element_type::KDNodeViewPtr;
 
-    SingleTreeTraverser(KDTreePtr query_kdtree_ptr)
-      : query_kdtree_ptr_{query_kdtree_ptr} {}
+    SingleTreeTraverser(IndexerPtr query_indexer_ptr)
+      : query_indexer_ptr_{query_indexer_ptr} {}
 
     template <typename BufferType>
     BufferType operator()(std::size_t query_index, BufferType& buffer) {
-        single_tree_traversal(query_index, buffer, query_kdtree_ptr_->root());
+        single_tree_traversal(query_index, buffer, query_indexer_ptr_->root());
         return buffer;
     }
 
@@ -85,7 +32,7 @@ class SingleTreeTraverser {
     BufferType operator()(const SamplesIteratorType& query_feature_first,
                           const SamplesIteratorType& query_feature_last,
                           BufferType&                buffer) {
-        single_tree_traversal(query_feature_first, query_feature_last, buffer, query_kdtree_ptr_->root());
+        single_tree_traversal(query_feature_first, query_feature_last, buffer, query_indexer_ptr_->root());
         return buffer;
     }
 
@@ -113,21 +60,21 @@ class SingleTreeTraverser {
 
     template <typename BufferType>
     auto recurse_to_closest_leaf_node(std::size_t query_index, BufferType& buffer, const KDNodeViewPtr& node) {
-        buffer(node->indices_range_.first,
-               node->indices_range_.second,
-               query_kdtree_ptr_->begin(),
-               query_kdtree_ptr_->end(),
-               query_kdtree_ptr_->n_features(),
-               query_index);
+        buffer.search(node->indices_range_.first,
+                      node->indices_range_.second,
+                      query_indexer_ptr_->begin(),
+                      query_indexer_ptr_->end(),
+                      query_indexer_ptr_->n_features(),
+                      query_index);
 
         // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
         if (!node->is_leaf()) {
             // get the pivot sample index in the dataset
             const auto pivot_index = node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][node->cut_feature_index_];
+            const auto pivot_split_value = (*query_indexer_ptr_)[pivot_index][node->cut_feature_index_];
             // get the value of the query according to the split dimension
-            const auto query_split_value = (*query_kdtree_ptr_)[query_index][node->cut_feature_index_];
+            const auto query_split_value = (*query_indexer_ptr_)[query_index][node->cut_feature_index_];
 
             // traverse either the left or right child node depending on where the target sample is located relatively
             // to the cut value
@@ -156,9 +103,9 @@ class SingleTreeTraverser {
             // get the pivot sample index in the dataset
             const auto pivot_index = parent_node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][parent_node->cut_feature_index_];
+            const auto pivot_split_value = (*query_indexer_ptr_)[pivot_index][parent_node->cut_feature_index_];
             // get the value of the query according to the split dimension
-            const auto query_split_value = (*query_kdtree_ptr_)[query_index][parent_node->cut_feature_index_];
+            const auto query_split_value = (*query_indexer_ptr_)[query_index][parent_node->cut_feature_index_];
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
             // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
             // put to the right
@@ -215,20 +162,20 @@ class SingleTreeTraverser {
                                       const SamplesIteratorType& query_feature_last,
                                       BufferType&                buffer,
                                       const KDNodeViewPtr&       node) {
-        buffer(node->indices_range_.first,
-               node->indices_range_.second,
-               query_kdtree_ptr_->begin(),
-               query_kdtree_ptr_->end(),
-               query_kdtree_ptr_->n_features(),
-               query_feature_first,
-               query_feature_last);
+        buffer.search(node->indices_range_.first,
+                      node->indices_range_.second,
+                      query_indexer_ptr_->begin(),
+                      query_indexer_ptr_->end(),
+                      query_indexer_ptr_->n_features(),
+                      query_feature_first,
+                      query_feature_last);
 
         // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
         if (!node->is_leaf()) {
             // get the pivot sample index in the dataset
             const auto pivot_index = node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][node->cut_feature_index_];
+            const auto pivot_split_value = (*query_indexer_ptr_)[pivot_index][node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = query_feature_first[node->cut_feature_index_];
 
@@ -262,7 +209,7 @@ class SingleTreeTraverser {
             // get the pivot sample index in the dataset
             const auto pivot_index = parent_node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = (*query_kdtree_ptr_)[pivot_index][parent_node->cut_feature_index_];
+            const auto pivot_split_value = (*query_indexer_ptr_)[pivot_index][parent_node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = query_feature_first[parent_node->cut_feature_index_];
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
@@ -291,16 +238,16 @@ class SingleTreeTraverser {
         return parent_node;
     }
 
-    KDTreePtr query_kdtree_ptr_;
+    IndexerPtr query_indexer_ptr_;
 };
 
-template <typename KDTreePtr, typename BufferType>
+template <typename IndexerPtr, typename BufferType>
 class Searcher {
   public:
-    using IndexType           = typename KDTreePtr::element_type::IndexType;
-    using DataType            = typename KDTreePtr::element_type::DataType;
-    using IndicesIteratorType = typename KDTreePtr::element_type::IndicesIteratorType;
-    using SamplesIteratorType = typename KDTreePtr::element_type::SamplesIteratorType;
+    using IndexType           = typename IndexerPtr::element_type::IndexType;
+    using DataType            = typename IndexerPtr::element_type::DataType;
+    using IndicesIteratorType = typename IndexerPtr::element_type::IndicesIteratorType;
+    using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
 
   private:
     static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIteratorType, SamplesIteratorType>, BufferType> ||
@@ -309,21 +256,21 @@ class Searcher {
                   "knn::count::Base<IndicesIteratorType, SamplesIteratorType>");
 
   public:
-    Searcher(KDTreePtr query_kdtree_ptr, const BufferType& buffer)
-      : query_kdtree_ptr_{query_kdtree_ptr}
+    Searcher(IndexerPtr query_indexer_ptr, const BufferType& buffer)
+      : query_indexer_ptr_{query_indexer_ptr}
       , buffer_{buffer} {}
 
     BufferType operator()(std::size_t query_index) {
-        return SingleTreeTraverser(query_kdtree_ptr_)(query_index, buffer_);
+        return SingleTreeTraverser(query_indexer_ptr_)(query_index, buffer_);
     }
 
     BufferType operator()(const SamplesIteratorType& query_feature_first,
                           const SamplesIteratorType& query_feature_last) {
-        return SingleTreeTraverser(query_kdtree_ptr_)(query_feature_first, query_feature_last, buffer_);
+        return SingleTreeTraverser(query_indexer_ptr_)(query_feature_first, query_feature_last, buffer_);
     }
 
   private:
-    KDTreePtr  query_kdtree_ptr_;
+    IndexerPtr query_indexer_ptr_;
     BufferType buffer_;
 };
 
