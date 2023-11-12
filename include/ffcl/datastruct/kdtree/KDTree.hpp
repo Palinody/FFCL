@@ -13,15 +13,9 @@
 #include "ffcl/knn/buffer/Singleton.hpp"
 #include "ffcl/knn/buffer/Unsorted.hpp"
 
+#include "ffcl/knn/count/Base.hpp"
 #include "ffcl/knn/count/Radius.hpp"
 #include "ffcl/knn/count/Range.hpp"
-
-#include "ffcl/knn/search/KNearestNeighborsSearch.hpp"
-// #include "ffcl/knn/search/NearestNeighborSearch.hpp"
-#include "ffcl/knn/search/RadiusCount.hpp"
-// #include "ffcl/knn/search/RadiusSearch.hpp"
-#include "ffcl/knn/search/RangeCount.hpp"
-// #include "ffcl/knn/search/RangeSearch.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>

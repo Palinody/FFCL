@@ -8,39 +8,40 @@
 
 namespace ffcl::mst {
 
-template <typename IndexType, typename ValueType>
-using Edge = std::tuple<IndexType, IndexType, ValueType>;
+template <typename Index, typename Value>
+using Edge = std::tuple<Index, Index, Value>;
 
-template <typename IndexType, typename ValueType>
-using MinimumSpanningTree = std::vector<Edge<IndexType, ValueType>>;
+template <typename Index, typename Value>
+using MinimumSpanningTree = std::vector<Edge<Index, Value>>;
 
-template <typename IndexType, typename ValueType>
-auto sort(MinimumSpanningTree<IndexType, ValueType>&& mst) {
-    auto comparator = [](const Edge<IndexType, ValueType>& lhs, const Edge<IndexType, ValueType>& rhs) {
-        return std::get<2>(lhs) < std::get<2>(rhs);
+template <typename Index, typename Value>
+auto sort(MinimumSpanningTree<Index, Value>&& mst) {
+    auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
+        return std::get<2>(edge_1) < std::get<2>(edge_2);
     };
 
-    std::sort(mst.begin(), mst.end(), comparator);
+    std::sort(mst.begin(), mst.end(), edge_comparator);
 
     return mst;
 }
 
-template <typename IndexType, typename ValueType>
-auto sort_copy(const MinimumSpanningTree<IndexType, ValueType>& mst) {
+template <typename Index, typename Value>
+auto sort_copy(const MinimumSpanningTree<Index, Value>& mst) {
     auto mst_copy = mst;
 
-    auto comparator = [](const Edge<IndexType, ValueType>& lhs, const Edge<IndexType, ValueType>& rhs) {
-        return std::get<2>(lhs) < std::get<2>(rhs);
+    auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
+        return std::get<2>(edge_1) < std::get<2>(edge_2);
     };
 
-    std::sort(mst_copy.begin(), mst_copy.end(), comparator);
+    std::sort(mst_copy.begin(), mst_copy.end(), edge_comparator);
 
     return mst_copy;
 }
 
-template <typename IndexType, typename ValueType>
-void print(const MinimumSpanningTree<IndexType, ValueType>& mst) {
+template <typename Index, typename Value>
+void print(const MinimumSpanningTree<Index, Value>& mst) {
     std::cout << "Minimum Spanning Tree (MST):\n";
+
     for (const auto& edge : mst) {
         std::cout << "(" << std::get<0>(edge) << ", " << std::get<1>(edge) << ", " << std::get<2>(edge) << "), \n";
     }
