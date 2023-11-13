@@ -1,6 +1,4 @@
-#pragma once
-
-#include "ffcl/knn/buffer/Base.hpp"
+#include "ffcl/search/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
@@ -8,12 +6,11 @@
 #include <iostream>
 #include <stdexcept>  // std::runtime_error
 #include <tuple>
-#include <vector>
 
-namespace ffcl::knn::buffer {
+namespace ffcl::search::buffer {
 
 template <typename IndicesIterator, typename DistancesIterator>
-class Radius : public Base<IndicesIterator, DistancesIterator> {
+class Singleton : public Base<IndicesIterator, DistancesIterator> {
   public:
     using IndexType     = typename Base<IndicesIterator, DistancesIterator>::IndexType;
     using DistanceType  = typename Base<IndicesIterator, DistancesIterator>::DistanceType;
@@ -22,35 +19,29 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
 
     using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
 
-    explicit Radius(const DistanceType& radius)
-      : Radius(radius, {}, {}) {}
-
-    explicit Radius(const DistanceType&  radius,
-                    const IndicesType&   init_neighbors_indices,
-                    const DistancesType& init_neighbors_distances)
-      : radius_{radius}
-      , indices_{init_neighbors_indices}
-      , distances_{init_neighbors_distances} {}
+    Singleton()
+      : index_{common::infinity<IndexType>()}
+      , distance_{common::infinity<DistanceType>()} {}
 
     std::size_t size() const {
-        return indices_.size();
+        return common::equality(index_, common::infinity<IndexType>()) ? 0 : 1;
     }
 
     std::size_t n_free_slots() const {
-        return common::infinity<IndexType>();
+        return common::equality(index_, common::infinity<IndexType>()) ? 1 : 0;
     }
 
     bool empty() const {
-        return indices_.empty();
+        return common::equality(index_, common::infinity<IndexType>());
     }
 
     IndexType upper_bound_index() const {
-        throw std::runtime_error("No furthest index to return for this type of buffer.");
-        return IndexType{};
+        assert(common::inequality(index_, common::infinity<IndexType>()));
+        return index_;
     }
 
     DistanceType upper_bound() const {
-        return radius_;
+        return distance_;
     }
 
     DistanceType upper_bound(const IndexType& feature_index) const {
@@ -59,29 +50,33 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
     }
 
     IndicesType indices() const {
-        return indices_;
+        return IndicesType{index_};
     }
 
     DistancesType distances() const {
-        return distances_;
+        return DistancesType{distance_};
     }
 
     IndicesType move_indices() {
-        return std::move(indices_);
+        return this->indices();
     }
 
     DistancesType move_distances() {
-        return std::move(distances_);
+        return this->distances();
     }
 
     std::tuple<IndicesType, DistancesType> move_data_to_indices_distances_pair() {
-        return std::make_tuple(std::move(indices_), std::move(distances_));
+        return std::make_tuple(this->indices(), this->distances());
+    }
+
+    auto closest_neighbor_index_distance_pair() {
+        return std::make_pair(index_, distance_);
     }
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         if (distance_candidate < this->upper_bound()) {
-            indices_.emplace_back(index_candidate);
-            distances_.emplace_back(distance_candidate);
+            index_    = index_candidate;
+            distance_ = distance_candidate;
         }
     }
 
@@ -96,15 +91,15 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t index = 0; index < n_samples; ++index) {
-            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+            const std::size_t candidate_in_bounds_index = indices_range_first[index];
 
-            if (candidate_nearest_neighbor_index != sample_index_query) {
-                const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
+            if (candidate_in_bounds_index != sample_index_query) {
+                const auto candidate_in_bounds_distance = common::math::heuristics::auto_distance(
                     samples_range_first + sample_index_query * n_features,
                     samples_range_first + sample_index_query * n_features + n_features,
-                    samples_range_first + candidate_nearest_neighbor_index * n_features);
+                    samples_range_first + candidate_in_bounds_index * n_features);
 
-                this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+                this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
             }
         }
     }
@@ -121,27 +116,24 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t index = 0; index < n_samples; ++index) {
-            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+            const std::size_t candidate_in_bounds_index = indices_range_first[index];
 
-            const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
-                feature_query_range_first,
-                feature_query_range_last,
-                samples_range_first + candidate_nearest_neighbor_index * n_features);
+            const auto candidate_in_bounds_distance =
+                common::math::heuristics::auto_distance(feature_query_range_first,
+                                                        feature_query_range_last,
+                                                        samples_range_first + candidate_in_bounds_index * n_features);
 
-            this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+            this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
         }
     }
 
     void print() const {
-        for (std::size_t index = 0; index < std::min(indices_.size(), distances_.size()); ++index) {
-            std::cout << "(" << indices_[index] << ", " << distances_[index] << ")\n";
-        }
+        std::cout << "(" << index_ << ", " << distance_ << ")\n";
     }
 
   private:
-    DistanceType  radius_;
-    IndicesType   indices_;
-    DistancesType distances_;
+    IndexType    index_;
+    DistanceType distance_;
 };
 
-}  // namespace ffcl::knn::buffer
+}  // namespace ffcl::search::buffer

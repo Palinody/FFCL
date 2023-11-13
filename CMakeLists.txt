@@ -36,11 +36,11 @@ set(HEADER_FILES
     include/ffcl/kmedoids/PAMUtils.hpp
     include/ffcl/kmedoids/PAMBuild.hpp
 
-    include/ffcl/knn/buffer/Base.hpp
-    include/ffcl/knn/buffer/Sorted.hpp
-    include/ffcl/knn/buffer/Unsorted.hpp
-    include/ffcl/knn/buffer/WithMemory.hpp
-    include/ffcl/knn/buffer/WithUnionFind.hpp
+    include/ffcl/search/buffer/Base.hpp
+    include/ffcl/search/buffer/Sorted.hpp
+    include/ffcl/search/buffer/Unsorted.hpp
+    include/ffcl/search/buffer/WithMemory.hpp
+    include/ffcl/search/buffer/WithUnionFind.hpp
 
     include/ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp
     include/ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp
@@ -211,7 +211,7 @@ elseif(MODE STREQUAL "gtest")
         SingletonTest
 
         # ---
-        test/src/knn/buffer/SingletonTest.cpp
+        test/src/search/buffer/SingletonTest.cpp
     )
     target_link_libraries(
         SingletonTest
@@ -231,7 +231,7 @@ elseif(MODE STREQUAL "gtest")
         SortedTest
 
         # ---
-        test/src/knn/buffer/SortedTest.cpp
+        test/src/search/buffer/SortedTest.cpp
     )
     target_link_libraries(
         SortedTest
@@ -251,7 +251,7 @@ elseif(MODE STREQUAL "gtest")
         UnsortedTest
 
         # ---
-        test/src/knn/buffer/UnsortedTest.cpp
+        test/src/search/buffer/UnsortedTest.cpp
     )
     target_link_libraries(
         UnsortedTest
@@ -271,7 +271,7 @@ elseif(MODE STREQUAL "gtest")
         WithMemoryTest
 
         # ---
-        test/src/knn/buffer/WithMemoryTest.cpp
+        test/src/search/buffer/WithMemoryTest.cpp
     )
     target_link_libraries(
         WithMemoryTest
@@ -291,7 +291,7 @@ elseif(MODE STREQUAL "gtest")
         WithUnionFindTest
 
         # ---
-        test/src/knn/buffer/WithUnionFindTest.cpp
+        test/src/search/buffer/WithUnionFindTest.cpp
     )
     target_link_libraries(
         WithUnionFindTest
@@ -311,7 +311,7 @@ elseif(MODE STREQUAL "gtest")
         SearchTest
 
         # ---
-        test/src/knn/SearchTest.cpp
+        test/src/search/SearchTest.cpp
     )
     target_link_libraries(
         SearchTest

@@ -4,10 +4,10 @@
 
 #include "ffcl/common/math/heuristics/Distances.hpp"
 
-#include "ffcl/knn/buffer/Base.hpp"
-#include "ffcl/knn/count/Base.hpp"
+#include "ffcl/search/buffer/Base.hpp"
+#include "ffcl/search/count/Base.hpp"
 
-namespace ffcl::knn {
+namespace ffcl::search {
 
 template <typename IndexerPtr>
 class SingleTreeTraverser {
@@ -248,10 +248,10 @@ class Searcher {
     using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
 
   private:
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIteratorType, SamplesIteratorType>, Buffer> ||
-                      std::is_base_of_v<knn::count::Base<IndicesIteratorType, SamplesIteratorType>, Buffer>,
-                  "Buffer must inherit from knn::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
-                  "knn::count::Base<IndicesIteratorType, SamplesIteratorType>");
+    static_assert(std::is_base_of_v<search::buffer::Base<IndicesIteratorType, SamplesIteratorType>, Buffer> ||
+                      std::is_base_of_v<search::count::Base<IndicesIteratorType, SamplesIteratorType>, Buffer>,
+                  "Buffer must inherit from search::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
+                  "search::count::Base<IndicesIteratorType, SamplesIteratorType>");
 
   public:
     Searcher(IndexerPtr query_indexer_ptr, const Buffer& buffer)
@@ -271,4 +271,4 @@ class Searcher {
     Buffer                          buffer_;
 };
 
-}  // namespace ffcl::knn
+}  // namespace ffcl::search

@@ -6,7 +6,7 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
-#include "ffcl/knn/buffer/WithUnionFind.hpp"
+#include "ffcl/search/buffer/WithUnionFind.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -248,7 +248,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const Indexer& indexer, Forest&
 
         // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
         // other components using the UnionFind data structure
-        auto nn_buffer = knn::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
+        auto nn_buffer = search::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
             forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {
@@ -292,7 +292,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const Indexer&               in
 
         // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
         // other components using the UnionFind data structure
-        auto nn_buffer = knn::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
+        auto nn_buffer = search::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
             forest.get_union_find_const_reference(), component_representative, 1);
 
         for (const auto& sample_index : component) {
@@ -344,7 +344,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const Indexer& i
 
     // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
     // other components using the UnionFind data structure
-    auto nn_buffer = knn::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
+    auto nn_buffer = search::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
         forest.get_union_find_const_reference(), smallest_component_representative, 1);
 
     for (const auto& sample_index : smallest_component) {
@@ -388,7 +388,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const Indexer&  
 
     // initialize a nearest neighbor buffer to compare the sample_index with other sample indices from
     // other components using the UnionFind data structure
-    auto nn_buffer = knn::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
+    auto nn_buffer = search::buffer::WithUnionFind<IndicesIteratorType, SamplesIteratorType>(
         forest.get_union_find_const_reference(), smallest_component_representative, 1);
 
     for (const auto& sample_index : smallest_component) {

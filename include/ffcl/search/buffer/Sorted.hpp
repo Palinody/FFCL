@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/knn/buffer/Base.hpp"
+#include "ffcl/search/buffer/Base.hpp"
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
@@ -10,7 +10,7 @@
 #include <iostream>
 #include <vector>
 
-namespace ffcl::knn::buffer {
+namespace ffcl::search::buffer {
 
 /**
  * @brief A sorted version of NearestNeighborsBuffer using std::lower_bound
@@ -109,16 +109,14 @@ class Sorted : public Base<IndicesIterator, DistancesIterator> {
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t index = 0; index < n_samples; ++index) {
-            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+            const std::size_t candidate_in_bounds_index = indices_range_first[index];
 
-            if (candidate_nearest_neighbor_index != sample_index_query) {
-                const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
-                    samples_range_first + sample_index_query * n_features,
-                    samples_range_first + sample_index_query * n_features + n_features,
-                    samples_range_first + candidate_nearest_neighbor_index * n_features);
+            const auto candidate_in_bounds_distance = common::math::heuristics::auto_distance(
+                samples_range_first + sample_index_query * n_features,
+                samples_range_first + sample_index_query * n_features + n_features,
+                samples_range_first + candidate_in_bounds_index * n_features);
 
-                this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
-            }
+            this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
         }
     }
 
@@ -134,14 +132,14 @@ class Sorted : public Base<IndicesIterator, DistancesIterator> {
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t index = 0; index < n_samples; ++index) {
-            const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
+            const std::size_t candidate_in_bounds_index = indices_range_first[index];
 
-            const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
-                feature_query_range_first,
-                feature_query_range_last,
-                samples_range_first + candidate_nearest_neighbor_index * n_features);
+            const auto candidate_in_bounds_distance =
+                common::math::heuristics::auto_distance(feature_query_range_first,
+                                                        feature_query_range_last,
+                                                        samples_range_first + candidate_in_bounds_index * n_features);
 
-            this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
+            this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
         }
     }
 
@@ -157,4 +155,4 @@ class Sorted : public Base<IndicesIterator, DistancesIterator> {
     IndexType     max_capacity_;
 };
 
-}  // namespace ffcl::knn::buffer
+}  // namespace ffcl::search::buffer

@@ -24,7 +24,7 @@ VERBOSE = True
 # processing on input data
 SCALE_MULTIPLIER = 10
 SHIFT = 0
-TYPE = np.float32
+DATA_TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
 n_samples = 1000
@@ -134,14 +134,14 @@ datasets_params = [
 
 def normalize_dataset(inputs, labels, scale=1, shift=0):
     # normalize dataset for easier parameter selection
-    inputs = (StandardScaler().fit_transform(inputs) * scale + shift).astype(TYPE)
+    inputs = (StandardScaler().fit_transform(inputs) * scale + shift).astype(DATA_TYPE)
     labels = labels.reshape(-1, 1).astype(np.int64)
     return inputs, labels
 
 
 def normalize_mnist(inputs, labels):
     # normalize dataset for easier parameter selection
-    inputs = MinMaxScaler(feature_range=(0, 1)).fit_transform(inputs).astype(TYPE)
+    inputs = MinMaxScaler(feature_range=(0, 1)).fit_transform(inputs).astype(DATA_TYPE)
     labels = labels.reshape(-1, 1).astype(np.int64)
     return inputs, labels
 
@@ -150,7 +150,9 @@ def normalize_dataset_with_imbalances(inputs):
     ratio1 = 0.3333
     ratio2 = 0.0666
     ratio3 = 0.01
-    X = (StandardScaler().fit_transform(inputs) * SCALE_MULTIPLIER + SHIFT).astype(TYPE)
+    X = (StandardScaler().fit_transform(inputs) * SCALE_MULTIPLIER + SHIFT).astype(
+        DATA_TYPE
+    )
     X_filtered = np.vstack(
         (
             X[y == 0][: int(n_samples * ratio1), :],

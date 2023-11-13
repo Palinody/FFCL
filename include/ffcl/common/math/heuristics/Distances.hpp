@@ -13,8 +13,8 @@
 namespace ffcl::common::math::heuristics {
 
 template <typename FeaturesIterator>
-auto squared_euclidean_distance_at_origin(const FeaturesIterator& features_range_first,
-                                          const FeaturesIterator& features_range_last)
+auto squared_euclidean_distance_from_origin(const FeaturesIterator& features_range_first,
+                                            const FeaturesIterator& features_range_last)
     -> decltype(std::declval<typename FeaturesIterator::value_type>() *
                 std::declval<typename FeaturesIterator::value_type>()) {
     static_assert(std::is_floating_point_v<typename FeaturesIterator::value_type>, "Input must be float.");
@@ -53,9 +53,9 @@ auto squared_euclidean_distance(const LeftFeaturesIterator&  left_features_range
 }
 
 template <typename FeaturesIterator>
-auto euclidean_distance_at_origin(const FeaturesIterator& features_range_first,
-                                  const FeaturesIterator& features_range_last) {
-    return std::sqrt(squared_euclidean_distance_at_origin(features_range_first, features_range_last));
+auto euclidean_distance_from_origin(const FeaturesIterator& features_range_first,
+                                    const FeaturesIterator& features_range_last) {
+    return std::sqrt(squared_euclidean_distance_from_origin(features_range_first, features_range_last));
 }
 
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
@@ -67,8 +67,8 @@ auto euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
 }
 
 template <typename FeaturesIterator>
-auto manhattan_distance_at_origin(const FeaturesIterator& features_range_first,
-                                  const FeaturesIterator& features_range_last)
+auto manhattan_distance_from_origin(const FeaturesIterator& features_range_first,
+                                    const FeaturesIterator& features_range_last)
     -> decltype(std::declval<typename FeaturesIterator::value_type>()) {
     static_assert(std::is_signed<typename FeaturesIterator::value_type>::value, "Input must be signed.");
 
@@ -102,8 +102,8 @@ auto manhattan_distance(const LeftFeaturesIterator&  left_features_range_first,
 }
 
 template <typename FeaturesIterator>
-auto unsigned_manhattan_distance_at_origin(const FeaturesIterator& features_range_first,
-                                           const FeaturesIterator& features_range_last)
+auto unsigned_manhattan_distance_from_origin(const FeaturesIterator& features_range_first,
+                                             const FeaturesIterator& features_range_last)
     -> decltype(std::declval<typename FeaturesIterator::value_type>()) {
     static_assert(std::is_signed<typename FeaturesIterator::value_type>::value, "Input must be signed.");
 
@@ -202,24 +202,24 @@ std::size_t levenshtein_distance(const LeftFeaturesIterator&  left_features_rang
 }
 
 template <typename FeaturesIterator>
-auto auto_distance_at_origin(const FeaturesIterator& features_range_first,
-                             const FeaturesIterator& features_range_last) {
+auto auto_distance_from_origin(const FeaturesIterator& features_range_first,
+                               const FeaturesIterator& features_range_last) {
     using FeatureType = typename FeaturesIterator::value_type;
 
     if constexpr (std::is_floating_point_v<FeatureType>) {
-        return euclidean_distance_at_origin(features_range_first, features_range_last);
+        return euclidean_distance_from_origin(features_range_first, features_range_last);
 
     } else if constexpr (std::is_signed_v<FeatureType>) {
-        return manhattan_distance_at_origin(features_range_first, features_range_last);
+        return manhattan_distance_from_origin(features_range_first, features_range_last);
 
     } else if constexpr (std::is_unsigned_v<FeatureType>) {
-        return unsigned_manhattan_distance_at_origin(features_range_first, features_range_last);
+        return unsigned_manhattan_distance_from_origin(features_range_first, features_range_last);
 
     } else {
 #if defined(VERBOSE) && VERBOSE == true
         std::cout << "[WARN] requested type for auto_distance not handled. Using default: euclidean.\n";
 #endif
-        return euclidean_distance_at_origin(features_range_first, features_range_last);
+        return euclidean_distance_from_origin(features_range_first, features_range_last);
     }
 }
 

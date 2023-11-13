@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ffcl/knn//Search.hpp"
+#include "ffcl/search/buffer/Singleton.hpp"
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

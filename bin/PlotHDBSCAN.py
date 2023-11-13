@@ -16,6 +16,8 @@ except:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "hdbscan"])
     import hdbscan
 
+from MakeClusteringDatasets import DATA_TYPE
+
 
 def plot_predictions(datapath, filename, axis=None):
     standalone_plot = axis is None
@@ -27,7 +29,7 @@ def plot_predictions(datapath, filename, axis=None):
 
     data = IO.auto_decode(
         datapath + "inputs/" + filename + ".txt",
-        dtype=np.float32,
+        dtype=DATA_TYPE,
         n_features=n_features,
     )
 
@@ -82,15 +84,9 @@ def plot_hdbscan_predictions(datapath, filename, axis=None):
 
     data = IO.auto_decode(
         datapath + "inputs/" + filename + ".txt",
-        dtype=np.float32,
+        dtype=DATA_TYPE,
         n_features=n_features,
-    ).astype(np.float32)
-
-    mst = IO.auto_decode(
-        datapath + "predictions/" + filename + ".txt",
-        dtype=np.float32,
-        n_features=3,
-    )
+    ).astype(DATA_TYPE)
 
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=20,
@@ -100,6 +96,7 @@ def plot_hdbscan_predictions(datapath, filename, axis=None):
         approx_min_span_tree=True,
         core_dist_n_jobs=1,
         allow_single_cluster=True,
+        metric="manhattan" if DATA_TYPE == np.int32 else "euclidean",
     )
     predictions = clusterer.fit_predict(data)
 

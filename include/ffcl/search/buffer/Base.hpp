@@ -6,7 +6,7 @@
 #include <tuple>
 #include <vector>
 
-namespace ffcl::knn::buffer {
+namespace ffcl::search::buffer {
 
 template <typename IndicesIterator, typename DistancesIterator>
 class Base {
@@ -62,4 +62,4 @@ class Base {
     virtual void print() const = 0;
 };
 
-}  // namespace ffcl::knn::buffer
+}  // namespace ffcl::search::buffer

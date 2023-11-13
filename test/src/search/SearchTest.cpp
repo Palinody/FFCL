@@ -4,8 +4,11 @@
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
-#include "ffcl/knn/Search.hpp"
-#include "ffcl/knn/buffer/Unsorted.hpp"
+
+#include "ffcl/search/Search.hpp"
+#include "ffcl/search/buffer/Radius.hpp"
+#include "ffcl/search/buffer/Range.hpp"
+#include "ffcl/search/buffer/Unsorted.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -119,7 +122,7 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
 }
 
 TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
-    fs::path filename = "noisy_circles.txt";
+    fs::path filename = "no_structure.txt";
 
     using IndexType = std::size_t;
     using ValueType = dType;
@@ -151,12 +154,15 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
                                                          .axis_selection_policy(AxisSelectionPolicyType())
                                                          .splitting_rule_policy(SplittingRulePolicyType()));
 
-    // auto buffer = ffcl::knn::buffer::Unsorted<IndicesIterator, SamplesIterator>(100);
-    auto buffer = ffcl::knn::buffer::Range<IndicesIterator, SamplesIterator>({{-10, 10}, {-2.5, 5}});
+    // auto buffer = ffcl::search::buffer::Unsorted<IndicesIterator, SamplesIterator>(100);
+    // auto buffer = ffcl::search::buffer::Range<IndicesIterator, SamplesIterator>({{-10, 10}, {-2.5, 5}});
+    auto buffer = ffcl::search::buffer::Radius<IndicesIterator, SamplesIterator>(5);
 
-    auto searcher = ffcl::knn::Searcher(indexer_ptr, buffer);
+    auto searcher = ffcl::search::Searcher(indexer_ptr, buffer);
 
-    const auto returned_indices = searcher(n_samples / 2).indices();
+    auto query = std::vector<ValueType>({0.5, 0.5});
+
+    const auto returned_indices = searcher(query.begin(), query.end()).indices();
 
     auto predictions = std::vector<IndexType>(n_samples);
 

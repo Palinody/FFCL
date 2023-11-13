@@ -7,15 +7,15 @@
 
 #include "ffcl/common/math/random/Distributions.hpp"
 
-#include "ffcl/knn/buffer/Base.hpp"
-#include "ffcl/knn/buffer/Radius.hpp"
-#include "ffcl/knn/buffer/Range.hpp"
-#include "ffcl/knn/buffer/Singleton.hpp"
-#include "ffcl/knn/buffer/Unsorted.hpp"
+#include "ffcl/search/buffer/Base.hpp"
+#include "ffcl/search/buffer/Radius.hpp"
+#include "ffcl/search/buffer/Range.hpp"
+#include "ffcl/search/buffer/Singleton.hpp"
+#include "ffcl/search/buffer/Unsorted.hpp"
 
-#include "ffcl/knn/count/Base.hpp"
-#include "ffcl/knn/count/Radius.hpp"
-#include "ffcl/knn/count/Range.hpp"
+#include "ffcl/search/count/Base.hpp"
+#include "ffcl/search/count/Radius.hpp"
+#include "ffcl/search/count/Range.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
@@ -395,7 +395,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
 
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_index(std::size_t query_index) const {
-    auto buffer = knn::buffer::Singleton<IndicesIterator, SamplesIterator>();
+    auto buffer = search::buffer::Singleton<IndicesIterator, SamplesIterator>();
 
     searcher(query_index, buffer, root_);
 
@@ -406,10 +406,10 @@ template <typename IndicesIterator, typename SamplesIterator>
 template <typename BufferType>
 void KDTree<IndicesIterator, SamplesIterator>::buffer_search_around_query_index(std::size_t query_index,
                                                                                 BufferType& buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIterator, SamplesIterator>, BufferType> ||
-                      std::is_base_of_v<knn::count::Base<IndicesIterator, SamplesIterator>, BufferType>,
-                  "BufferType must inherit from knn::buffer::Base<IndicesIterator, SamplesIterator> or "
-                  "knn::count::Base<IndicesIterator, SamplesIterator>");
+    static_assert(std::is_base_of_v<search::buffer::Base<IndicesIterator, SamplesIterator>, BufferType> ||
+                      std::is_base_of_v<search::count::Base<IndicesIterator, SamplesIterator>, BufferType>,
+                  "BufferType must inherit from search::buffer::Base<IndicesIterator, SamplesIterator> or "
+                  "search::count::Base<IndicesIterator, SamplesIterator>");
 
     searcher(query_index, buffer);
 }
@@ -417,7 +417,7 @@ void KDTree<IndicesIterator, SamplesIterator>::buffer_search_around_query_index(
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_index(std::size_t query_index,
                                                                                       std::size_t n_neighbors) const {
-    knn::buffer::Unsorted<IndicesIterator, SamplesIterator> buffer(n_neighbors);
+    search::buffer::Unsorted<IndicesIterator, SamplesIterator> buffer(n_neighbors);
 
     searcher(query_index, buffer);
 
@@ -532,7 +532,7 @@ KDTree<IndicesIterator, SamplesIterator>::get_parent_node_after_sibling_traversa
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::radius_count_around_query_index(std::size_t     query_index,
                                                                                       const DataType& radius) const {
-    auto buffer = knn::count::Radius<IndicesIterator, SamplesIterator>(radius);
+    auto buffer = search::count::Radius<IndicesIterator, SamplesIterator>(radius);
 
     searcher(query_index, buffer);
 
@@ -542,7 +542,7 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::radius_count_around_query_
 template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_index(std::size_t     query_index,
                                                                                 const DataType& radius) const {
-    auto buffer = knn::buffer::Radius<IndicesIterator, SamplesIterator>(radius);
+    auto buffer = search::buffer::Radius<IndicesIterator, SamplesIterator>(radius);
 
     searcher(query_index, buffer);
 
@@ -558,7 +558,7 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_i
         /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
-    auto buffer = knn::count::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
+    auto buffer = search::count::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
     searcher(query_index, buffer);
 
@@ -574,7 +574,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_index(
         /**/ samples_range_first_ + query_index * n_features_ + n_features_,
         /**/ kd_bounding_box);
 
-    auto buffer = knn::buffer::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
+    auto buffer = search::buffer::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
     searcher(query_index, buffer);
 
@@ -585,7 +585,7 @@ template <typename IndicesIterator, typename SamplesIterator>
 auto KDTree<IndicesIterator, SamplesIterator>::nearest_neighbor_around_query_sample(
     const SamplesIterator& query_feature_first,
     const SamplesIterator& query_feature_last) const {
-    auto buffer = knn::buffer::Singleton<IndicesIterator, SamplesIterator>();
+    auto buffer = search::buffer::Singleton<IndicesIterator, SamplesIterator>();
 
     traversal(query_feature_first, query_feature_last, buffer, root_);
 
@@ -598,10 +598,10 @@ void KDTree<IndicesIterator, SamplesIterator>::buffer_search_around_query_sample
     const SamplesIterator& query_feature_first,
     const SamplesIterator& query_feature_last,
     BufferType&            buffer) const {
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIterator, SamplesIterator>, BufferType> ||
-                      std::is_base_of_v<knn::count::Base<IndicesIterator, SamplesIterator>, BufferType>,
-                  "BufferType must inherit from knn::buffer::Base<IndicesIterator, SamplesIterator> or "
-                  "knn::count::Base<IndicesIterator, SamplesIterator>");
+    static_assert(std::is_base_of_v<search::buffer::Base<IndicesIterator, SamplesIterator>, BufferType> ||
+                      std::is_base_of_v<search::count::Base<IndicesIterator, SamplesIterator>, BufferType>,
+                  "BufferType must inherit from search::buffer::Base<IndicesIterator, SamplesIterator> or "
+                  "search::count::Base<IndicesIterator, SamplesIterator>");
 
     traversal(query_feature_first, query_feature_last, buffer);
 }
@@ -611,7 +611,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::k_nearest_neighbors_around_query_
     const SamplesIterator& query_feature_first,
     const SamplesIterator& query_feature_last,
     std::size_t            n_neighbors) const {
-    knn::buffer::Unsorted<IndicesIterator, SamplesIterator> buffer(n_neighbors);
+    search::buffer::Unsorted<IndicesIterator, SamplesIterator> buffer(n_neighbors);
 
     traversal(query_feature_first, query_feature_last, buffer);
 
@@ -737,7 +737,7 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::radius_count_around_query_
     const SamplesIterator& query_feature_first,
     const SamplesIterator& query_feature_last,
     const DataType&        radius) const {
-    auto buffer = knn::count::Radius<IndicesIterator, SamplesIterator>(radius);
+    auto buffer = search::count::Radius<IndicesIterator, SamplesIterator>(radius);
 
     traversal(query_feature_first, query_feature_last, buffer);
 
@@ -749,7 +749,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::radius_search_around_query_sample
     const SamplesIterator& query_feature_first,
     const SamplesIterator& query_feature_last,
     const DataType&        radius) const {
-    auto buffer = knn::buffer::Radius<IndicesIterator, SamplesIterator>(radius);
+    auto buffer = search::buffer::Radius<IndicesIterator, SamplesIterator>(radius);
 
     traversal(query_feature_first, query_feature_last, buffer);
 
@@ -764,7 +764,7 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::range_count_around_query_s
     const auto translated_kd_bounding_box =
         bbox::relative_to_absolute_coordinates(query_feature_first, query_feature_last, kd_bounding_box);
 
-    auto buffer = knn::count::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
+    auto buffer = search::count::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
     traversal(query_feature_first, query_feature_last, buffer);
 
@@ -779,7 +779,7 @@ auto KDTree<IndicesIterator, SamplesIterator>::range_search_around_query_sample(
     const auto translated_kd_bounding_box =
         bbox::relative_to_absolute_coordinates(query_feature_first, query_feature_last, kd_bounding_box);
 
-    auto buffer = knn::buffer::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
+    auto buffer = search::buffer::Range<IndicesIterator, SamplesIterator>(translated_kd_bounding_box);
 
     traversal(query_feature_first, query_feature_last, buffer);
 
