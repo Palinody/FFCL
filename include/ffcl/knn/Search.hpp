@@ -7,7 +7,7 @@
 #include "ffcl/knn/buffer/Base.hpp"
 #include "ffcl/knn/count/Base.hpp"
 
-namespace ffcl::knn::count {
+namespace ffcl::knn {
 
 template <typename IndexerPtr>
 class SingleTreeTraverser {
@@ -22,23 +22,23 @@ class SingleTreeTraverser {
     SingleTreeTraverser(IndexerPtr query_indexer_ptr)
       : query_indexer_ptr_{query_indexer_ptr} {}
 
-    template <typename BufferType>
-    BufferType operator()(std::size_t query_index, BufferType& buffer) {
+    template <typename Buffer>
+    Buffer operator()(std::size_t query_index, Buffer& buffer) {
         single_tree_traversal(query_index, buffer, query_indexer_ptr_->root());
         return buffer;
     }
 
-    template <typename BufferType>
-    BufferType operator()(const SamplesIteratorType& query_feature_first,
-                          const SamplesIteratorType& query_feature_last,
-                          BufferType&                buffer) {
+    template <typename Buffer>
+    Buffer operator()(const SamplesIteratorType& query_feature_first,
+                      const SamplesIteratorType& query_feature_last,
+                      Buffer&                    buffer) {
         single_tree_traversal(query_feature_first, query_feature_last, buffer, query_indexer_ptr_->root());
         return buffer;
     }
 
   private:
-    template <typename BufferType>
-    void single_tree_traversal(std::size_t query_index, BufferType& buffer, const KDNodeViewPtr& node) {
+    template <typename Buffer>
+    void single_tree_traversal(std::size_t query_index, Buffer& buffer, KDNodeViewPtr node) {
         // current_node is currently a leaf node (and root in the special case where the entire tree is in a single
         // node)
         auto current_kdnode = recurse_to_closest_leaf_node(
@@ -58,8 +58,8 @@ class SingleTreeTraverser {
         }
     }
 
-    template <typename BufferType>
-    auto recurse_to_closest_leaf_node(std::size_t query_index, BufferType& buffer, const KDNodeViewPtr& node) {
+    template <typename Buffer>
+    KDNodeViewPtr recurse_to_closest_leaf_node(std::size_t query_index, Buffer& buffer, KDNodeViewPtr node) {
         buffer.search(node->indices_range_.first,
                       node->indices_range_.second,
                       query_indexer_ptr_->begin(),
@@ -93,10 +93,8 @@ class SingleTreeTraverser {
         return node;
     }
 
-    template <typename BufferType>
-    auto get_parent_node_after_sibling_traversal(std::size_t          query_index,
-                                                 BufferType&          buffer,
-                                                 const KDNodeViewPtr& node) {
+    template <typename Buffer>
+    KDNodeViewPtr get_parent_node_after_sibling_traversal(std::size_t query_index, Buffer& buffer, KDNodeViewPtr node) {
         auto parent_node = node->parent_.lock();
         // if node has a parent
         if (parent_node) {
@@ -131,11 +129,11 @@ class SingleTreeTraverser {
         return parent_node;
     }
 
-    template <typename BufferType>
+    template <typename Buffer>
     void single_tree_traversal(const SamplesIteratorType& query_feature_first,
                                const SamplesIteratorType& query_feature_last,
-                               BufferType&                buffer,
-                               const KDNodeViewPtr&       node) {
+                               Buffer&                    buffer,
+                               KDNodeViewPtr              node) {
         // current_node is currently a leaf node (and root in the special case where the entire tree is in a single
         // node)
         auto current_kdnode = recurse_to_closest_leaf_node(
@@ -157,11 +155,11 @@ class SingleTreeTraverser {
         }
     }
 
-    template <typename BufferType>
-    auto recurse_to_closest_leaf_node(const SamplesIteratorType& query_feature_first,
-                                      const SamplesIteratorType& query_feature_last,
-                                      BufferType&                buffer,
-                                      const KDNodeViewPtr&       node) {
+    template <typename Buffer>
+    KDNodeViewPtr recurse_to_closest_leaf_node(const SamplesIteratorType& query_feature_first,
+                                               const SamplesIteratorType& query_feature_last,
+                                               Buffer&                    buffer,
+                                               KDNodeViewPtr              node) {
         buffer.search(node->indices_range_.first,
                       node->indices_range_.second,
                       query_indexer_ptr_->begin(),
@@ -198,11 +196,11 @@ class SingleTreeTraverser {
         return node;
     }
 
-    template <typename BufferType>
-    auto get_parent_node_after_sibling_traversal(const SamplesIteratorType& query_feature_first,
-                                                 const SamplesIteratorType& query_feature_last,
-                                                 BufferType&                buffer,
-                                                 const KDNodeViewPtr&       node) {
+    template <typename Buffer>
+    KDNodeViewPtr get_parent_node_after_sibling_traversal(const SamplesIteratorType& query_feature_first,
+                                                          const SamplesIteratorType& query_feature_last,
+                                                          Buffer&                    buffer,
+                                                          KDNodeViewPtr              node) {
         auto parent_node = node->parent_.lock();
         // if node has a parent
         if (parent_node) {
@@ -241,7 +239,7 @@ class SingleTreeTraverser {
     IndexerPtr query_indexer_ptr_;
 };
 
-template <typename IndexerPtr, typename BufferType>
+template <typename IndexerPtr, typename Buffer>
 class Searcher {
   public:
     using IndexType           = typename IndexerPtr::element_type::IndexType;
@@ -250,28 +248,27 @@ class Searcher {
     using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
 
   private:
-    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIteratorType, SamplesIteratorType>, BufferType> ||
-                      std::is_base_of_v<knn::count::Base<IndicesIteratorType, SamplesIteratorType>, BufferType>,
-                  "BufferType must inherit from knn::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
+    static_assert(std::is_base_of_v<knn::buffer::Base<IndicesIteratorType, SamplesIteratorType>, Buffer> ||
+                      std::is_base_of_v<knn::count::Base<IndicesIteratorType, SamplesIteratorType>, Buffer>,
+                  "Buffer must inherit from knn::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
                   "knn::count::Base<IndicesIteratorType, SamplesIteratorType>");
 
   public:
-    Searcher(IndexerPtr query_indexer_ptr, const BufferType& buffer)
-      : query_indexer_ptr_{query_indexer_ptr}
+    Searcher(IndexerPtr query_indexer_ptr, const Buffer& buffer)
+      : single_tree_traverser_{SingleTreeTraverser(query_indexer_ptr)}
       , buffer_{buffer} {}
 
-    BufferType operator()(std::size_t query_index) {
-        return SingleTreeTraverser(query_indexer_ptr_)(query_index, buffer_);
+    Buffer operator()(std::size_t query_index) {
+        return single_tree_traverser_(query_index, buffer_);
     }
 
-    BufferType operator()(const SamplesIteratorType& query_feature_first,
-                          const SamplesIteratorType& query_feature_last) {
-        return SingleTreeTraverser(query_indexer_ptr_)(query_feature_first, query_feature_last, buffer_);
+    Buffer operator()(const SamplesIteratorType& query_feature_first, const SamplesIteratorType& query_feature_last) {
+        return single_tree_traverser_(query_feature_first, query_feature_last, buffer_);
     }
 
   private:
-    IndexerPtr query_indexer_ptr_;
-    BufferType buffer_;
+    SingleTreeTraverser<IndexerPtr> single_tree_traverser_;
+    Buffer                          buffer_;
 };
 
-}  // namespace ffcl::knn::count
+}  // namespace ffcl::knn

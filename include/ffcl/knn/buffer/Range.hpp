@@ -4,6 +4,7 @@
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
+#include "ffcl/common/math/linear_algebra/Translation.hpp"
 
 #include "ffcl/datastruct/BoundingBox.hpp"
 
@@ -100,15 +101,16 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
         for (std::size_t index = 0; index < n_samples; ++index) {
             const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
-            if (candidate_nearest_neighbor_index != sample_index_query &&
-                datastruct::bbox::is_sample_in_kd_bounding_box(
-                    samples_range_first + candidate_nearest_neighbor_index * n_features,
-                    samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
-                    kd_bounding_box_)) {
-                const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
-                    samples_range_first + sample_index_query * n_features,
-                    samples_range_first + sample_index_query * n_features + n_features,
-                    samples_range_first + candidate_nearest_neighbor_index * n_features);
+            const auto candidate_centered_at_origin = common::math::linear_algebra::translate_right_range_to_origin(
+                samples_range_first + sample_index_query * n_features,
+                samples_range_first + sample_index_query * n_features + n_features,
+                samples_range_first + candidate_nearest_neighbor_index * n_features,
+                samples_range_first + candidate_nearest_neighbor_index * n_features + n_features);
+
+            if (datastruct::bbox::is_sample_in_kd_bounding_box(
+                    candidate_centered_at_origin.begin(), candidate_centered_at_origin.end(), kd_bounding_box_)) {
+                const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance_at_origin(
+                    candidate_centered_at_origin.begin(), candidate_centered_at_origin.end());
 
                 this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
             }
@@ -129,15 +131,16 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
         for (std::size_t index = 0; index < n_samples; ++index) {
             const std::size_t candidate_nearest_neighbor_index = indices_range_first[index];
 
-            const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance(
+            const auto candidate_centered_at_origin = common::math::linear_algebra::translate_right_range_to_origin(
                 feature_query_range_first,
                 feature_query_range_last,
-                samples_range_first + candidate_nearest_neighbor_index * n_features);
+                samples_range_first + candidate_nearest_neighbor_index * n_features,
+                samples_range_first + candidate_nearest_neighbor_index * n_features + n_features);
 
             if (datastruct::bbox::is_sample_in_kd_bounding_box(
-                    samples_range_first + candidate_nearest_neighbor_index * n_features,
-                    samples_range_first + candidate_nearest_neighbor_index * n_features + n_features,
-                    kd_bounding_box_)) {
+                    candidate_centered_at_origin.begin(), candidate_centered_at_origin.end(), kd_bounding_box_)) {
+                const auto candidate_nearest_neighbor_distance = common::math::heuristics::auto_distance_at_origin(
+                    candidate_centered_at_origin.begin(), candidate_centered_at_origin.end());
                 this->update(candidate_nearest_neighbor_index, candidate_nearest_neighbor_distance);
             }
         }
