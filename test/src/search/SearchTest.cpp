@@ -10,6 +10,14 @@
 #include "ffcl/search/buffer/Range.hpp"
 #include "ffcl/search/buffer/Unsorted.hpp"
 
+#include "ffcl/datastruct/shapes/boundingbox/segment/MiddleAndLength.hpp"
+#include "ffcl/datastruct/shapes/boundingbox/segment/MinAndMax.hpp"
+#include "ffcl/datastruct/shapes/boundingbox/segment/PositionAndLength.hpp"
+
+#include "ffcl/datastruct/shapes/boundingbox/Corner.hpp"
+
+#include "ffcl/datastruct/shapes/boundingbox/BoundingBox.hpp"
+
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
 #include <fstream>
