@@ -4,18 +4,18 @@
 #include <cstddef>  // std::size_t
 #include <vector>
 
-namespace ffcl::datastruct::boundingbox {
+namespace ffcl::datastruct::bounds {
 
 template <typename ValueType, std::size_t Size>
-class Corner;
+class Vertex;
 
 template <typename ValueType>
-class Corner<ValueType, 0> {
+class Vertex<ValueType, 0> {
   public:
-    Corner(const std::vector<ValueType>& values)
+    Vertex(const std::vector<ValueType>& values)
       : values_{values} {}
 
-    Corner(std::vector<ValueType>&& values) noexcept
+    Vertex(std::vector<ValueType>&& values) noexcept
       : values_{std::move(values)} {}
 
     ValueType& operator[](std::size_t index) {
@@ -35,12 +35,12 @@ class Corner<ValueType, 0> {
 };
 
 template <typename ValueType, std::size_t Size>
-class Corner {
+class Vertex {
   public:
-    Corner(const std::array<ValueType, Size>& values)
+    Vertex(const std::array<ValueType, Size>& values)
       : values_{values} {}
 
-    Corner(std::array<ValueType, Size>&& values) noexcept
+    Vertex(std::array<ValueType, Size>&& values) noexcept
       : values_{std::move(values)} {}
 
     constexpr ValueType& operator[](std::size_t index) {
@@ -59,4 +59,4 @@ class Corner {
     std::array<ValueType, Size> values_;
 };
 
-}  // namespace ffcl::datastruct::boundingbox
+}  // namespace ffcl::datastruct::bounds

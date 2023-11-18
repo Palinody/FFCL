@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ffcl::datastruct::boundingbox::segment {
+namespace ffcl::datastruct::bounds::segment_representation {
 
 template <typename ValueType>
 class PositionAndLength {
@@ -22,8 +22,8 @@ class PositionAndLength {
     }
 
   private:
-    // segment represented as a reference position and a length relative to that position
+    // segment_representation represented as a reference position and a length relative to that position
     SegmentType segment_representation_;
 };
 
-}  // namespace ffcl::datastruct::boundingbox::segment
+}  // namespace ffcl::datastruct::bounds::segment_representation

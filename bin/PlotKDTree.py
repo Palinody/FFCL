@@ -128,7 +128,7 @@ def plot_bbox(bbox, ax, color="red", linestyle="-", alpha=1) -> None:
 def draw_orthogonal_line(
     pivot_point, cut_index, bounding_box, ax, color="red", linestyle="--", alpha=1
 ):
-    # bound the segment with the min max values of the non pivot axis dimension
+    # bound the segment_representation with the min max values of the non pivot axis dimension
     other_axis_min, other_axis = bounding_box[1 - cut_index]
     pivot_value = pivot_point[cut_index]
     if cut_index == 0:

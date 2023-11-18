@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ffcl::datastruct::boundingbox::segment {
+namespace ffcl::datastruct::bounds::segment_representation {
 
 template <typename ValueType>
 class MiddleAndLength {
@@ -24,9 +24,9 @@ class MiddleAndLength {
     }
 
   private:
-    // segment represented as a length and a middle point that cuts it in half
+    // segment_representation represented as a length and a middle point that cuts it in half
     // this class actually stores half of the length
     SegmentType segment_representation_;
 };
 
-}  // namespace ffcl::datastruct::boundingbox::segment
+}  // namespace ffcl::datastruct::bounds::segment_representation

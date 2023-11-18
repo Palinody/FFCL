@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ffcl::datastruct::boundingbox::segment {
+namespace ffcl::datastruct::bounds::segment_representation {
 
 template <typename ValueType>
 class MinAndMax {
@@ -22,8 +22,8 @@ class MinAndMax {
     }
 
   private:
-    // segment represented as a minimum and a maximum value
+    // segment_representation represented as a minimum and a maximum value
     SegmentType segment_representation_;
 };
 
-}  // namespace ffcl::datastruct::boundingbox::segment
+}  // namespace ffcl::datastruct::bounds::segment_representation
