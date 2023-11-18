@@ -2,10 +2,14 @@
 
 namespace ffcl::datastruct::bounds::segment_representation {
 
-template <typename ValueType>
+template <typename Value>
 class PositionAndLength {
   public:
-    using SegmentType = std::pair<ValueType, ValueType>;
+    using ValueType   = Value;
+    using SegmentType = std::pair<Value, Value>;
+
+    PositionAndLength(const ValueType& position, const ValueType& length)
+      : PositionAndLength(std::make_pair(position, length)) {}
 
     PositionAndLength(const SegmentType& segment_representation)
       : segment_representation_{segment_representation} {}
@@ -13,11 +17,11 @@ class PositionAndLength {
     PositionAndLength(SegmentType&& segment_representation) noexcept
       : segment_representation_{std::move(segment_representation)} {}
 
-    constexpr ValueType length_from_middle() const {
+    constexpr Value length_from_middle() const {
         return segment_representation_.second / 2;
     }
 
-    constexpr ValueType middle() const {
+    constexpr Value middle() const {
         return segment_representation_.first + length_from_middle();
     }
 

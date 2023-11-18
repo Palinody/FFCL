@@ -6,10 +6,10 @@
 
 namespace ffcl::datastruct::bounds {
 
-template <typename ValueType>
+template <typename ValueType, std::size_t Size = 0>
 class Ball {
   public:
-    using CentroidType = Vertex<ValueType>;
+    using CentroidType = Vertex<ValueType, Size>;
 
     Ball(const CentroidType& centroid, const ValueType& radius)
       : centroid_{centroid}
@@ -32,13 +32,12 @@ class Ball {
         return radius_;
     }
 
-    CentroidType centroid() const {
-        auto result = CentroidType(n_features());
+    const CentroidType& centroid() const {
+        return centroid_;
+    }
 
-        for (std::size_t feature_index = 0; feature_index < n_features(); ++feature_index) {
-            result[feature_index] = centroid_[feature_index].centroid();
-        }
-        return result;
+    const CentroidType make_centroid() const {
+        return centroid_;
     }
 
   private:

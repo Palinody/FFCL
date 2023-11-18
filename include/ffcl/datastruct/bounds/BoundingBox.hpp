@@ -3,17 +3,18 @@
 #include <vector>
 
 #include "ffcl/datastruct/bounds/Vertex.hpp"
+#include "ffcl/datastruct/bounds/segment_representation/MiddleAndHalfLength.hpp"
 #include "ffcl/datastruct/bounds/segment_representation/MiddleAndLength.hpp"
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
 #include "ffcl/datastruct/bounds/segment_representation/PositionAndLength.hpp"
 
 namespace ffcl::datastruct::bounds {
 
-template <typename SegmentType>
+template <typename Segment>
 class BoundingBox {
   public:
-    using ValueType    = typename SegmentType::ValueType;
-    using SegmentsType = std::vector<SegmentType>;
+    using ValueType    = typename Segment::ValueType;
+    using SegmentsType = std::vector<Segment>;
 
     using CentroidType = std::vector<ValueType>;
 

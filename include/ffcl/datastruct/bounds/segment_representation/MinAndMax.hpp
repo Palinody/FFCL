@@ -2,10 +2,14 @@
 
 namespace ffcl::datastruct::bounds::segment_representation {
 
-template <typename ValueType>
+template <typename Value>
 class MinAndMax {
   public:
-    using SegmentType = std::pair<ValueType, ValueType>;
+    using ValueType   = Value;
+    using SegmentType = std::pair<Value, Value>;
+
+    MinAndMax(const ValueType& min, const ValueType& max)
+      : MinAndMax(std::make_pair(min, max)) {}
 
     MinAndMax(const SegmentType& segment_representation)
       : segment_representation_{segment_representation} {}
@@ -13,11 +17,11 @@ class MinAndMax {
     MinAndMax(SegmentType&& segment_representation) noexcept
       : segment_representation_{std::move(segment_representation)} {}
 
-    constexpr ValueType length_from_centroid() const {
+    constexpr Value length_from_centroid() const {
         return (segment_representation_.second - segment_representation_.first) / 2;
     }
 
-    constexpr ValueType centroid() const {
+    constexpr Value centroid() const {
         return (segment_representation_.first + segment_representation_.second) / 2;
     }
 

@@ -14,9 +14,9 @@
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
 #include "ffcl/datastruct/bounds/segment_representation/PositionAndLength.hpp"
 
-#include "ffcl/datastruct/bounds/Vertex.hpp"
-
+#include "ffcl/datastruct/bounds/Ball.hpp"
 #include "ffcl/datastruct/bounds/BoundingBox.hpp"
+#include "ffcl/datastruct/bounds/Vertex.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -165,6 +165,11 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     // auto buffer = ffcl::search::buffer::Unsorted<IndicesIterator, SamplesIterator>(100);
     // auto buffer = ffcl::search::buffer::Range<IndicesIterator, SamplesIterator>({{-10, 10}, {-2.5, 5}});
     auto buffer = ffcl::search::buffer::Radius<IndicesIterator, SamplesIterator>(5);
+
+    using SegmentType     = ffcl::datastruct::bounds::segment_representation::MinAndMax<ValueType>;
+    using BoundingBoxType = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
+
+    auto boundingbox = BoundingBoxType({{-10, 10}, {-2.5, 5}});
 
     auto searcher = ffcl::search::Searcher(indexer_ptr, buffer);
 
