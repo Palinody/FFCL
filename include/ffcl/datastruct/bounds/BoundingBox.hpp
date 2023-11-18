@@ -15,7 +15,7 @@ class BoundingBox {
     using ValueType    = typename SegmentType::ValueType;
     using SegmentsType = std::vector<SegmentType>;
 
-    using CentroidsType = std::vector<ValueType>;
+    using CentroidType = std::vector<ValueType>;
 
     BoundingBox(const SegmentsType& segments)
       : segments_{segments} {}
@@ -36,8 +36,8 @@ class BoundingBox {
         return segments_[feature_index].length_from_centroid();
     }
 
-    CentroidsType centroid() const {
-        auto result = CentroidsType(n_features());
+    CentroidType centroid() const {
+        auto result = CentroidType(n_features());
 
         for (std::size_t feature_index = 0; feature_index < n_features(); ++feature_index) {
             result[feature_index] = segments_[feature_index].centroid();
