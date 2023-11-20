@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cstddef>  // std::size_t
+#include <initializer_list>
+#include <stdexcept>
 #include <vector>
 
 namespace ffcl::datastruct::bounds {
@@ -13,6 +15,9 @@ template <typename ValueType>
 class Vertex<ValueType, 0> {
   public:
     using ArrayType = std::vector<ValueType>;
+
+    Vertex(std::initializer_list<ValueType> init_list)
+      : values_(init_list) {}
 
     Vertex(const std::vector<ValueType>& values)
       : values_{values} {}
@@ -64,6 +69,13 @@ template <typename ValueType, std::size_t NFeatures>
 class Vertex {
   public:
     using ArrayType = std::array<ValueType, NFeatures>;
+
+    Vertex(std::initializer_list<ValueType> init_list) {
+        if (init_list.size() != NFeatures) {
+            throw std::length_error("Initializer list length does not match NFeatures");
+        }
+        std::copy(init_list.begin(), init_list.end(), values_.begin());
+    }
 
     Vertex(const std::array<ValueType, NFeatures>& values)
       : values_{values} {}

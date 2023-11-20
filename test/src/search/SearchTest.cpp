@@ -229,7 +229,7 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     using BufferType = ffcl::search::buffer::UnsortedWithBound<BoundPtr, IndicesIterator, SamplesIterator>;
 
     // auto bound_ptr = std::make_shared<BoundType>(BoundType({{-2, 10}, {-5, 20}}));
-    auto bound_ptr = std::make_shared<BoundType>(BoundType(std::vector<ValueType>{-2, 10}, 10));
+    auto bound_ptr = std::make_shared<BoundType>(BoundType({-2, 10}, 10));
 
     auto buffer = BufferType(bound_ptr, /*max_capacity=*/ffcl::common::infinity<IndexType>());
 
