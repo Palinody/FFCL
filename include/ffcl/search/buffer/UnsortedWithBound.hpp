@@ -120,20 +120,19 @@ class UnsortedWithBound : public Base<IndicesIterator, DistancesIterator> {
                 const SamplesIterator& samples_range_last,
                 std::size_t            n_features,
                 std::size_t            sample_index_query) {
-        common::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last, sample_index_query);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t index = 0; index < n_samples; ++index) {
             const std::size_t candidate_in_bounds_index = indices_range_first[index];
 
-            if (candidate_in_bounds_index != sample_index_query) {
-                const auto candidate_in_bounds_distance = common::math::heuristics::auto_distance(
-                    samples_range_first + sample_index_query * n_features,
-                    samples_range_first + sample_index_query * n_features + n_features,
-                    samples_range_first + candidate_in_bounds_index * n_features);
+            const auto optional_candidate_distance = bound_ptr_->compute_distance_within_bounds(
+                samples_range_first + candidate_in_bounds_index * n_features,
+                samples_range_first + candidate_in_bounds_index * n_features + n_features);
 
-                this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
+            if (optional_candidate_distance) {
+                this->update(candidate_in_bounds_index, *optional_candidate_distance);
             }
         }
     }
@@ -145,21 +144,20 @@ class UnsortedWithBound : public Base<IndicesIterator, DistancesIterator> {
                 std::size_t            n_features,
                 const SamplesIterator& feature_query_range_first,
                 const SamplesIterator& feature_query_range_last) {
-        common::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last, feature_query_range_first, feature_query_range_last);
 
         const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t index = 0; index < n_samples; ++index) {
             const std::size_t candidate_in_bounds_index = indices_range_first[index];
 
-            bound_ptr_->is_in_bounds(feature_query_range_first, feature_query_range_last);
+            const auto optional_candidate_distance = bound_ptr_->compute_distance_within_bounds(
+                samples_range_first + candidate_in_bounds_index * n_features,
+                samples_range_first + candidate_in_bounds_index * n_features + n_features);
 
-            const auto candidate_in_bounds_distance =
-                common::math::heuristics::auto_distance(feature_query_range_first,
-                                                        feature_query_range_last,
-                                                        samples_range_first + candidate_in_bounds_index * n_features);
-
-            this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
+            if (optional_candidate_distance) {
+                this->update(candidate_in_bounds_index, *optional_candidate_distance);
+            }
         }
     }
 

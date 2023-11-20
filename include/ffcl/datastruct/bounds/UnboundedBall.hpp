@@ -12,15 +12,15 @@ class UnboundedBall {
     using CentroidType = Vertex<ValueType, NFeatures>;
 
     UnboundedBall(const CentroidType& centroid)
-      : centroid_{centroid}
+      : center_point_{centroid}
       , radius_{common::infinity<ValueType>()} {}
 
     UnboundedBall(CentroidType&& centroid) noexcept
-      : centroid_{std::move(centroid)}
+      : center_point_{std::move(centroid)}
       , radius_{common::infinity<ValueType>()} {}
 
     std::size_t n_features() const {
-        return centroid_.size();
+        return center_point_.size();
     }
 
     template <typename FeaturesIterator>
@@ -38,6 +38,14 @@ class UnboundedBall {
             features_range_first, features_range_last, center_point_.begin());
     }
 
+    template <typename FeaturesIterator>
+    std::optional<ValueType> compute_distance_within_bounds(const FeaturesIterator& features_range_first,
+                                                            const FeaturesIterator& features_range_last) const {
+        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+
+        return this->distance(features_range_first, features_range_last);
+    }
+
     ValueType length_from_centroid() const {
         return radius_;
     }
@@ -48,16 +56,16 @@ class UnboundedBall {
     }
 
     const CentroidType& centroid() const {
-        return centroid_;
+        return center_point_;
     }
 
     CentroidType make_centroid() const {
-        return centroid_;
+        return center_point_;
     }
 
   private:
     // an unbounded ball represented as a single point and an infinite radius
-    CentroidType centroid_;
+    CentroidType center_point_;
     ValueType    radius_;
 };
 
