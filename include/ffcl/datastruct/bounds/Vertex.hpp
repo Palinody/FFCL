@@ -6,12 +6,14 @@
 
 namespace ffcl::datastruct::bounds {
 
-template <typename ValueType, std::size_t Size>
+template <typename ValueType, std::size_t NFeatures>
 class Vertex;
 
 template <typename ValueType>
 class Vertex<ValueType, 0> {
   public:
+    using ArrayType = std::vector<ValueType>;
+
     Vertex(const std::vector<ValueType>& values)
       : values_{values} {}
 
@@ -30,17 +32,43 @@ class Vertex<ValueType, 0> {
         return values_.size();
     }
 
+    constexpr auto begin() {
+        return values_.begin();
+    }
+
+    constexpr auto end() {
+        return values_.end();
+    }
+
+    constexpr auto begin() const {
+        return values_.begin();
+    }
+
+    constexpr auto end() const {
+        return values_.end();
+    }
+
+    constexpr auto cbegin() const {
+        return values_.cbegin();
+    }
+
+    constexpr auto cend() const {
+        return values_.cend();
+    }
+
   private:
     std::vector<ValueType> values_;
 };
 
-template <typename ValueType, std::size_t Size>
+template <typename ValueType, std::size_t NFeatures>
 class Vertex {
   public:
-    Vertex(const std::array<ValueType, Size>& values)
+    using ArrayType = std::array<ValueType, NFeatures>;
+
+    Vertex(const std::array<ValueType, NFeatures>& values)
       : values_{values} {}
 
-    Vertex(std::array<ValueType, Size>&& values) noexcept
+    Vertex(std::array<ValueType, NFeatures>&& values) noexcept
       : values_{std::move(values)} {}
 
     constexpr ValueType& operator[](std::size_t index) {
@@ -55,8 +83,32 @@ class Vertex {
         return values_.size();
     }
 
+    constexpr auto begin() {
+        return values_.begin();
+    }
+
+    constexpr auto end() {
+        return values_.end();
+    }
+
+    constexpr auto begin() const {
+        return values_.begin();
+    }
+
+    constexpr auto end() const {
+        return values_.end();
+    }
+
+    constexpr auto cbegin() const {
+        return values_.cbegin();
+    }
+
+    constexpr auto cend() const {
+        return values_.cend();
+    }
+
   private:
-    std::array<ValueType, Size> values_;
+    std::array<ValueType, NFeatures> values_;
 };
 
 }  // namespace ffcl::datastruct::bounds

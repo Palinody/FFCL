@@ -17,12 +17,12 @@ class PositionAndLength {
     PositionAndLength(SegmentType&& segment_representation) noexcept
       : segment_representation_{std::move(segment_representation)} {}
 
-    constexpr Value length_from_middle() const {
+    constexpr Value length_from_centroid() const {
         return segment_representation_.second / 2;
     }
 
-    constexpr Value middle() const {
-        return segment_representation_.first + length_from_middle();
+    constexpr Value centroid() const {
+        return segment_representation_.first + length_from_centroid();
     }
 
   private:

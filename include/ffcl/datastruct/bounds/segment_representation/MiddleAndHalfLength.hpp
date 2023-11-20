@@ -17,11 +17,11 @@ class MiddleAndHalfLength {
     MiddleAndHalfLength(SegmentType&& segment_representation) noexcept
       : segment_representation_{std::move(segment_representation)} {}
 
-    constexpr Value length_from_middle() const {
+    constexpr Value length_from_centroid() const {
         return segment_representation_.second;
     }
 
-    constexpr Value middle() const {
+    constexpr Value centroid() const {
         return segment_representation_.first;
     }
 

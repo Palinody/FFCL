@@ -19,11 +19,11 @@ class MiddleAndLength {
       : segment_representation_{std::make_pair(/**/ std::move(segment_representation.first),
                                                /**/ std::move(segment_representation.second) / 2)} {}
 
-    constexpr Value length_from_middle() const {
+    constexpr Value length_from_centroid() const {
         return segment_representation_.second;
     }
 
-    constexpr Value middle() const {
+    constexpr Value centroid() const {
         return segment_representation_.first;
     }
 

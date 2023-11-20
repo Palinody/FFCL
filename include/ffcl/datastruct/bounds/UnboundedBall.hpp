@@ -4,32 +4,29 @@
 
 #include "ffcl/datastruct/bounds/Vertex.hpp"
 
-#include "ffcl/common/math/heuristics/Distances.hpp"
-
 namespace ffcl::datastruct::bounds {
 
 template <typename ValueType, std::size_t NFeatures = 0>
-class Ball {
+class UnboundedBall {
   public:
     using CentroidType = Vertex<ValueType, NFeatures>;
 
-    Ball(const CentroidType& centroid, const ValueType& radius)
-      : center_point_{centroid}
-      , radius_{radius} {}
+    UnboundedBall(const CentroidType& centroid)
+      : centroid_{centroid}
+      , radius_{common::infinity<ValueType>()} {}
 
-    Ball(CentroidType&& centroid, const ValueType& radius) noexcept
-      : center_point_{std::move(centroid)}
-      , radius_{radius} {}
+    UnboundedBall(CentroidType&& centroid) noexcept
+      : centroid_{std::move(centroid)}
+      , radius_{common::infinity<ValueType>()} {}
 
     std::size_t n_features() const {
-        return center_point_.size();
+        return centroid_.size();
     }
 
     template <typename FeaturesIterator>
     bool is_in_bounds(const FeaturesIterator& features_range_first, const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
-
-        return this->distance(features_range_first, features_range_last) < radius_;
+        common::ignore_parameters(features_range_first, features_range_last);
+        return true;
     }
 
     template <typename FeaturesIterator>
@@ -51,16 +48,16 @@ class Ball {
     }
 
     const CentroidType& centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
     CentroidType make_centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
   private:
-    // a ball represented as a single point and a radius
-    CentroidType center_point_;
+    // an unbounded ball represented as a single point and an infinite radius
+    CentroidType centroid_;
     ValueType    radius_;
 };
 
