@@ -15,12 +15,13 @@ namespace ffcl::common::math::heuristics {
 template <typename FeaturesIterator>
 auto squared_euclidean_distance_from_origin(const FeaturesIterator& features_range_first,
                                             const FeaturesIterator& features_range_last)
-    -> decltype(std::declval<typename FeaturesIterator::value_type>() *
-                std::declval<typename FeaturesIterator::value_type>()) {
-    static_assert(std::is_floating_point_v<typename FeaturesIterator::value_type>, "Input must be float.");
+    -> decltype(std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>() *
+                std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>()) {
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<FeaturesIterator>::value_type>,
+                  "Input must be float.");
 
-    using ResultType = decltype(std::declval<typename FeaturesIterator::value_type>() *
-                                std::declval<typename FeaturesIterator::value_type>());
+    using ResultType = decltype(std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>() *
+                                std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>());
 
     return std::transform_reduce(features_range_first,
                                  features_range_last,
@@ -33,13 +34,15 @@ template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto squared_euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
                                 const LeftFeaturesIterator&  left_features_range_last,
                                 const RightFeaturesIterator& right_features_range_first)
-    -> decltype(std::declval<typename LeftFeaturesIterator::value_type>() *
-                std::declval<typename LeftFeaturesIterator::value_type>()) {
-    static_assert(std::is_floating_point_v<typename LeftFeaturesIterator::value_type>, "Input1 must be float.");
-    static_assert(std::is_floating_point_v<typename RightFeaturesIterator::value_type>, "Input2 must be float.");
+    -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
+                std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>()) {
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
+                  "Input1 must be float.");
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<RightFeaturesIterator>::value_type>,
+                  "Input2 must be float.");
 
-    using ResultType = decltype(std::declval<typename LeftFeaturesIterator::value_type>() *
-                                std::declval<typename LeftFeaturesIterator::value_type>());
+    using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
+                                std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>());
 
     return std::transform_reduce(left_features_range_first,
                                  left_features_range_last,
@@ -69,10 +72,11 @@ auto euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
 template <typename FeaturesIterator>
 auto manhattan_distance_from_origin(const FeaturesIterator& features_range_first,
                                     const FeaturesIterator& features_range_last)
-    -> decltype(std::declval<typename FeaturesIterator::value_type>()) {
-    static_assert(std::is_signed<typename FeaturesIterator::value_type>::value, "Input must be signed.");
+    -> decltype(std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>()) {
+    static_assert(std::is_signed<typename std::iterator_traits<FeaturesIterator>::value_type>::value,
+                  "Input must be signed.");
 
-    using ResultType = decltype(std::declval<typename FeaturesIterator::value_type>());
+    using ResultType = decltype(std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>());
 
     return std::transform_reduce(features_range_first,
                                  features_range_last,
@@ -85,13 +89,15 @@ template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto manhattan_distance(const LeftFeaturesIterator&  left_features_range_first,
                         const LeftFeaturesIterator&  left_features_range_last,
                         const RightFeaturesIterator& right_features_range_first)
-    -> decltype(std::declval<typename LeftFeaturesIterator::value_type>() +
-                std::declval<typename LeftFeaturesIterator::value_type>()) {
-    static_assert(std::is_signed<typename LeftFeaturesIterator::value_type>::value, "Input1 must be signed.");
-    static_assert(std::is_signed<typename RightFeaturesIterator::value_type>::value, "Input2 must be signed.");
+    -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
+                std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>()) {
+    static_assert(std::is_signed<typename std::iterator_traits<LeftFeaturesIterator>::value_type>::value,
+                  "Input1 must be signed.");
+    static_assert(std::is_signed<typename std::iterator_traits<RightFeaturesIterator>::value_type>::value,
+                  "Input2 must be signed.");
 
-    using ResultType = decltype(std::declval<typename LeftFeaturesIterator::value_type>() +
-                                std::declval<typename LeftFeaturesIterator::value_type>());
+    using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
+                                std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>());
 
     return std::transform_reduce(left_features_range_first,
                                  left_features_range_last,
@@ -104,10 +110,11 @@ auto manhattan_distance(const LeftFeaturesIterator&  left_features_range_first,
 template <typename FeaturesIterator>
 auto unsigned_manhattan_distance_from_origin(const FeaturesIterator& features_range_first,
                                              const FeaturesIterator& features_range_last)
-    -> decltype(std::declval<typename FeaturesIterator::value_type>()) {
-    static_assert(std::is_signed<typename FeaturesIterator::value_type>::value, "Input must be signed.");
+    -> decltype(std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>()) {
+    static_assert(std::is_signed<typename std::iterator_traits<FeaturesIterator>::value_type>::value,
+                  "Input must be signed.");
 
-    using ResultType = decltype(std::declval<typename FeaturesIterator::value_type>());
+    using ResultType = decltype(std::declval<typename std::iterator_traits<FeaturesIterator>::value_type>());
 
     return std::transform_reduce(features_range_first,
                                  features_range_last,
@@ -120,13 +127,15 @@ template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto unsigned_manhattan_distance(const LeftFeaturesIterator&  left_features_range_first,
                                  const LeftFeaturesIterator&  left_features_range_last,
                                  const RightFeaturesIterator& right_features_range_first)
-    -> decltype(std::declval<typename LeftFeaturesIterator::value_type>() -
-                std::declval<typename RightFeaturesIterator::value_type>()) {
-    static_assert(std::is_unsigned_v<typename LeftFeaturesIterator::value_type>, "Input1 must be unsigned integer.");
-    static_assert(std::is_unsigned_v<typename RightFeaturesIterator::value_type>, "Input2 must be unsigned integer.");
+    -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() -
+                std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>()) {
+    static_assert(std::is_unsigned_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
+                  "Input1 must be unsigned integer.");
+    static_assert(std::is_unsigned_v<typename std::iterator_traits<RightFeaturesIterator>::value_type>,
+                  "Input2 must be unsigned integer.");
 
-    using ResultType = decltype(std::declval<typename LeftFeaturesIterator::value_type>() -
-                                std::declval<typename RightFeaturesIterator::value_type>());
+    using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() -
+                                std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
 
     return std::transform_reduce(left_features_range_first,
                                  left_features_range_last,
@@ -140,13 +149,15 @@ template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
                        const LeftFeaturesIterator&  left_features_range_last,
                        const RightFeaturesIterator& right_features_range_first)
-    -> decltype(std::declval<typename LeftFeaturesIterator::value_type>() *
-                std::declval<typename RightFeaturesIterator::value_type>()) {
-    static_assert(std::is_floating_point_v<typename LeftFeaturesIterator::value_type>, "Input1 must be float.");
-    static_assert(std::is_floating_point_v<typename RightFeaturesIterator::value_type>, "Input2 must be float.");
+    -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
+                std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>()) {
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
+                  "Input1 must be float.");
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<RightFeaturesIterator>::value_type>,
+                  "Input2 must be float.");
 
-    using ResultType = decltype(std::declval<typename LeftFeaturesIterator::value_type>() *
-                                std::declval<typename RightFeaturesIterator::value_type>());
+    using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
+                                std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
 
     const std::size_t n_features = std::distance(left_features_range_first, left_features_range_last);
 
@@ -170,8 +181,10 @@ std::size_t levenshtein_distance(const LeftFeaturesIterator&  left_features_rang
                                  const LeftFeaturesIterator&  left_features_range_last,
                                  const RightFeaturesIterator& right_features_range_first,
                                  const RightFeaturesIterator& right_features_range_last) {
-    static_assert(std::is_integral_v<typename LeftFeaturesIterator::value_type>, "Input1 must be integral.");
-    static_assert(std::is_integral_v<typename RightFeaturesIterator::value_type>, "Input2 must be integral.");
+    static_assert(std::is_integral_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
+                  "Input1 must be integral.");
+    static_assert(std::is_integral_v<typename std::iterator_traits<RightFeaturesIterator>::value_type>,
+                  "Input2 must be integral.");
 
     const std::size_t n_features_left  = std::distance(left_features_range_first, left_features_range_last);
     const std::size_t n_features_right = std::distance(right_features_range_first, right_features_range_last);
@@ -204,7 +217,7 @@ std::size_t levenshtein_distance(const LeftFeaturesIterator&  left_features_rang
 template <typename FeaturesIterator>
 auto auto_distance_from_origin(const FeaturesIterator& features_range_first,
                                const FeaturesIterator& features_range_last) {
-    using FeatureType = typename FeaturesIterator::value_type;
+    using FeatureType = typename std::iterator_traits<FeaturesIterator>::value_type;
 
     if constexpr (std::is_floating_point_v<FeatureType>) {
         return euclidean_distance_from_origin(features_range_first, features_range_last);
@@ -227,8 +240,8 @@ template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto auto_distance(const LeftFeaturesIterator&  left_features_range_first,
                    const LeftFeaturesIterator&  left_features_range_last,
                    const RightFeaturesIterator& right_features_range_first) {
-    using FeatureType1 = typename LeftFeaturesIterator::value_type;
-    using FeatureType2 = typename RightFeaturesIterator::value_type;
+    using FeatureType1 = typename std::iterator_traits<LeftFeaturesIterator>::value_type;
+    using FeatureType2 = typename std::iterator_traits<RightFeaturesIterator>::value_type;
 
     // The feature types must be the same for the auto_distance function since its only be used for practicality
     // purposes for now. Each function is compatible with different types.

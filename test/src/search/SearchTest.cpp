@@ -219,17 +219,17 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
                                                      OptionsType()
                                                          .bucket_size(std::sqrt(n_samples))
                                                          .max_depth(std::log2(n_samples))
-                                                         .axis_selection_policy(AxisSelectionPolicyType())
-                                                         .splitting_rule_policy(SplittingRulePolicyType()));
+                                                         .axis_selection_policy(AxisSelectionPolicyType{})
+                                                         .splitting_rule_policy(SplittingRulePolicyType{}));
 
     // using SegmentType = ffcl::datastruct::bounds::segment_representation::MiddleAndLength<ValueType>;
     // using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
-    using BoundType  = ffcl::datastruct::bounds::Ball<ValueType>;
+    using BoundType  = ffcl::datastruct::bounds::Ball<ValueType, 2>;
     using BoundPtr   = std::shared_ptr<BoundType>;
     using BufferType = ffcl::search::buffer::UnsortedWithBound<BoundPtr, IndicesIterator, SamplesIterator>;
 
     // auto bound_ptr = std::make_shared<BoundType>(BoundType({{-2, 10}, {-5, 20}}));
-    auto bound_ptr = std::make_shared<BoundType>(BoundType({-2, 10}, 10));
+    auto bound_ptr = std::make_shared<BoundType>(BoundType{{-2, 10}, 10});
 
     auto buffer = BufferType(bound_ptr, /*max_capacity=*/ffcl::common::infinity<IndexType>());
 

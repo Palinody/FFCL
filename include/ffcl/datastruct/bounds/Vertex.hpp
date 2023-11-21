@@ -14,8 +14,6 @@ class Vertex;
 template <typename ValueType>
 class Vertex<ValueType, 0> {
   public:
-    using ArrayType = std::vector<ValueType>;
-
     Vertex(std::initializer_list<ValueType> init_list)
       : values_(init_list) {}
 
@@ -68,19 +66,17 @@ class Vertex<ValueType, 0> {
 template <typename ValueType, std::size_t NFeatures>
 class Vertex {
   public:
-    using ArrayType = std::array<ValueType, NFeatures>;
-
-    Vertex(std::initializer_list<ValueType> init_list) {
-        if (init_list.size() != NFeatures) {
-            throw std::length_error("Initializer list length does not match NFeatures");
-        }
-        std::copy(init_list.begin(), init_list.end(), values_.begin());
+    template <typename... Args, std::enable_if_t<sizeof...(Args) == NFeatures, int> = 0>
+    constexpr Vertex(Args&&... args)
+      : values_{{static_cast<ValueType>(std::forward<Args>(args))...}} {
+        static_assert((std::is_convertible_v<Args, ValueType> && ...),
+                      "All arguments must be convertible to ValueType.");
     }
 
-    Vertex(const std::array<ValueType, NFeatures>& values)
+    constexpr Vertex(const std::array<ValueType, NFeatures>& values)
       : values_{values} {}
 
-    Vertex(std::array<ValueType, NFeatures>&& values) noexcept
+    constexpr Vertex(std::array<ValueType, NFeatures>&& values) noexcept
       : values_{std::move(values)} {}
 
     constexpr ValueType& operator[](std::size_t index) {
