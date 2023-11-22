@@ -13,7 +13,7 @@
 
 namespace ffcl::search::buffer {
 
-template <typename BoundPtr, typename IndicesIterator, typename DistancesIterator>
+template <typename IndicesIterator, typename DistancesIterator, typename BoundPtr>
 class UnsortedWithBound : public Base<IndicesIterator, DistancesIterator> {
   public:
     using IndexType     = typename Base<IndicesIterator, DistancesIterator>::IndexType;

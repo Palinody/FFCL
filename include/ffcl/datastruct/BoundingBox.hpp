@@ -13,7 +13,7 @@ template <typename SamplesIterator>
 using IteratorPairType = std::pair<SamplesIterator, SamplesIterator>;
 
 template <typename SamplesIterator>
-using DataType = typename SamplesIterator::value_type;
+using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
 template <typename SamplesIterator>
 using RangeType = std::pair<DataType<SamplesIterator>, DataType<SamplesIterator>>;

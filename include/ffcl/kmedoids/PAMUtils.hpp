@@ -23,7 +23,7 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const SamplesIterator
                                                            const SamplesIterator&          samples_range_last,
                                                            std::size_t                     n_features,
                                                            const std::vector<std::size_t>& medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -61,7 +61,7 @@ template <typename SamplesIterator>
 std::vector<std::size_t> samples_to_nearest_medoid_indices(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -94,7 +94,7 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const SamplesI
                                                                   const SamplesIterator&          samples_range_last,
                                                                   std::size_t                     n_features,
                                                                   const std::vector<std::size_t>& medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -141,7 +141,7 @@ template <typename SamplesIterator>
 std::vector<std::size_t> samples_to_second_nearest_medoid_indices(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -184,7 +184,7 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const SamplesIt
                                                                  const SamplesIterator&          samples_range_last,
                                                                  std::size_t                     n_features,
                                                                  const std::vector<std::size_t>& medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -243,7 +243,7 @@ template <typename SamplesIterator>
 std::vector<std::size_t> samples_to_third_nearest_medoid_indices(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -347,12 +347,12 @@ std::vector<std::size_t> samples_to_nth_nearest_medoid_indices(
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_nearest_medoid_distances(
     const SamplesIterator&          samples_range_first,
     const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
     const std::vector<std::size_t>& medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -385,10 +385,10 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_dist
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_nearest_medoid_distances(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -416,12 +416,12 @@ std::vector<typename SamplesIterator::value_type> samples_to_nearest_medoid_dist
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_second_nearest_medoid_distances(
     const SamplesIterator&          samples_range_first,
     const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
     const std::vector<std::size_t>& medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -460,10 +460,10 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medo
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_second_nearest_medoid_distances(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -497,12 +497,12 @@ std::vector<typename SamplesIterator::value_type> samples_to_second_nearest_medo
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_third_nearest_medoid_distances(
     const SamplesIterator&          samples_range_first,
     const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
     const std::vector<std::size_t>& medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -549,10 +549,10 @@ std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoi
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_third_nearest_medoid_distances(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (medoids.empty()) {
         throw std::invalid_argument("Medoids indices vector shouldn't be empty.");
@@ -594,7 +594,7 @@ std::vector<typename SamplesIterator::value_type> samples_to_third_nearest_medoi
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_nth_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_nth_nearest_medoid_distances(
     const SamplesIterator&          samples_range_first,
     const SamplesIterator&          samples_range_last,
     std::size_t                     n_features,
@@ -622,7 +622,7 @@ std::vector<typename SamplesIterator::value_type> samples_to_nth_nearest_medoid_
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> samples_to_nth_nearest_medoid_distances(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_to_nth_nearest_medoid_distances(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
     const std::vector<std::size_t>&                                  medoids,
     std::size_t                                                      nth_closest = 1) {
@@ -702,11 +702,11 @@ std::vector<DataType> compute_losses_with_silhouette_medoid_removal(
 }
 
 template <typename SamplesIterator>
-std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_index_pair(
+std::pair<typename std::iterator_traits<SamplesIterator>::value_type, std::size_t> first_medoid_td_index_pair(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last,
     std::size_t            n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = ffcl::common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -736,9 +736,9 @@ std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_ind
 }
 
 template <typename SamplesIterator>
-std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_index_pair(
+std::pair<typename std::iterator_traits<SamplesIterator>::value_type, std::size_t> first_medoid_td_index_pair(
     const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = pairwise_distance_matrix.n_rows();
 
@@ -765,14 +765,15 @@ std::pair<typename SamplesIterator::value_type, std::size_t> first_medoid_td_ind
 }
 
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> medoids_to_centroids(const SamplesIterator& samples_range_first,
-                                                                       const SamplesIterator& samples_range_last,
-                                                                       std::size_t            n_features,
-                                                                       const std::vector<std::size_t>& medoids) {
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> medoids_to_centroids(
+    const SamplesIterator&          samples_range_first,
+    const SamplesIterator&          samples_range_last,
+    std::size_t                     n_features,
+    const std::vector<std::size_t>& medoids) {
     ffcl::common::ignore_parameters(samples_range_last);
 
     const auto n_medoids = medoids.size();
-    auto       clusters  = std::vector<typename SamplesIterator::value_type>(n_medoids * n_features);
+    auto clusters = std::vector<typename std::iterator_traits<SamplesIterator>::value_type>(n_medoids * n_features);
 
     for (std::size_t k = 0; k < n_medoids; ++k) {
         const std::size_t data_index = medoids[k];

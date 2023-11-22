@@ -12,11 +12,11 @@ namespace ffcl {
 
 template <typename SamplesIterator>
 class Hamerly {
-    static_assert(std::is_floating_point_v<typename SamplesIterator::value_type>,
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<SamplesIterator>::value_type>,
                   "Hamerly allows floating point types.");
 
   public:
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;

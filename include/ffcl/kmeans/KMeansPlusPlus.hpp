@@ -35,14 +35,15 @@ namespace ffcl::kmeansplusplus {
  * @param samples_range_last
  * @param n_centroids
  * @param n_features
- * @return std::vector<typename SamplesIterator::value_type>
+ * @return std::vector<typename std::iterator_traits<SamplesIterator>::value_type>
  */
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> make_centroids(const SamplesIterator& samples_range_first,
-                                                                 const SamplesIterator& samples_range_last,
-                                                                 std::size_t            n_centroids,
-                                                                 std::size_t            n_features) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> make_centroids(
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
+    std::size_t            n_centroids,
+    std::size_t            n_features) {
+    static_assert(std::is_floating_point<typename std::iterator_traits<SamplesIterator>::value_type>::value,
                   "Data should be a floating point type.");
 
     auto centroids = common::math::random::select_random_sample(samples_range_first, samples_range_last, n_features);
@@ -76,15 +77,15 @@ std::vector<typename SamplesIterator::value_type> make_centroids(const SamplesIt
  * @param samples_range_last
  * @param n_centroids
  * @param n_features
- * @return std::vector<typename SamplesIterator::value_type>
+ * @return std::vector<typename std::iterator_traits<SamplesIterator>::value_type>
  */
 template <typename SamplesIterator>
-std::vector<typename SamplesIterator::value_type> make_centroids_from_previous_centroid(
+std::vector<typename std::iterator_traits<SamplesIterator>::value_type> make_centroids_from_previous_centroid(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last,
     std::size_t            n_centroids,
     std::size_t            n_features) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value,
+    static_assert(std::is_floating_point<typename std::iterator_traits<SamplesIterator>::value_type>::value,
                   "Data should be a floating point type.");
 
     auto previous_centroid =

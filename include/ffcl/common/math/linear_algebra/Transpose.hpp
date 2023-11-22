@@ -19,7 +19,7 @@ template <typename SamplesIterator>
 auto transpose_sequential(const SamplesIterator& samples_range_first,
                           const SamplesIterator& samples_range_last,
                           std::size_t            n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -39,7 +39,7 @@ template <typename SamplesIterator>
 auto transpose_parallel_openmp(const SamplesIterator& samples_range_first,
                                const SamplesIterator& samples_range_last,
                                std::size_t            n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 

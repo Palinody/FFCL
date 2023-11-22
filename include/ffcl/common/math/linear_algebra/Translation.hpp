@@ -14,7 +14,7 @@ auto translate_right_range_to_origin(const LeftFeaturesIterator&  left_features_
                                      const RightFeaturesIterator& right_features_range_last) {
     common::ignore_parameters(left_features_range_last);
 
-    using ValueType = typename RightFeaturesIterator::value_type;
+    using ValueType = typename std::iterator_traits<RightFeaturesIterator>::value_type;
 
     const auto n_features = std::distance(right_features_range_first, right_features_range_last);
 

@@ -32,7 +32,7 @@ namespace ffcl::common::math::heuristics {
 template <typename ClusterLabelsIterator>
 auto get_cluster_sizes(ClusterLabelsIterator cluster_labels_range_first,
                        ClusterLabelsIterator cluster_labels_range_last) {
-    using IndexType = typename ClusterLabelsIterator::value_type;
+    using IndexType = typename std::iterator_traits<ClusterLabelsIterator>::value_type;
 
     static_assert(std::is_integral<IndexType>::value, "Cluster labels must be integer.");
 
@@ -62,7 +62,7 @@ auto get_cluster_sizes(ClusterLabelsIterator cluster_labels_range_first,
  * @param n_features
  * @param cluster_labels_range_first
  * @param cluster_labels_range_last
- * @return std::vector<typename SamplesIterator::value_type>
+ * @return std::vector<typename std::iterator_traits<SamplesIterator>::value_type>
  */
 template <typename SamplesIterator, typename ClusterLabelsIterator>
 auto cohesion(const SamplesIterator&       samples_range_first,
@@ -70,11 +70,12 @@ auto cohesion(const SamplesIterator&       samples_range_first,
               std::size_t                  n_features,
               const ClusterLabelsIterator& cluster_labels_range_first,
               const ClusterLabelsIterator& cluster_labels_range_last) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value, "Samples must be float.");
-    static_assert(std::is_integral<typename ClusterLabelsIterator::value_type>::value,
+    static_assert(std::is_floating_point<typename std::iterator_traits<SamplesIterator>::value_type>::value,
+                  "Samples must be float.");
+    static_assert(std::is_integral<typename std::iterator_traits<ClusterLabelsIterator>::value_type>::value,
                   "Cluster labels must be integer.");
 
-    using FloatType = typename SamplesIterator::value_type;
+    using FloatType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -126,7 +127,7 @@ auto cohesion(const SamplesIterator&       samples_range_first,
  * @param n_features
  * @param cluster_labels_range_first
  * @param cluster_labels_range_last
- * @return std::vector<typename SamplesIterator::value_type>
+ * @return std::vector<typename std::iterator_traits<SamplesIterator>::value_type>
  */
 template <typename SamplesIterator, typename ClusterLabelsIterator>
 auto separation(const SamplesIterator&       samples_range_first,
@@ -134,11 +135,12 @@ auto separation(const SamplesIterator&       samples_range_first,
                 std::size_t                  n_features,
                 const ClusterLabelsIterator& cluster_labels_range_first,
                 const ClusterLabelsIterator& cluster_labels_range_last) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value, "Samples must be float.");
-    static_assert(std::is_integral<typename ClusterLabelsIterator::value_type>::value,
+    static_assert(std::is_floating_point<typename std::iterator_traits<SamplesIterator>::value_type>::value,
+                  "Samples must be float.");
+    static_assert(std::is_integral<typename std::iterator_traits<ClusterLabelsIterator>::value_type>::value,
                   "Cluster labels must be integer.");
 
-    using FloatType = typename SamplesIterator::value_type;
+    using FloatType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -208,11 +210,12 @@ auto silhouette(const SamplesIterator&       samples_range_first,
                 std::size_t                  n_features,
                 const ClusterLabelsIterator& cluster_labels_range_first,
                 const ClusterLabelsIterator& cluster_labels_range_last) {
-    static_assert(std::is_floating_point<typename SamplesIterator::value_type>::value, "Samples must be float.");
-    static_assert(std::is_integral<typename ClusterLabelsIterator::value_type>::value,
+    static_assert(std::is_floating_point<typename std::iterator_traits<SamplesIterator>::value_type>::value,
+                  "Samples must be float.");
+    static_assert(std::is_integral<typename std::iterator_traits<ClusterLabelsIterator>::value_type>::value,
                   "Cluster labels must be integer.");
 
-    using FloatType = typename SamplesIterator::value_type;
+    using FloatType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -243,8 +246,9 @@ auto silhouette(const SamplesIterator&       samples_range_first,
 
 template <typename SamplesIterator>
 auto get_average_silhouette(const SamplesIterator& samples_silhouette_first,
-                            const SamplesIterator& samples_silhouette_last) -> typename SamplesIterator::value_type {
-    using FloatType = typename SamplesIterator::value_type;
+                            const SamplesIterator& samples_silhouette_last) ->
+    typename std::iterator_traits<SamplesIterator>::value_type {
+    using FloatType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_elements = std::distance(samples_silhouette_first, samples_silhouette_last);
 

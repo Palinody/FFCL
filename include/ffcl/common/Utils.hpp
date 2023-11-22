@@ -88,12 +88,12 @@ std::vector<TargetType> to_type(const DataIterator& data_range_first, const Data
 }
 
 template <typename DataIterator>
-bool are_containers_equal(
-    DataIterator                      left_data_range_first,
-    DataIterator                      left_data_range_last,
-    DataIterator                      right_data_range_first,
-    typename DataIterator::value_type tolerance = std::numeric_limits<typename DataIterator::value_type>::epsilon()) {
-    using InputType = typename DataIterator::value_type;
+bool are_containers_equal(DataIterator                                            left_data_range_first,
+                          DataIterator                                            left_data_range_last,
+                          DataIterator                                            right_data_range_first,
+                          typename std::iterator_traits<DataIterator>::value_type tolerance =
+                              std::numeric_limits<typename std::iterator_traits<DataIterator>::value_type>::epsilon()) {
+    using InputType = typename std::iterator_traits<DataIterator>::value_type;
     while (left_data_range_first != left_data_range_last) {
         if constexpr (std::is_integral_v<InputType>) {
             if (*left_data_range_first != *right_data_range_first) {
@@ -208,18 +208,18 @@ std::size_t get_n_samples(const DataIterator& data_range_first,
 }
 
 template <typename DataIterator>
-bool is_element_in(const DataIterator&                      data_range_first,
-                   const DataIterator&                      data_range_last,
-                   const typename DataIterator::value_type& element) {
+bool is_element_in(const DataIterator&                                            data_range_first,
+                   const DataIterator&                                            data_range_last,
+                   const typename std::iterator_traits<DataIterator>::value_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the opposite boolean value
     return !(std::find(data_range_first, data_range_last, element) == data_range_last);
 }
 
 template <typename DataIterator>
-bool is_element_not_in(const DataIterator&                      data_range_first,
-                       const DataIterator&                      data_range_last,
-                       const typename DataIterator::value_type& element) {
+bool is_element_not_in(const DataIterator&                                            data_range_first,
+                       const DataIterator&                                            data_range_last,
+                       const typename std::iterator_traits<DataIterator>::value_type& element) {
     // if std::find reaches the end of the container then nothing is found and it returns true
     // so we want is_element_in to return the same boolean value
     return std::find(data_range_first, data_range_last, element) == data_range_last;

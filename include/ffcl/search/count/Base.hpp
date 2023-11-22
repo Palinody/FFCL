@@ -11,8 +11,8 @@ namespace ffcl::search::count {
 template <typename IndicesIterator, typename DistancesIterator>
 class Base {
   public:
-    using IndexType    = typename IndicesIterator::value_type;
-    using DistanceType = typename DistancesIterator::value_type;
+    using IndexType    = typename std::iterator_traits<IndicesIterator>::value_type;
+    using DistanceType = typename std::iterator_traits<DistancesIterator>::value_type;
 
     using SamplesIterator = typename std::vector<DistanceType>::iterator;
 

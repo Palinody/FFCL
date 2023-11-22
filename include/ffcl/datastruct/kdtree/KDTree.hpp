@@ -40,8 +40,8 @@ namespace fs = std::filesystem;
 template <typename IndicesIterator, typename SamplesIterator>
 class KDTree {
   public:
-    using IndexType = typename IndicesIterator::value_type;
-    using DataType  = typename SamplesIterator::value_type;
+    using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
+    using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
 
     using IndicesIteratorType = IndicesIterator;
     using SamplesIteratorType = SamplesIterator;

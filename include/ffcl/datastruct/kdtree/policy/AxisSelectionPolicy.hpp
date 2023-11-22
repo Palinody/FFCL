@@ -23,7 +23,7 @@ class AxisSelectionPolicy {
 template <typename IndicesIterator, typename SamplesIterator>
 class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     constexpr CycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
@@ -51,7 +51,7 @@ class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, Sample
 template <typename IndicesIterator, typename SamplesIterator>
 class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     constexpr HighestVarianceBuild& sampling_rate(double sampling_rate) {
         sampling_rate_ = sampling_rate;
@@ -86,7 +86,7 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
 template <typename IndicesIterator, typename SamplesIterator>
 class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     constexpr MaximumSpreadBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;

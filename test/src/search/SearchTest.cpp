@@ -226,7 +226,7 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     // using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
     using BoundType  = ffcl::datastruct::bounds::Ball<ValueType, 2>;
     using BoundPtr   = std::shared_ptr<BoundType>;
-    using BufferType = ffcl::search::buffer::UnsortedWithBound<BoundPtr, IndicesIterator, SamplesIterator>;
+    using BufferType = ffcl::search::buffer::UnsortedWithBound<IndicesIterator, SamplesIterator, BoundPtr>;
 
     // auto bound_ptr = std::make_shared<BoundType>(BoundType({{-2, 10}, {-5, 20}}));
     auto bound_ptr = std::make_shared<BoundType>(BoundType{{-2, 10}, 10});

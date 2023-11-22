@@ -10,14 +10,14 @@
 namespace pam {
 
 template <typename SamplesIterator>
-std::tuple<typename SamplesIterator::value_type,
+std::tuple<typename std::iterator_traits<SamplesIterator>::value_type,
            std::vector<std::size_t>,
-           std::vector<typename SamplesIterator::value_type>>
+           std::vector<typename std::iterator_traits<SamplesIterator>::value_type>>
 build(const SamplesIterator& samples_range_first,
       const SamplesIterator& samples_range_last,
       std::size_t            n_features,
       std::size_t            n_medoids) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = ffcl::common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -81,9 +81,9 @@ build(const SamplesIterator& samples_range_first,
 }
 
 template <typename SamplesIterator>
-std::tuple<typename SamplesIterator::value_type,
+std::tuple<typename std::iterator_traits<SamplesIterator>::value_type,
            std::vector<std::size_t>,
-           std::vector<typename SamplesIterator::value_type>>
+           std::vector<typename std::iterator_traits<SamplesIterator>::value_type>>
 build(const ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix,
       std::size_t                                                      n_medoids) {
     return build(std::get<0>(pairwise_distance_matrix),

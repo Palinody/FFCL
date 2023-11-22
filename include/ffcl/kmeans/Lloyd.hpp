@@ -11,10 +11,11 @@ namespace ffcl {
 
 template <typename SamplesIterator>
 class Lloyd {
-    static_assert(std::is_floating_point_v<typename SamplesIterator::value_type>, "Lloyd allows floating point types.");
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<SamplesIterator>::value_type>,
+                  "Lloyd allows floating point types.");
 
   public:
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
@@ -131,7 +132,7 @@ void Lloyd<SamplesIterator>::update_centroids() {
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type Lloyd<SamplesIterator>::update_buffers() {
+typename std::iterator_traits<SamplesIterator>::value_type Lloyd<SamplesIterator>::update_buffers() {
     buffers_ptr_->samples_to_nearest_centroid_indices_ =
         kmeans::utils::samples_to_nearest_centroid_indices(std::get<0>(dataset_descriptor_),
                                                            std::get<1>(dataset_descriptor_),

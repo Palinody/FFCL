@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ffcl/common/math/heuristics/Distances.hpp"
-
 #include <cstddef>
 #include <tuple>
 #include <vector>
@@ -11,8 +9,8 @@ namespace ffcl::search::buffer {
 template <typename IndicesIterator, typename DistancesIterator>
 class Base {
   public:
-    using IndexType     = typename IndicesIterator::value_type;
-    using DistanceType  = typename DistancesIterator::value_type;
+    using IndexType     = typename std::iterator_traits<IndicesIterator>::value_type;
+    using DistanceType  = typename std::iterator_traits<DistancesIterator>::value_type;
     using IndicesType   = std::vector<IndexType>;
     using DistancesType = std::vector<DistanceType>;
 

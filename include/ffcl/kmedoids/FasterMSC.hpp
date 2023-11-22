@@ -25,11 +25,11 @@ namespace ffcl {
 template <typename SamplesIterator>
 class FasterMSC {
     // couldnt make FasterMSC stable with integers so it stays disabled for now
-    static_assert(std::is_floating_point_v<typename SamplesIterator::value_type>,
+    static_assert(std::is_floating_point_v<typename std::iterator_traits<SamplesIterator>::value_type>,
                   "FasterMSC only allows floating point types.");
 
   public:
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
@@ -174,8 +174,8 @@ auto FasterMSC<SamplesIterator>::step() {
 }
 
 template <typename SamplesIterator>
-std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIterator>::find_best_swap(
-    std::size_t medoid_candidate_index) const {
+std::pair<typename std::iterator_traits<SamplesIterator>::value_type, std::size_t>
+FasterMSC<SamplesIterator>::find_best_swap(std::size_t medoid_candidate_index) const {
     // TD set to the positive loss of removing medoid mi and assigning all of its members to the next best
     // alternative
     auto delta_td_mi = buffers_ptr_->losses_with_closest_medoid_removal_;
@@ -241,8 +241,8 @@ std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIt
 }
 
 template <typename SamplesIterator>
-std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIterator>::find_best_swap_k2(
-    std::size_t medoid_candidate_index) const {
+std::pair<typename std::iterator_traits<SamplesIterator>::value_type, std::size_t>
+FasterMSC<SamplesIterator>::find_best_swap_k2(std::size_t medoid_candidate_index) const {
     // TD set to the positive loss of removing medoid mi and assigning all of its members to the next best
     // alternative
     auto delta_td_mi = std::vector<DataType>(2);
@@ -280,8 +280,9 @@ std::pair<typename SamplesIterator::value_type, std::size_t> FasterMSC<SamplesIt
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type FasterMSC<SamplesIterator>::swap_buffers(std::size_t medoid_candidate_index,
-                                                                              std::size_t best_swap_index) {
+typename std::iterator_traits<SamplesIterator>::value_type FasterMSC<SamplesIterator>::swap_buffers(
+    std::size_t medoid_candidate_index,
+    std::size_t best_swap_index) {
     DataType loss = 0;
 
     auto& samples_to_nearest_medoid_indices          = buffers_ptr_->samples_to_nearest_medoid_indices_;
@@ -447,8 +448,9 @@ typename SamplesIterator::value_type FasterMSC<SamplesIterator>::swap_buffers(st
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type FasterMSC<SamplesIterator>::swap_buffers_k2(std::size_t medoid_candidate_index,
-                                                                                 std::size_t best_swap_index) {
+typename std::iterator_traits<SamplesIterator>::value_type FasterMSC<SamplesIterator>::swap_buffers_k2(
+    std::size_t medoid_candidate_index,
+    std::size_t best_swap_index) {
     medoids_[best_swap_index] = medoid_candidate_index;
 
     DataType loss = 0;

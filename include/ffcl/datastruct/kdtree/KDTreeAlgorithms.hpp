@@ -26,7 +26,7 @@ ssize_t select_axis_with_largest_bounding_box_difference(const bbox::HyperRangeT
 template <typename SamplesIterator>
 ssize_t select_axis_with_largest_bounding_box_difference(const bbox::HyperRangeType<SamplesIterator>& kd_bounding_box,
                                                          const std::vector<std::size_t>&              feature_mask) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     // feature index of the greatest range dimension in the kd bounding box at the indices of the feature_mask
     std::size_t current_max_range_feature_index = 0;

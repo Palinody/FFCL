@@ -52,24 +52,24 @@ void min_container_inplace_left(Container& left_container, const Container& righ
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type argmin(const SamplesIterator& samples_range_first,
-                                            const SamplesIterator& samples_range_last) {
+typename std::iterator_traits<SamplesIterator>::value_type argmin(const SamplesIterator& samples_range_first,
+                                                                  const SamplesIterator& samples_range_last) {
     auto min_it = std::min_element(samples_range_first, samples_range_last);
     return std::distance(samples_range_first, min_it);
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type argmax(const SamplesIterator& samples_range_first,
-                                            const SamplesIterator& samples_range_last) {
+typename std::iterator_traits<SamplesIterator>::value_type argmax(const SamplesIterator& samples_range_first,
+                                                                  const SamplesIterator& samples_range_last) {
     auto max_it = std::max_element(samples_range_first, samples_range_last);
     return std::distance(samples_range_first, max_it);
 }
 
 template <typename SamplesIterator>
-std::pair<std::size_t, typename SamplesIterator::value_type> get_min_index_value_pair(
+std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_type> get_min_index_value_pair(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto     min_element = std::min_element(samples_range_first, samples_range_last);
     std::size_t    min_index   = std::distance(samples_range_first, min_element);
@@ -79,10 +79,10 @@ std::pair<std::size_t, typename SamplesIterator::value_type> get_min_index_value
 }
 
 template <typename SamplesIterator>
-std::pair<std::size_t, typename SamplesIterator::value_type> get_max_index_value_pair(
+std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_type> get_max_index_value_pair(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto     max_element = std::max_element(samples_range_first, samples_range_last);
     std::size_t    max_index   = std::distance(samples_range_first, max_element);
@@ -92,10 +92,10 @@ std::pair<std::size_t, typename SamplesIterator::value_type> get_max_index_value
 }
 
 template <typename SamplesIterator>
-std::pair<std::size_t, typename SamplesIterator::value_type> get_second_max_index_value_pair(
+std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_type> get_second_max_index_value_pair(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     // Get the index of the maximum element
     auto           max_it    = std::max_element(samples_range_first, samples_range_last);
@@ -120,11 +120,11 @@ std::pair<std::size_t, typename SamplesIterator::value_type> get_second_max_inde
 }
 
 template <typename SamplesIterator>
-std::pair<std::size_t, typename SamplesIterator::value_type> find_nth_smallest_index_and_element(
+std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_type> find_nth_smallest_index_and_element(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last,
     std::size_t            n) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     if (n > static_cast<std::size_t>(samples_range_last - samples_range_first)) {
         throw std::invalid_argument("N-th smallest requested element shouldn't be greater that the container's size.");
@@ -150,7 +150,7 @@ template <typename SamplesIterator>
 auto compute_mean_per_feature(SamplesIterator samples_range_first,
                               SamplesIterator samples_range_last,
                               std::size_t     n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -180,7 +180,7 @@ auto compute_mean_per_feature(IndicesIterator indices_range_first,
                               std::size_t     n_features) {
     ignore_parameters(samples_range_last);
 
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -209,7 +209,7 @@ auto compute_mean_per_feature(IndicesIterator                 indices_range_firs
                               const std::vector<std::size_t>& feature_mask) {
     ignore_parameters(samples_range_last);
 
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -234,7 +234,7 @@ template <typename SamplesIterator>
 auto compute_variance_per_feature(SamplesIterator samples_range_first,
                                   SamplesIterator samples_range_last,
                                   std::size_t     n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -276,7 +276,7 @@ auto compute_variance_per_feature(const IndicesIterator& indices_range_first,
                                   SamplesIterator        samples_range_first,
                                   SamplesIterator        samples_range_last,
                                   std::size_t            n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -320,7 +320,7 @@ auto compute_variance_per_feature(const IndicesIterator&          indices_range_
                                   SamplesIterator                 samples_range_last,
                                   std::size_t                     n_features,
                                   const std::vector<std::size_t>& feature_mask) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -352,7 +352,7 @@ template <typename SamplesIterator>
 std::size_t argmax_variance_per_feature(SamplesIterator samples_range_first,
                                         SamplesIterator samples_range_last,
                                         std::size_t     n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -389,7 +389,7 @@ std::size_t argmax_variance_per_feature(const IndicesIterator& indices_range_fir
                                         SamplesIterator        samples_range_first,
                                         SamplesIterator        samples_range_last,
                                         std::size_t            n_features) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -428,7 +428,7 @@ std::size_t argmax_variance_per_feature(const IndicesIterator&          indices_
                                         SamplesIterator                 samples_range_last,
                                         std::size_t                     n_features,
                                         const std::vector<std::size_t>& feature_mask) {
-    using DataType = typename SamplesIterator::value_type;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -453,9 +453,9 @@ std::size_t argmax_variance_per_feature(const IndicesIterator&          indices_
 }
 
 template <typename SamplesIterator>
-typename SamplesIterator::value_type compute_variance(SamplesIterator samples_range_first,
-                                                      SamplesIterator samples_range_last) {
-    using DataType = typename SamplesIterator::value_type;
+typename std::iterator_traits<SamplesIterator>::value_type compute_variance(SamplesIterator samples_range_first,
+                                                                            SamplesIterator samples_range_last) {
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_elements = std::distance(samples_range_first, samples_range_last);
     const auto sum        = std::accumulate(samples_range_first, samples_range_last, static_cast<DataType>(0));

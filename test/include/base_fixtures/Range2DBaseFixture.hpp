@@ -62,13 +62,13 @@ class Range2DBaseFixture : public ::testing::Test {
     }
 
     template <typename SamplesIterator>
-    std::vector<typename SamplesIterator::value_type> get_column(SamplesIterator samples_first,
-                                                                 SamplesIterator samples_last,
-                                                                 std::size_t     n_features,
-                                                                 std::size_t     target_column) {
+    std::vector<typename std::iterator_traits<SamplesIterator>::value_type> get_column(SamplesIterator samples_first,
+                                                                                       SamplesIterator samples_last,
+                                                                                       std::size_t     n_features,
+                                                                                       std::size_t     target_column) {
         const std::size_t n_samples = ffcl::common::get_n_samples(samples_first, samples_last, n_features);
 
-        auto column = std::vector<typename SamplesIterator::value_type>(n_samples);
+        auto column = std::vector<typename std::iterator_traits<SamplesIterator>::value_type>(n_samples);
 
         for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
             column[sample_index] = samples_first[sample_index * n_features + target_column];
@@ -89,7 +89,7 @@ class Range2DBaseFixture : public ::testing::Test {
     }
 
     template <typename SamplesIterator>
-    std::optional<std::pair<std::size_t, typename SamplesIterator::value_type>> is_pivot_faulty(
+    std::optional<std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_type>> is_pivot_faulty(
         SamplesIterator samples_first,
         SamplesIterator samples_last,
         std::size_t     n_features,
@@ -121,7 +121,7 @@ class Range2DBaseFixture : public ::testing::Test {
     }
 
     template <typename IndicesIterator, typename SamplesIterator>
-    std::optional<std::pair<std::size_t, typename SamplesIterator::value_type>> is_pivot_faulty(
+    std::optional<std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_type>> is_pivot_faulty(
         IndicesIterator indices_first,
         IndicesIterator indices_last,
         SamplesIterator samples_first,
@@ -158,9 +158,8 @@ class Range2DBaseFixture : public ::testing::Test {
     }
 
     template <typename SamplesIterator>
-    std::vector<typename SamplesIterator::value_type> shuffle_by_row(SamplesIterator samples_first,
-                                                                     SamplesIterator samples_last,
-                                                                     std::size_t     n_features) {
+    std::vector<typename std::iterator_traits<SamplesIterator>::value_type>
+    shuffle_by_row(SamplesIterator samples_first, SamplesIterator samples_last, std::size_t n_features) {
         const std::size_t n_samples = ffcl::common::get_n_samples(samples_first, samples_last, n_features);
 
         std::vector<std::size_t> indices(n_samples);
