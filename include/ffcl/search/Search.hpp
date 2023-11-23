@@ -18,10 +18,14 @@ class Searcher {
     using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
 
   private:
-    static_assert(std::is_base_of_v<search::buffer::Base<IndicesIteratorType, SamplesIteratorType>, Buffer> ||
-                      std::is_base_of_v<search::count::Base<IndicesIteratorType, SamplesIteratorType>, Buffer>,
-                  "Buffer must inherit from search::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
-                  "search::count::Base<IndicesIteratorType, SamplesIteratorType>");
+    /*
+    static_assert(std::is_base_of_v<buffer::Base<IndicesIteratorType, SamplesIteratorType>, Buffer> ||
+                      std::is_base_of_v<count::Base<IndicesIteratorType, SamplesIteratorType>, Buffer>,
+                  "Buffer must inherit from buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
+                  "count::Base<IndicesIteratorType, SamplesIteratorType>");
+    */
+    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                  "Derived does not inherit from StaticBase<Derived>");
 
   public:
     Searcher(IndexerPtr query_indexer_ptr, const Buffer& buffer)

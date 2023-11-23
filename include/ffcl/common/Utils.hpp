@@ -7,12 +7,33 @@
 #include <cstddef>  // std::size_t
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
 #include <iostream>
 
 namespace ffcl::common {
+
+// A type trait to check for CRTP inheritance
+template <typename Derived, template <typename> class Base>
+struct is_crtp_of {
+    // We create two types: one that always exists (yes), and one that only exists on success (no).
+    // The check(...) will always be chosen if it's valid, thanks to the ellipsis which has the lowest precedence.
+    using yes = char;
+    struct no {
+        yes m[2];
+    };  // 'no' type will be larger than 'yes'
+
+    // This check will be valid only if you can static_cast from Derived* to Base<Derived>*.
+    // This is only possible if Derived inherits from Base<Derived>.
+    static yes test(Base<Derived>*);
+    static no  test(...);
+
+    // The size of test<U>(nullptr) will be sizeof(yes) if Derived inherits from Base<Derived>
+    // and sizeof(no) otherwise. We compare it with sizeof(yes) to find out if the inheritance is true.
+    static const bool value = sizeof(test(static_cast<Derived*>(nullptr))) == sizeof(yes);
+};
 
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}

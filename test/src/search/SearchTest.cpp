@@ -222,14 +222,14 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
                                                          .axis_selection_policy(AxisSelectionPolicyType{})
                                                          .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    // using SegmentType = ffcl::datastruct::bounds::segment_representation::MiddleAndLength<ValueType>;
-    // using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
-    using BoundType  = ffcl::datastruct::bounds::Ball<ValueType, 2>;
+    using SegmentType = ffcl::datastruct::bounds::segment_representation::MiddleAndLength<ValueType>;
+    using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
+    // using BoundType  = ffcl::datastruct::bounds::Ball<ValueType, 2>;
     using BoundPtr   = std::shared_ptr<BoundType>;
-    using BufferType = ffcl::search::buffer::UnsortedWithBound<IndicesIterator, SamplesIterator, BoundPtr>;
+    using BufferType = ffcl::search::buffer::StaticUnsorted<BoundPtr, IndicesIterator, SamplesIterator>;
 
-    // auto bound_ptr = std::make_shared<BoundType>(BoundType({{-2, 10}, {-5, 20}}));
-    auto bound_ptr = std::make_shared<BoundType>(BoundType{{-2, 10}, 10});
+    auto bound_ptr = std::make_shared<BoundType>(BoundType({{-2, 10}, {-5, 20}}));
+    // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-2, 10}, 10});
 
     auto buffer = BufferType(bound_ptr, /*max_capacity=*/ffcl::common::infinity<IndexType>());
 
