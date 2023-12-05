@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstddef>  // std::size_t
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <type_traits>
 #include <unordered_set>
@@ -15,24 +16,54 @@
 
 namespace ffcl::common {
 
+// Primary template for general types (non-pointers)
+template <typename T, typename = void>
+struct remove_pointer {
+    using type = T;
+};
+
+// Specialization for raw pointers
+template <typename T>
+struct remove_pointer<T, std::enable_if_t<std::is_pointer_v<T>>> {
+    using type = std::remove_pointer_t<T>;
+};
+
+// Specialization for std::unique_ptr
+template <typename T>
+struct remove_pointer<std::unique_ptr<T>> {
+    using type = T;
+};
+
+// Specialization for std::shared_ptr
+template <typename T>
+struct remove_pointer<std::shared_ptr<T>> {
+    using type = T;
+};
+
+// Helper type alias
+template <typename T>
+using remove_pointer_t = typename remove_pointer<T>::type;
+
 // A type trait to check for CRTP inheritance
 template <typename Derived, template <typename> class Base>
-struct is_crtp_of {
+class is_crtp_of {
+  private:
     // We create two types: one that always exists (yes), and one that only exists on success (no).
     // The check(...) will always be chosen if it's valid, thanks to the ellipsis which has the lowest precedence.
     using yes = char;
+    // 'no' type will be larger than 'yes'
     struct no {
         yes m[2];
-    };  // 'no' type will be larger than 'yes'
-
+    };
     // This check will be valid only if you can static_cast from Derived* to Base<Derived>*.
     // This is only possible if Derived inherits from Base<Derived>.
     static yes test(Base<Derived>*);
     static no  test(...);
 
+  public:
     // The size of test<U>(nullptr) will be sizeof(yes) if Derived inherits from Base<Derived>
     // and sizeof(no) otherwise. We compare it with sizeof(yes) to find out if the inheritance is true.
-    static const bool value = sizeof(test(static_cast<Derived*>(nullptr))) == sizeof(yes);
+    static constexpr bool value = sizeof(test(static_cast<Derived*>(nullptr))) == sizeof(yes);
 };
 
 template <typename... Args>

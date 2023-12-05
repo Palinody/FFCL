@@ -2,6 +2,8 @@
 
 #include "ffcl/search/buffer/Base.hpp"
 
+#include "ffcl/datastruct/bounds/StaticBound.hpp"
+
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
@@ -26,14 +28,14 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
 
     using SamplesIterator = typename Base<IndicesIterator, DistancesIterator>::SamplesIterator;
 
-    WithUnionFind(const UnionFind& union_find_ref,
+    WithUnionFind(const UnionFind& union_find_const_reference,
                   const IndexType& query_representative,
                   const IndexType& max_capacity = common::infinity<IndexType>())
-      : WithUnionFind({}, {}, union_find_ref, query_representative, max_capacity) {}
+      : WithUnionFind({}, {}, union_find_const_reference, query_representative, max_capacity) {}
 
     WithUnionFind(const IndicesType&   init_neighbors_indices,
                   const DistancesType& init_neighbors_distances,
-                  const UnionFind&     union_find_ref,
+                  const UnionFind&     union_find_const_reference,
                   const IndexType&     query_representative,
                   const IndexType&     max_capacity = common::infinity<IndexType>())
       : indices_{init_neighbors_indices}
@@ -41,7 +43,7 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
       , furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity > init_neighbors_indices.size() ? max_capacity : init_neighbors_indices.size()}
-      , union_find_ref_{union_find_ref}
+      , union_find_const_reference_{union_find_const_reference}
       , query_representative_{query_representative} {
         if (indices_.size()) {
             if (indices_.size() == distances_.size()) {
@@ -101,8 +103,8 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the candidate is not in the same component as the representative of the component
-        const bool is_candidate_valid =
-            union_find_ref_.find(query_representative_) != union_find_ref_.find(index_candidate);
+        const bool is_candidate_valid = union_find_const_reference_.find(query_representative_) !=
+                                        union_find_const_reference_.find(index_candidate);
 
         if (is_candidate_valid) {
             // always populate if the max capacity isnt reached
@@ -196,8 +198,169 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
     DistanceType              furthest_k_nearest_neighbor_distance_;
     IndexType                 max_capacity_;
 
-    const UnionFind& union_find_ref_;
+    const UnionFind& union_find_const_reference_;
     IndexType        query_representative_;
+};
+
+template <typename IndicesIterator, typename DistancesIterator, typename BoundPtr>
+class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterator, DistancesIterator, BoundPtr>> {
+  public:
+    using IndicesIteratorType   = IndicesIterator;
+    using DistancesIteratorType = DistancesIterator;
+    using SamplesIteratorType   = DistancesIteratorType;
+
+    using IndexType    = typename std::iterator_traits<IndicesIteratorType>::value_type;
+    using DistanceType = typename std::iterator_traits<DistancesIteratorType>::value_type;
+
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<DistanceType>, "DistanceType must be trivial.");
+
+    using IndicesType   = std::vector<IndexType>;
+    using DistancesType = std::vector<DistanceType>;
+
+    using UnionFindConstReferenceType = const datastruct::UnionFind<IndexType>&;
+
+    StaticWithUnionFind(BoundPtr                    bound_ptr,
+                        UnionFindConstReferenceType union_find_const_reference,
+                        const IndexType&            query_representative,
+                        const IndexType&            max_capacity = common::infinity<IndexType>())
+      : StaticWithUnionFind(bound_ptr, {}, {}, union_find_const_reference, query_representative, max_capacity) {}
+
+    StaticWithUnionFind(BoundPtr                    bound_ptr,
+                        const IndicesType&          init_neighbors_indices,
+                        const DistancesType&        init_neighbors_distances,
+                        UnionFindConstReferenceType union_find_const_reference,
+                        const IndexType&            query_representative,
+                        const IndexType&            max_capacity = common::infinity<IndexType>())
+      : bound_ptr_{bound_ptr}
+      , indices_{init_neighbors_indices}
+      , distances_{init_neighbors_distances}
+      , furthest_buffer_index_{0}
+      , furthest_k_nearest_neighbor_distance_{0}
+      , max_capacity_{max_capacity > init_neighbors_indices.size() ? max_capacity : init_neighbors_indices.size()}
+      , union_find_const_reference_{union_find_const_reference}
+      , query_representative_{query_representative} {
+        if (indices_.size()) {
+            if (indices_.size() == distances_.size()) {
+                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                    common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+
+            } else {
+                throw std::runtime_error("Indices and distances buffers sizes do not match.");
+            }
+        }
+    }
+
+    auto indices_impl() const {
+        return indices_;
+    }
+
+    auto distances_impl() const {
+        return distances_;
+    }
+
+    const auto& const_reference_indices_impl() const& {
+        return indices_;
+    }
+
+    const auto& const_reference_distances_impl() const& {
+        return distances_;
+    }
+
+    auto&& move_indices_impl() && {
+        return std::move(indices_);
+    }
+
+    auto&& move_distances_impl() && {
+        return std::move(distances_);
+    }
+
+    std::size_t size_impl() const {
+        return indices_.size();
+    }
+
+    std::size_t n_free_slots_impl() const {
+        return max_capacity_ - size_impl();
+    }
+
+    bool empty_impl() const {
+        return indices_.empty();
+    }
+
+    IndexType upper_bound_index_impl() const {
+        return indices_[furthest_buffer_index_];
+    }
+
+    DistanceType upper_bound_impl() const {
+        return furthest_k_nearest_neighbor_distance_;
+    }
+
+    DistanceType upper_bound_impl(const IndexType& feature_index) const {
+        common::ignore_parameters(feature_index);
+        return upper_bound_impl();
+    }
+
+    void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        // consider an update only if the candidate is not in the same component as the representative of the component
+        const bool is_candidate_valid = union_find_const_reference_.find(query_representative_) !=
+                                        union_find_const_reference_.find(index_candidate);
+
+        if (is_candidate_valid) {
+            // always populate if the max capacity isnt reached
+            if (n_free_slots_impl()) {
+                indices_.emplace_back(index_candidate);
+                distances_.emplace_back(distance_candidate);
+                if (distance_candidate > upper_bound_impl()) {
+                    // update the new index position of the furthest in the buffer
+                    furthest_buffer_index_                = indices_.size() - 1;
+                    furthest_k_nearest_neighbor_distance_ = distance_candidate;
+                }
+            }
+            // populate if the max capacity is reached and the candidate has a closer distance
+            else if (distance_candidate < upper_bound_impl()) {
+                // replace the previous greatest distance now that the vectors overflow the max capacity
+                indices_[furthest_buffer_index_]   = index_candidate;
+                distances_[furthest_buffer_index_] = distance_candidate;
+                // find the new furthest neighbor and update the cache accordingly
+                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                    common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+            }
+        }
+    }
+
+    void partial_search_impl(const IndicesIteratorType& indices_range_first,
+                             const IndicesIteratorType& indices_range_last,
+                             const SamplesIteratorType& samples_range_first,
+                             const SamplesIteratorType& samples_range_last,
+                             std::size_t                n_features) {
+        ffcl::common::ignore_parameters(samples_range_last);
+
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
+
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_in_bounds_index = indices_range_first[index];
+
+            const auto optional_candidate_distance = bound_ptr_->compute_distance_within_bounds(
+                samples_range_first + candidate_in_bounds_index * n_features,
+                samples_range_first + candidate_in_bounds_index * n_features + n_features);
+
+            if (optional_candidate_distance) {
+                update_impl(candidate_in_bounds_index, *optional_candidate_distance);
+            }
+        }
+    }
+
+  private:
+    BoundPtr bound_ptr_;
+
+    std::vector<IndexType>    indices_;
+    std::vector<DistanceType> distances_;
+    IndexType                 furthest_buffer_index_;
+    DistanceType              furthest_k_nearest_neighbor_distance_;
+    IndexType                 max_capacity_;
+
+    UnionFindConstReferenceType union_find_const_reference_;
+    IndexType                   query_representative_;
 };
 
 }  // namespace ffcl::search::buffer

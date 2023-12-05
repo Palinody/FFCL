@@ -74,12 +74,24 @@ struct StaticBase {
     }
 
     template <typename DerivedType = DerivedClass>
+    const auto& indices() const& {
+        return static_cast<const DerivedType&>(*this).const_reference_indices_impl();
+    }
+
+    template <typename DerivedType = DerivedClass>
+    const auto& distances() const& {
+        return static_cast<const DerivedType&>(*this).const_reference_distances_impl();
+    }
+
+    template <typename DerivedType = DerivedClass>
     auto&& indices() && {
+        // using ForwardedType = decltype(static_cast<DerivedType&&>(*this));
         return std::move(static_cast<DerivedType&&>(*this)).move_indices_impl();
     }
 
     template <typename DerivedType = DerivedClass>
     auto&& distances() && {
+        // using ForwardedType = decltype(static_cast<DerivedType&&>(*this));
         return std::move(static_cast<DerivedType&&>(*this)).move_distances_impl();
     }
 

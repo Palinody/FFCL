@@ -1,12 +1,14 @@
 #pragma once
 
+#include "ffcl/datastruct/bounds/segment_representation/StaticSegmentRepresentation.hpp"
+
 namespace ffcl::datastruct::bounds::segment_representation {
 
 template <typename Value>
-class MiddleAndHalfLength {
+class MiddleAndHalfLength : public StaticSegmentRepresentation<MiddleAndHalfLength<Value>> {
   public:
     using ValueType   = Value;
-    using SegmentType = std::pair<Value, Value>;
+    using SegmentType = std::pair<ValueType, ValueType>;
 
     MiddleAndHalfLength(const ValueType& middle, const ValueType& half_length)
       : MiddleAndHalfLength(std::make_pair(middle, half_length)) {}
@@ -17,11 +19,11 @@ class MiddleAndHalfLength {
     MiddleAndHalfLength(SegmentType&& segment_representation) noexcept
       : segment_representation_{std::move(segment_representation)} {}
 
-    constexpr Value length_from_centroid() const {
+    constexpr auto length_from_centroid_impl() const {
         return segment_representation_.second;
     }
 
-    constexpr Value centroid() const {
+    constexpr auto centroid_impl() const {
         return segment_representation_.first;
     }
 

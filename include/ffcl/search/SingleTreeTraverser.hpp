@@ -28,6 +28,8 @@ class SingleTreeTraverser {
                       "Buffer must inherit from search::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
                       "search::count::Base<IndicesIteratorType, SamplesIteratorType>");
         */
+        static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                      "Derived class does not inherit from StaticBase<Derived>");
 
         single_tree_traversal(query_index, buffer, query_indexer_ptr_->root());
         return buffer;
@@ -43,6 +45,9 @@ class SingleTreeTraverser {
                       "Buffer must inherit from search::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
                       "search::count::Base<IndicesIteratorType, SamplesIteratorType>");
         */
+        static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                      "Derived class does not inherit from StaticBase<Derived>");
+
         single_tree_traversal(query_feature_first, query_feature_last, buffer, query_indexer_ptr_->root());
         return buffer;
     }

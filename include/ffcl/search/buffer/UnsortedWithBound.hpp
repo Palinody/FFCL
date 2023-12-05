@@ -2,6 +2,8 @@
 
 #include "ffcl/search/buffer/Base.hpp"
 
+#include "ffcl/datastruct/bounds/StaticBound.hpp"
+
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
@@ -179,123 +181,8 @@ class UnsortedWithBound : public Base<IndicesIterator, DistancesIterator> {
     }
 
   private:
-    BoundPtr      bound_ptr_;
-    IndicesType   indices_;
-    DistancesType distances_;
-    IndexType     furthest_buffer_index_;
-    DistanceType  furthest_k_nearest_neighbor_distance_;
-    IndexType     max_capacity_;
-};
+    BoundPtr bound_ptr_;
 
-template <typename BoundPtr, typename IndicesIterator, typename DistancesIterator>
-class StaticUnsorted : public StaticBase<StaticUnsorted<BoundPtr, IndicesIterator, DistancesIterator>> {
-  public:
-    using IndicesIteratorType   = IndicesIterator;
-    using DistancesIteratorType = DistancesIterator;
-    using SamplesIteratorType   = DistancesIteratorType;
-
-    using IndexType    = typename std::iterator_traits<IndicesIteratorType>::value_type;
-    using DistanceType = typename std::iterator_traits<DistancesIteratorType>::value_type;
-
-    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
-    static_assert(std::is_trivial_v<DistanceType>, "DistanceType must be trivial.");
-
-    using IndicesType   = std::vector<IndexType>;
-    using DistancesType = std::vector<DistanceType>;
-
-    explicit StaticUnsorted(BoundPtr bound_ptr, const IndexType& max_capacity = ffcl::common::infinity<IndexType>())
-      : bound_ptr_{bound_ptr}
-      , indices_{}
-      , distances_{}
-      , furthest_buffer_index_{0}
-      , furthest_k_nearest_neighbor_distance_{0}
-      , max_capacity_{max_capacity} {}
-
-    IndicesType indices_impl() const {
-        return indices_;
-    }
-
-    DistanceType distances_impl() const {
-        return distances_;
-    }
-
-    IndicesType&& move_indices_impl() && {
-        return std::move(indices_);
-    }
-
-    DistanceType&& move_distances_impl() && {
-        return std::move(distances_);
-    }
-
-    std::size_t size_impl() const {
-        return indices_.size();
-    }
-
-    std::size_t n_free_slots_impl() const {
-        return max_capacity_ - size_impl();
-    }
-
-    bool empty_impl() const {
-        return indices_.empty();
-    }
-
-    DistanceType upper_bound_impl() const {
-        return furthest_k_nearest_neighbor_distance_;
-    }
-
-    DistanceType upper_bound_impl(const IndexType& feature_index) const {
-        ffcl::common::ignore_parameters(feature_index);
-        return upper_bound_impl();
-    }
-
-    void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        // always populate if the max capacity isnt reached
-        if (n_free_slots_impl()) {
-            indices_.emplace_back(index_candidate);
-            distances_.emplace_back(distance_candidate);
-            if (distance_candidate > upper_bound_impl()) {
-                // update the new index position of the furthest in the buffer
-                furthest_buffer_index_                = indices_.size() - 1;
-                furthest_k_nearest_neighbor_distance_ = distance_candidate;
-            }
-        }
-        // populate if the max capacity is reached and the candidate has a closer distance
-        else if (distance_candidate < upper_bound_impl()) {
-            // replace the previous greatest distance now that the vectors overflow the max capacity
-            indices_[furthest_buffer_index_]   = index_candidate;
-            distances_[furthest_buffer_index_] = distance_candidate;
-            // find the new furthest neighbor and update the cache accordingly
-            std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
-                ffcl::common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
-        }
-    }
-
-    void partial_search_impl(const IndicesIteratorType& indices_range_first,
-                             const IndicesIteratorType& indices_range_last,
-                             const SamplesIteratorType& samples_range_first,
-                             const SamplesIteratorType& samples_range_last,
-                             std::size_t                n_features) {
-        ffcl::common::ignore_parameters(samples_range_last);
-
-        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
-        for (std::size_t index = 0; index < n_samples; ++index) {
-            const std::size_t candidate_in_bounds_index = indices_range_first[index];
-
-            ffcl::common::ignore_parameters(candidate_in_bounds_index);
-
-            const auto optional_candidate_distance = bound_ptr_->compute_distance_within_bounds(
-                samples_range_first + candidate_in_bounds_index * n_features,
-                samples_range_first + candidate_in_bounds_index * n_features + n_features);
-
-            if (optional_candidate_distance) {
-                update_impl(candidate_in_bounds_index, *optional_candidate_distance);
-            }
-        }
-    }
-
-  private:
-    BoundPtr      bound_ptr_;
     IndicesType   indices_;
     DistancesType distances_;
     IndexType     furthest_buffer_index_;

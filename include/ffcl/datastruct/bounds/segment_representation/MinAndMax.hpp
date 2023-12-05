@@ -1,12 +1,14 @@
 #pragma once
 
+#include "ffcl/datastruct/bounds/segment_representation/StaticSegmentRepresentation.hpp"
+
 namespace ffcl::datastruct::bounds::segment_representation {
 
 template <typename Value>
-class MinAndMax {
+class MinAndMax : public StaticSegmentRepresentation<MinAndMax<Value>> {
   public:
     using ValueType   = Value;
-    using SegmentType = std::pair<Value, Value>;
+    using SegmentType = std::pair<ValueType, ValueType>;
 
     MinAndMax(const ValueType& min, const ValueType& max)
       : MinAndMax(std::make_pair(min, max)) {}
@@ -17,11 +19,11 @@ class MinAndMax {
     MinAndMax(SegmentType&& segment_representation) noexcept
       : segment_representation_{std::move(segment_representation)} {}
 
-    constexpr Value length_from_centroid() const {
+    constexpr auto length_from_centroid_impl() const {
         return (segment_representation_.second - segment_representation_.first) / 2;
     }
 
-    constexpr Value centroid() const {
+    constexpr auto centroid_impl() const {
         return (segment_representation_.first + segment_representation_.second) / 2;
     }
 

@@ -9,7 +9,6 @@
 #include "ffcl/search/buffer/Radius.hpp"
 #include "ffcl/search/buffer/Range.hpp"
 #include "ffcl/search/buffer/Unsorted.hpp"
-#include "ffcl/search/buffer/UnsortedWithBound.hpp"
 
 #include "ffcl/datastruct/bounds/segment_representation/MiddleAndLength.hpp"
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
@@ -17,6 +16,7 @@
 
 #include "ffcl/datastruct/bounds/Ball.hpp"
 #include "ffcl/datastruct/bounds/BoundingBox.hpp"
+#include "ffcl/datastruct/bounds/UnboundedBall.hpp"
 #include "ffcl/datastruct/bounds/Vertex.hpp"
 
 #include <sys/types.h>  // std::ssize_t
@@ -223,10 +223,10 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
                                                          .splitting_rule_policy(SplittingRulePolicyType{}));
 
     using SegmentType = ffcl::datastruct::bounds::segment_representation::MiddleAndLength<ValueType>;
-    using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
-    // using BoundType  = ffcl::datastruct::bounds::Ball<ValueType, 2>;
+    using BoundType   = ffcl::datastruct::bounds::StaticBoundingBox<SegmentType>;
+    // using BoundType  = ffcl::datastruct::bounds::StaticBall<ValueType, 2>;
     using BoundPtr   = std::shared_ptr<BoundType>;
-    using BufferType = ffcl::search::buffer::StaticUnsorted<BoundPtr, IndicesIterator, SamplesIterator>;
+    using BufferType = ffcl::search::buffer::StaticUnsorted<IndicesIterator, SamplesIterator, BoundPtr>;
 
     auto bound_ptr = std::make_shared<BoundType>(BoundType({{-2, 10}, {-5, 20}}));
     // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-2, 10}, 10});
