@@ -294,7 +294,7 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, Distanc
 
             ffcl::common::ignore_parameters(candidate_in_bounds_index);
 
-            const auto optional_candidate_distance = bound_ptr_->compute_distance_within_bounds(
+            const auto optional_candidate_distance = bound_ptr_->compute_distance_if_within_bounds(
                 samples_range_first + candidate_in_bounds_index * n_features,
                 samples_range_first + candidate_in_bounds_index * n_features + n_features);
 

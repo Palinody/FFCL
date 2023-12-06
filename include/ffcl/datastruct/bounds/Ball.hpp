@@ -96,16 +96,16 @@ class StaticBall : public StaticBound<StaticBall<ValueType, NFeatures>> {
     }
 
     template <typename FeaturesIterator>
-    bool is_in_bounds_impl(const FeaturesIterator& features_range_first,
-                           const FeaturesIterator& features_range_last) const {
+    constexpr bool is_in_bounds_impl(const FeaturesIterator& features_range_first,
+                                     const FeaturesIterator& features_range_last) const {
         assert(center_point_.size() == std::distance(features_range_first, features_range_last));
 
         return distance_impl(features_range_first, features_range_last) < radius_;
     }
 
     template <typename FeaturesIterator>
-    ValueType distance_impl(const FeaturesIterator& features_range_first,
-                            const FeaturesIterator& features_range_last) const {
+    constexpr auto distance_impl(const FeaturesIterator& features_range_first,
+                                 const FeaturesIterator& features_range_last) const {
         assert(center_point_.size() == std::distance(features_range_first, features_range_last));
 
         return common::math::heuristics::auto_distance(
@@ -113,32 +113,29 @@ class StaticBall : public StaticBound<StaticBall<ValueType, NFeatures>> {
     }
 
     template <typename FeaturesIterator>
-    std::optional<ValueType> compute_distance_within_bounds_impl(const FeaturesIterator& features_range_first,
-                                                                 const FeaturesIterator& features_range_last) const {
+    constexpr auto compute_distance_if_within_bounds_impl(const FeaturesIterator& features_range_first,
+                                                          const FeaturesIterator& features_range_last) const {
         assert(center_point_.size() == std::distance(features_range_first, features_range_last));
 
-        if (is_in_bounds_impl(features_range_first, features_range_last)) {
-            return distance_impl(features_range_first, features_range_last);
+        const auto feature_distance = distance_impl(features_range_first, features_range_last);
 
-        } else {
-            return std::nullopt;
-        }
+        return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
     }
 
-    ValueType length_from_centroid_impl() const {
+    constexpr auto length_from_centroid_impl() const {
         return radius_;
     }
 
-    constexpr ValueType length_from_centroid_impl(std::size_t feature_index) const {
+    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return radius_;
     }
 
-    const CentroidType& centroid_impl() const {
+    constexpr auto& centroid_reference_impl() const {
         return center_point_;
     }
 
-    CentroidType make_centroid_impl() const {
+    constexpr auto make_centroid_impl() const {
         return center_point_;
     }
 

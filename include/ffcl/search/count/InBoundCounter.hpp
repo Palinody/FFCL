@@ -1,49 +1,70 @@
 #pragma once
 
+#include "ffcl/search/count/Base.hpp"
+
+#include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
 
-#include <cstddef>
+#include <iostream>
+#include <stdexcept>  // std::runtime_error
 #include <tuple>
 #include <vector>
 
 namespace ffcl::search::count {
 
 template <typename IndicesIterator, typename DistancesIterator>
-class Base {
+class InBoundCounter : public Base<IndicesIterator, DistancesIterator> {
   public:
-    using IndexType    = typename std::iterator_traits<IndicesIterator>::value_type;
-    using DistanceType = typename std::iterator_traits<DistancesIterator>::value_type;
+    auto count_impl() const {
+        return count_;
+    }
 
-    using SamplesIterator = typename std::vector<DistanceType>::iterator;
+    auto n_free_slots_impl() const {
+        return common::infinity<IndexType>();
+    }
 
-    virtual ~Base() {}
+    auto upper_bound_impl() const {
+        return radius_;
+    }
 
-    virtual DistanceType upper_bound() const = 0;
+    auto upper_bound_impl(const IndexType& feature_index) const {
+        common::ignore_parameters(feature_index);
+        return upper_bound_impl();
+    }
 
-    virtual DistanceType upper_bound(const IndexType& feature_index) const = 0;
+    void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        // should be replaced by radius check
+        common::ignore_parameters(index_candidate);
+        if (distance_candidate < upper_bound_impl()) {
+            ++count_;
+        }
+    }
 
-    virtual std::size_t n_free_slots() const = 0;
+    void partial_search_impl(const IndicesIteratorType& indices_range_first,
+                             const IndicesIteratorType& indices_range_last,
+                             const SamplesIteratorType& samples_range_first,
+                             const SamplesIteratorType& samples_range_last,
+                             std::size_t                n_features) {
+        ffcl::common::ignore_parameters(samples_range_last);
 
-    virtual IndexType count() const = 0;
+        const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    virtual void update(const IndexType& index_candidate, const DistanceType& distance_candidate) = 0;
+        for (std::size_t index = 0; index < n_samples; ++index) {
+            const std::size_t candidate_in_bounds_index = indices_range_first[index];
 
-    virtual void search(const IndicesIterator& indices_range_first,
-                        const IndicesIterator& indices_range_last,
-                        const SamplesIterator& samples_range_first,
-                        const SamplesIterator& samples_range_last,
-                        std::size_t            n_features,
-                        std::size_t            sample_index_query) = 0;
+            const auto optional_candidate_distance = bound_ptr_->compute_distance_within_bounds(
+                samples_range_first + candidate_in_bounds_index * n_features,
+                samples_range_first + candidate_in_bounds_index * n_features + n_features);
 
-    virtual void search(const IndicesIterator& indices_range_first,
-                        const IndicesIterator& indices_range_last,
-                        const SamplesIterator& samples_range_first,
-                        const SamplesIterator& samples_range_last,
-                        std::size_t            n_features,
-                        const SamplesIterator& feature_query_range_first,
-                        const SamplesIterator& feature_query_range_last) = 0;
+            if (optional_candidate_distance) {
+                update_impl(candidate_in_bounds_index, *optional_candidate_distance);
+            }
+        }
+    }
 
-    virtual void print() const = 0;
+  private:
+    DistanceType radius_;
+    IndexType    count_;
 };
 
 template <class DerivedClass>
