@@ -22,12 +22,6 @@ class SingleTreeTraverser {
 
     template <typename Buffer>
     Buffer operator()(std::size_t query_index, Buffer& buffer) {
-        /*
-        static_assert(std::is_base_of_v<search::buffer::Base<IndicesIteratorType, SamplesIteratorType>, Buffer> ||
-                          std::is_base_of_v<search::count::Base<IndicesIteratorType, SamplesIteratorType>, Buffer>,
-                      "Buffer must inherit from search::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
-                      "search::count::Base<IndicesIteratorType, SamplesIteratorType>");
-        */
         static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
                       "Derived class does not inherit from StaticBase<Derived>");
 
@@ -39,12 +33,6 @@ class SingleTreeTraverser {
     Buffer operator()(const SamplesIteratorType& query_feature_first,
                       const SamplesIteratorType& query_feature_last,
                       Buffer&                    buffer) {
-        /*
-        static_assert(std::is_base_of_v<search::buffer::Base<IndicesIteratorType, SamplesIteratorType>, Buffer> ||
-                          std::is_base_of_v<search::count::Base<IndicesIteratorType, SamplesIteratorType>, Buffer>,
-                      "Buffer must inherit from search::buffer::Base<IndicesIteratorType, SamplesIteratorType> or "
-                      "search::count::Base<IndicesIteratorType, SamplesIteratorType>");
-        */
         static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
                       "Derived class does not inherit from StaticBase<Derived>");
 
