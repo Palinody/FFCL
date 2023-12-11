@@ -86,6 +86,18 @@ template <typename T>
 constexpr bool is_raw_or_smart_ptr() {
     return std::is_pointer<T>::value || is_smart_ptr<T>::value;
 }
+
+/*
+// EXAMPLE USAGE
+int main() {
+    static_assert(is_raw_or_smart_ptr<int*>(), "int* is a raw pointer");
+    static_assert(is_raw_or_smart_ptr<std::unique_ptr<int>>(), "std::unique_ptr<int> is a smart pointer");
+    static_assert(is_raw_or_smart_ptr<std::shared_ptr<int>>(), "std::shared_ptr<int> is a smart pointer");
+    static_assert(is_raw_or_smart_ptr<std::weak_ptr<int>>(), "std::weak_ptr<int> is a smart pointer");
+    static_assert(!is_raw_or_smart_ptr<int>(), "int is not a pointer");
+    return 0;
+}
+*/
 // END: is_raw_or_smart_ptr
 
 // BEGIN: is_iterator_v
@@ -105,6 +117,16 @@ template <typename T>
 constexpr bool is_iterator_v() {
     return is_iterator<T>::value;
 }
+/*
+// Example usage
+#include <vector>
+int main() {
+    static_assert(is_iterator_v<std::vector<int>::iterator>(), "std::vector<int>::iterator is an iterator");
+    static_assert(is_iterator_v<int*>(), "int* is an iterator (as a raw pointer)");
+    static_assert(!is_iterator_v<int>(), "int is not an iterator");
+    return 0;
+}
+*/
 // END: is_iterator_v
 
 template <typename... Args>
