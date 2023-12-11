@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>  // std::size_t
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -65,6 +66,46 @@ class is_crtp_of {
     // and sizeof(no) otherwise. We compare it with sizeof(yes) to find out if the inheritance is true.
     static constexpr bool value = sizeof(test(static_cast<Derived*>(nullptr))) == sizeof(yes);
 };
+
+// BEGIN: is_raw_or_smart_ptr
+// Helper template to check if a type is a smart pointer (std::unique_ptr, std::shared_ptr, std::weak_ptr)
+template <typename T>
+struct is_smart_ptr : std::false_type {};
+
+template <typename T>
+struct is_smart_ptr<std::unique_ptr<T>> : std::true_type {};
+
+template <typename T>
+struct is_smart_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template <typename T>
+struct is_smart_ptr<std::weak_ptr<T>> : std::true_type {};
+
+// Function to check if T is a raw or smart pointer
+template <typename T>
+constexpr bool is_raw_or_smart_ptr() {
+    return std::is_pointer<T>::value || is_smart_ptr<T>::value;
+}
+// END: is_raw_or_smart_ptr
+
+// BEGIN: is_iterator_v
+// Helper to check for the presence of nested types typical for iterators
+template <typename T, typename = void>
+struct is_iterator : std::false_type {};
+
+template <typename T>
+struct is_iterator<T,
+                   std::void_t<typename std::iterator_traits<T>::difference_type,
+                               typename std::iterator_traits<T>::value_type,
+                               typename std::iterator_traits<T>::pointer,
+                               typename std::iterator_traits<T>::reference,
+                               typename std::iterator_traits<T>::iterator_category>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_iterator_v() {
+    return is_iterator<T>::value;
+}
+// END: is_iterator_v
 
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}
