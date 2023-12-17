@@ -4,6 +4,8 @@
 
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
 
+#include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
+
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
@@ -202,12 +204,19 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
     IndexType        query_representative_;
 };
 
-template <typename IndicesIterator, typename DistancesIterator, typename BoundPtr>
-class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterator, DistancesIterator, BoundPtr>> {
+template <typename IndicesIterator,
+          typename DistancesIterator,
+          typename Bound = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>>
+class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterator, DistancesIterator, Bound>> {
   public:
     using IndicesIteratorType   = IndicesIterator;
     using DistancesIteratorType = DistancesIterator;
     using SamplesIteratorType   = DistancesIteratorType;
+
+    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
+    static_assert(common::is_iterator<DistancesIteratorType>::value, "DistancesIteratorType is not an iterator");
+    static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
+                  "Bound does not inherit from datastruct::bounds::StaticBound<Derived>");
 
     using IndexType    = typename std::iterator_traits<IndicesIteratorType>::value_type;
     using DistanceType = typename std::iterator_traits<DistancesIteratorType>::value_type;
@@ -220,36 +229,30 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterato
 
     using UnionFindConstReferenceType = const datastruct::UnionFind<IndexType>&;
 
-    StaticWithUnionFind(BoundPtr                    bound_ptr,
+    StaticWithUnionFind(Bound&&                     bound,
                         UnionFindConstReferenceType union_find_const_reference,
                         const IndexType&            query_representative,
                         const IndexType&            max_capacity = common::infinity<IndexType>())
-      : StaticWithUnionFind(bound_ptr, {}, {}, union_find_const_reference, query_representative, max_capacity) {}
-
-    StaticWithUnionFind(BoundPtr                    bound_ptr,
-                        const IndicesType&          init_neighbors_indices,
-                        const DistancesType&        init_neighbors_distances,
-                        UnionFindConstReferenceType union_find_const_reference,
-                        const IndexType&            query_representative,
-                        const IndexType&            max_capacity = common::infinity<IndexType>())
-      : bound_ptr_{bound_ptr}
-      , indices_{init_neighbors_indices}
-      , distances_{init_neighbors_distances}
+      : bound_{std::forward<Bound>(bound)}
+      , indices_{}
+      , distances_{}
       , furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
-      , max_capacity_{max_capacity > init_neighbors_indices.size() ? max_capacity : init_neighbors_indices.size()}
+      , max_capacity_{max_capacity}
       , union_find_const_reference_{union_find_const_reference}
-      , query_representative_{query_representative} {
-        if (indices_.size()) {
-            if (indices_.size() == distances_.size()) {
-                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
-                    common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+      , query_representative_{query_representative} {}
 
-            } else {
-                throw std::runtime_error("Indices and distances buffers sizes do not match.");
-            }
-        }
-    }
+    StaticWithUnionFind(DistancesIteratorType       centroid_features_query_first,
+                        DistancesIteratorType       centroid_features_query_last,
+                        UnionFindConstReferenceType union_find_const_reference,
+                        const IndexType&            query_representative,
+                        const IndexType&            max_capacity = common::infinity<IndexType>())
+      : StaticWithUnionFind(Bound(centroid_features_query_first, centroid_features_query_last),
+                            IndicesType{},
+                            DistancesType{},
+                            union_find_const_reference,
+                            query_representative,
+                            max_capacity) {}
 
     auto indices_impl() const {
         return indices_;
@@ -340,9 +343,9 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterato
         for (std::size_t subrange_index = 0; subrange_index < n_subrange_samples; ++subrange_index) {
             const std::size_t query_index = indices_range_first[subrange_index];
 
-            const auto optional_candidate_distance = bound_ptr_->compute_distance_if_within_bounds(
-                samples_range_first + query_index * n_features,
-                samples_range_first + query_index * n_features + n_features);
+            const auto optional_candidate_distance =
+                bound_.compute_distance_if_within_bounds(samples_range_first + query_index * n_features,
+                                                         samples_range_first + query_index * n_features + n_features);
 
             if (optional_candidate_distance) {
                 update_impl(query_index, *optional_candidate_distance);
@@ -351,13 +354,13 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterato
     }
 
   private:
-    BoundPtr bound_ptr_;
+    Bound bound_;
 
-    std::vector<IndexType>    indices_;
-    std::vector<DistanceType> distances_;
-    IndexType                 furthest_buffer_index_;
-    DistanceType              furthest_k_nearest_neighbor_distance_;
-    IndexType                 max_capacity_;
+    IndicesType   indices_;
+    DistancesType distances_;
+    IndexType     furthest_buffer_index_;
+    DistanceType  furthest_k_nearest_neighbor_distance_;
+    IndexType     max_capacity_;
 
     UnionFindConstReferenceType union_find_const_reference_;
     IndexType                   query_representative_;

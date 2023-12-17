@@ -4,6 +4,8 @@
 
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
 
+#include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
+
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
@@ -184,8 +186,10 @@ class Unsorted : public Base<IndicesIterator, DistancesIterator> {
     IndexType     max_capacity_;
 };
 
-template <typename IndicesIterator, typename DistancesIterator, typename BoundPtr>
-class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, DistancesIterator, BoundPtr>> {
+template <typename IndicesIterator,
+          typename DistancesIterator,
+          typename Bound = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>>
+class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, DistancesIterator, Bound>> {
   public:
     using IndicesIteratorType   = IndicesIterator;
     using DistancesIteratorType = DistancesIterator;
@@ -194,24 +198,30 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, Distanc
     using IndexType    = typename std::iterator_traits<IndicesIteratorType>::value_type;
     using DistanceType = typename std::iterator_traits<DistancesIteratorType>::value_type;
 
-    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
-    static_assert(std::is_trivial_v<DistanceType>, "DistanceType must be trivial.");
-
     using IndicesType   = std::vector<IndexType>;
     using DistancesType = std::vector<DistanceType>;
 
-    explicit StaticUnsorted(BoundPtr bound_ptr, const IndexType& max_capacity = ffcl::common::infinity<IndexType>())
-      : bound_ptr_{bound_ptr}
+    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
+    static_assert(common::is_iterator<DistancesIteratorType>::value, "DistancesIteratorType is not an iterator");
+
+    static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
+                  "Bound does not inherit from datastruct::bounds::StaticBound<Derived>");
+
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<DistanceType>, "DistanceType must be trivial.");
+
+    explicit StaticUnsorted(Bound&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
+      : bound_{std::forward<Bound>(bound)}
       , indices_{}
       , distances_{}
       , furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
-      , max_capacity_{max_capacity} {
-        using BoundType = typename ffcl::common::remove_pointer_t<BoundPtr>;
+      , max_capacity_{max_capacity} {}
 
-        static_assert(common::is_crtp_of<BoundType, datastruct::bounds::StaticBound>::value,
-                      "BoundType does not inherit from datastruct::bounds::StaticBound<Derived>");
-    }
+    StaticUnsorted(DistancesIteratorType centroid_features_query_first,
+                   DistancesIteratorType centroid_features_query_last,
+                   const IndexType&      max_capacity = common::infinity<IndexType>())
+      : StaticUnsorted(Bound(centroid_features_query_first, centroid_features_query_last), max_capacity) {}
 
     auto indices_impl() const {
         return indices_;
@@ -254,7 +264,7 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, Distanc
     }
 
     DistanceType upper_bound_impl(const IndexType& feature_index) const {
-        ffcl::common::ignore_parameters(feature_index);
+        common::ignore_parameters(feature_index);
         return upper_bound_impl();
     }
 
@@ -276,7 +286,7 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, Distanc
             distances_[furthest_buffer_index_] = distance_candidate;
             // find the new furthest neighbor and update the cache accordingly
             std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
-                ffcl::common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
+                common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
         }
     }
 
@@ -285,16 +295,16 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, Distanc
                              const SamplesIteratorType& samples_range_first,
                              const SamplesIteratorType& samples_range_last,
                              std::size_t                n_features) {
-        ffcl::common::ignore_parameters(samples_range_last);
+        common::ignore_parameters(samples_range_last);
 
         const std::size_t n_subrange_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t subrange_index = 0; subrange_index < n_subrange_samples; ++subrange_index) {
             const std::size_t query_index = indices_range_first[subrange_index];
 
-            const auto optional_candidate_distance = bound_ptr_->compute_distance_if_within_bounds(
-                samples_range_first + query_index * n_features,
-                samples_range_first + query_index * n_features + n_features);
+            const auto optional_candidate_distance =
+                bound_.compute_distance_if_within_bounds(samples_range_first + query_index * n_features,
+                                                         samples_range_first + query_index * n_features + n_features);
 
             if (optional_candidate_distance) {
                 update_impl(query_index, *optional_candidate_distance);
@@ -303,7 +313,7 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<IndicesIterator, Distanc
     }
 
   private:
-    BoundPtr bound_ptr_;
+    Bound bound_;
 
     IndicesType   indices_;
     DistancesType distances_;

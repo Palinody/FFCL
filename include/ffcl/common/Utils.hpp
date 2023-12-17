@@ -103,20 +103,17 @@ int main() {
 // BEGIN: is_iterator_v
 // Helper to check for the presence of nested types typical for iterators
 template <typename T, typename = void>
-struct is_iterator : std::false_type {};
+struct is_iterator {
+    static constexpr bool value = false;
+};
 
 template <typename T>
-struct is_iterator<T,
-                   std::void_t<typename std::iterator_traits<T>::difference_type,
-                               typename std::iterator_traits<T>::value_type,
-                               typename std::iterator_traits<T>::pointer,
-                               typename std::iterator_traits<T>::reference,
-                               typename std::iterator_traits<T>::iterator_category>> : std::true_type {};
+struct is_iterator<
+    T,
+    typename std::enable_if<!std::is_same<typename std::iterator_traits<T>::value_type, void>::value>::type> {
+    static constexpr bool value = true;
+};
 
-template <typename T>
-constexpr bool is_iterator_v() {
-    return is_iterator<T>::value;
-}
 /*
 // Example usage
 #include <vector>
@@ -128,6 +125,33 @@ int main() {
 }
 */
 // END: is_iterator_v
+
+// BEGIN: is_std_container
+template <typename T>
+struct is_std_container {
+    template <typename U>
+    static std::true_type test(typename U::iterator*);
+
+    template <typename U>
+    static std::false_type test(...);
+
+    static constexpr bool value = decltype(test<T>(nullptr))::value;
+};
+
+template <typename T>
+constexpr bool is_std_container_v() {
+    return is_std_container<T>::value;
+}
+
+/*
+// Example usage
+int main() {
+    static_assert(is_std_container<std::vector<int>>::value, "It's a container!");
+    static_assert(!is_std_container<int>::value, "Not a container!");
+    return 0;
+}
+*/
+// END is_std_container
 
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}

@@ -5,6 +5,8 @@
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
 #include "ffcl/datastruct/bounds/Vertex.hpp"
 
+#include <vector>
+
 namespace ffcl::datastruct::bounds {
 
 template <typename ValueType, std::size_t NFeatures = 0>
@@ -129,6 +131,77 @@ class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<ValueType, NF
   private:
     // an unbounded ball represented as a single point and an infinite radius
     CentroidType center_point_;
+};
+
+template <typename FeaturesIterator>
+class StaticUnboundedBallView : public StaticBound<StaticUnboundedBallView<FeaturesIterator>> {
+  public:
+    static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
+
+    using ValueType = typename std::iterator_traits<FeaturesIterator>::value_type;
+
+    static_assert(std::is_trivial_v<ValueType>, "ValueType must be trivial.");
+
+    StaticUnboundedBallView(FeaturesIterator centroid_features_range_first,
+                            FeaturesIterator centroid_features_range_last)
+      : centroid_features_range_first_{centroid_features_range_first}
+      , centroid_features_range_last_{centroid_features_range_last} {}
+
+    std::size_t n_features_impl() const {
+        return std::distance(centroid_features_range_first_, centroid_features_range_last_);
+    }
+
+    template <typename OtherFeaturesIterator>
+    constexpr bool is_in_bounds_impl(const OtherFeaturesIterator& other_features_range_first,
+                                     const OtherFeaturesIterator& other_features_range_last) const {
+        common::ignore_parameters(other_features_range_first, other_features_range_last);
+        return true;
+    }
+
+    template <typename OtherFeaturesIterator>
+    constexpr auto distance_impl(const OtherFeaturesIterator& other_features_range_first,
+                                 const OtherFeaturesIterator& other_features_range_last) const {
+        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+
+        return common::math::heuristics::auto_distance(
+            other_features_range_first, other_features_range_last, centroid_features_range_first_);
+    }
+
+    template <typename OtherFeaturesIterator>
+    constexpr auto compute_distance_if_within_bounds_impl(
+        const OtherFeaturesIterator& other_features_range_first,
+        const OtherFeaturesIterator& other_features_range_last) const {
+        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+
+        return std::optional<ValueType>(distance_impl(other_features_range_first, other_features_range_last));
+    }
+
+    constexpr auto length_from_centroid_impl() const {
+        return common::infinity<ValueType>();
+    }
+
+    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
+        common::ignore_parameters(feature_index);
+        return common::infinity<ValueType>();
+    }
+
+    constexpr auto& centroid_reference_impl() const {
+        // always_false<Derived>::value is dependent on the template parameter FeaturesIterator. This means that
+        // static_assert will only be evaluated when centroid_reference_impl is instantiated with a specific type,
+        // allowing the base template to compile successfully until an attempt is made to instantiate this method.
+        static_assert(always_false<FeaturesIterator>::value,
+                      "centroid_reference_impl cannot be implemented for view data.");
+        // The following return statement is unreachable but required to avoid
+        // compile errors in some compilers. Use a dummy return or throw an exception.
+        throw std::logic_error("Unimplemented method");
+    }
+
+    constexpr auto make_centroid_impl() const {
+        return std::vector(centroid_features_range_first_, centroid_features_range_last_);
+    }
+
+  private:
+    FeaturesIterator centroid_features_range_first_, centroid_features_range_last_;
 };
 
 }  // namespace ffcl::datastruct::bounds

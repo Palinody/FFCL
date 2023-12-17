@@ -225,21 +225,33 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     // using SegmentType = ffcl::datastruct::bounds::segment_representation::MinAndMax<ValueType>;
     // using BoundType   = ffcl::datastruct::bounds::StaticBoundingBox<SegmentType>;
     // using BoundType = ffcl::datastruct::bounds::StaticBall<ValueType, 2>;
-    using BoundType  = ffcl::datastruct::bounds::StaticUnboundedBall<ValueType, 2>;
-    using BoundPtr   = std::shared_ptr<BoundType>;
-    using BufferType = ffcl::search::buffer::StaticUnsorted<IndicesIterator, SamplesIterator, BoundPtr>;
+    // using BoundType = ffcl::datastruct::bounds::StaticUnboundedBall<ValueType, 2>;
+    // using BoundType = ffcl::datastruct::bounds::StaticUnboundedBallView<SamplesIterator>;
+    // using BoundType = ffcl::datastruct::bounds::StaticBallView<SamplesIterator>;
+    // using BoundType = ffcl::datastruct::bounds::StaticBoundingBoxView<SamplesIterator>;
 
-    // auto bound_ptr = std::make_shared<BoundType>(BoundType({{-2, 10}, {-5, 20}}));
-    // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-5, -10}, 10});
-    auto bound_ptr = std::make_shared<BoundType>(BoundType{{-5, -10}});
+    using BufferType = ffcl::search::buffer::StaticUnsorted<IndicesIterator, SamplesIterator>;
 
-    auto buffer = BufferType(bound_ptr, /*max_capacity=*/2 /*ffcl::common::infinity<IndexType>()*/);
+    // auto bound_ptr = std::make_shared<BoundType>(BoundType({{-15, -10}, {-15, -3}}));
+    // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-10, -10}, 10});
+    // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-10, -10}});
 
-    auto searcher = ffcl::search::Searcher(indexer_ptr, buffer);
+    auto center_point_query = std::vector<ValueType>{-10, -10};
+    // const ValueType radius_query = 5;
+    // auto lengths_from_center_point_query = std::vector<ValueType>{2, 6};
 
-    auto query = std::vector<ValueType>({-5, -10});
+    // auto bound_query = BoundType(center_point_query.begin(), center_point_query.end(), radius_query);
+    // auto bound_query = BoundType(center_point_query.begin(), center_point_query.end(),
+    // lengths_from_center_point_query);
 
-    const auto returned_indices = searcher(query.begin(), query.end()).indices();
+    const IndexType max_capacity = 1000;  // ffcl::common::infinity<IndexType>();
+    // auto            bounded_buffer_query = BufferType(std::move(bound_query), /*max_capacity=*/max_capacity);
+    auto bounded_buffer_query =
+        BufferType(center_point_query.begin(), center_point_query.end(), /*max_capacity=*/max_capacity);
+
+    auto searcher = ffcl::search::Searcher(indexer_ptr, bounded_buffer_query);
+
+    const auto returned_indices = searcher(center_point_query.begin(), center_point_query.end()).indices();
 
     auto predictions = std::vector<IndexType>(n_samples);
 
