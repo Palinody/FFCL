@@ -204,22 +204,15 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
     IndexType        query_representative_;
 };
 
-template <typename IndicesIterator,
-          typename DistancesIterator,
-          typename Bound = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>>
-class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterator, DistancesIterator, Bound>> {
+template <typename DistancesIterator, typename Bound = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>>
+class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesIterator, Bound>> {
   public:
-    using IndicesIteratorType   = IndicesIterator;
-    using DistancesIteratorType = DistancesIterator;
-    using SamplesIteratorType   = DistancesIteratorType;
-
-    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
-    static_assert(common::is_iterator<DistancesIteratorType>::value, "DistancesIteratorType is not an iterator");
+    static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
     static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
                   "Bound does not inherit from datastruct::bounds::StaticBound<Derived>");
 
-    using IndexType    = typename std::iterator_traits<IndicesIteratorType>::value_type;
-    using DistanceType = typename std::iterator_traits<DistancesIteratorType>::value_type;
+    using IndexType    = std::size_t;
+    using DistanceType = typename std::iterator_traits<DistancesIterator>::value_type;
 
     static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
     static_assert(std::is_trivial_v<DistanceType>, "DistanceType must be trivial.");
@@ -242,8 +235,8 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterato
       , union_find_const_reference_{union_find_const_reference}
       , query_representative_{query_representative} {}
 
-    StaticWithUnionFind(DistancesIteratorType       centroid_features_query_first,
-                        DistancesIteratorType       centroid_features_query_last,
+    StaticWithUnionFind(DistancesIterator           centroid_features_query_first,
+                        DistancesIterator           centroid_features_query_last,
                         UnionFindConstReferenceType union_find_const_reference,
                         const IndexType&            query_representative,
                         const IndexType&            max_capacity = common::infinity<IndexType>())
@@ -253,6 +246,14 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterato
                             union_find_const_reference,
                             query_representative,
                             max_capacity) {}
+
+    constexpr auto centroid_begin_impl() const {
+        return bound_.centroid_begin();
+    }
+
+    constexpr auto centroid_end_impl() const {
+        return bound_.centroid_end();
+    }
 
     auto indices_impl() const {
         return indices_;
@@ -331,11 +332,12 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterato
         }
     }
 
-    void partial_search_impl(const IndicesIteratorType& indices_range_first,
-                             const IndicesIteratorType& indices_range_last,
-                             const SamplesIteratorType& samples_range_first,
-                             const SamplesIteratorType& samples_range_last,
-                             std::size_t                n_features) {
+    template <typename IndicesIterator, typename SamplesIterator>
+    void partial_search_impl(const IndicesIterator& indices_range_first,
+                             const IndicesIterator& indices_range_last,
+                             const SamplesIterator& samples_range_first,
+                             const SamplesIterator& samples_range_last,
+                             std::size_t            n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
 
         const std::size_t n_subrange_samples = std::distance(indices_range_first, indices_range_last);
@@ -365,5 +367,17 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<IndicesIterato
     UnionFindConstReferenceType union_find_const_reference_;
     IndexType                   query_representative_;
 };
+
+template <typename Bound, typename UnionFindConstReferenceType, typename IndexType>
+StaticWithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&, const IndexType&)
+    -> StaticWithUnionFind<typename Bound::IteratorType, Bound>;
+
+template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
+StaticWithUnionFind(DistancesIteratorType,
+                    DistancesIteratorType,
+                    UnionFindConstReferenceType,
+                    const IndexType&,
+                    const IndexType&)
+    -> StaticWithUnionFind<DistancesIteratorType, datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>>;
 
 }  // namespace ffcl::search::buffer

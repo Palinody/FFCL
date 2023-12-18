@@ -11,23 +11,27 @@ namespace ffcl::datastruct::bounds {
 template <typename ValueType, std::size_t NFeatures>
 class Vertex;
 
-template <typename ValueType>
-class Vertex<ValueType, 0> {
+template <typename Value>
+class Vertex<Value, 0> {
   public:
-    Vertex(std::initializer_list<ValueType> init_list)
+    using ValueType     = Value;
+    using ContainerType = std::vector<ValueType>;
+    using IteratorType  = typename ContainerType::iterator;
+
+    Vertex(std::initializer_list<Value> init_list)
       : values_(init_list) {}
 
-    Vertex(const std::vector<ValueType>& values)
+    Vertex(const ContainerType& values)
       : values_{values} {}
 
-    Vertex(std::vector<ValueType>&& values) noexcept
+    Vertex(ContainerType&& values) noexcept
       : values_{std::move(values)} {}
 
-    ValueType& operator[](std::size_t index) {
+    Value& operator[](std::size_t index) {
         return values_[index];
     }
 
-    const ValueType& operator[](std::size_t index) const {
+    const Value& operator[](std::size_t index) const {
         return values_[index];
     }
 
@@ -60,30 +64,33 @@ class Vertex<ValueType, 0> {
     }
 
   private:
-    std::vector<ValueType> values_;
+    ContainerType values_;
 };
 
-template <typename ValueType, std::size_t NFeatures>
+template <typename Value, std::size_t NFeatures>
 class Vertex {
   public:
+    using ValueType     = Value;
+    using ContainerType = std::array<ValueType, NFeatures>;
+    using IteratorType  = typename ContainerType::iterator;
+
     template <typename... Args, std::enable_if_t<sizeof...(Args) == NFeatures, int> = 0>
     constexpr Vertex(Args&&... args)
-      : values_{{static_cast<ValueType>(std::forward<Args>(args))...}} {
-        static_assert((std::is_convertible_v<Args, ValueType> && ...),
-                      "All arguments must be convertible to ValueType.");
+      : values_{{static_cast<Value>(std::forward<Args>(args))...}} {
+        static_assert((std::is_convertible_v<Args, Value> && ...), "All arguments must be convertible to Value.");
     }
 
-    constexpr Vertex(const std::array<ValueType, NFeatures>& values)
+    constexpr Vertex(const ContainerType& values)
       : values_{values} {}
 
-    constexpr Vertex(std::array<ValueType, NFeatures>&& values) noexcept
+    constexpr Vertex(ContainerType&& values) noexcept
       : values_{std::move(values)} {}
 
-    constexpr ValueType& operator[](std::size_t index) {
+    constexpr Value& operator[](std::size_t index) {
         return values_[index];
     }
 
-    constexpr const ValueType& operator[](std::size_t index) const {
+    constexpr const Value& operator[](std::size_t index) const {
         return values_[index];
     }
 
@@ -116,7 +123,7 @@ class Vertex {
     }
 
   private:
-    std::array<ValueType, NFeatures> values_;
+    ContainerType values_;
 };
 
 }  // namespace ffcl::datastruct::bounds

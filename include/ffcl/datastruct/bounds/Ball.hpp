@@ -15,20 +15,20 @@ class Ball {
     using CentroidType = Vertex<ValueType, NFeatures>;
 
     Ball(const CentroidType& centroid, const ValueType& radius)
-      : center_point_{centroid}
+      : centroid_{centroid}
       , radius_{radius} {}
 
     Ball(CentroidType&& centroid, const ValueType& radius) noexcept
-      : center_point_{std::move(centroid)}
+      : centroid_{std::move(centroid)}
       , radius_{radius} {}
 
     std::size_t n_features() const {
-        return center_point_.size();
+        return centroid_.size();
     }
 
     template <typename FeaturesIterator>
     bool is_in_bounds(const FeaturesIterator& features_range_first, const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return this->distance(features_range_first, features_range_last) < radius_;
     }
@@ -36,16 +36,15 @@ class Ball {
     template <typename FeaturesIterator>
     ValueType distance(const FeaturesIterator& features_range_first,
                        const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return common::math::heuristics::auto_distance(
-            features_range_first, features_range_last, center_point_.begin());
+        return common::math::heuristics::auto_distance(features_range_first, features_range_last, centroid_.begin());
     }
 
     template <typename FeaturesIterator>
     std::optional<ValueType> compute_distance_within_bounds(const FeaturesIterator& features_range_first,
                                                             const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         if (this->is_in_bounds(features_range_first, features_range_last)) {
             return this->distance(features_range_first, features_range_last);
@@ -65,40 +64,44 @@ class Ball {
     }
 
     const CentroidType& centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
     CentroidType make_centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
   private:
     // a ball represented as a single point and a radius
-    CentroidType center_point_;
+    CentroidType centroid_;
     ValueType    radius_;
 };
 
-template <typename ValueType, std::size_t NFeatures = 0>
-class StaticBall : public StaticBound<StaticBall<ValueType, NFeatures>> {
+template <typename Value, std::size_t NFeatures = 0>
+class StaticBall : public StaticBound<StaticBall<Value, NFeatures>> {
   public:
+    using ValueType = Value;
+
     using CentroidType = Vertex<ValueType, NFeatures>;
 
+    using IteratorType = typename CentroidType::IteratorType;
+
     StaticBall(const CentroidType& centroid, const ValueType& radius)
-      : center_point_{centroid}
+      : centroid_{centroid}
       , radius_{radius} {}
 
     StaticBall(CentroidType&& centroid, const ValueType& radius) noexcept
-      : center_point_{std::move(centroid)}
+      : centroid_{std::move(centroid)}
       , radius_{radius} {}
 
     std::size_t n_features_impl() const {
-        return center_point_.size();
+        return centroid_.size();
     }
 
     template <typename FeaturesIterator>
     constexpr bool is_in_bounds_impl(const FeaturesIterator& features_range_first,
                                      const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return distance_impl(features_range_first, features_range_last) < radius_;
     }
@@ -106,16 +109,15 @@ class StaticBall : public StaticBound<StaticBall<ValueType, NFeatures>> {
     template <typename FeaturesIterator>
     constexpr auto distance_impl(const FeaturesIterator& features_range_first,
                                  const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return common::math::heuristics::auto_distance(
-            features_range_first, features_range_last, center_point_.begin());
+        return common::math::heuristics::auto_distance(features_range_first, features_range_last, centroid_.begin());
     }
 
     template <typename FeaturesIterator>
     constexpr auto compute_distance_if_within_bounds_impl(const FeaturesIterator& features_range_first,
                                                           const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         const auto feature_distance = distance_impl(features_range_first, features_range_last);
 
@@ -132,16 +134,24 @@ class StaticBall : public StaticBound<StaticBall<ValueType, NFeatures>> {
     }
 
     constexpr auto& centroid_reference_impl() const {
-        return center_point_;
+        return centroid_;
     }
 
     constexpr auto make_centroid_impl() const {
-        return center_point_;
+        return centroid_;
+    }
+
+    constexpr auto centroid_begin_impl() const {
+        return centroid_.begin();
+    }
+
+    constexpr auto centroid_end_impl() const {
+        return centroid_.end();
     }
 
   private:
     // a ball represented as a single point and a radius
-    CentroidType center_point_;
+    CentroidType centroid_;
     ValueType    radius_;
 };
 
@@ -154,15 +164,17 @@ class StaticBallView : public StaticBound<StaticBallView<FeaturesIterator>> {
 
     static_assert(std::is_trivial_v<ValueType>, "ValueType must be trivial.");
 
+    using IteratorType = FeaturesIterator;
+
     StaticBallView(FeaturesIterator center_point_range_first,
                    FeaturesIterator center_point_range_last,
                    const ValueType& radius)
-      : features_range_first_{center_point_range_first}
-      , center_point_range_last_{center_point_range_last}
+      : centroid_features_range_first_{center_point_range_first}
+      , centroid_features_range_last_{center_point_range_last}
       , radius_{radius} {}
 
     std::size_t n_features_impl() const {
-        return std::distance(features_range_first_, center_point_range_last_);
+        return std::distance(centroid_features_range_first_, centroid_features_range_last_);
     }
 
     template <typename OtherFeaturesIterator>
@@ -179,7 +191,7 @@ class StaticBallView : public StaticBound<StaticBallView<FeaturesIterator>> {
         assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
 
         return common::math::heuristics::auto_distance(
-            other_features_range_first, other_features_range_last, features_range_first_);
+            other_features_range_first, other_features_range_last, centroid_features_range_first_);
     }
 
     template <typename OtherFeaturesIterator>
@@ -214,12 +226,20 @@ class StaticBallView : public StaticBound<StaticBallView<FeaturesIterator>> {
     }
 
     constexpr auto make_centroid_impl() const {
-        return std::vector(features_range_first_, center_point_range_last_);
+        return std::vector(centroid_features_range_first_, centroid_features_range_last_);
+    }
+
+    constexpr auto centroid_begin_impl() {
+        return centroid_features_range_first_;
+    }
+
+    constexpr auto centroid_end_impl() {
+        return centroid_features_range_last_;
     }
 
   private:
     // a ball represented as a single point and a radius
-    FeaturesIterator features_range_first_, center_point_range_last_;
+    FeaturesIterator centroid_features_range_first_, centroid_features_range_last_;
     ValueType        radius_;
 };
 

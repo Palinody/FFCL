@@ -15,15 +15,15 @@ class UnboundedBall {
     using CentroidType = Vertex<ValueType, NFeatures>;
 
     UnboundedBall(const CentroidType& centroid)
-      : center_point_{centroid}
+      : centroid_{centroid}
       , radius_{common::infinity<ValueType>()} {}
 
     UnboundedBall(CentroidType&& centroid) noexcept
-      : center_point_{std::move(centroid)}
+      : centroid_{std::move(centroid)}
       , radius_{common::infinity<ValueType>()} {}
 
     std::size_t n_features() const {
-        return center_point_.size();
+        return centroid_.size();
     }
 
     template <typename FeaturesIterator>
@@ -35,16 +35,15 @@ class UnboundedBall {
     template <typename FeaturesIterator>
     ValueType distance(const FeaturesIterator& features_range_first,
                        const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return common::math::heuristics::auto_distance(
-            features_range_first, features_range_last, center_point_.begin());
+        return common::math::heuristics::auto_distance(features_range_first, features_range_last, centroid_.begin());
     }
 
     template <typename FeaturesIterator>
     std::optional<ValueType> compute_distance_within_bounds(const FeaturesIterator& features_range_first,
                                                             const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return this->distance(features_range_first, features_range_last);
     }
@@ -59,32 +58,36 @@ class UnboundedBall {
     }
 
     const CentroidType& centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
     CentroidType make_centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
   private:
     // an unbounded ball represented as a single point and an infinite radius
-    CentroidType center_point_;
+    CentroidType centroid_;
     ValueType    radius_;
 };
 
-template <typename ValueType, std::size_t NFeatures = 0>
-class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<ValueType, NFeatures>> {
+template <typename Value, std::size_t NFeatures = 0>
+class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<Value, NFeatures>> {
   public:
+    using ValueType = Value;
+
     using CentroidType = Vertex<ValueType, NFeatures>;
 
+    using IteratorType = typename CentroidType::IteratorType;
+
     StaticUnboundedBall(const CentroidType& centroid)
-      : center_point_{centroid} {}
+      : centroid_{centroid} {}
 
     StaticUnboundedBall(CentroidType&& centroid) noexcept
-      : center_point_{std::move(centroid)} {}
+      : centroid_{std::move(centroid)} {}
 
     std::size_t n_features_impl() const {
-        return center_point_.size();
+        return centroid_.size();
     }
 
     template <typename FeaturesIterator>
@@ -97,16 +100,15 @@ class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<ValueType, NF
     template <typename FeaturesIterator>
     constexpr auto distance_impl(const FeaturesIterator& features_range_first,
                                  const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return common::math::heuristics::auto_distance(
-            features_range_first, features_range_last, center_point_.begin());
+        return common::math::heuristics::auto_distance(features_range_first, features_range_last, centroid_.begin());
     }
 
     template <typename FeaturesIterator>
     constexpr auto compute_distance_if_within_bounds_impl(const FeaturesIterator& features_range_first,
                                                           const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return std::optional<ValueType>(distance_impl(features_range_first, features_range_last));
     }
@@ -121,16 +123,24 @@ class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<ValueType, NF
     }
 
     constexpr auto& centroid_reference_impl() const {
-        return center_point_;
+        return centroid_;
     }
 
     constexpr auto make_centroid_impl() const {
-        return center_point_;
+        return centroid_;
+    }
+
+    constexpr auto centroid_begin_impl() {
+        return centroid_.begin();
+    }
+
+    constexpr auto centroid_end_impl() {
+        return centroid_.end();
     }
 
   private:
     // an unbounded ball represented as a single point and an infinite radius
-    CentroidType center_point_;
+    CentroidType centroid_;
 };
 
 template <typename FeaturesIterator>
@@ -141,6 +151,8 @@ class StaticUnboundedBallView : public StaticBound<StaticUnboundedBallView<Featu
     using ValueType = typename std::iterator_traits<FeaturesIterator>::value_type;
 
     static_assert(std::is_trivial_v<ValueType>, "ValueType must be trivial.");
+
+    using IteratorType = FeaturesIterator;
 
     StaticUnboundedBallView(FeaturesIterator centroid_features_range_first,
                             FeaturesIterator centroid_features_range_last)
@@ -198,6 +210,14 @@ class StaticUnboundedBallView : public StaticBound<StaticUnboundedBallView<Featu
 
     constexpr auto make_centroid_impl() const {
         return std::vector(centroid_features_range_first_, centroid_features_range_last_);
+    }
+
+    constexpr auto centroid_begin_impl() const {
+        return centroid_features_range_first_;
+    }
+
+    constexpr auto centroid_end_impl() const {
+        return centroid_features_range_last_;
     }
 
   private:

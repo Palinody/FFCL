@@ -9,34 +9,33 @@
 
 namespace ffcl::search {
 
-template <typename IndexerPtr, typename Buffer>
+template <typename IndexerPtr>
 class Searcher {
   public:
+    static_assert(common::is_raw_or_smart_ptr<IndexerPtr>());
+
     using IndexType           = typename IndexerPtr::element_type::IndexType;
     using DataType            = typename IndexerPtr::element_type::DataType;
     using IndicesIteratorType = typename IndexerPtr::element_type::IndicesIteratorType;
     using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
 
-  private:
-    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                  "Derived class does not inherit from StaticBase<Derived>");
-
   public:
-    Searcher(IndexerPtr query_indexer_ptr, const Buffer& buffer)
-      : single_tree_traverser_{SingleTreeTraverser(query_indexer_ptr)}
-      , buffer_{buffer} {}
+    Searcher(IndexerPtr query_indexer_ptr)
+      : single_tree_traverser_{SingleTreeTraverser(query_indexer_ptr)} {}
 
-    Buffer operator()(std::size_t query_index) {
-        return single_tree_traverser_(query_index, buffer_);
-    }
+    template <typename Buffer>
+    Buffer operator()(Buffer&& buffer) {
+        static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                      "Derived class does not inherit from StaticBase<Derived>");
 
-    Buffer operator()(const SamplesIteratorType& query_feature_first, const SamplesIteratorType& query_feature_last) {
-        return single_tree_traverser_(query_feature_first, query_feature_last, buffer_);
+        return single_tree_traverser_(std::forward<Buffer>(buffer));
     }
 
   private:
     SingleTreeTraverser<IndexerPtr> single_tree_traverser_;
-    Buffer                          buffer_;
 };
+
+template <typename IndexerPtr>
+Searcher(IndexerPtr) -> Searcher<IndexerPtr>;
 
 }  // namespace ffcl::search

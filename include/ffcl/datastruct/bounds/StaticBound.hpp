@@ -55,6 +55,16 @@ struct StaticBound {
     constexpr auto make_centroid() const {
         return static_cast<const DerivedType*>(this)->make_centroid_impl();
     }
+
+    template <typename DerivedType = DerivedClass>
+    constexpr auto centroid_begin() const {
+        return static_cast<const DerivedType*>(this)->centroid_begin_impl();
+    }
+
+    template <typename DerivedType = DerivedClass>
+    constexpr auto centroid_end() const {
+        return static_cast<const DerivedType*>(this)->centroid_end_impl();
+    }
 };
 
 }  // namespace ffcl::datastruct::bounds

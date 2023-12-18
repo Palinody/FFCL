@@ -37,14 +37,14 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
-      , visited_indices_reference_{visited_indices_reference} {}
+      , visited_indices_const_reference_{visited_indices_reference} {}
 
     WithMemory(VisitedIndices&& visited_indices, const IndexType& max_capacity = common::infinity<IndexType>())
       : furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_{std::move(visited_indices)}
-      , visited_indices_reference_{visited_indices_} {}
+      , visited_indices_const_reference_{visited_indices_} {}
 
     WithMemory(const IndicesIterator& visited_indices_first,
                const IndicesIterator& visited_indices_last,
@@ -53,7 +53,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_{VisitedIndices(visited_indices_first, visited_indices_last)}
-      , visited_indices_reference_{visited_indices_} {}
+      , visited_indices_const_reference_{visited_indices_} {}
 
     WithMemory(const IndicesType&   init_neighbors_indices,
                const DistancesType& init_neighbors_distances,
@@ -64,7 +64,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity > indices_.size() ? max_capacity : indices_.size()}
       , visited_indices_{VisitedIndices(indices_.begin(), indices_.end())}
-      , visited_indices_reference_{visited_indices_} {
+      , visited_indices_const_reference_{visited_indices_} {
         if (indices_.size()) {
             if (indices_.size() == distances_.size()) {
                 std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
@@ -139,7 +139,7 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
 
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the index hasnt been visited
-        if (visited_indices_reference_.find(index_candidate) == visited_indices_reference_.end()) {
+        if (visited_indices_const_reference_.find(index_candidate) == visited_indices_const_reference_.end()) {
             // always populate if the max capacity isnt reached
             if (this->n_free_slots()) {
                 indices_.emplace_back(index_candidate);
@@ -223,36 +223,30 @@ class WithMemory : public Base<IndicesIterator, DistancesIterator> {
     IndexType     max_capacity_;
 
     VisitedIndices        visited_indices_;
-    const VisitedIndices& visited_indices_reference_;
+    const VisitedIndices& visited_indices_const_reference_;
 };
 
-template <typename IndicesIterator,
-          typename DistancesIterator,
+template <typename DistancesIterator,
           typename Bound          = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>,
           typename VisitedIndices = std::unordered_set<std::size_t>>
-class StaticWithMemory
-  : public StaticBase<StaticWithMemory<IndicesIterator, DistancesIterator, Bound, VisitedIndices>> {
+class StaticWithMemory : public StaticBase<StaticWithMemory<DistancesIterator, Bound, VisitedIndices>> {
   public:
-    using IndicesIteratorType   = IndicesIterator;
-    using DistancesIteratorType = DistancesIterator;
-    using SamplesIteratorType   = DistancesIteratorType;
-
-    using IndexType    = typename std::iterator_traits<IndicesIteratorType>::value_type;
-    using DistanceType = typename std::iterator_traits<DistancesIteratorType>::value_type;
-
-    using IndicesType   = std::vector<IndexType>;
-    using DistancesType = std::vector<DistanceType>;
-
-    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
-    static_assert(common::is_iterator<DistancesIteratorType>::value, "DistancesIteratorType is not an iterator");
-
+    static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
     static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
                   "Bound does not inherit from datastruct::bounds::StaticBound<Derived>");
-
     static_assert(common::is_std_container_v<VisitedIndices>, "VisitedIndices is not a standard container");
+
+    using IndicesIteratorType   = typename VisitedIndices::iterator;
+    using DistancesIteratorType = DistancesIterator;
+
+    using IndexType    = typename std::iterator_traits<IndicesIteratorType>::value_type;
+    using DistanceType = typename std::iterator_traits<DistancesIterator>::value_type;
 
     static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
     static_assert(std::is_trivial_v<DistanceType>, "DistanceType must be trivial.");
+
+    using IndicesType   = std::vector<IndexType>;
+    using DistancesType = std::vector<DistanceType>;
 
     explicit StaticWithMemory(Bound&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
       : bound_{std::forward<Bound>(bound)}
@@ -260,7 +254,7 @@ class StaticWithMemory
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_{}
-      , visited_indices_reference_{visited_indices_} {}
+      , visited_indices_const_reference_{visited_indices_} {}
 
     StaticWithMemory(Bound&&               bound,
                      const VisitedIndices& visited_indices_reference,
@@ -269,7 +263,8 @@ class StaticWithMemory
       , furthest_buffer_index_{0}
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
-      , visited_indices_reference_{visited_indices_reference} {}
+      , visited_indices_{}
+      , visited_indices_const_reference_{visited_indices_reference} {}
 
     StaticWithMemory(Bound&&                    bound,
                      const IndicesIteratorType& visited_indices_first,
@@ -280,18 +275,18 @@ class StaticWithMemory
       , furthest_k_nearest_neighbor_distance_{0}
       , max_capacity_{max_capacity}
       , visited_indices_{VisitedIndices(visited_indices_first, visited_indices_last)}
-      , visited_indices_reference_{visited_indices_} {}
+      , visited_indices_const_reference_{visited_indices_} {}
 
     StaticWithMemory(DistancesIteratorType centroid_features_query_first,
                      DistancesIteratorType centroid_features_query_last,
                      const IndexType&      max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(Bound(centroid_features_query_first, centroid_features_query_last), max_capacity) {}
+      : StaticWithMemory(Bound{centroid_features_query_first, centroid_features_query_last}, max_capacity) {}
 
     StaticWithMemory(DistancesIteratorType centroid_features_query_first,
                      DistancesIteratorType centroid_features_query_last,
                      const VisitedIndices& visited_indices_reference,
                      const IndexType&      max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(Bound(centroid_features_query_first, centroid_features_query_last),
+      : StaticWithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
                          visited_indices_reference,
                          max_capacity) {}
 
@@ -300,10 +295,18 @@ class StaticWithMemory
                      const IndicesIteratorType& visited_indices_first,
                      const IndicesIteratorType& visited_indices_last,
                      const IndexType&           max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(Bound(centroid_features_query_first, centroid_features_query_last),
+      : StaticWithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
                          visited_indices_first,
                          visited_indices_last,
                          max_capacity) {}
+
+    constexpr auto centroid_begin_impl() const {
+        return bound_.centroid_begin();
+    }
+
+    constexpr auto centroid_end_impl() const {
+        return bound_.centroid_end();
+    }
 
     auto indices_impl() const {
         return indices_;
@@ -356,7 +359,7 @@ class StaticWithMemory
 
     void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the index hasnt been visited
-        if (visited_indices_reference_.find(index_candidate) == visited_indices_reference_.end()) {
+        if (visited_indices_const_reference_.find(index_candidate) == visited_indices_const_reference_.end()) {
             // always populate if the max capacity isnt reached
             if (n_free_slots_impl()) {
                 indices_.emplace_back(index_candidate);
@@ -379,11 +382,12 @@ class StaticWithMemory
         }
     }
 
-    void partial_search_impl(const IndicesIteratorType& indices_range_first,
-                             const IndicesIteratorType& indices_range_last,
-                             const SamplesIteratorType& samples_range_first,
-                             const SamplesIteratorType& samples_range_last,
-                             std::size_t                n_features) {
+    template <typename IndicesIterator, typename SamplesIterator>
+    void partial_search_impl(const IndicesIterator& indices_range_first,
+                             const IndicesIterator& indices_range_last,
+                             const SamplesIterator& samples_range_first,
+                             const SamplesIterator& samples_range_last,
+                             std::size_t            n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
 
         const std::size_t n_subrange_samples = std::distance(indices_range_first, indices_range_last);
@@ -411,7 +415,43 @@ class StaticWithMemory
     IndexType     max_capacity_;
 
     VisitedIndices        visited_indices_;
-    const VisitedIndices& visited_indices_reference_;
+    const VisitedIndices& visited_indices_const_reference_;
 };
+
+template <typename Bound, typename IndexType>
+StaticWithMemory(Bound&&, const IndexType&)
+    -> StaticWithMemory<typename Bound::IteratorType, Bound, std::unordered_set<IndexType>>;
+
+template <typename Bound, typename VisitedIndices, typename IndexType>
+StaticWithMemory(Bound&&, const VisitedIndices&, const IndexType&)
+    -> StaticWithMemory<typename Bound::IteratorType, Bound, VisitedIndices>;
+
+template <typename Bound, typename IndicesIteratorType, typename IndexType>
+StaticWithMemory(Bound&&, const IndicesIteratorType&, const IndicesIteratorType&, const IndexType&)
+    -> StaticWithMemory<typename Bound::IteratorType, Bound, std::unordered_set<IndexType>>;
+
+// ---
+
+template <typename DistancesIteratorType, typename IndexType>
+StaticWithMemory(DistancesIteratorType, DistancesIteratorType, const IndexType&)
+    -> StaticWithMemory<DistancesIteratorType,
+                        datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>,
+                        std::unordered_set<IndexType>>;
+
+template <typename DistancesIteratorType, typename VisitedIndices, typename IndexType>
+StaticWithMemory(DistancesIteratorType, DistancesIteratorType, const VisitedIndices&, const IndexType&)
+    -> StaticWithMemory<DistancesIteratorType,
+                        datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>,
+                        VisitedIndices>;
+
+template <typename DistancesIteratorType, typename IndicesIteratorType, typename IndexType>
+StaticWithMemory(DistancesIteratorType,
+                 DistancesIteratorType,
+                 const IndicesIteratorType&,
+                 const IndicesIteratorType&,
+                 const IndexType&)
+    -> StaticWithMemory<DistancesIteratorType,
+                        datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>,
+                        std::unordered_set<IndexType>>;
 
 }  // namespace ffcl::search::buffer

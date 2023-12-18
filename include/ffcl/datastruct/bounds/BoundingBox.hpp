@@ -18,16 +18,16 @@ class BoundingBox {
     using LengthsFromCentroid = CentroidType;
 
     BoundingBox(const SegmentsType& segments)
-      : center_point_{std::vector<ValueType>(segments.size())}
+      : centroid_{std::vector<ValueType>(segments.size())}
       , lengths_from_center_point_{std::vector<ValueType>(segments.size())} {
         for (std::size_t feature_index = 0; feature_index < segments.size(); ++feature_index) {
-            center_point_[feature_index]              = segments[feature_index].centroid();
+            centroid_[feature_index]                  = segments[feature_index].centroid();
             lengths_from_center_point_[feature_index] = segments[feature_index].length_from_centroid();
         }
     }
 
     std::size_t n_features() const {
-        return center_point_.size();
+        return centroid_.size();
     }
 
     template <typename FeaturesIterator>
@@ -37,9 +37,9 @@ class BoundingBox {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             // A sample is inside the bounding box if p is in [lo, hi]
             if (features_range_first[feature_index] <
-                    center_point_[feature_index] - lengths_from_center_point_[feature_index] ||
+                    centroid_[feature_index] - lengths_from_center_point_[feature_index] ||
                 features_range_first[feature_index] >
-                    center_point_[feature_index] + lengths_from_center_point_[feature_index]) {
+                    centroid_[feature_index] + lengths_from_center_point_[feature_index]) {
                 return false;
             }
         }
@@ -49,16 +49,15 @@ class BoundingBox {
     template <typename FeaturesIterator>
     ValueType distance(const FeaturesIterator& features_range_first,
                        const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return common::math::heuristics::auto_distance(
-            features_range_first, features_range_last, center_point_.begin());
+        return common::math::heuristics::auto_distance(features_range_first, features_range_last, centroid_.begin());
     }
 
     template <typename FeaturesIterator>
     std::optional<ValueType> compute_distance_within_bounds(const FeaturesIterator& features_range_first,
                                                             const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         if (this->is_in_bounds(features_range_first, features_range_last)) {
             return this->distance(features_range_first, features_range_last);
@@ -78,17 +77,17 @@ class BoundingBox {
     }
 
     const CentroidType& centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
     CentroidType make_centroid() const {
-        return center_point_;
+        return centroid_;
     }
 
   private:
     // a bounding box represented as a center point coordinate and and the relative lengths from that point to the axis
     // aligned bounds w.r.t. each feature dimension
-    CentroidType        center_point_;
+    CentroidType        centroid_;
     LengthsFromCentroid lengths_from_center_point_;
 };
 
@@ -98,20 +97,22 @@ class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
     using ValueType    = typename Segment::ValueType;
     using SegmentsType = std::vector<Segment>;
 
-    using CentroidType        = Vertex<ValueType, 0>;
-    using LengthsFromCentroid = CentroidType;
+    using CentroidType            = Vertex<ValueType, 0>;
+    using LengthsFromCentroidType = CentroidType;
+
+    using IteratorType = typename CentroidType::IteratorType;
 
     StaticBoundingBox(const SegmentsType& segments)
-      : center_point_{std::vector<ValueType>(segments.size())}
+      : centroid_{std::vector<ValueType>(segments.size())}
       , lengths_from_center_point_{std::vector<ValueType>(segments.size())} {
         for (std::size_t feature_index = 0; feature_index < segments.size(); ++feature_index) {
-            center_point_[feature_index]              = segments[feature_index].centroid();
+            centroid_[feature_index]                  = segments[feature_index].centroid();
             lengths_from_center_point_[feature_index] = segments[feature_index].length_from_centroid();
         }
     }
 
     std::size_t n_features_impl() const {
-        return center_point_.size();
+        return centroid_.size();
     }
 
     template <typename FeaturesIterator>
@@ -122,9 +123,9 @@ class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             // A sample is inside the bounding box if p is in [lo, hi]
             if (features_range_first[feature_index] <
-                    center_point_[feature_index] - lengths_from_center_point_[feature_index] ||
+                    centroid_[feature_index] - lengths_from_center_point_[feature_index] ||
                 features_range_first[feature_index] >
-                    center_point_[feature_index] + lengths_from_center_point_[feature_index]) {
+                    centroid_[feature_index] + lengths_from_center_point_[feature_index]) {
                 return false;
             }
         }
@@ -134,16 +135,15 @@ class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
     template <typename FeaturesIterator>
     constexpr auto distance_impl(const FeaturesIterator& features_range_first,
                                  const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return common::math::heuristics::auto_distance(
-            features_range_first, features_range_last, center_point_.begin());
+        return common::math::heuristics::auto_distance(features_range_first, features_range_last, centroid_.begin());
     }
 
     template <typename FeaturesIterator>
     constexpr auto compute_distance_if_within_bounds_impl(const FeaturesIterator& features_range_first,
                                                           const FeaturesIterator& features_range_last) const {
-        assert(center_point_.size() == std::distance(features_range_first, features_range_last));
+        assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return is_in_bounds_impl(features_range_first, features_range_last)
                    ? std::optional<ValueType>(distance_impl(features_range_first, features_range_last))
@@ -160,18 +160,26 @@ class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
     }
 
     constexpr auto& centroid_reference_impl() const {
-        return center_point_;
+        return centroid_;
     }
 
     constexpr auto make_centroid_impl() const {
-        return center_point_;
+        return centroid_;
+    }
+
+    constexpr auto centroid_begin_impl() {
+        return centroid_.begin();
+    }
+
+    constexpr auto centroid_end_impl() {
+        return centroid_.end();
     }
 
   private:
     // a bounding box represented as a center point coordinate and and the relative lengths from that point to the axis
     // aligned bounds w.r.t. each feature dimension
-    CentroidType        center_point_;
-    LengthsFromCentroid lengths_from_center_point_;
+    CentroidType            centroid_;
+    LengthsFromCentroidType lengths_from_center_point_;
 };
 
 template <typename FeaturesIterator>
@@ -185,6 +193,8 @@ class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesI
 
     using LengthsFromCentroidType = std::vector<ValueType>;
 
+    using IteratorType = FeaturesIterator;
+
     explicit StaticBoundingBoxView(FeaturesIterator               center_point_features_range_first,
                                    FeaturesIterator               center_point_features_range_last,
                                    const LengthsFromCentroidType& lengths_from_center)
@@ -195,12 +205,12 @@ class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesI
     explicit StaticBoundingBoxView(FeaturesIterator          center_point_features_range_first,
                                    FeaturesIterator          center_point_features_range_last,
                                    LengthsFromCentroidType&& lengths_from_center)
-      : center_point_features_range_first_{center_point_features_range_first}
-      , center_point_features_range_last_{center_point_features_range_last}
+      : centroid_features_range_first_{center_point_features_range_first}
+      , centroid_features_range_last_{center_point_features_range_last}
       , lengths_from_center_point_{std::forward<LengthsFromCentroidType>(lengths_from_center)} {}
 
     std::size_t n_features_impl() const {
-        return std::distance(center_point_features_range_first_, center_point_features_range_last_);
+        return std::distance(centroid_features_range_first_, centroid_features_range_last_);
     }
 
     template <typename OtherFeaturesIterator>
@@ -213,9 +223,9 @@ class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesI
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             // A sample is inside the bounding box if p is in [lo, hi]
             if (other_features_range_first[feature_index] <
-                    center_point_features_range_first_[feature_index] - lengths_from_center_point_[feature_index] ||
+                    centroid_features_range_first_[feature_index] - lengths_from_center_point_[feature_index] ||
                 other_features_range_first[feature_index] >
-                    center_point_features_range_first_[feature_index] + lengths_from_center_point_[feature_index]) {
+                    centroid_features_range_first_[feature_index] + lengths_from_center_point_[feature_index]) {
                 return false;
             }
         }
@@ -228,7 +238,7 @@ class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesI
         assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
 
         return common::math::heuristics::auto_distance(
-            other_features_range_first, other_features_range_last, center_point_features_range_first_);
+            other_features_range_first, other_features_range_last, centroid_features_range_first_);
     }
 
     template <typename OtherFeaturesIterator>
@@ -269,12 +279,20 @@ class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesI
     }
 
     constexpr auto make_centroid_impl() const {
-        return std::vector(center_point_features_range_first_, center_point_features_range_last_);
+        return std::vector(centroid_features_range_first_, centroid_features_range_last_);
+    }
+
+    constexpr auto centroid_begin_impl() const {
+        return centroid_features_range_first_;
+    }
+
+    constexpr auto centroid_end_impl() const {
+        return centroid_features_range_last_;
     }
 
   private:
     // a bounding box represented as a reference center point range along each feature dimension
-    FeaturesIterator center_point_features_range_first_, center_point_features_range_last_;
+    FeaturesIterator centroid_features_range_first_, centroid_features_range_last_;
     // and the lengths from the reference center point along each feature dimension
     LengthsFromCentroidType lengths_from_center_point_;
 };
