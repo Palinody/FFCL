@@ -215,8 +215,9 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_clusters() const {
     for (const auto& condensed_cluster_node : return_shallowest_cluster_selection()) {
         // assign all descendant samples in the node hierarchy with the same cluster label
         // then increment the cluster label for the next non-overlapping cluster
-        preorder_traversal_single_linkage_clustering(
-            cluster_label++, condensed_cluster_node->single_linkage_cluster_node_first_, flat_cluster);
+        preorder_traversal_single_linkage_clustering(cluster_label++,
+                                                     /**/ condensed_cluster_node->single_linkage_cluster_node_root_,
+                                                     /**/ flat_cluster);
     }
     return flat_cluster;
 }
@@ -285,7 +286,7 @@ template <typename IndexType, typename ValueType>
 void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_fill_shallowest_selected_nodes(
     const CondensedClusterNodePtr&        condensed_cluster_node,
     std::vector<CondensedClusterNodePtr>& selected_condensed_cluster_nodes) const {
-    // if condensed_cluster_node we simply add it to the array vector and exit the function
+    // if condensed_cluster_node is selected, we simply add it to the array vector and exit the function
     if (condensed_cluster_node->is_selected()) {
         selected_condensed_cluster_nodes.emplace_back(condensed_cluster_node);
     }

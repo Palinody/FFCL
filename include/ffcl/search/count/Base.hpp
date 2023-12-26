@@ -47,7 +47,17 @@ class Base {
 };
 
 template <class DerivedClass>
-struct StaticBase {
+struct StaticCounter {
+    template <typename DerivedType = DerivedClass>
+    constexpr auto centroid_begin() const {
+        return static_cast<const DerivedType*>(this)->centroid_begin_impl();
+    }
+
+    template <typename DerivedType = DerivedClass>
+    constexpr auto centroid_end() const {
+        return static_cast<const DerivedType*>(this)->centroid_end_impl();
+    }
+
     template <typename DerivedType = DerivedClass>
     auto count() const {
         return static_cast<const DerivedType*>(this)->n_free_slots_impl();
@@ -74,12 +84,12 @@ struct StaticBase {
         static_cast<DerivedType*>(this)->update_impl(index_candidate, distance_candidate);
     }
 
-    template <typename DerivedType = DerivedClass>
-    void partial_search(const typename DerivedType::IndicesIteratorType& indices_range_first,
-                        const typename DerivedType::IndicesIteratorType& indices_range_last,
-                        const typename DerivedType::SamplesIteratorType& samples_range_first,
-                        const typename DerivedType::SamplesIteratorType& samples_range_last,
-                        std::size_t                                      n_features) {
+    template <typename IndicesIterator, typename SamplesIterator, typename DerivedType = DerivedClass>
+    void partial_search(const IndicesIterator& indices_range_first,
+                        const IndicesIterator& indices_range_last,
+                        const SamplesIterator& samples_range_first,
+                        const SamplesIterator& samples_range_last,
+                        std::size_t            n_features) {
         static_cast<DerivedType*>(this)->partial_search_impl(
             /**/ indices_range_first,
             /**/ indices_range_last,

@@ -12,6 +12,7 @@
 
 namespace ffcl::search::count {
 
+/*
 template <typename IndicesIterator, typename DistancesIterator>
 class Radius : public Base<IndicesIterator, DistancesIterator> {
   public:
@@ -103,5 +104,6 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
     DistanceType radius_;
     IndexType    count_;
 };
+*/
 
 }  // namespace ffcl::search::count

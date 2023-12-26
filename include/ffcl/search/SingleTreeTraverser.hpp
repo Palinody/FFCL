@@ -7,37 +7,56 @@
 
 namespace ffcl::search {
 
-template <typename IndexerPtr>
+template <typename Indexer>
 class SingleTreeTraverser {
   public:
-    static_assert(common::is_raw_or_smart_ptr<IndexerPtr>());
+    // static_assert(common::is_raw_or_smart_ptr<IndexerPtr>());
 
-    using IndexType           = typename IndexerPtr::element_type::IndexType;
-    using DataType            = typename IndexerPtr::element_type::DataType;
-    using IndicesIteratorType = typename IndexerPtr::element_type::IndicesIteratorType;
-    using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
+    // using IndexType           = typename IndexerPtr::element_type::IndexType;
+    // using DataType            = typename IndexerPtr::element_type::DataType;
+    // using IndicesIteratorType = typename IndexerPtr::element_type::IndicesIteratorType;
+    // using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
 
-    using KDNodeViewPtr = typename IndexerPtr::element_type::KDNodeViewPtr;
+    // using KDNodeViewPtr = typename IndexerPtr::element_type::KDNodeViewPtr;
 
-    SingleTreeTraverser(IndexerPtr query_indexer_ptr)
-      : query_indexer_ptr_{query_indexer_ptr} {}
+    using IndexType           = typename Indexer::IndexType;
+    using DataType            = typename Indexer::DataType;
+    using IndicesIteratorType = typename Indexer::IndicesIteratorType;
+    using SamplesIteratorType = typename Indexer::SamplesIteratorType;
+
+    using KDNodeViewPtr = typename Indexer::KDNodeViewPtr;
+
+    SingleTreeTraverser(Indexer&& query_indexer)
+      : query_indexer_{std::forward<Indexer>(query_indexer)} {}
 
     template <typename Buffer>
     Buffer operator()(Buffer&& input_buffer) {
         static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                      "Derived class does not inherit from StaticBase<Derived>");
+                      "Provided a Buffer that does not inherit from StaticBase<Derived>");
 
         auto processed_buffer = std::forward<Buffer>(input_buffer);
-        single_tree_traversal(query_indexer_ptr_->root(), processed_buffer);
+        single_tree_traversal(query_indexer_.root(), processed_buffer);
         return processed_buffer;
+    }
+
+    std::size_t n_samples() const {
+        return query_indexer_.n_samples();
+    }
+
+    constexpr auto features_range_first(std::size_t sample_index) const {
+        return query_indexer_.features_range_first(sample_index);
+    }
+
+    constexpr auto features_range_last(std::size_t sample_index) const {
+        return query_indexer_.features_range_last(sample_index);
     }
 
   private:
     template <typename Buffer>
-    void single_tree_traversal(KDNodeViewPtr node, Buffer& buffer) {
+    void single_tree_traversal(KDNodeViewPtr node, Buffer& buffer) const {
         // current_node is currently a leaf node (and root in the special case where the entire tree is in a single
         // node)
-        auto current_kdnode = recurse_to_closest_leaf_node(
+        auto current_kdnode = recursive_search_to_leaf_node(
             /**/ node,
             /**/ buffer);
 
@@ -53,30 +72,30 @@ class SingleTreeTraverser {
     }
 
     template <typename Buffer>
-    KDNodeViewPtr recurse_to_closest_leaf_node(KDNodeViewPtr node, Buffer& buffer) {
+    KDNodeViewPtr recursive_search_to_leaf_node(KDNodeViewPtr node, Buffer& buffer) const {
         buffer.partial_search(node->indices_range_.first,
                               node->indices_range_.second,
-                              query_indexer_ptr_->begin(),
-                              query_indexer_ptr_->end(),
-                              query_indexer_ptr_->n_features());
+                              query_indexer_.begin(),
+                              query_indexer_.end(),
+                              query_indexer_.n_features());
 
         // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
         if (!node->is_leaf()) {
             // get the pivot sample index in the dataset
             const auto pivot_index = node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = (*query_indexer_ptr_)[pivot_index][node->cut_feature_index_];
+            const auto pivot_split_value = query_indexer_[pivot_index][node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = buffer.centroid_begin()[node->cut_feature_index_];
 
             // traverse either the left or right child node depending on where the target sample is located relatively
             // to the cut value
             if (query_split_value < pivot_split_value) {
-                node = recurse_to_closest_leaf_node(
+                node = recursive_search_to_leaf_node(
                     /**/ node->left_,
                     /**/ buffer);
             } else {
-                node = recurse_to_closest_leaf_node(
+                node = recursive_search_to_leaf_node(
                     /**/ node->right_,
                     /**/ buffer);
             }
@@ -85,14 +104,14 @@ class SingleTreeTraverser {
     }
 
     template <typename Buffer>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(KDNodeViewPtr node, Buffer& buffer) {
+    KDNodeViewPtr get_parent_node_after_sibling_traversal(const KDNodeViewPtr& node, Buffer& buffer) const {
         auto parent_node = node->parent_.lock();
         // if node has a parent
         if (parent_node) {
             // get the pivot sample index in the dataset
             const auto pivot_index = parent_node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = (*query_indexer_ptr_)[pivot_index][parent_node->cut_feature_index_];
+            const auto pivot_split_value = query_indexer_[pivot_index][parent_node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = buffer.centroid_begin()[parent_node->cut_feature_index_];
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
@@ -119,7 +138,7 @@ class SingleTreeTraverser {
         return parent_node;
     }
 
-    IndexerPtr query_indexer_ptr_;
+    Indexer query_indexer_;
 };
 
 }  // namespace ffcl::search

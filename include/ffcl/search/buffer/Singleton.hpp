@@ -9,6 +9,7 @@
 
 namespace ffcl::search::buffer {
 
+/*
 template <typename IndicesIterator, typename DistancesIterator>
 class Singleton : public Base<IndicesIterator, DistancesIterator> {
   public:
@@ -135,5 +136,6 @@ class Singleton : public Base<IndicesIterator, DistancesIterator> {
     IndexType    index_;
     DistanceType distance_;
 };
+*/
 
 }  // namespace ffcl::search::buffer

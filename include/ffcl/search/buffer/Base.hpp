@@ -6,6 +6,7 @@
 
 namespace ffcl::search::buffer {
 
+// /*
 template <typename IndicesIterator, typename DistancesIterator>
 class Base {
   public:
@@ -57,6 +58,7 @@ class Base {
 
     virtual void print() const = 0;
 };
+// */
 
 template <class DerivedClass>
 struct StaticBase {
@@ -118,6 +120,11 @@ struct StaticBase {
     template <typename DerivedType = DerivedClass>
     bool empty() const {
         return static_cast<const DerivedType*>(this)->empty_impl();
+    }
+
+    template <typename DerivedType = DerivedClass>
+    auto upper_bound_index() const {
+        return static_cast<const DerivedType*>(this)->upper_bound_index_impl();
     }
 
     template <typename DerivedType = DerivedClass>

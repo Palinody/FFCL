@@ -15,6 +15,7 @@
 
 namespace ffcl::search::buffer {
 
+/*
 template <typename IndicesIterator, typename DistancesIterator, typename BoundPtr>
 class UnsortedWithBound : public Base<IndicesIterator, DistancesIterator> {
   public:
@@ -189,5 +190,6 @@ class UnsortedWithBound : public Base<IndicesIterator, DistancesIterator> {
     DistanceType  furthest_k_nearest_neighbor_distance_;
     IndexType     max_capacity_;
 };
+*/
 
 }  // namespace ffcl::search::buffer

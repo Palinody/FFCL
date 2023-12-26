@@ -4,7 +4,6 @@
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
-#include "ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp"
 #include "ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp"
 
 #include <sys/types.h>  // std::ssize_t
@@ -199,11 +198,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
@@ -250,11 +249,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
@@ -301,11 +300,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
@@ -352,11 +351,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
@@ -403,11 +402,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
@@ -454,11 +453,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
@@ -505,11 +504,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
@@ -554,11 +553,11 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 

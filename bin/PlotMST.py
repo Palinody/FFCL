@@ -70,9 +70,9 @@ def plot_hdbscan_mst(clusterer, axis=None):
     clusterer.minimum_spanning_tree_.plot(
         axis=axis, edge_cmap="viridis", edge_alpha=0.6, node_size=80, edge_linewidth=2
     )
-    
+
     axis.set_title("HDBSCAN python3 MST")
-    
+
     if standalone_plot:
         plt.show()
 
@@ -99,7 +99,7 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
         gen_min_span_tree=True,
         approx_min_span_tree=False,
         core_dist_n_jobs=1,
-        allow_single_cluster=True
+        allow_single_cluster=True,
     )
     predictions = clusterer.fit_predict(data)
 

@@ -14,6 +14,7 @@
 
 namespace ffcl::search::count {
 
+/*
 template <typename IndicesIterator, typename DistancesIterator>
 class Range : public Base<IndicesIterator, DistancesIterator> {
   public:
@@ -113,5 +114,6 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
     HyperRangeType kd_bounding_box_;
     IndexType      count_;
 };
+*/
 
 }  // namespace ffcl::search::count

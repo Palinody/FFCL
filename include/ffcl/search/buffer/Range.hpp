@@ -15,6 +15,7 @@
 
 namespace ffcl::search::buffer {
 
+/*
 template <typename IndicesIterator, typename DistancesIterator>
 class Range : public Base<IndicesIterator, DistancesIterator> {
   public:
@@ -108,13 +109,12 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                     samples_range_first + candidate_in_bounds_index * n_features,
                     samples_range_first + candidate_in_bounds_index * n_features + n_features);
 
-            if (datastruct::bbox::is_sample_in_kd_bounding_box(
-                    /**/ candidate_feature_vector_centered_at_origin.begin(),
-                    /**/ candidate_feature_vector_centered_at_origin.end(),
-                    /**/ kd_bounding_box_)) {
+            if (datastruct::bbox::is_sample_in_kd_bounding_box(candidate_feature_vector_centered_at_origin.begin(),
+                                                               candidate_feature_vector_centered_at_origin.end(),
+                                                               kd_bounding_box_)) {
                 const auto candidate_in_bounds_distance = common::math::heuristics::auto_distance_from_origin(
-                    /**/ candidate_feature_vector_centered_at_origin.begin(),
-                    /**/ candidate_feature_vector_centered_at_origin.end());
+                    candidate_feature_vector_centered_at_origin.begin(),
+                    candidate_feature_vector_centered_at_origin.end());
 
                 this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
             }
@@ -142,13 +142,12 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
                     samples_range_first + candidate_in_bounds_index * n_features,
                     samples_range_first + candidate_in_bounds_index * n_features + n_features);
 
-            if (datastruct::bbox::is_sample_in_kd_bounding_box(
-                    /**/ candidate_feature_vector_centered_at_origin.begin(),
-                    /**/ candidate_feature_vector_centered_at_origin.end(),
-                    /**/ kd_bounding_box_)) {
+            if (datastruct::bbox::is_sample_in_kd_bounding_box(candidate_feature_vector_centered_at_origin.begin(),
+                                                               candidate_feature_vector_centered_at_origin.end(),
+                                                               kd_bounding_box_)) {
                 const auto candidate_in_bounds_distance = common::math::heuristics::auto_distance_from_origin(
-                    /**/ candidate_feature_vector_centered_at_origin.begin(),
-                    /**/ candidate_feature_vector_centered_at_origin.end());
+                    candidate_feature_vector_centered_at_origin.begin(),
+                    candidate_feature_vector_centered_at_origin.end());
 
                 this->update(candidate_in_bounds_index, candidate_in_bounds_distance);
             }
@@ -166,5 +165,6 @@ class Range : public Base<IndicesIterator, DistancesIterator> {
     IndicesType    indices_;
     DistancesType  distances_;
 };
+*/
 
 }  // namespace ffcl::search::buffer

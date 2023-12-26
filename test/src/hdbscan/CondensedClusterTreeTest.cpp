@@ -223,7 +223,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -304,7 +304,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -385,7 +385,7 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -466,7 +466,7 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -547,7 +547,7 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -628,7 +628,7 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -709,7 +709,7 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 

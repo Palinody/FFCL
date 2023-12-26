@@ -6,8 +6,6 @@
 #include "ffcl/datastruct/kdtree/KDTree.hpp"
 
 #include "ffcl/search/Search.hpp"
-#include "ffcl/search/buffer/Radius.hpp"
-#include "ffcl/search/buffer/Range.hpp"
 #include "ffcl/search/buffer/Unsorted.hpp"
 
 #include "ffcl/datastruct/bounds/segment_representation/MiddleAndLength.hpp"
@@ -130,7 +128,6 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
-/*
 TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     fs::path filename = "no_structure.txt";
 
@@ -153,74 +150,16 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer_ptr = std::make_shared<IndexerType>(indices.begin(),
-                                                     indices.end(),
-                                                     data.begin(),
-                                                     data.end(),
-                                                     n_features,
-                                                     OptionsType()
-                                                         .bucket_size(std::sqrt(n_samples))
-                                                         .max_depth(std::log2(n_samples))
-                                                         .axis_selection_policy(AxisSelectionPolicyType())
-                                                         .splitting_rule_policy(SplittingRulePolicyType()));
-
-    // auto buffer = ffcl::search::buffer::Unsorted<IndicesIterator, SamplesIterator>(100);
-    // auto buffer = ffcl::search::buffer::Range<IndicesIterator, SamplesIterator>({{-10, 10}, {-2.5, 5}});
-    auto buffer = ffcl::search::buffer::Radius<IndicesIterator, SamplesIterator>(5);
-
-    using SegmentType     = ffcl::datastruct::bounds::segment_representation::MinAndMax<ValueType>;
-    using BoundingBoxType = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
-
-    auto boundingbox = BoundingBoxType({{-10, 10}, {-2.5, 5}});
-
-    auto searcher = ffcl::search::Searcher(indexer_ptr, buffer);
-
-    auto query = std::vector<ValueType>({0.5, 0.5});
-
-    const auto returned_indices = searcher(query.begin(), query.end()).indices();
-
-    auto predictions = std::vector<IndexType>(n_samples);
-
-    for (const auto& index : returned_indices) {
-        predictions[index] = 1;
-    }
-
-    write_data<IndexType>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-*/
-
-TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
-    fs::path filename = "no_structure.txt";
-
-    using IndexType = std::size_t;
-    using ValueType = dType;
-
-    auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
-    const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer_ptr = std::make_shared<IndexerType>(indices.begin(),
-                                                     indices.end(),
-                                                     data.begin(),
-                                                     data.end(),
-                                                     n_features,
-                                                     OptionsType()
-                                                         .bucket_size(std::sqrt(n_samples))
-                                                         .max_depth(std::log2(n_samples))
-                                                         .axis_selection_policy(AxisSelectionPolicyType{})
-                                                         .splitting_rule_policy(SplittingRulePolicyType{}));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     // using SegmentType = ffcl::datastruct::bounds::segment_representation::MinAndMax<ValueType>;
     // using BoundType   = ffcl::datastruct::bounds::StaticBoundingBox<SegmentType>;
@@ -242,7 +181,9 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
 
     // auto bound_query = BoundType(center_point_query.begin(), center_point_query.end(), radius_query);
     auto bound_query = ffcl::datastruct::bounds::StaticBoundingBoxView(
-        center_point_query.begin(), center_point_query.end(), lengths_from_center_point_query);
+        /**/ center_point_query.begin(),
+        /**/ center_point_query.end(),
+        /**/ lengths_from_center_point_query);
 
     const IndexType max_capacity = ffcl::common::infinity<IndexType>();
 
@@ -251,7 +192,7 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     // auto bounded_buffer_query =
     // BufferType(center_point_query.begin(), center_point_query.end(), /*max_capacity=*/max_capacity);
 
-    auto searcher = ffcl::search::Searcher(indexer_ptr);
+    auto searcher = ffcl::search::Searcher(std::move(indexer));
 
     const auto returned_indices = searcher(std::move(bounded_buffer_query)).indices();
 
@@ -286,20 +227,20 @@ TEST_F(SearcherErrorsTest, NoisyCirclesBenchmarkTest) {
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer_ptr = std::make_shared<IndexerType>(indices.begin(),
-                                                     indices.end(),
-                                                     data.begin(),
-                                                     data.end(),
-                                                     n_features,
-                                                     OptionsType()
-                                                         .bucket_size(std::sqrt(n_samples))
-                                                         .max_depth(std::log2(n_samples))
-                                                         .axis_selection_policy(AxisSelectionPolicyType{})
-                                                         .splitting_rule_policy(SplittingRulePolicyType{}));
+    auto indexer = IndexerType(indices.begin(),
+                               indices.end(),
+                               data.begin(),
+                               data.end(),
+                               n_features,
+                               OptionsType()
+                                   .bucket_size(std::sqrt(n_samples))
+                                   .max_depth(std::log2(n_samples))
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     // using BufferType = ffcl::search::buffer::StaticUnsorted<SamplesIterator>;
 
-    auto searcher = ffcl::search::Searcher(indexer_ptr);
+    auto searcher = ffcl::search::Searcher(std::move(indexer));
 
     constexpr IndexType max_capacity = 10;  // ffcl::common::infinity<IndexType>();
 
@@ -309,7 +250,7 @@ TEST_F(SearcherErrorsTest, NoisyCirclesBenchmarkTest) {
         auto bounded_buffer_query =
             ffcl::search::buffer::StaticUnsorted(data.begin() + sample_index_query * n_features,
                                                  data.begin() + sample_index_query * n_features + n_features,
-                                                 /*max_capacity=*/max_capacity);
+                                                 max_capacity);
 
         const auto returned_indices = searcher(std::move(bounded_buffer_query)).indices();
 

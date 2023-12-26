@@ -2,6 +2,12 @@
 
 #include "ffcl/common/Utils.hpp"
 
+#include "ffcl/search/buffer/Unsorted.hpp"
+
+#include "ffcl/datastruct/bounds/Ball.hpp"
+
+#include "ffcl/search/Search.hpp"
+
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -65,29 +71,15 @@ class DBSCAN {
      * @return auto std::vector<LabelType> that has the same length as the input index range:
      * std::distance(global_index_first, global_index_last)
      */
-    template <typename IndexerFunction, typename... Args>
-    auto predict(const Indexer& indexer, IndexerFunction&& indexer_function, Args&&... args) const;
-
-    auto predict(const Indexer& indexer) const;
-
-    template <typename IndexerFunction, typename... Args>
-    auto predict_with_buffers(const Indexer& indexer, IndexerFunction&& indexer_function, Args&&... args) const;
-
-    auto predict_with_buffers(const Indexer& indexer) const;
+    auto predict(Indexer&& indexer) const;
 
   private:
-    template <typename NeighborsIndicesType,
-              typename VisitedIndicesType,
-              typename PredictionsType,
-              typename IndexerFunction,
-              typename... Args>
-    void predict_inner(NeighborsIndicesType& neighbors_indices,
-                       VisitedIndicesType&   visited_indices,
-                       PredictionsType&      predictions,
-                       const LabelType&      cluster_label,
-                       const Indexer&        indexer,
-                       IndexerFunction&&     indexer_function,
-                       Args&&... args) const;
+    template <typename NeighborsIndicesType, typename VisitedIndicesType, typename PredictionsType>
+    void predict_inner(NeighborsIndicesType&      neighbors_indices,
+                       VisitedIndicesType&        visited_indices,
+                       PredictionsType&           predictions,
+                       const LabelType&           cluster_label,
+                       search::Searcher<Indexer>& searcher) const;
 
     enum class SampleStatus : LabelType { noise = 0 };
 
@@ -105,16 +97,11 @@ DBSCAN<Indexer>& DBSCAN<Indexer>::set_options(const Options& options) {
 }
 
 template <typename Indexer>
-template <typename IndexerFunction, typename... Args>
-auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_function, Args&&... args) const {
-    // the query function that should be a member of the indexer
-    auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
-                              std::size_t sample_index, auto&&... func_args) mutable {
-        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(func_args)>(func_args)...);
-    };
+auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
+    auto searcher = search::Searcher(std::forward<Indexer>(indexer));
 
     // the total number of samples that will be searched by index
-    const std::size_t n_samples = indexer.n_samples();
+    const std::size_t n_samples = searcher.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
     auto predictions = std::vector<LabelType>(n_samples);
@@ -132,24 +119,22 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_
         if (!visited_indices[entry_point_candidate_index]) {
             // mark the current sample index as visited
             visited_indices[entry_point_candidate_index] = true;
-            // the indices of the neighbors in the global dataset with their corresponding distances
-            // the query sample is not included
-            auto neighbors_buffer = query_function(entry_point_candidate_index, std::forward<Args>(args)...);
 
-            if (neighbors_buffer.size() > options_.min_samples_) {
+            auto ball_view =
+                datastruct::bounds::StaticBallView(searcher.features_range_first(entry_point_candidate_index),
+                                                   searcher.features_range_last(entry_point_candidate_index),
+                                                   options_.radius_);
+
+            auto nn_buffer_query = searcher(search::buffer::StaticUnsorted(std::move(ball_view)));
+
+            if (nn_buffer_query.size() > options_.min_samples_) {
                 ++cluster_label;
 
                 predictions[entry_point_candidate_index] = cluster_label;
 
-                auto neighbors_indices = neighbors_buffer.move_indices();
+                auto neighbors_indices = std::move(nn_buffer_query).indices();
 
-                predict_inner(neighbors_indices,
-                              visited_indices,
-                              predictions,
-                              cluster_label,
-                              indexer,
-                              indexer_function,
-                              std::forward<Args>(args)...);
+                predict_inner(neighbors_indices, visited_indices, predictions, cluster_label, searcher);
             } else {
                 predictions[entry_point_candidate_index] = static_cast<LabelType>(SampleStatus::noise);
             }
@@ -159,24 +144,12 @@ auto DBSCAN<Indexer>::predict(const Indexer& indexer, IndexerFunction&& indexer_
 }
 
 template <typename Indexer>
-template <typename NeighborsIndicesType,
-          typename VisitedIndicesType,
-          typename PredictionsType,
-          typename IndexerFunction,
-          typename... Args>
-void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType& neighbors_indices,
-                                    VisitedIndicesType&   visited_indices,
-                                    PredictionsType&      predictions,
-                                    const LabelType&      cluster_label,
-                                    const Indexer&        indexer,
-                                    IndexerFunction&&     indexer_function,
-                                    Args&&... args) const {
-    // the query function that should be a member of the indexer
-    auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
-                              std::size_t sample_index, auto&&... func_args) mutable {
-        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(func_args)>(func_args)...);
-    };
-
+template <typename NeighborsIndicesType, typename VisitedIndicesType, typename PredictionsType>
+void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType&      neighbors_indices,
+                                    VisitedIndicesType&        visited_indices,
+                                    PredictionsType&           predictions,
+                                    const LabelType&           cluster_label,
+                                    search::Searcher<Indexer>& searcher) const {
     // iterate over the samples that are assigned to the current cluster
     for (std::size_t cluster_sample_index = 0; cluster_sample_index < neighbors_indices.size();
          ++cluster_sample_index) {
@@ -186,11 +159,14 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType& neighbors_indices,
             // mark the current neighbor index as visited
             visited_indices[neighbor_index] = true;
 
-            // for each neighbor query, retrieve its neighbors
-            auto inner_neighbors_buffer = query_function(neighbor_index, std::forward<Args>(args)...);
+            auto ball_view = datastruct::bounds::StaticBallView(searcher.features_range_first(neighbor_index),
+                                                                searcher.features_range_last(neighbor_index),
+                                                                options_.radius_);
+
+            auto inner_neighbors_buffer = searcher(search::buffer::StaticUnsorted(std::move(ball_view)));
 
             if (inner_neighbors_buffer.size() > options_.min_samples_) {
-                auto inner_neighbors_indices = inner_neighbors_buffer.move_indices();
+                auto inner_neighbors_indices = std::move(inner_neighbors_buffer).indices();
 
                 // iterate over each neighbor's neighbors and add them to the neighbors to visit only if
                 // they havent been visited already
@@ -207,77 +183,6 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType& neighbors_indices,
             predictions[neighbor_index] = cluster_label;
         }
     }
-}
-
-template <typename Indexer>
-auto DBSCAN<Indexer>::predict(const Indexer& indexer) const {
-    return predict(indexer, &Indexer::radius_search_around_query_index, options_.radius_);
-}
-
-template <typename Indexer>
-template <typename IndexerFunction, typename... Args>
-auto DBSCAN<Indexer>::predict_with_buffers(const Indexer&    indexer,
-                                           IndexerFunction&& indexer_function,
-                                           Args&&... args) const {
-    // the query function that should be a member of the indexer
-    auto query_function = [&indexer, indexer_function = std::forward<IndexerFunction>(indexer_function)](
-                              std::size_t sample_index, auto&&... func_args) mutable {
-        return std::invoke(indexer_function, indexer, sample_index, std::forward<decltype(func_args)>(func_args)...);
-    };
-
-    const std::size_t n_samples = indexer.n_samples();
-
-    // vector keeping track of the cluster label for each index specified by the global index range
-    auto predictions = std::vector<LabelType>(n_samples);
-
-    // initialize the initial cluster counter that's in [0, n_samples). Noise samples will be set to -1
-    LabelType cluster_label = static_cast<LabelType>(1);
-
-    // maps each sample to its nearest neighbors w.r.t. radius and min samples in radius options
-    auto precomputed_neighborhood = std::vector<std::vector<std::size_t>>(n_samples);
-    // booloean that assesses whether the current sample is core or non core
-    auto precomputed_is_core = std::vector<bool>(n_samples);
-
-    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
-        auto current_neighborhood_indices = query_function(global_index, std::forward<Args>(args)...).move_indices();
-
-        precomputed_is_core[global_index] = current_neighborhood_indices.size() + 1 >= options_.min_samples_;
-
-        precomputed_neighborhood[global_index] = std::move(current_neighborhood_indices);
-    }
-
-    auto neighbors_stack = std::vector<std::size_t>();
-
-    for (std::size_t global_index = 0; global_index < n_samples; ++global_index) {
-        if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise) &&
-            precomputed_is_core[global_index]) {
-            while (true) {
-                if (predictions[global_index] == static_cast<LabelType>(SampleStatus::noise)) {
-                    predictions[global_index] = cluster_label;
-
-                    if (precomputed_is_core[global_index]) {
-                        for (const auto& neighbor_index : precomputed_neighborhood[global_index]) {
-                            if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
-                                neighbors_stack.emplace_back(neighbor_index);
-                            }
-                        }
-                    }
-                }
-                if (neighbors_stack.empty()) {
-                    break;
-                }
-                global_index = neighbors_stack.back();
-                neighbors_stack.pop_back();
-            }
-            ++cluster_label;
-        }
-    }
-    return predictions;
-}
-
-template <typename Indexer>
-auto DBSCAN<Indexer>::predict_with_buffers(const Indexer& indexer) const {
-    return predict_with_buffers(indexer, &Indexer::radius_search_around_query_index, options_.radius_);
 }
 
 }  // namespace ffcl

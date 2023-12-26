@@ -47,16 +47,6 @@ struct StaticBound {
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto& centroid_reference() const {
-        return static_cast<const DerivedType*>(this)->centroid_reference_impl();
-    }
-
-    template <typename DerivedType = DerivedClass>
-    constexpr auto make_centroid() const {
-        return static_cast<const DerivedType*>(this)->make_centroid_impl();
-    }
-
-    template <typename DerivedType = DerivedClass>
     constexpr auto centroid_begin() const {
         return static_cast<const DerivedType*>(this)->centroid_begin_impl();
     }

@@ -18,6 +18,7 @@
 
 namespace ffcl::search::buffer {
 
+/*
 template <typename IndicesIterator,
           typename DistancesIterator,
           typename UnionFind = ffcl::datastruct::UnionFind<std::size_t>>
@@ -42,14 +43,14 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
                   const IndexType&     max_capacity = common::infinity<IndexType>())
       : indices_{init_neighbors_indices}
       , distances_{init_neighbors_distances}
-      , furthest_buffer_index_{0}
-      , furthest_k_nearest_neighbor_distance_{0}
+      , upper_bound_buffer_index_{0}
+      , upper_bound_distance_{0}
       , max_capacity_{max_capacity > init_neighbors_indices.size() ? max_capacity : init_neighbors_indices.size()}
       , union_find_const_reference_{union_find_const_reference}
       , query_representative_{query_representative} {
         if (indices_.size()) {
             if (indices_.size() == distances_.size()) {
-                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                std::tie(upper_bound_buffer_index_, upper_bound_distance_) =
                     common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
 
             } else {
@@ -71,11 +72,11 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
     }
 
     IndexType upper_bound_index() const {
-        return indices_[furthest_buffer_index_];
+        return indices_[upper_bound_buffer_index_];
     }
 
     DistanceType upper_bound() const {
-        return furthest_k_nearest_neighbor_distance_;
+        return upper_bound_distance_;
     }
 
     DistanceType upper_bound(const IndexType& feature_index) const {
@@ -115,17 +116,17 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
                 distances_.emplace_back(distance_candidate);
                 if (distance_candidate > this->upper_bound()) {
                     // update the new index position of the furthest in the buffer
-                    furthest_buffer_index_                = indices_.size() - 1;
-                    furthest_k_nearest_neighbor_distance_ = distance_candidate;
+                    upper_bound_buffer_index_ = indices_.size() - 1;
+                    upper_bound_distance_     = distance_candidate;
                 }
             }
             // populate if the max capacity is reached and the candidate has a closer distance
             else if (distance_candidate < this->upper_bound()) {
                 // replace the previous greatest distance now that the vectors overflow the max capacity
-                indices_[furthest_buffer_index_]   = index_candidate;
-                distances_[furthest_buffer_index_] = distance_candidate;
+                indices_[upper_bound_buffer_index_]   = index_candidate;
+                distances_[upper_bound_buffer_index_] = distance_candidate;
                 // find the new furthest neighbor and update the cache accordingly
-                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                std::tie(upper_bound_buffer_index_, upper_bound_distance_) =
                     common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
             }
         }
@@ -183,8 +184,8 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
         // max_capacity_ remains unchanged
         indices_.clear();
         distances_.clear();
-        furthest_buffer_index_                = 0;
-        furthest_k_nearest_neighbor_distance_ = 0;
+        upper_bound_buffer_index_ = 0;
+        upper_bound_distance_     = 0;
     }
 
     void print() const {
@@ -196,13 +197,14 @@ class WithUnionFind : public Base<IndicesIterator, DistancesIterator> {
   private:
     std::vector<IndexType>    indices_;
     std::vector<DistanceType> distances_;
-    IndexType                 furthest_buffer_index_;
-    DistanceType              furthest_k_nearest_neighbor_distance_;
+    IndexType                 upper_bound_buffer_index_;
+    DistanceType              upper_bound_distance_;
     IndexType                 max_capacity_;
 
     const UnionFind& union_find_const_reference_;
     IndexType        query_representative_;
 };
+*/
 
 template <typename DistancesIterator, typename Bound = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>>
 class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesIterator, Bound>> {
@@ -229,8 +231,8 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
       : bound_{std::forward<Bound>(bound)}
       , indices_{}
       , distances_{}
-      , furthest_buffer_index_{0}
-      , furthest_k_nearest_neighbor_distance_{0}
+      , upper_bound_buffer_index_{0}
+      , upper_bound_distance_{0}
       , max_capacity_{max_capacity}
       , union_find_const_reference_{union_find_const_reference}
       , query_representative_{query_representative} {}
@@ -241,8 +243,6 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
                         const IndexType&            query_representative,
                         const IndexType&            max_capacity = common::infinity<IndexType>())
       : StaticWithUnionFind(Bound(centroid_features_query_first, centroid_features_query_last),
-                            IndicesType{},
-                            DistancesType{},
                             union_find_const_reference,
                             query_representative,
                             max_capacity) {}
@@ -292,11 +292,11 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
     }
 
     IndexType upper_bound_index_impl() const {
-        return indices_[furthest_buffer_index_];
+        return indices_[upper_bound_buffer_index_];
     }
 
     DistanceType upper_bound_impl() const {
-        return furthest_k_nearest_neighbor_distance_;
+        return upper_bound_distance_;
     }
 
     DistanceType upper_bound_impl(const IndexType& feature_index) const {
@@ -316,17 +316,17 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
                 distances_.emplace_back(distance_candidate);
                 if (distance_candidate > upper_bound_impl()) {
                     // update the new index position of the furthest in the buffer
-                    furthest_buffer_index_                = indices_.size() - 1;
-                    furthest_k_nearest_neighbor_distance_ = distance_candidate;
+                    upper_bound_buffer_index_ = indices_.size() - 1;
+                    upper_bound_distance_     = distance_candidate;
                 }
             }
             // populate if the max capacity is reached and the candidate has a closer distance
             else if (distance_candidate < upper_bound_impl()) {
                 // replace the previous greatest distance now that the vectors overflow the max capacity
-                indices_[furthest_buffer_index_]   = index_candidate;
-                distances_[furthest_buffer_index_] = distance_candidate;
+                indices_[upper_bound_buffer_index_]   = index_candidate;
+                distances_[upper_bound_buffer_index_] = distance_candidate;
                 // find the new furthest neighbor and update the cache accordingly
-                std::tie(furthest_buffer_index_, furthest_k_nearest_neighbor_distance_) =
+                std::tie(upper_bound_buffer_index_, upper_bound_distance_) =
                     common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
             }
         }
@@ -343,14 +343,14 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
         const std::size_t n_subrange_samples = std::distance(indices_range_first, indices_range_last);
 
         for (std::size_t subrange_index = 0; subrange_index < n_subrange_samples; ++subrange_index) {
-            const std::size_t query_index = indices_range_first[subrange_index];
+            const std::size_t reference_index = indices_range_first[subrange_index];
 
-            const auto optional_candidate_distance =
-                bound_.compute_distance_if_within_bounds(samples_range_first + query_index * n_features,
-                                                         samples_range_first + query_index * n_features + n_features);
+            const auto optional_candidate_distance = bound_.compute_distance_if_within_bounds(
+                samples_range_first + reference_index * n_features,
+                samples_range_first + reference_index * n_features + n_features);
 
             if (optional_candidate_distance) {
-                update_impl(query_index, *optional_candidate_distance);
+                update_impl(reference_index, *optional_candidate_distance);
             }
         }
     }
@@ -360,17 +360,27 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
 
     IndicesType   indices_;
     DistancesType distances_;
-    IndexType     furthest_buffer_index_;
-    DistanceType  furthest_k_nearest_neighbor_distance_;
-    IndexType     max_capacity_;
+
+    IndexType    upper_bound_buffer_index_;
+    DistanceType upper_bound_distance_;
+
+    IndexType max_capacity_;
 
     UnionFindConstReferenceType union_find_const_reference_;
     IndexType                   query_representative_;
 };
 
 template <typename Bound, typename UnionFindConstReferenceType, typename IndexType>
+StaticWithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&)
+    -> StaticWithUnionFind<typename Bound::IteratorType, Bound>;
+
+template <typename Bound, typename UnionFindConstReferenceType, typename IndexType>
 StaticWithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&, const IndexType&)
     -> StaticWithUnionFind<typename Bound::IteratorType, Bound>;
+
+template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
+StaticWithUnionFind(DistancesIteratorType, DistancesIteratorType, UnionFindConstReferenceType, const IndexType&)
+    -> StaticWithUnionFind<DistancesIteratorType, datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>>;
 
 template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
 StaticWithUnionFind(DistancesIteratorType,

@@ -9,33 +9,50 @@
 
 namespace ffcl::search {
 
-template <typename IndexerPtr>
+template <typename Indexer>
 class Searcher {
   public:
-    static_assert(common::is_raw_or_smart_ptr<IndexerPtr>());
+    // static_assert(common::is_raw_or_smart_ptr<IndexerPtr>());
 
-    using IndexType           = typename IndexerPtr::element_type::IndexType;
-    using DataType            = typename IndexerPtr::element_type::DataType;
-    using IndicesIteratorType = typename IndexerPtr::element_type::IndicesIteratorType;
-    using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
+    // using IndexType           = typename Indexer::element_type::IndexType;
+    // using DataType            = typename Indexer::element_type::DataType;
+    // using IndicesIteratorType = typename Indexer::element_type::IndicesIteratorType;
+    // using SamplesIteratorType = typename Indexer::element_type::SamplesIteratorType;
+
+    using IndexType           = typename Indexer::IndexType;
+    using DataType            = typename Indexer::DataType;
+    using IndicesIteratorType = typename Indexer::IndicesIteratorType;
+    using SamplesIteratorType = typename Indexer::SamplesIteratorType;
 
   public:
-    Searcher(IndexerPtr query_indexer_ptr)
-      : single_tree_traverser_{SingleTreeTraverser(query_indexer_ptr)} {}
+    Searcher(Indexer&& query_indexer)
+      : single_tree_traverser_{SingleTreeTraverser(std::forward<Indexer>(query_indexer))} {}
 
     template <typename Buffer>
     Buffer operator()(Buffer&& buffer) {
         static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                      "Derived class does not inherit from StaticBase<Derived>");
+                      "Provided a Buffer that does not inherit from StaticBase<Derived>");
 
         return single_tree_traverser_(std::forward<Buffer>(buffer));
     }
 
+    std::size_t n_samples() const {
+        return single_tree_traverser_.n_samples();
+    }
+
+    constexpr auto features_range_first(std::size_t sample_index) const {
+        return single_tree_traverser_.features_range_first(sample_index);
+    }
+
+    constexpr auto features_range_last(std::size_t sample_index) const {
+        return single_tree_traverser_.features_range_last(sample_index);
+    }
+
   private:
-    SingleTreeTraverser<IndexerPtr> single_tree_traverser_;
+    SingleTreeTraverser<Indexer> single_tree_traverser_;
 };
 
-template <typename IndexerPtr>
-Searcher(IndexerPtr) -> Searcher<IndexerPtr>;
+template <typename Indexer>
+Searcher(Indexer) -> Searcher<Indexer>;
 
 }  // namespace ffcl::search

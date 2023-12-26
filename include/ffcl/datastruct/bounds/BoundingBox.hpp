@@ -8,6 +8,7 @@
 
 namespace ffcl::datastruct::bounds {
 
+/*
 template <typename Segment>
 class BoundingBox {
   public:
@@ -90,6 +91,7 @@ class BoundingBox {
     CentroidType        centroid_;
     LengthsFromCentroid lengths_from_center_point_;
 };
+*/
 
 template <typename Segment>
 class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
@@ -159,19 +161,11 @@ class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
         return lengths_from_center_point_[feature_index];
     }
 
-    constexpr auto& centroid_reference_impl() const {
-        return centroid_;
-    }
-
-    constexpr auto make_centroid_impl() const {
-        return centroid_;
-    }
-
-    constexpr auto centroid_begin_impl() {
+    constexpr auto centroid_begin_impl() const {
         return centroid_.begin();
     }
 
-    constexpr auto centroid_end_impl() {
+    constexpr auto centroid_end_impl() const {
         return centroid_.end();
     }
 
@@ -265,21 +259,6 @@ class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesI
 
     constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
         return lengths_from_center_point_[feature_index];
-    }
-
-    constexpr auto& centroid_reference_impl() const {
-        // always_false<Derived>::value is dependent on the template parameter FeaturesIterator. This means that
-        // static_assert will only be evaluated when centroid_reference_impl is instantiated with a specific type,
-        // allowing the base template to compile successfully until an attempt is made to instantiate this method.
-        static_assert(always_false<FeaturesIterator>::value,
-                      "centroid_reference_impl cannot be implemented for view data.");
-        // The following return statement is unreachable but required to avoid
-        // compile errors in some compilers. Use a dummy return or throw an exception.
-        throw std::logic_error("Unimplemented method");
-    }
-
-    constexpr auto make_centroid_impl() const {
-        return std::vector(centroid_features_range_first_, centroid_features_range_last_);
     }
 
     constexpr auto centroid_begin_impl() const {

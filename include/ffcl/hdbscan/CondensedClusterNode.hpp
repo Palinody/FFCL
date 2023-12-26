@@ -33,7 +33,7 @@ struct CondensedClusterNode {
                             const ValueType&                   lambda_value);
 
     // the single linkage cluster node pointer that led to a split of the single linkage tree.
-    SingleLinkageClusterNodePtr single_linkage_cluster_node_first_;
+    SingleLinkageClusterNodePtr single_linkage_cluster_node_root_;
     // the initial lambda value: 1 / distance. It results from the creation of the current node after a split.
     ValueType lambda_min_;
     // the total accumulated lambda values for each points persisting in the same cluster.
@@ -49,9 +49,9 @@ struct CondensedClusterNode {
 template <typename IndexType, typename ValueType>
 CondensedClusterNode<IndexType, ValueType>::CondensedClusterNode(
     SingleLinkageClusterNodePtr single_linkage_cluster_node)
-  : single_linkage_cluster_node_first_{single_linkage_cluster_node}
-  , lambda_min_{single_linkage_cluster_node_first_->has_parent()
-                    ? common::division(1, single_linkage_cluster_node_first_->parent_->level_)
+  : single_linkage_cluster_node_root_{single_linkage_cluster_node}
+  , lambda_min_{single_linkage_cluster_node_root_->has_parent()
+                    ? common::division(1, single_linkage_cluster_node_root_->parent_->level_)
                     : 0}
   , stability_{0}
   , is_selected_{false} {}
@@ -74,7 +74,7 @@ bool CondensedClusterNode<IndexType, ValueType>::is_selected() const {
 template <typename IndexType, typename ValueType>
 std::size_t CondensedClusterNode<IndexType, ValueType>::size() const {
     // takes into account only the initiating node of the branch that persists along different lambda values
-    return single_linkage_cluster_node_first_->size();
+    return single_linkage_cluster_node_root_->size();
 }
 
 template <typename IndexType, typename ValueType>

@@ -164,7 +164,7 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -218,7 +218,7 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -272,7 +272,7 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -326,7 +326,7 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -380,7 +380,7 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -434,7 +434,7 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -488,7 +488,7 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 

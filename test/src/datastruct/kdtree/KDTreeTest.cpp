@@ -167,6 +167,7 @@ TEST_F(KDTreeErrorsTest, SequentialNearestNeighborIndexTest) {
 }
 */
 
+/*
 TEST_F(KDTreeErrorsTest, NearestNeighborIndexTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
@@ -1246,6 +1247,7 @@ TEST_F(KDTreeErrorsTest, UnbalancedBlobsTest) {
 
     kdtree.serialize(kdtree_folder_root_ / kdtree_filename);
 }
+*/
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

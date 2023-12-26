@@ -69,7 +69,7 @@ class HDBSCAN {
 
     HDBSCAN<Indexer>& set_options(const Options& options);
 
-    auto predict(const Indexer& indexer) const;
+    auto predict(Indexer&& indexer) const;
 
   private:
     Options options_;
@@ -86,14 +86,14 @@ HDBSCAN<Indexer>& HDBSCAN<Indexer>::set_options(const Options& options) {
 }
 
 template <typename Indexer>
-auto HDBSCAN<Indexer>::predict(const Indexer& indexer) const {
+auto HDBSCAN<Indexer>::predict(Indexer&& indexer) const {
     using BoruvkasAlgorithmOptionsType    = typename BoruvkasAlgorithm<Indexer>::Options;
     using CondensedClusterTreeOptionsType = typename CondensedClusterTree<IndexType, ValueType>::Options;
 
     const auto boruvkas_algorithm =
         BoruvkasAlgorithm<Indexer>(BoruvkasAlgorithmOptionsType().k_nearest_neighbors(options_.k_nearest_neighbors_));
 
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::forward<Indexer>(indexer));
 
     const auto single_linkage_cluster_tree = SingleLinkageClusterTree(std::move(minimum_spanning_tree));
 

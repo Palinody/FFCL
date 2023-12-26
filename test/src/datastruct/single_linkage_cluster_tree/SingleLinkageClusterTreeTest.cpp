@@ -204,7 +204,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -268,7 +268,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -332,7 +332,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -396,7 +396,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -460,7 +460,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -524,7 +524,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -588,7 +588,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     timer.print_elapsed_seconds(9);
 
@@ -666,7 +666,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(indexer);
+    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
     ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
 

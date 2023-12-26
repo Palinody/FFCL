@@ -9,6 +9,7 @@
 
 namespace ffcl::datastruct::bounds {
 
+/*
 template <typename ValueType, std::size_t NFeatures = 0>
 class UnboundedBall {
   public:
@@ -70,6 +71,7 @@ class UnboundedBall {
     CentroidType centroid_;
     ValueType    radius_;
 };
+*/
 
 template <typename Value, std::size_t NFeatures = 0>
 class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<Value, NFeatures>> {
@@ -122,19 +124,11 @@ class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<Value, NFeatu
         return common::infinity<ValueType>();
     }
 
-    constexpr auto& centroid_reference_impl() const {
-        return centroid_;
-    }
-
-    constexpr auto make_centroid_impl() const {
-        return centroid_;
-    }
-
-    constexpr auto centroid_begin_impl() {
+    constexpr auto centroid_begin_impl() const {
         return centroid_.begin();
     }
 
-    constexpr auto centroid_end_impl() {
+    constexpr auto centroid_end_impl() const {
         return centroid_.end();
     }
 
@@ -195,21 +189,6 @@ class StaticUnboundedBallView : public StaticBound<StaticUnboundedBallView<Featu
     constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return common::infinity<ValueType>();
-    }
-
-    constexpr auto& centroid_reference_impl() const {
-        // always_false<Derived>::value is dependent on the template parameter FeaturesIterator. This means that
-        // static_assert will only be evaluated when centroid_reference_impl is instantiated with a specific type,
-        // allowing the base template to compile successfully until an attempt is made to instantiate this method.
-        static_assert(always_false<FeaturesIterator>::value,
-                      "centroid_reference_impl cannot be implemented for view data.");
-        // The following return statement is unreachable but required to avoid
-        // compile errors in some compilers. Use a dummy return or throw an exception.
-        throw std::logic_error("Unimplemented method");
-    }
-
-    constexpr auto make_centroid_impl() const {
-        return std::vector(centroid_features_range_first_, centroid_features_range_last_);
     }
 
     constexpr auto centroid_begin_impl() const {

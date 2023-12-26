@@ -12,6 +12,7 @@
 
 namespace ffcl::search::buffer {
 
+/*
 template <typename IndicesIterator, typename DistancesIterator>
 class Radius : public Base<IndicesIterator, DistancesIterator> {
   public:
@@ -141,5 +142,6 @@ class Radius : public Base<IndicesIterator, DistancesIterator> {
     IndicesType   indices_;
     DistancesType distances_;
 };
+*/
 
 }  // namespace ffcl::search::buffer
