@@ -15,7 +15,11 @@ class Lloyd {
                   "Lloyd allows floating point types.");
 
   public:
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
     // pointers/iterators to the first and last elements of the dataset and the feature size
     using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;

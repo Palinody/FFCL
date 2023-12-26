@@ -19,7 +19,9 @@ class HDBSCAN {
   public:
     using IndexType = typename Indexer::IndexType;
     using ValueType = typename Indexer::DataType;
-    // static_assert(std::is_floating_point<ValueType>::value, "HDBSCAN only allows floating point types.");
+
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<ValueType>, "ValueType must be trivial.");
 
     struct Options {
         Options() = default;

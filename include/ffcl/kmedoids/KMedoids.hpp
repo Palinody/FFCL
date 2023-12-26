@@ -26,6 +26,8 @@ namespace ffcl {
 template <typename DataType, bool PrecomputePairwiseDistanceMatrix = true>
 class KMedoids {
   public:
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
     struct Options {
         Options& max_iter(std::size_t max_iter) {
             max_iter_ = max_iter;

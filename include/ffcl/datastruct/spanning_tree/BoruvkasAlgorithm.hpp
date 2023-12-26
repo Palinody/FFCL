@@ -30,10 +30,17 @@ namespace ffcl {
 template <typename Indexer>
 class BoruvkasAlgorithm {
   public:
-    using IndexType           = typename Indexer::IndexType;
-    using ValueType           = typename Indexer::DataType;
+    using IndexType = typename Indexer::IndexType;
+    using ValueType = typename Indexer::DataType;
+
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<ValueType>, "ValueType must be trivial.");
+
     using IndicesIteratorType = typename Indexer::IndicesIteratorType;
     using SamplesIteratorType = typename Indexer::SamplesIteratorType;
+
+    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
+    static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
     using EdgeType = mst::Edge<IndexType, ValueType>;
 
@@ -234,9 +241,9 @@ auto BoruvkasAlgorithm<Indexer>::make_core_distances_ptr(search::Searcher<Indexe
     auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::make_unique<ValueType[]>(searcher.n_samples()));
 
     for (std::size_t sample_index = 0; sample_index < searcher.n_samples(); ++sample_index) {
-        auto nn_buffer_query = search::buffer::StaticUnsorted(searcher.features_range_first(sample_index),
-                                                              searcher.features_range_last(sample_index),
-                                                              k_nearest_neighbors);
+        auto nn_buffer_query = search::buffer::Unsorted(searcher.features_range_first(sample_index),
+                                                        searcher.features_range_last(sample_index),
+                                                        k_nearest_neighbors);
 
         (*core_distances_ptr)[sample_index] = searcher(std::move(nn_buffer_query)).upper_bound();
     }
@@ -257,12 +264,11 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(search::Searcher<Indexer>& sear
         for (const auto& sample_index : component) {
             // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
             // the same component using the UnionFind data structure
-            auto nn_buffer_query =
-                searcher(search::buffer::StaticWithUnionFind(searcher.features_range_first(sample_index),
-                                                             searcher.features_range_last(sample_index),
-                                                             forest.get_union_find_const_reference(),
-                                                             component_representative,
-                                                             /*max_capacity=*/static_cast<IndexType>(1)));
+            auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
+                                                                          searcher.features_range_last(sample_index),
+                                                                          forest.get_union_find_const_reference(),
+                                                                          component_representative,
+                                                                          /*max_capacity=*/static_cast<IndexType>(1)));
 
             // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
             const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();
@@ -302,12 +308,11 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(search::Searcher<Indexer>&   se
         for (const auto& sample_index : component) {
             // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
             // the same component using the UnionFind data structure
-            auto nn_buffer_query =
-                searcher(search::buffer::StaticWithUnionFind(searcher.features_range_first(sample_index),
-                                                             searcher.features_range_last(sample_index),
-                                                             forest.get_union_find_const_reference(),
-                                                             component_representative,
-                                                             /*max_capacity=*/static_cast<IndexType>(1)));
+            auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
+                                                                          searcher.features_range_last(sample_index),
+                                                                          forest.get_union_find_const_reference(),
+                                                                          component_representative,
+                                                                          /*max_capacity=*/static_cast<IndexType>(1)));
 
             // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
             const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();
@@ -359,12 +364,11 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(search::Searcher
     for (const auto& sample_index : smallest_component) {
         // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
         // the same component using the UnionFind data structure
-        auto nn_buffer_query =
-            searcher(search::buffer::StaticWithUnionFind(searcher.features_range_first(sample_index),
-                                                         searcher.features_range_last(sample_index),
-                                                         forest.get_union_find_const_reference(),
-                                                         smallest_component_representative,
-                                                         /*max_capacity=*/static_cast<IndexType>(1)));
+        auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
+                                                                      searcher.features_range_last(sample_index),
+                                                                      forest.get_union_find_const_reference(),
+                                                                      smallest_component_representative,
+                                                                      /*max_capacity=*/static_cast<IndexType>(1)));
 
         // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
         const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();
@@ -407,12 +411,11 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(search::Searcher
     for (const auto& sample_index : smallest_component) {
         // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
         // the same component using the UnionFind data structure
-        auto nn_buffer_query =
-            searcher(search::buffer::StaticWithUnionFind(searcher.features_range_first(sample_index),
-                                                         searcher.features_range_last(sample_index),
-                                                         forest.get_union_find_const_reference(),
-                                                         smallest_component_representative,
-                                                         /*max_capacity=*/static_cast<IndexType>(1)));
+        auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
+                                                                      searcher.features_range_last(sample_index),
+                                                                      forest.get_union_find_const_reference(),
+                                                                      smallest_component_representative,
+                                                                      /*max_capacity=*/static_cast<IndexType>(1)));
 
         // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
         const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();

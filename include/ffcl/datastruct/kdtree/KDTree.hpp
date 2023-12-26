@@ -33,8 +33,14 @@ class KDTree {
     using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
     using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
 
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
     using IndicesIteratorType = IndicesIterator;
     using SamplesIteratorType = SamplesIterator;
+
+    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
+    static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
     using KDNodeViewType = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewType;
     using KDNodeViewPtr  = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr;

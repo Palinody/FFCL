@@ -2,8 +2,8 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/search/buffer/Base.hpp"
-#include "ffcl/search/count/Base.hpp"
+#include "ffcl/search/buffer/StaticBase.hpp"
+#include "ffcl/search/count/StaticBase.hpp"
 
 #include "ffcl/search/SingleTreeTraverser.hpp"
 
@@ -12,17 +12,17 @@ namespace ffcl::search {
 template <typename Indexer>
 class Searcher {
   public:
-    // static_assert(common::is_raw_or_smart_ptr<IndexerPtr>());
+    using IndexType = typename Indexer::IndexType;
+    using DataType  = typename Indexer::DataType;
 
-    // using IndexType           = typename Indexer::element_type::IndexType;
-    // using DataType            = typename Indexer::element_type::DataType;
-    // using IndicesIteratorType = typename Indexer::element_type::IndicesIteratorType;
-    // using SamplesIteratorType = typename Indexer::element_type::SamplesIteratorType;
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
-    using IndexType           = typename Indexer::IndexType;
-    using DataType            = typename Indexer::DataType;
     using IndicesIteratorType = typename Indexer::IndicesIteratorType;
     using SamplesIteratorType = typename Indexer::SamplesIteratorType;
+
+    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
+    static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
   public:
     Searcher(Indexer&& query_indexer)

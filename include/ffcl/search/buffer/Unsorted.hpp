@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/search/buffer/Base.hpp"
+#include "ffcl/search/buffer/StaticBase.hpp"
 
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
 
@@ -17,8 +17,8 @@
 
 namespace ffcl::search::buffer {
 
-template <typename DistancesIterator, typename Bound = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>>
-class StaticUnsorted : public StaticBase<StaticUnsorted<DistancesIterator, Bound>> {
+template <typename DistancesIterator, typename Bound = datastruct::bounds::UnboundedBallView<DistancesIterator>>
+class Unsorted : public StaticBase<Unsorted<DistancesIterator, Bound>> {
   public:
     static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
     static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
@@ -36,7 +36,7 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<DistancesIterator, Bound
     using IndicesIteratorType   = typename IndicesType::iterator;
     using DistancesIteratorType = DistancesIterator;
 
-    explicit StaticUnsorted(Bound&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
+    explicit Unsorted(Bound&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
       : bound_{std::forward<Bound>(bound)}
       , indices_{}
       , distances_{}
@@ -47,10 +47,10 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<DistancesIterator, Bound
                       "Bound does not inherit from datastruct::bounds::StaticBound<Derived>");
     }
 
-    explicit StaticUnsorted(DistancesIterator centroid_features_query_first,
-                            DistancesIterator centroid_features_query_last,
-                            const IndexType&  max_capacity = common::infinity<IndexType>())
-      : StaticUnsorted{Bound{centroid_features_query_first, centroid_features_query_last}, max_capacity} {}
+    explicit Unsorted(DistancesIterator centroid_features_query_first,
+                      DistancesIterator centroid_features_query_last,
+                      const IndexType&  max_capacity = common::infinity<IndexType>())
+      : Unsorted{Bound{centroid_features_query_first, centroid_features_query_last}, max_capacity} {}
 
     constexpr auto centroid_begin_impl() const {
         return bound_.centroid_begin();
@@ -167,13 +167,19 @@ class StaticUnsorted : public StaticBase<StaticUnsorted<DistancesIterator, Bound
 };
 
 template <typename Bound>
-StaticUnsorted(Bound &&) -> StaticUnsorted<typename Bound::IteratorType, Bound>;
+Unsorted(Bound &&) -> Unsorted<typename Bound::IteratorType, Bound>;
+
+template <typename DistancesIteratorType>
+Unsorted(DistancesIteratorType, DistancesIteratorType)
+    -> Unsorted<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>>;
+
+// ---
 
 template <typename Bound, typename IndexType>
-StaticUnsorted(Bound&&, const IndexType&) -> StaticUnsorted<typename Bound::IteratorType, Bound>;
+Unsorted(Bound&&, const IndexType&) -> Unsorted<typename Bound::IteratorType, Bound>;
 
 template <typename DistancesIteratorType, typename IndexType>
-StaticUnsorted(DistancesIteratorType, DistancesIteratorType, const IndexType&)
-    -> StaticUnsorted<DistancesIteratorType, datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>>;
+Unsorted(DistancesIteratorType, DistancesIteratorType, const IndexType&)
+    -> Unsorted<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>>;
 
 }  // namespace ffcl::search::buffer

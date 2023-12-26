@@ -162,14 +162,14 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
     // using SegmentType = ffcl::datastruct::bounds::segment_representation::MinAndMax<ValueType>;
-    // using BoundType   = ffcl::datastruct::bounds::StaticBoundingBox<SegmentType>;
-    // using BoundType = ffcl::datastruct::bounds::StaticBall<ValueType, 2>;
-    // using BoundType = ffcl::datastruct::bounds::StaticUnboundedBall<ValueType, 2>;
-    // using BoundType = ffcl::datastruct::bounds::StaticUnboundedBallView<SamplesIterator>;
-    // using BoundType = ffcl::datastruct::bounds::StaticBallView<SamplesIterator>;
-    // using BoundType = ffcl::datastruct::bounds::StaticBoundingBoxView<SamplesIterator>;
+    // using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
+    // using BoundType = ffcl::datastruct::bounds::Ball<ValueType, 2>;
+    // using BoundType = ffcl::datastruct::bounds::UnboundedBall<ValueType, 2>;
+    // using BoundType = ffcl::datastruct::bounds::UnboundedBallView<SamplesIterator>;
+    // using BoundType = ffcl::datastruct::bounds::BallView<SamplesIterator>;
+    // using BoundType = ffcl::datastruct::bounds::BoundingBoxView<SamplesIterator>;
 
-    // using BufferType = ffcl::search::buffer::StaticUnsorted<SamplesIterator, BoundType>;
+    // using BufferType = ffcl::search::buffer::Unsorted<SamplesIterator, BoundType>;
 
     // auto bound_ptr = std::make_shared<BoundType>(BoundType({{-15, -10}, {-15, -3}}));
     // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-10, -10}, 10});
@@ -180,15 +180,14 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     auto lengths_from_center_point_query = std::vector<ValueType>{2, 6};
 
     // auto bound_query = BoundType(center_point_query.begin(), center_point_query.end(), radius_query);
-    auto bound_query = ffcl::datastruct::bounds::StaticBoundingBoxView(
+    auto bound_query = ffcl::datastruct::bounds::BoundingBoxView(
         /**/ center_point_query.begin(),
         /**/ center_point_query.end(),
         /**/ lengths_from_center_point_query);
 
     const IndexType max_capacity = ffcl::common::infinity<IndexType>();
 
-    auto bounded_buffer_query =
-        ffcl::search::buffer::StaticUnsorted(std::move(bound_query), /*max_capacity=*/max_capacity);
+    auto bounded_buffer_query = ffcl::search::buffer::Unsorted(std::move(bound_query), /*max_capacity=*/max_capacity);
     // auto bounded_buffer_query =
     // BufferType(center_point_query.begin(), center_point_query.end(), /*max_capacity=*/max_capacity);
 
@@ -238,7 +237,7 @@ TEST_F(SearcherErrorsTest, NoisyCirclesBenchmarkTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    // using BufferType = ffcl::search::buffer::StaticUnsorted<SamplesIterator>;
+    // using BufferType = ffcl::search::buffer::Unsorted<SamplesIterator>;
 
     auto searcher = ffcl::search::Searcher(std::move(indexer));
 
@@ -248,9 +247,9 @@ TEST_F(SearcherErrorsTest, NoisyCirclesBenchmarkTest) {
 
     for (std::size_t sample_index_query = 0; sample_index_query < n_samples; ++sample_index_query) {
         auto bounded_buffer_query =
-            ffcl::search::buffer::StaticUnsorted(data.begin() + sample_index_query * n_features,
-                                                 data.begin() + sample_index_query * n_features + n_features,
-                                                 max_capacity);
+            ffcl::search::buffer::Unsorted(data.begin() + sample_index_query * n_features,
+                                           data.begin() + sample_index_query * n_features + n_features,
+                                           max_capacity);
 
         const auto returned_indices = searcher(std::move(bounded_buffer_query)).indices();
 

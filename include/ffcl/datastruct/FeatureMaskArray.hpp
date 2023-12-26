@@ -15,6 +15,8 @@ namespace ffcl::datastruct {
 template <typename IndexType, std::size_t NFeatures>
 class FeatureMaskArray {
   public:
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+
     using VariantType          = std::variant<std::vector<IndexType>, std::array<IndexType, NFeatures>>;
     using ConstIndicesIterator = typename VariantType::value_type::const_iterator;
 

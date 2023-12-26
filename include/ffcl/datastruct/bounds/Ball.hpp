@@ -10,7 +10,7 @@
 namespace ffcl::datastruct::bounds {
 
 template <typename Value, std::size_t NFeatures = 0>
-class StaticBall : public StaticBound<StaticBall<Value, NFeatures>> {
+class Ball : public StaticBound<Ball<Value, NFeatures>> {
   public:
     using ValueType = Value;
 
@@ -18,11 +18,11 @@ class StaticBall : public StaticBound<StaticBall<Value, NFeatures>> {
 
     using IteratorType = typename CentroidType::IteratorType;
 
-    StaticBall(const CentroidType& centroid, const ValueType& radius)
+    Ball(const CentroidType& centroid, const ValueType& radius)
       : centroid_{centroid}
       , radius_{radius} {}
 
-    StaticBall(CentroidType&& centroid, const ValueType& radius) noexcept
+    Ball(CentroidType&& centroid, const ValueType& radius) noexcept
       : centroid_{std::move(centroid)}
       , radius_{radius} {}
 
@@ -80,7 +80,7 @@ class StaticBall : public StaticBound<StaticBall<Value, NFeatures>> {
 };
 
 template <typename FeaturesIterator>
-class StaticBallView : public StaticBound<StaticBallView<FeaturesIterator>> {
+class BallView : public StaticBound<BallView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -90,9 +90,9 @@ class StaticBallView : public StaticBound<StaticBallView<FeaturesIterator>> {
 
     using IteratorType = FeaturesIterator;
 
-    StaticBallView(FeaturesIterator center_point_range_first,
-                   FeaturesIterator center_point_range_last,
-                   const ValueType& radius)
+    BallView(FeaturesIterator center_point_range_first,
+             FeaturesIterator center_point_range_last,
+             const ValueType& radius)
       : centroid_features_range_first_{center_point_range_first}
       , centroid_features_range_last_{center_point_range_last}
       , radius_{radius} {}

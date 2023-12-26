@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/search/buffer/Base.hpp"
+#include "ffcl/search/buffer/StaticBase.hpp"
 
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
 
@@ -18,8 +18,8 @@
 
 namespace ffcl::search::buffer {
 
-template <typename DistancesIterator, typename Bound = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>>
-class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesIterator, Bound>> {
+template <typename DistancesIterator, typename Bound = datastruct::bounds::UnboundedBallView<DistancesIterator>>
+class WithUnionFind : public StaticBase<WithUnionFind<DistancesIterator, Bound>> {
   public:
     static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
     static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
@@ -36,10 +36,10 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
 
     using UnionFindConstReferenceType = const datastruct::UnionFind<IndexType>&;
 
-    StaticWithUnionFind(Bound&&                     bound,
-                        UnionFindConstReferenceType union_find_const_reference,
-                        const IndexType&            query_representative,
-                        const IndexType&            max_capacity = common::infinity<IndexType>())
+    WithUnionFind(Bound&&                     bound,
+                  UnionFindConstReferenceType union_find_const_reference,
+                  const IndexType&            query_representative,
+                  const IndexType&            max_capacity = common::infinity<IndexType>())
       : bound_{std::forward<Bound>(bound)}
       , indices_{}
       , distances_{}
@@ -49,15 +49,15 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
       , union_find_const_reference_{union_find_const_reference}
       , query_representative_{query_representative} {}
 
-    StaticWithUnionFind(DistancesIterator           centroid_features_query_first,
-                        DistancesIterator           centroid_features_query_last,
-                        UnionFindConstReferenceType union_find_const_reference,
-                        const IndexType&            query_representative,
-                        const IndexType&            max_capacity = common::infinity<IndexType>())
-      : StaticWithUnionFind(Bound(centroid_features_query_first, centroid_features_query_last),
-                            union_find_const_reference,
-                            query_representative,
-                            max_capacity) {}
+    WithUnionFind(DistancesIterator           centroid_features_query_first,
+                  DistancesIterator           centroid_features_query_last,
+                  UnionFindConstReferenceType union_find_const_reference,
+                  const IndexType&            query_representative,
+                  const IndexType&            max_capacity = common::infinity<IndexType>())
+      : WithUnionFind(Bound(centroid_features_query_first, centroid_features_query_last),
+                      union_find_const_reference,
+                      query_representative,
+                      max_capacity) {}
 
     constexpr auto centroid_begin_impl() const {
         return bound_.centroid_begin();
@@ -183,23 +183,25 @@ class StaticWithUnionFind : public StaticBase<StaticWithUnionFind<DistancesItera
 };
 
 template <typename Bound, typename UnionFindConstReferenceType, typename IndexType>
-StaticWithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&)
-    -> StaticWithUnionFind<typename Bound::IteratorType, Bound>;
+WithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&)
+    -> WithUnionFind<typename Bound::IteratorType, Bound>;
+
+template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
+WithUnionFind(DistancesIteratorType, DistancesIteratorType, UnionFindConstReferenceType, const IndexType&)
+    -> WithUnionFind<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>>;
+
+// ---
 
 template <typename Bound, typename UnionFindConstReferenceType, typename IndexType>
-StaticWithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&, const IndexType&)
-    -> StaticWithUnionFind<typename Bound::IteratorType, Bound>;
+WithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&, const IndexType&)
+    -> WithUnionFind<typename Bound::IteratorType, Bound>;
 
 template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
-StaticWithUnionFind(DistancesIteratorType, DistancesIteratorType, UnionFindConstReferenceType, const IndexType&)
-    -> StaticWithUnionFind<DistancesIteratorType, datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>>;
-
-template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
-StaticWithUnionFind(DistancesIteratorType,
-                    DistancesIteratorType,
-                    UnionFindConstReferenceType,
-                    const IndexType&,
-                    const IndexType&)
-    -> StaticWithUnionFind<DistancesIteratorType, datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>>;
+WithUnionFind(DistancesIteratorType,
+              DistancesIteratorType,
+              UnionFindConstReferenceType,
+              const IndexType&,
+              const IndexType&)
+    -> WithUnionFind<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>>;
 
 }  // namespace ffcl::search::buffer

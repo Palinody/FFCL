@@ -11,6 +11,8 @@ namespace ffcl::datastruct {
 template <typename IndexType>
 class UnionFind {
   public:
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+
     explicit UnionFind(std::size_t n_samples);
 
     UnionFind(std::size_t n_samples, std::unique_ptr<IndexType[]> labels);

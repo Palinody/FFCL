@@ -22,7 +22,9 @@ template <typename Indexer>
 class DBSCAN {
   public:
     using DataType = typename Indexer::DataType;
+
     static_assert(std::is_floating_point<DataType>::value, "DBSCAN only allows floating point types.");
+
     using LabelType = std::size_t;
 
     struct Options {
@@ -120,12 +122,11 @@ auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
             // mark the current sample index as visited
             visited_indices[entry_point_candidate_index] = true;
 
-            auto ball_view =
-                datastruct::bounds::StaticBallView(searcher.features_range_first(entry_point_candidate_index),
-                                                   searcher.features_range_last(entry_point_candidate_index),
-                                                   options_.radius_);
+            auto ball_view = datastruct::bounds::BallView(searcher.features_range_first(entry_point_candidate_index),
+                                                          searcher.features_range_last(entry_point_candidate_index),
+                                                          options_.radius_);
 
-            auto nn_buffer_query = searcher(search::buffer::StaticUnsorted(std::move(ball_view)));
+            auto nn_buffer_query = searcher(search::buffer::Unsorted(std::move(ball_view)));
 
             if (nn_buffer_query.size() > options_.min_samples_) {
                 ++cluster_label;
@@ -159,11 +160,11 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType&      neighbors_indices
             // mark the current neighbor index as visited
             visited_indices[neighbor_index] = true;
 
-            auto ball_view = datastruct::bounds::StaticBallView(searcher.features_range_first(neighbor_index),
-                                                                searcher.features_range_last(neighbor_index),
-                                                                options_.radius_);
+            auto ball_view = datastruct::bounds::BallView(searcher.features_range_first(neighbor_index),
+                                                          searcher.features_range_last(neighbor_index),
+                                                          options_.radius_);
 
-            auto inner_neighbors_buffer = searcher(search::buffer::StaticUnsorted(std::move(ball_view)));
+            auto inner_neighbors_buffer = searcher(search::buffer::Unsorted(std::move(ball_view)));
 
             if (inner_neighbors_buffer.size() > options_.min_samples_) {
                 auto inner_neighbors_indices = std::move(inner_neighbors_buffer).indices();

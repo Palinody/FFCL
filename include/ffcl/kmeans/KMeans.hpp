@@ -23,9 +23,9 @@ namespace ffcl {
 
 template <typename DataType>
 class KMeans {
-    static_assert(std::is_floating_point<DataType>::value, "KMeans only allows floating point types.");
-
   public:
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
     struct Options {
         Options& max_iter(std::size_t max_iter) {
             max_iter_ = max_iter;

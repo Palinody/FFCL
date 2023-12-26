@@ -14,6 +14,9 @@ namespace ffcl::datastruct {
 
 template <typename IndicesIterator, typename SamplesIterator>
 struct KDNodeView {
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     using KDNodeViewType = KDNodeView<IndicesIterator, SamplesIterator>;
     using KDNodeViewPtr  = std::shared_ptr<KDNodeViewType>;
 

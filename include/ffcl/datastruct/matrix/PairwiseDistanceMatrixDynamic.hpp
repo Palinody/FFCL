@@ -20,7 +20,12 @@ namespace ffcl::datastruct {
 template <typename SamplesIterator>
 class PairwiseDistanceMatrixDynamic {
   public:
-    using ValueType             = typename std::iterator_traits<SamplesIterator>::value_type;
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
+    using ValueType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_trivial_v<ValueType>, "ValueType must be trivial.");
+
     using DatasetDescriptorType = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
 
     PairwiseDistanceMatrixDynamic(const SamplesIterator& samples_range_first,

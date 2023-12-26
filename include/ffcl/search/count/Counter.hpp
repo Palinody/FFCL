@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/search/count/Base.hpp"
+#include "ffcl/search/count/StaticBase.hpp"
 
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
 
@@ -17,7 +17,7 @@
 namespace ffcl::search::count {
 
 template <typename DistancesIterator, typename Bound>
-class Counter : public StaticCounter<Counter<DistancesIterator, Bound>> {
+class Counter : public StaticCBase<Counter<DistancesIterator, Bound>> {
   public:
     static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
     static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
@@ -110,11 +110,14 @@ class Counter : public StaticCounter<Counter<DistancesIterator, Bound>> {
     IndexType count_;
 };
 
+template <typename Bound>
+Counter(Bound &&) -> Counter<typename Bound::IteratorType, Bound>;
+
 template <typename Bound, typename IndexType>
 Counter(Bound&&, const IndexType&) -> Counter<typename Bound::IteratorType, Bound>;
 
 template <typename DistancesIteratorType, typename IndexType>
 Counter(DistancesIteratorType, DistancesIteratorType, const IndexType&)
-    -> Counter<DistancesIteratorType, datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>>;
+    -> Counter<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>>;
 
 }  // namespace ffcl::search::count

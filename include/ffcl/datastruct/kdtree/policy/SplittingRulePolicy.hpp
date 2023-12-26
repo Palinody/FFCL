@@ -6,6 +6,9 @@ namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 struct SplittingRulePolicy {
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     SplittingRulePolicy() = default;
 
     inline virtual std::tuple<std::size_t,
@@ -22,6 +25,9 @@ struct SplittingRulePolicy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, SamplesIterator> {
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     inline std::tuple<std::size_t,
                       bbox::IteratorPairType<IndicesIterator>,
                       bbox::IteratorPairType<IndicesIterator>,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/search/buffer/Base.hpp"
+#include "ffcl/search/buffer/StaticBase.hpp"
 
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
 
@@ -18,9 +18,9 @@
 namespace ffcl::search::buffer {
 
 template <typename DistancesIterator,
-          typename Bound          = datastruct::bounds::StaticUnboundedBallView<DistancesIterator>,
+          typename Bound          = datastruct::bounds::UnboundedBallView<DistancesIterator>,
           typename VisitedIndices = std::unordered_set<std::size_t>>
-class StaticWithMemory : public StaticBase<StaticWithMemory<DistancesIterator, Bound, VisitedIndices>> {
+class WithMemory : public StaticBase<WithMemory<DistancesIterator, Bound, VisitedIndices>> {
   public:
     static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
     static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
@@ -39,7 +39,7 @@ class StaticWithMemory : public StaticBase<StaticWithMemory<DistancesIterator, B
     using IndicesType   = std::vector<IndexType>;
     using DistancesType = std::vector<DistanceType>;
 
-    explicit StaticWithMemory(Bound&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
+    explicit WithMemory(Bound&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
       : bound_{std::forward<Bound>(bound)}
       , upper_bound_buffer_index_{0}
       , upper_bound_distance_{0}
@@ -47,9 +47,9 @@ class StaticWithMemory : public StaticBase<StaticWithMemory<DistancesIterator, B
       , visited_indices_{}
       , visited_indices_const_reference_{visited_indices_} {}
 
-    StaticWithMemory(Bound&&               bound,
-                     const VisitedIndices& visited_indices_reference,
-                     const IndexType&      max_capacity = common::infinity<IndexType>())
+    WithMemory(Bound&&               bound,
+               const VisitedIndices& visited_indices_reference,
+               const IndexType&      max_capacity = common::infinity<IndexType>())
       : bound_{std::forward<Bound>(bound)}
       , upper_bound_buffer_index_{0}
       , upper_bound_distance_{0}
@@ -57,9 +57,9 @@ class StaticWithMemory : public StaticBase<StaticWithMemory<DistancesIterator, B
       , visited_indices_{}
       , visited_indices_const_reference_{visited_indices_reference} {}
 
-    StaticWithMemory(Bound&&          bound,
-                     VisitedIndices&& visited_indices,
-                     const IndexType& max_capacity = common::infinity<IndexType>())
+    WithMemory(Bound&&          bound,
+               VisitedIndices&& visited_indices,
+               const IndexType& max_capacity = common::infinity<IndexType>())
       : bound_{std::forward<Bound>(bound)}
       , upper_bound_buffer_index_{0}
       , upper_bound_distance_{0}
@@ -67,42 +67,42 @@ class StaticWithMemory : public StaticBase<StaticWithMemory<DistancesIterator, B
       , visited_indices_{std::move(visited_indices)}
       , visited_indices_const_reference_{visited_indices_} {}
 
-    StaticWithMemory(Bound&&                    bound,
-                     const IndicesIteratorType& visited_indices_first,
-                     const IndicesIteratorType& visited_indices_last,
-                     const IndexType&           max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(std::move(bound), VisitedIndices(visited_indices_first, visited_indices_last), max_capacity) {}
+    WithMemory(Bound&&                    bound,
+               const IndicesIteratorType& visited_indices_first,
+               const IndicesIteratorType& visited_indices_last,
+               const IndexType&           max_capacity = common::infinity<IndexType>())
+      : WithMemory(std::move(bound), VisitedIndices(visited_indices_first, visited_indices_last), max_capacity) {}
 
-    StaticWithMemory(DistancesIteratorType centroid_features_query_first,
-                     DistancesIteratorType centroid_features_query_last,
-                     const IndexType&      max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(Bound{centroid_features_query_first, centroid_features_query_last}, max_capacity) {}
+    WithMemory(DistancesIteratorType centroid_features_query_first,
+               DistancesIteratorType centroid_features_query_last,
+               const IndexType&      max_capacity = common::infinity<IndexType>())
+      : WithMemory(Bound{centroid_features_query_first, centroid_features_query_last}, max_capacity) {}
 
-    StaticWithMemory(DistancesIteratorType centroid_features_query_first,
-                     DistancesIteratorType centroid_features_query_last,
-                     const VisitedIndices& visited_indices_reference,
-                     const IndexType&      max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
-                         visited_indices_reference,
-                         max_capacity) {}
+    WithMemory(DistancesIteratorType centroid_features_query_first,
+               DistancesIteratorType centroid_features_query_last,
+               const VisitedIndices& visited_indices_reference,
+               const IndexType&      max_capacity = common::infinity<IndexType>())
+      : WithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
+                   visited_indices_reference,
+                   max_capacity) {}
 
-    StaticWithMemory(DistancesIteratorType centroid_features_query_first,
-                     DistancesIteratorType centroid_features_query_last,
-                     VisitedIndices&&      visited_indices,
-                     const IndexType&      max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
-                         std::move(visited_indices),
-                         max_capacity) {}
+    WithMemory(DistancesIteratorType centroid_features_query_first,
+               DistancesIteratorType centroid_features_query_last,
+               VisitedIndices&&      visited_indices,
+               const IndexType&      max_capacity = common::infinity<IndexType>())
+      : WithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
+                   std::move(visited_indices),
+                   max_capacity) {}
 
-    StaticWithMemory(DistancesIteratorType      centroid_features_query_first,
-                     DistancesIteratorType      centroid_features_query_last,
-                     const IndicesIteratorType& visited_indices_first,
-                     const IndicesIteratorType& visited_indices_last,
-                     const IndexType&           max_capacity = common::infinity<IndexType>())
-      : StaticWithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
-                         visited_indices_first,
-                         visited_indices_last,
-                         max_capacity) {}
+    WithMemory(DistancesIteratorType      centroid_features_query_first,
+               DistancesIteratorType      centroid_features_query_last,
+               const IndicesIteratorType& visited_indices_first,
+               const IndicesIteratorType& visited_indices_last,
+               const IndexType&           max_capacity = common::infinity<IndexType>())
+      : WithMemory(Bound{centroid_features_query_first, centroid_features_query_last},
+                   visited_indices_first,
+                   visited_indices_last,
+                   max_capacity) {}
 
     constexpr auto centroid_begin_impl() const {
         return bound_.centroid_begin();
@@ -224,40 +224,70 @@ class StaticWithMemory : public StaticBase<StaticWithMemory<DistancesIterator, B
     const VisitedIndices& visited_indices_const_reference_;
 };
 
-template <typename Bound, typename IndexType>
-StaticWithMemory(Bound&&, const IndexType&)
-    -> StaticWithMemory<typename Bound::IteratorType, Bound, std::unordered_set<IndexType>>;
+template <typename Bound>
+WithMemory(Bound &&) -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<std::size_t>>;
 
-template <typename Bound, typename VisitedIndices, typename IndexType>
-StaticWithMemory(Bound&&, const VisitedIndices&, const IndexType&)
-    -> StaticWithMemory<typename Bound::IteratorType, Bound, VisitedIndices>;
+template <typename Bound, typename VisitedIndices>
+WithMemory(Bound&&, const VisitedIndices&) -> WithMemory<typename Bound::IteratorType, Bound, VisitedIndices>;
 
-template <typename Bound, typename IndicesIteratorType, typename IndexType>
-StaticWithMemory(Bound&&, const IndicesIteratorType&, const IndicesIteratorType&, const IndexType&)
-    -> StaticWithMemory<typename Bound::IteratorType, Bound, std::unordered_set<IndexType>>;
+template <typename Bound, typename IndicesIteratorType>
+WithMemory(Bound&&, const IndicesIteratorType&, const IndicesIteratorType&)
+    -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<std::size_t>>;
+
+template <typename DistancesIteratorType>
+WithMemory(DistancesIteratorType, DistancesIteratorType)
+    -> WithMemory<DistancesIteratorType,
+                  datastruct::bounds::UnboundedBallView<DistancesIteratorType>,
+                  std::unordered_set<std::size_t>>;
+
+template <typename DistancesIteratorType, typename VisitedIndices>
+WithMemory(DistancesIteratorType, DistancesIteratorType, const VisitedIndices&)
+    -> WithMemory<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>, VisitedIndices>;
+
+template <typename DistancesIteratorType, typename VisitedIndices>
+WithMemory(DistancesIteratorType, DistancesIteratorType, VisitedIndices &&)
+    -> WithMemory<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>, VisitedIndices>;
+
+template <typename DistancesIteratorType, typename IndicesIteratorType>
+WithMemory(DistancesIteratorType, DistancesIteratorType, const IndicesIteratorType&, const IndicesIteratorType&)
+    -> WithMemory<DistancesIteratorType,
+                  datastruct::bounds::UnboundedBallView<DistancesIteratorType>,
+                  std::unordered_set<std::size_t>>;
 
 // ---
 
+template <typename Bound, typename IndexType>
+WithMemory(Bound&&, const IndexType&) -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<IndexType>>;
+
+template <typename Bound, typename VisitedIndices, typename IndexType>
+WithMemory(Bound&&, const VisitedIndices&, const IndexType&)
+    -> WithMemory<typename Bound::IteratorType, Bound, VisitedIndices>;
+
+template <typename Bound, typename IndicesIteratorType, typename IndexType>
+WithMemory(Bound&&, const IndicesIteratorType&, const IndicesIteratorType&, const IndexType&)
+    -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<IndexType>>;
+
 template <typename DistancesIteratorType, typename IndexType>
-StaticWithMemory(DistancesIteratorType, DistancesIteratorType, const IndexType&)
-    -> StaticWithMemory<DistancesIteratorType,
-                        datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>,
-                        std::unordered_set<IndexType>>;
+WithMemory(DistancesIteratorType, DistancesIteratorType, const IndexType&)
+    -> WithMemory<DistancesIteratorType,
+                  datastruct::bounds::UnboundedBallView<DistancesIteratorType>,
+                  std::unordered_set<IndexType>>;
 
 template <typename DistancesIteratorType, typename VisitedIndices, typename IndexType>
-StaticWithMemory(DistancesIteratorType, DistancesIteratorType, const VisitedIndices&, const IndexType&)
-    -> StaticWithMemory<DistancesIteratorType,
-                        datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>,
-                        VisitedIndices>;
+WithMemory(DistancesIteratorType, DistancesIteratorType, const VisitedIndices&, const IndexType&)
+    -> WithMemory<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>, VisitedIndices>;
+
+template <typename DistancesIteratorType, typename VisitedIndices, typename IndexType>
+WithMemory(DistancesIteratorType, DistancesIteratorType, VisitedIndices&&, const IndexType&)
+    -> WithMemory<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>, VisitedIndices>;
 
 template <typename DistancesIteratorType, typename IndicesIteratorType, typename IndexType>
-StaticWithMemory(DistancesIteratorType,
-                 DistancesIteratorType,
-                 const IndicesIteratorType&,
-                 const IndicesIteratorType&,
-                 const IndexType&)
-    -> StaticWithMemory<DistancesIteratorType,
-                        datastruct::bounds::StaticUnboundedBallView<DistancesIteratorType>,
-                        std::unordered_set<IndexType>>;
+WithMemory(DistancesIteratorType,
+           DistancesIteratorType,
+           const IndicesIteratorType&,
+           const IndicesIteratorType&,
+           const IndexType&) -> WithMemory<DistancesIteratorType,
+                                           datastruct::bounds::UnboundedBallView<DistancesIteratorType>,
+                                           std::unordered_set<IndexType>>;
 
 }  // namespace ffcl::search::buffer

@@ -11,6 +11,9 @@ namespace ffcl::datastruct::kdtree::policy {
 template <typename IndicesIterator, typename SamplesIterator>
 class AxisSelectionPolicy {
   public:
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     virtual std::size_t operator()(IndicesIterator                        indices_range_first,
                                    IndicesIterator                        indices_range_last,
                                    SamplesIterator                        samples_range_first,
@@ -23,6 +26,9 @@ class AxisSelectionPolicy {
 template <typename IndicesIterator, typename SamplesIterator>
 class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     constexpr CycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
@@ -51,7 +57,12 @@ class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, Sample
 template <typename IndicesIterator, typename SamplesIterator>
 class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
     constexpr HighestVarianceBuild& sampling_rate(double sampling_rate) {
         sampling_rate_ = sampling_rate;
@@ -86,7 +97,12 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
 template <typename IndicesIterator, typename SamplesIterator>
 class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
   public:
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
     constexpr MaximumSpreadBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;

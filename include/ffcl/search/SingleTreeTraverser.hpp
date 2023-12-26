@@ -2,29 +2,29 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/search/buffer/Base.hpp"
-#include "ffcl/search/count/Base.hpp"
+#include "ffcl/search/buffer/StaticBase.hpp"
+#include "ffcl/search/count/StaticBase.hpp"
 
 namespace ffcl::search {
 
 template <typename Indexer>
 class SingleTreeTraverser {
   public:
-    // static_assert(common::is_raw_or_smart_ptr<IndexerPtr>());
+    using IndexType = typename Indexer::IndexType;
+    using DataType  = typename Indexer::DataType;
 
-    // using IndexType           = typename IndexerPtr::element_type::IndexType;
-    // using DataType            = typename IndexerPtr::element_type::DataType;
-    // using IndicesIteratorType = typename IndexerPtr::element_type::IndicesIteratorType;
-    // using SamplesIteratorType = typename IndexerPtr::element_type::SamplesIteratorType;
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
-    // using KDNodeViewPtr = typename IndexerPtr::element_type::KDNodeViewPtr;
-
-    using IndexType           = typename Indexer::IndexType;
-    using DataType            = typename Indexer::DataType;
     using IndicesIteratorType = typename Indexer::IndicesIteratorType;
     using SamplesIteratorType = typename Indexer::SamplesIteratorType;
 
+    static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
+    static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
+
     using KDNodeViewPtr = typename Indexer::KDNodeViewPtr;
+
+    static_assert(common::is_raw_or_smart_ptr<KDNodeViewPtr>(), "KDNodeViewPtr is not a row or smart pointer");
 
     SingleTreeTraverser(Indexer&& query_indexer)
       : query_indexer_{std::forward<Indexer>(query_indexer)} {}

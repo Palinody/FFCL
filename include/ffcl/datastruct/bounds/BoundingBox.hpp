@@ -9,7 +9,7 @@
 namespace ffcl::datastruct::bounds {
 
 template <typename Segment>
-class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
+class BoundingBox : public StaticBound<BoundingBox<Segment>> {
   public:
     using ValueType    = typename Segment::ValueType;
     using SegmentsType = std::vector<Segment>;
@@ -19,7 +19,7 @@ class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
 
     using IteratorType = typename CentroidType::IteratorType;
 
-    StaticBoundingBox(const SegmentsType& segments)
+    BoundingBox(const SegmentsType& segments)
       : centroid_{std::vector<ValueType>(segments.size())}
       , lengths_from_center_point_{std::vector<ValueType>(segments.size())} {
         for (std::size_t feature_index = 0; feature_index < segments.size(); ++feature_index) {
@@ -92,7 +92,7 @@ class StaticBoundingBox : public StaticBound<StaticBoundingBox<Segment>> {
 };
 
 template <typename FeaturesIterator>
-class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesIterator>> {
+class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -104,16 +104,16 @@ class StaticBoundingBoxView : public StaticBound<StaticBoundingBoxView<FeaturesI
 
     using IteratorType = FeaturesIterator;
 
-    explicit StaticBoundingBoxView(FeaturesIterator               center_point_features_range_first,
-                                   FeaturesIterator               center_point_features_range_last,
-                                   const LengthsFromCentroidType& lengths_from_center)
-      : StaticBoundingBoxView(center_point_features_range_first,
-                              center_point_features_range_last,
-                              LengthsFromCentroidType{lengths_from_center}) {}
+    explicit BoundingBoxView(FeaturesIterator               center_point_features_range_first,
+                             FeaturesIterator               center_point_features_range_last,
+                             const LengthsFromCentroidType& lengths_from_center)
+      : BoundingBoxView(center_point_features_range_first,
+                        center_point_features_range_last,
+                        LengthsFromCentroidType{lengths_from_center}) {}
 
-    explicit StaticBoundingBoxView(FeaturesIterator          center_point_features_range_first,
-                                   FeaturesIterator          center_point_features_range_last,
-                                   LengthsFromCentroidType&& lengths_from_center)
+    explicit BoundingBoxView(FeaturesIterator          center_point_features_range_first,
+                             FeaturesIterator          center_point_features_range_last,
+                             LengthsFromCentroidType&& lengths_from_center)
       : centroid_features_range_first_{center_point_features_range_first}
       , centroid_features_range_last_{center_point_features_range_last}
       , lengths_from_center_point_{std::forward<LengthsFromCentroidType>(lengths_from_center)} {}

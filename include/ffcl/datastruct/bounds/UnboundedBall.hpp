@@ -10,7 +10,7 @@
 namespace ffcl::datastruct::bounds {
 
 template <typename Value, std::size_t NFeatures = 0>
-class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<Value, NFeatures>> {
+class UnboundedBall : public StaticBound<UnboundedBall<Value, NFeatures>> {
   public:
     using ValueType = Value;
 
@@ -18,10 +18,10 @@ class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<Value, NFeatu
 
     using IteratorType = typename CentroidType::IteratorType;
 
-    StaticUnboundedBall(const CentroidType& centroid)
+    UnboundedBall(const CentroidType& centroid)
       : centroid_{centroid} {}
 
-    StaticUnboundedBall(CentroidType&& centroid) noexcept
+    UnboundedBall(CentroidType&& centroid) noexcept
       : centroid_{std::move(centroid)} {}
 
     std::size_t n_features_impl() const {
@@ -74,7 +74,7 @@ class StaticUnboundedBall : public StaticBound<StaticUnboundedBall<Value, NFeatu
 };
 
 template <typename FeaturesIterator>
-class StaticUnboundedBallView : public StaticBound<StaticUnboundedBallView<FeaturesIterator>> {
+class UnboundedBallView : public StaticBound<UnboundedBallView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -84,8 +84,7 @@ class StaticUnboundedBallView : public StaticBound<StaticUnboundedBallView<Featu
 
     using IteratorType = FeaturesIterator;
 
-    StaticUnboundedBallView(FeaturesIterator centroid_features_range_first,
-                            FeaturesIterator centroid_features_range_last)
+    UnboundedBallView(FeaturesIterator centroid_features_range_first, FeaturesIterator centroid_features_range_last)
       : centroid_features_range_first_{centroid_features_range_first}
       , centroid_features_range_last_{centroid_features_range_last} {}
 
