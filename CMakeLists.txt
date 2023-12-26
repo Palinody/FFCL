@@ -37,7 +37,6 @@ set(HEADER_FILES
     include/ffcl/kmedoids/PAMBuild.hpp
 
     include/ffcl/search/buffer/Base.hpp
-    include/ffcl/search/buffer/Sorted.hpp
     include/ffcl/search/buffer/Unsorted.hpp
     include/ffcl/search/buffer/WithMemory.hpp
     include/ffcl/search/buffer/WithUnionFind.hpp
@@ -205,46 +204,6 @@ elseif(MODE STREQUAL "gtest")
     add_test(
         SortingTest
         SortingTest
-    )
-
-    add_executable(
-        SingletonTest
-
-        # ---
-        test/src/search/buffer/SingletonTest.cpp
-    )
-    target_link_libraries(
-        SingletonTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        SingletonTest
-        SingletonTest
-    )
-
-    add_executable(
-        SortedTest
-
-        # ---
-        test/src/search/buffer/SortedTest.cpp
-    )
-    target_link_libraries(
-        SortedTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        SortedTest
-        SortedTest
     )
 
     add_executable(

@@ -6,6 +6,7 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
+#include "ffcl/search/buffer/Unsorted.hpp"
 #include "ffcl/search/buffer/WithUnionFind.hpp"
 
 #include "ffcl/search/Search.hpp"

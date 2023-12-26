@@ -7,16 +7,6 @@
 
 #include "ffcl/common/math/random/Distributions.hpp"
 
-#include "ffcl/search/buffer/Base.hpp"
-#include "ffcl/search/buffer/Radius.hpp"
-#include "ffcl/search/buffer/Range.hpp"
-#include "ffcl/search/buffer/Singleton.hpp"
-#include "ffcl/search/buffer/Unsorted.hpp"
-
-#include "ffcl/search/count/Base.hpp"
-#include "ffcl/search/count/Radius.hpp"
-#include "ffcl/search/count/Range.hpp"
-
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
 #include <array>
