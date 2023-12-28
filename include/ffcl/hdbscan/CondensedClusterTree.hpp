@@ -12,20 +12,20 @@ namespace ffcl {
 
 namespace fs = std::filesystem;
 
-template <typename IndexType, typename ValueType>
+template <typename Index, typename Value>
 class CondensedClusterTree {
-    static_assert(std::is_fundamental<IndexType>::value, "IndexType must be a fundamental type.");
-    static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
+    static_assert(std::is_fundamental<Index>::value, "Index must be a fundamental type.");
+    static_assert(std::is_fundamental<Value>::value, "Value must be a fundamental type.");
 
   public:
-    using CondensedClusterNodeType = CondensedClusterNode<IndexType, ValueType>;
+    using CondensedClusterNodeType = CondensedClusterNode<Index, Value>;
     using CondensedClusterNodePtr  = std::shared_ptr<CondensedClusterNodeType>;
 
-    using SingleLinkageClusterTreeType = SingleLinkageClusterTree<IndexType, ValueType>;
+    using SingleLinkageClusterTreeType = SingleLinkageClusterTree<Index, Value>;
     using SingleLinkageClusterNodeType = typename SingleLinkageClusterTreeType::SingleLinkageClusterNodeType;
     using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterTreeType::SingleLinkageClusterNodePtr;
 
-    using ClusterIndexType = IndexType;
+    using ClusterIndexType = Index;
 
     struct Options {
         Options() = default;
@@ -92,15 +92,13 @@ class CondensedClusterTree {
     CondensedClusterNodePtr root_;
 };
 
-template <typename IndexType, typename ValueType>
-CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
-    SingleLinkageClusterNodePtr single_linkage_cluster_root)
+template <typename Index, typename Value>
+CondensedClusterTree<Index, Value>::CondensedClusterTree(SingleLinkageClusterNodePtr single_linkage_cluster_root)
   : CondensedClusterTree(single_linkage_cluster_root, Options{}) {}
 
-template <typename IndexType, typename ValueType>
-CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
-    SingleLinkageClusterNodePtr single_linkage_cluster_root,
-    const Options&              options)
+template <typename Index, typename Value>
+CondensedClusterTree<Index, Value>::CondensedClusterTree(SingleLinkageClusterNodePtr single_linkage_cluster_root,
+                                                         const Options&              options)
   : options_{options}
   , root_{build(single_linkage_cluster_root)} {
     // Don't perform cluster selection if the leaf nodes are requested.
@@ -116,8 +114,8 @@ CondensedClusterTree<IndexType, ValueType>::CondensedClusterTree(
     }
 }
 
-template <typename IndexType, typename ValueType>
-auto CondensedClusterTree<IndexType, ValueType>::build(const SingleLinkageClusterNodePtr& slink_root_node) {
+template <typename Index, typename Value>
+auto CondensedClusterTree<Index, Value>::build(const SingleLinkageClusterNodePtr& slink_root_node) {
     auto condensed_cluster_root_node = std::make_shared<CondensedClusterNodeType>(slink_root_node);
 
     preorder_traversal_build(condensed_cluster_root_node, slink_root_node);
@@ -125,8 +123,8 @@ auto CondensedClusterTree<IndexType, ValueType>::build(const SingleLinkageCluste
     return condensed_cluster_root_node;
 }
 
-template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
+template <typename Index, typename Value>
+void CondensedClusterTree<Index, Value>::preorder_traversal_build(
     CondensedClusterNodePtr            condensed_cluster_node,
     const SingleLinkageClusterNodePtr& single_linkage_cluster_node) {
     if (!single_linkage_cluster_node->is_leaf()) {
@@ -205,8 +203,8 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
     }
 }
 
-template <typename IndexType, typename ValueType>
-auto CondensedClusterTree<IndexType, ValueType>::extract_flat_clusters() const {
+template <typename Index, typename Value>
+auto CondensedClusterTree<Index, Value>::extract_flat_clusters() const {
     // the flat cluster represented as an array vector of labels mapping each sample to their respective cluster label
     auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
     // The cluster hierarchy for each condensed cluster node will be assigned consecutive cluster labels beginning from
@@ -222,13 +220,13 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_clusters() const {
     return flat_cluster;
 }
 
-template <typename IndexType, typename ValueType>
-auto CondensedClusterTree<IndexType, ValueType>::predict() const {
+template <typename Index, typename Value>
+auto CondensedClusterTree<Index, Value>::predict() const {
     return extract_flat_clusters();
 }
 
-template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_single_linkage_clustering(
+template <typename Index, typename Value>
+void CondensedClusterTree<Index, Value>::preorder_traversal_single_linkage_clustering(
     const ClusterIndexType&            cluster_label,
     const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
     std::vector<ClusterIndexType>&     flat_cluster) const {
@@ -247,8 +245,8 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_single_linka
     }
 }
 
-template <typename IndexType, typename ValueType>
-auto CondensedClusterTree<IndexType, ValueType>::select_subtree(CondensedClusterNodePtr condensed_cluster_node) {
+template <typename Index, typename Value>
+auto CondensedClusterTree<Index, Value>::select_subtree(CondensedClusterNodePtr condensed_cluster_node) {
     // return the stability of the node directly if the node query is leaf
     if (condensed_cluster_node->is_leaf()) {
         return condensed_cluster_node->stability_;
@@ -272,8 +270,8 @@ auto CondensedClusterTree<IndexType, ValueType>::select_subtree(CondensedCluster
     }
 }
 
-template <typename IndexType, typename ValueType>
-auto CondensedClusterTree<IndexType, ValueType>::return_shallowest_cluster_selection() const {
+template <typename Index, typename Value>
+auto CondensedClusterTree<Index, Value>::return_shallowest_cluster_selection() const {
     // an array vector of CondensedClusterNodePtr containing the shallowest non overlapping nodes marked as selected
     std::vector<CondensedClusterNodePtr> selected_condensed_cluster_nodes;
 
@@ -282,8 +280,8 @@ auto CondensedClusterTree<IndexType, ValueType>::return_shallowest_cluster_selec
     return selected_condensed_cluster_nodes;
 }
 
-template <typename IndexType, typename ValueType>
-void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_fill_shallowest_selected_nodes(
+template <typename Index, typename Value>
+void CondensedClusterTree<Index, Value>::preorder_traversal_fill_shallowest_selected_nodes(
     const CondensedClusterNodePtr&        condensed_cluster_node,
     std::vector<CondensedClusterNodePtr>& selected_condensed_cluster_nodes) const {
     // if condensed_cluster_node is selected, we simply add it to the array vector and exit the function

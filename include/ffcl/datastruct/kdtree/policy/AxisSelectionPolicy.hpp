@@ -14,6 +14,10 @@ class AxisSelectionPolicy {
     static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
     static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
 
+    AxisSelectionPolicy() = default;
+
+    virtual ~AxisSelectionPolicy() = default;
+
     virtual std::size_t operator()(IndicesIterator                        indices_range_first,
                                    IndicesIterator                        indices_range_last,
                                    SamplesIterator                        samples_range_first,
@@ -30,6 +34,8 @@ class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, Sample
     static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
 
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    CycleThroughAxesBuild() = default;
 
     constexpr CycleThroughAxesBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;
@@ -63,6 +69,8 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
+    HighestVarianceBuild() = default;
 
     constexpr HighestVarianceBuild& sampling_rate(double sampling_rate) {
         sampling_rate_ = sampling_rate;
@@ -103,6 +111,8 @@ class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIt
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
+    MaximumSpreadBuild() = default;
 
     constexpr MaximumSpreadBuild& feature_mask(const std::vector<std::size_t>& feature_mask) {
         feature_mask_ = feature_mask;

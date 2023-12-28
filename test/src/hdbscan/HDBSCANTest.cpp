@@ -141,16 +141,16 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+    auto indexer = ffcl::datastruct::KDTree(indices.begin(),
+                                            indices.end(),
+                                            data.begin(),
+                                            data.end(),
+                                            n_features,
+                                            OptionsType()
+                                                .bucket_size(std::sqrt(n_samples))
+                                                .max_depth(std::log2(n_samples))
+                                                .axis_selection_policy(AxisSelectionPolicyType())
+                                                .splitting_rule_policy(SplittingRulePolicyType()));
 
     timer.print_elapsed_seconds(9);
 

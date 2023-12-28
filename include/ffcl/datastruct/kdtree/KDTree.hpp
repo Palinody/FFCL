@@ -50,7 +50,7 @@ class KDTree {
     struct Options {
         Options()
           : bucket_size_{40}
-          , max_depth_{common::infinity<ssize_t>()}
+          , max_depth_{common::infinity<std::size_t>()}
           , axis_selection_policy_ptr_{std::make_shared<
                 kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>>()}
           , splitting_rule_policy_ptr_{
@@ -65,7 +65,7 @@ class KDTree {
             return *this;
         }
 
-        Options& max_depth(ssize_t max_depth) {
+        Options& max_depth(std::size_t max_depth) {
             max_depth_ = max_depth;
             return *this;
         }
@@ -108,7 +108,7 @@ class KDTree {
         // the maximum number of samples per leaf node
         std::size_t bucket_size_;
         // the maximum recursion depth
-        ssize_t max_depth_;
+        std::size_t max_depth_;
         // the policy that will be responsible for selecting the axis at a given kdtree depth
         std::shared_ptr<kdtree::policy::AxisSelectionPolicy<IndicesIterator, SamplesIterator>>
             axis_selection_policy_ptr_;
@@ -125,43 +125,29 @@ class KDTree {
            std::size_t     n_features,
            const Options&  options = Options());
 
-    // KDTree(const KDTree&) = delete;
+    KDTree(const KDTree& other);
+
+    KDTree(KDTree&& other) noexcept;
 
     std::size_t n_samples() const;
 
     std::size_t n_features() const;
 
-    constexpr auto begin() const {
-        return samples_range_first_;
-    }
+    constexpr auto begin() const;
 
-    constexpr auto end() const {
-        return samples_range_last_;
-    }
+    constexpr auto end() const;
 
-    constexpr auto cbegin() const {
-        return samples_range_first_;
-    }
+    constexpr auto cbegin() const;
 
-    constexpr auto cend() const {
-        return samples_range_last_;
-    }
+    constexpr auto cend() const;
 
-    constexpr auto root() const {
-        return root_;
-    }
+    constexpr auto root() const;
 
-    constexpr auto operator[](std::size_t sample_index) const {
-        return features_range_first(sample_index);
-    }
+    constexpr auto operator[](std::size_t sample_index) const;
 
-    constexpr auto features_range_first(std::size_t sample_index) const {
-        return samples_range_first_ + sample_index * n_features_;
-    }
+    constexpr auto features_range_first(std::size_t sample_index) const;
 
-    constexpr auto features_range_last(std::size_t sample_index) const {
-        return samples_range_first_ + sample_index * n_features_ + n_features_;
-    }
+    constexpr auto features_range_last(std::size_t sample_index) const;
 
     // serialization
 
@@ -173,7 +159,7 @@ class KDTree {
     KDNodeViewPtr build(const IndicesIterator& indices_range_first,
                         const IndicesIterator& indices_range_last,
                         ssize_t                cut_feature_index,
-                        ssize_t                depth,
+                        std::size_t            depth,
                         HyperRangeType&        kd_bounding_box);
 
     // Options used to configure the indexing structure.
@@ -190,6 +176,15 @@ class KDTree {
     // The root node of the indexing structure.
     KDNodeViewPtr root_;
 };
+
+//  Class Template Argument Deduction (CTAD) guide
+template <typename IndicesIterator, typename SamplesIterator>
+KDTree(IndicesIterator,
+       IndicesIterator,
+       SamplesIterator,
+       SamplesIterator,
+       std::size_t,
+       const typename KDTree<IndicesIterator, SamplesIterator>::Options&) -> KDTree<IndicesIterator, SamplesIterator>;
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_first,
@@ -220,6 +215,24 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
                 kd_bounding_box_)} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
+KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
+  : options_{other.options_}
+  , samples_range_first_{other.samples_range_first_}
+  , samples_range_last_{other.samples_range_last_}
+  , n_features_{other.n_features_}
+  , kd_bounding_box_{other.kd_bounding_box_}
+  , root_{other.root_} {}
+
+template <typename IndicesIterator, typename SamplesIterator>
+KDTree<IndicesIterator, SamplesIterator>::KDTree(KDTree&& other) noexcept
+  : options_{std::move(other.options_)}
+  , samples_range_first_{std::move(other.samples_range_first_)}
+  , samples_range_last_{std::move(other.samples_range_last_)}
+  , n_features_{std::move(other.n_features_)}
+  , kd_bounding_box_{std::move(other.kd_bounding_box_)}
+  , root_{std::move(other.root_)} {}
+
+template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::n_samples() const {
     return common::get_n_samples(samples_range_first_, samples_range_last_, n_features_);
 }
@@ -230,11 +243,51 @@ std::size_t KDTree<IndicesIterator, SamplesIterator>::n_features() const {
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::begin() const {
+    return samples_range_first_;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::end() const {
+    return samples_range_last_;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::cbegin() const {
+    return samples_range_first_;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::cend() const {
+    return samples_range_last_;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::root() const {
+    return root_;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::operator[](std::size_t sample_index) const {
+    return features_range_first(sample_index);
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::features_range_first(std::size_t sample_index) const {
+    return samples_range_first_ + sample_index * n_features_;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+constexpr auto KDTree<IndicesIterator, SamplesIterator>::features_range_last(std::size_t sample_index) const {
+    return samples_range_first_ + sample_index * n_features_ + n_features_;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
 typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesIterator, SamplesIterator>::build(
     const IndicesIterator& indices_range_first,
     const IndicesIterator& indices_range_last,
     ssize_t                cut_feature_index,
-    ssize_t                depth,
+    std::size_t            depth,
     HyperRangeType&        kd_bounding_box) {
     KDNodeViewPtr kdnode;
     // number of samples in the current node

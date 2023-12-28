@@ -25,7 +25,7 @@ class DBSCAN {
 
     static_assert(std::is_floating_point<DataType>::value, "DBSCAN only allows floating point types.");
 
-    using LabelType = std::size_t;
+    using Label = std::size_t;
 
     struct Options {
         Options() = default;
@@ -70,20 +70,20 @@ class DBSCAN {
      * between.
      *
      * @param indexer the indexer that was used to index the dataset and rearranged the index
-     * @return auto std::vector<LabelType> that has the same length as the input index range:
+     * @return auto std::vector<Label> that has the same length as the input index range:
      * std::distance(global_index_first, global_index_last)
      */
     auto predict(Indexer&& indexer) const;
 
   private:
-    template <typename NeighborsIndicesType, typename VisitedIndicesType, typename PredictionsType>
-    void predict_inner(NeighborsIndicesType&      neighbors_indices,
-                       VisitedIndicesType&        visited_indices,
-                       PredictionsType&           predictions,
-                       const LabelType&           cluster_label,
-                       search::Searcher<Indexer>& searcher) const;
+    template <typename NeighborsIndices, typename VisitedIndices, typename Predictions>
+    void predict_inner(NeighborsIndices&                neighbors_indices,
+                       VisitedIndices&                  visited_indices,
+                       Predictions&                     predictions,
+                       const Label&                     cluster_label,
+                       const search::Searcher<Indexer>& searcher) const;
 
-    enum class SampleStatus : LabelType { noise = 0 };
+    enum class SampleStatus : Label { noise = 0 };
 
     Options options_;
 };
@@ -100,16 +100,16 @@ DBSCAN<Indexer>& DBSCAN<Indexer>::set_options(const Options& options) {
 
 template <typename Indexer>
 auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
-    auto searcher = search::Searcher(std::forward<Indexer>(indexer));
+    const auto searcher = search::Searcher(std::forward<Indexer>(indexer));
 
     // the total number of samples that will be searched by index
     const std::size_t n_samples = searcher.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
-    auto predictions = std::vector<LabelType>(n_samples);
+    auto predictions = std::vector<Label>(n_samples);
 
     // initialize the initial cluster counter that's in [0, n_samples)
-    LabelType cluster_label = static_cast<LabelType>(SampleStatus::noise);
+    Label cluster_label = static_cast<Label>(SampleStatus::noise);
 
     // boolean buffer that keep tracks of the samples that have been already visited
     auto visited_indices = std::make_unique<bool[]>(n_samples);
@@ -121,23 +121,25 @@ auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
         if (!visited_indices[entry_point_candidate_index]) {
             // mark the current sample index as visited
             visited_indices[entry_point_candidate_index] = true;
-
+            // we construct a ball (in hyperspace) object that will be used to query nearby samples
             auto ball_view = datastruct::bounds::BallView(searcher.features_range_first(entry_point_candidate_index),
                                                           searcher.features_range_last(entry_point_candidate_index),
                                                           options_.radius_);
-
+            // the ball view object is passed to a buffer that's used by the searcher to query and accumulate the
+            // nearby objects
             auto nn_buffer_query = searcher(search::buffer::Unsorted(std::move(ball_view)));
-
+            // if the nearby samples caught in the ball are dense enough
             if (nn_buffer_query.size() > options_.min_samples_) {
+                // we get a new cluster
                 ++cluster_label;
-
+                // and assign the cluster label to the initial sample that formed a new cluster
                 predictions[entry_point_candidate_index] = cluster_label;
-
+                // we retrieve the nearby samples indices
                 auto neighbors_indices = std::move(nn_buffer_query).indices();
-
+                // neighbors_indices will be populated with all the nearby samples that satisfy the density criterion
                 predict_inner(neighbors_indices, visited_indices, predictions, cluster_label, searcher);
             } else {
-                predictions[entry_point_candidate_index] = static_cast<LabelType>(SampleStatus::noise);
+                predictions[entry_point_candidate_index] = static_cast<Label>(SampleStatus::noise);
             }
         }
     }
@@ -145,12 +147,12 @@ auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
 }
 
 template <typename Indexer>
-template <typename NeighborsIndicesType, typename VisitedIndicesType, typename PredictionsType>
-void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType&      neighbors_indices,
-                                    VisitedIndicesType&        visited_indices,
-                                    PredictionsType&           predictions,
-                                    const LabelType&           cluster_label,
-                                    search::Searcher<Indexer>& searcher) const {
+template <typename NeighborsIndices, typename VisitedIndices, typename Predictions>
+void DBSCAN<Indexer>::predict_inner(NeighborsIndices&                neighbors_indices,
+                                    VisitedIndices&                  visited_indices,
+                                    Predictions&                     predictions,
+                                    const Label&                     cluster_label,
+                                    const search::Searcher<Indexer>& searcher) const {
     // iterate over the samples that are assigned to the current cluster
     for (std::size_t cluster_sample_index = 0; cluster_sample_index < neighbors_indices.size();
          ++cluster_sample_index) {
@@ -180,7 +182,7 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndicesType&      neighbors_indices
             }
         }
         // assign neighbor_index to a cluster if its not already the case
-        if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
+        if (predictions[neighbor_index] == static_cast<Label>(SampleStatus::noise)) {
             predictions[neighbor_index] = cluster_label;
         }
     }

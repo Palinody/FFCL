@@ -96,7 +96,7 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
 
     timer.reset();
 
-    const auto predictions = hdbscan.predict(indexer);
+    const auto predictions = hdbscan.predict(std::move(indexer));
 
     bench_summary.indexer_query_duration = timer.elapsed();
 

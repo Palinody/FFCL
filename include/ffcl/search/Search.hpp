@@ -9,27 +9,30 @@
 
 namespace ffcl::search {
 
-template <typename Indexer>
+template <typename ReferenceIndexer>
 class Searcher {
   public:
-    using IndexType = typename Indexer::IndexType;
-    using DataType  = typename Indexer::DataType;
+    using IndexType = typename ReferenceIndexer::IndexType;
+    using DataType  = typename ReferenceIndexer::DataType;
 
     static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
-    using IndicesIteratorType = typename Indexer::IndicesIteratorType;
-    using SamplesIteratorType = typename Indexer::SamplesIteratorType;
+    using IndicesIteratorType = typename ReferenceIndexer::IndicesIteratorType;
+    using SamplesIteratorType = typename ReferenceIndexer::SamplesIteratorType;
 
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
     static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
   public:
-    Searcher(Indexer&& query_indexer)
-      : single_tree_traverser_{SingleTreeTraverser(std::forward<Indexer>(query_indexer))} {}
+    Searcher(const ReferenceIndexer& reference_indexer)
+      : single_tree_traverser_{reference_indexer} {}
+
+    Searcher(ReferenceIndexer&& reference_indexer)
+      : single_tree_traverser_{std::move(reference_indexer)} {}
 
     template <typename Buffer>
-    Buffer operator()(Buffer&& buffer) {
+    Buffer operator()(Buffer&& buffer) const {
         static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
                       "Provided a Buffer that does not inherit from StaticBase<Derived>");
 
@@ -49,10 +52,10 @@ class Searcher {
     }
 
   private:
-    SingleTreeTraverser<Indexer> single_tree_traverser_;
+    SingleTreeTraverser<ReferenceIndexer> single_tree_traverser_;
 };
 
-template <typename Indexer>
-Searcher(Indexer) -> Searcher<Indexer>;
+template <typename ReferenceIndexer>
+Searcher(ReferenceIndexer) -> Searcher<ReferenceIndexer>;
 
 }  // namespace ffcl::search

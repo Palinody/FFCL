@@ -23,10 +23,10 @@
 
 namespace ffcl {
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix = true>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix = true>
 class KMedoids {
   public:
-    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+    static_assert(std::is_trivial_v<Data>, "Data must be trivial.");
 
     struct Options {
         Options& max_iter(std::size_t max_iter) {
@@ -76,7 +76,7 @@ class KMedoids {
 
     KMedoids(const KMedoids&) = delete;
 
-    KMedoids<DataType, PrecomputePairwiseDistanceMatrix>& set_options(const Options& options);
+    KMedoids<Data, PrecomputePairwiseDistanceMatrix>& set_options(const Options& options);
 
     template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
     std::vector<std::size_t> fit(const SamplesIterator& samples_range_first, const SamplesIterator& samples_range_last);
@@ -91,11 +91,11 @@ class KMedoids {
     std::vector<std::size_t> fit(const datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix);
 
     template <typename SamplesIterator>
-    std::vector<DataType> forward(const SamplesIterator& samples_range_first,
-                                  const SamplesIterator& samples_range_last) const;
+    std::vector<Data> forward(const SamplesIterator& samples_range_first,
+                              const SamplesIterator& samples_range_last) const;
 
     template <typename SamplesIterator>
-    std::vector<DataType> forward(
+    std::vector<Data> forward(
         const datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const;
 
     template <typename SamplesIterator>
@@ -117,47 +117,47 @@ class KMedoids {
     Options options_;
 };
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
-KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t n_medoids, std::size_t n_features)
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
+KMedoids<Data, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t n_medoids, std::size_t n_features)
   : n_medoids_{n_medoids}
   , n_features_{n_features} {}
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
-KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t    n_medoids,
-                                                               std::size_t    n_features,
-                                                               const Options& options)
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
+KMedoids<Data, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t    n_medoids,
+                                                           std::size_t    n_features,
+                                                           const Options& options)
   : n_medoids_{n_medoids}
   , n_features_{n_features}
   , options_{options} {}
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
-KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t                     n_medoids,
-                                                               std::size_t                     n_features,
-                                                               const std::vector<std::size_t>& medoids_indices)
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
+KMedoids<Data, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t                     n_medoids,
+                                                           std::size_t                     n_features,
+                                                           const std::vector<std::size_t>& medoids_indices)
   : n_medoids_{n_medoids}
   , n_features_{n_features}
   , medoids_{medoids_indices} {}
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
-KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t                     n_medoids,
-                                                               std::size_t                     n_features,
-                                                               const std::vector<std::size_t>& medoids_indices,
-                                                               const Options&                  options)
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
+KMedoids<Data, PrecomputePairwiseDistanceMatrix>::KMedoids(std::size_t                     n_medoids,
+                                                           std::size_t                     n_features,
+                                                           const std::vector<std::size_t>& medoids_indices,
+                                                           const Options&                  options)
   : n_medoids_{n_medoids}
   , n_features_{n_features}
   , medoids_{medoids_indices}
   , options_{options} {}
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
-KMedoids<DataType, PrecomputePairwiseDistanceMatrix>& KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::set_options(
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
+KMedoids<Data, PrecomputePairwiseDistanceMatrix>& KMedoids<Data, PrecomputePairwiseDistanceMatrix>::set_options(
     const Options& options) {
     options_ = options;
     return *this;
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
-std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::fit(
+std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last) {
     using DatasetDescriptorType              = std::tuple<SamplesIterator, SamplesIterator, std::size_t>;
@@ -181,7 +181,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
         medoids_candidates.emplace_back(medoids_);
     }
     // make the losses buffer for each centroids candidates
-    auto candidates_losses = std::vector<DataType>(medoids_candidates.size());
+    auto candidates_losses = std::vector<Data>(medoids_candidates.size());
 
     // creates a n_candidates vector of vectors (of n_medoids size with each elements initialized to infinity if we
     // wanted to be precise but common::are_containers_equal checks for datastruct sizes. So we dont need to do
@@ -246,18 +246,18 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
     return medoids_;
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::fit(
+std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last) {
     // execute fit function with a default PAM algorithm
     return fit<FasterPAM>(samples_range_first, samples_range_last);
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <template <typename> class KMedoidsAlgorithm, typename SamplesIterator>
-std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::fit(
+std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     const datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) {
     // contains the medoids indices for each tries which number is defined by options_.n_init_ if medoids_
     // werent already assigned
@@ -277,7 +277,7 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
         medoids_candidates.emplace_back(medoids_);
     }
     // make the losses buffer for each centroids candidates
-    auto candidates_losses = std::vector<DataType>(medoids_candidates.size());
+    auto candidates_losses = std::vector<Data>(medoids_candidates.size());
 
     // creates a n_candidates vector of vectors (of n_medoids size with each elements initialized to infinity if we
     // wanted to be precise but common::are_containers_equal checks for datastruct sizes. So we dont need to do
@@ -332,42 +332,42 @@ std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::f
     return medoids_;
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::fit(
+std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     const datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) {
     // execute fit function with a default PAM algorithm
     return fit<FasterPAM>(pairwise_distance_matrix);
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<DataType> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::forward(
+std::vector<Data> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::forward(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last) const {
     return pam::utils::samples_to_nearest_medoid_distances(
         samples_range_first, samples_range_last, n_features_, medoids_);
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<DataType> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::forward(
+std::vector<Data> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::forward(
     const datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const {
     return pam::utils::samples_to_nearest_medoid_distances(pairwise_distance_matrix, medoids_);
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::predict(
+std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::predict(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last) const {
     return pam::utils::samples_to_nth_nearest_medoid_indices(
         samples_range_first, samples_range_last, n_features_, medoids_);
 }
 
-template <typename DataType, bool PrecomputePairwiseDistanceMatrix>
+template <typename Data, bool PrecomputePairwiseDistanceMatrix>
 template <typename SamplesIterator>
-std::vector<std::size_t> KMedoids<DataType, PrecomputePairwiseDistanceMatrix>::predict(
+std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::predict(
     const datastruct::PairwiseDistanceMatrix<SamplesIterator>& pairwise_distance_matrix) const {
     return pam::utils::samples_to_nearest_medoid_indices(pairwise_distance_matrix, medoids_);
 }

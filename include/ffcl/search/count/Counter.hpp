@@ -20,6 +20,7 @@ template <typename DistancesIterator, typename Bound>
 class Counter : public StaticCBase<Counter<DistancesIterator, Bound>> {
   public:
     static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
+
     static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
                   "Bound does not inherit from datastruct::bounds::StaticBound<Derived>");
 
@@ -32,10 +33,7 @@ class Counter : public StaticCBase<Counter<DistancesIterator, Bound>> {
     explicit Counter(Bound&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
       : bound_{std::forward<Bound>(bound)}
       , upper_bound_distance_{0}
-      , max_capacity_{max_capacity} {
-        static_assert(common::is_crtp_of<Bound, datastruct::bounds::StaticBound>::value,
-                      "Bound does not inherit from datastruct::bounds::StaticBound<Derived>");
-    }
+      , max_capacity_{max_capacity} {}
 
     explicit Counter(DistancesIterator centroid_features_query_first,
                      DistancesIterator centroid_features_query_last,

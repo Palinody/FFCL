@@ -7,48 +7,51 @@
 
 namespace ffcl::search {
 
-template <typename Indexer>
+template <typename ReferenceIndexer>
 class SingleTreeTraverser {
   public:
-    using IndexType = typename Indexer::IndexType;
-    using DataType  = typename Indexer::DataType;
+    using IndexType = typename ReferenceIndexer::IndexType;
+    using DataType  = typename ReferenceIndexer::DataType;
 
     static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
-    using IndicesIteratorType = typename Indexer::IndicesIteratorType;
-    using SamplesIteratorType = typename Indexer::SamplesIteratorType;
+    using IndicesIteratorType = typename ReferenceIndexer::IndicesIteratorType;
+    using SamplesIteratorType = typename ReferenceIndexer::SamplesIteratorType;
 
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
     static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
-    using KDNodeViewPtr = typename Indexer::KDNodeViewPtr;
+    using KDNodeViewPtr = typename ReferenceIndexer::KDNodeViewPtr;
 
     static_assert(common::is_raw_or_smart_ptr<KDNodeViewPtr>(), "KDNodeViewPtr is not a row or smart pointer");
 
-    SingleTreeTraverser(Indexer&& query_indexer)
-      : query_indexer_{std::forward<Indexer>(query_indexer)} {}
+    SingleTreeTraverser(const ReferenceIndexer& reference_indexer)
+      : reference_indexer_{reference_indexer} {}
+
+    SingleTreeTraverser(ReferenceIndexer&& reference_indexer)
+      : reference_indexer_{std::move(reference_indexer)} {}
 
     template <typename Buffer>
-    Buffer operator()(Buffer&& input_buffer) {
+    Buffer operator()(Buffer&& input_buffer) const {
         static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
                       "Provided a Buffer that does not inherit from StaticBase<Derived>");
 
         auto processed_buffer = std::forward<Buffer>(input_buffer);
-        single_tree_traversal(query_indexer_.root(), processed_buffer);
+        single_tree_traversal(reference_indexer_.root(), processed_buffer);
         return processed_buffer;
     }
 
     std::size_t n_samples() const {
-        return query_indexer_.n_samples();
+        return reference_indexer_.n_samples();
     }
 
     constexpr auto features_range_first(std::size_t sample_index) const {
-        return query_indexer_.features_range_first(sample_index);
+        return reference_indexer_.features_range_first(sample_index);
     }
 
     constexpr auto features_range_last(std::size_t sample_index) const {
-        return query_indexer_.features_range_last(sample_index);
+        return reference_indexer_.features_range_last(sample_index);
     }
 
   private:
@@ -72,19 +75,19 @@ class SingleTreeTraverser {
     }
 
     template <typename Buffer>
-    KDNodeViewPtr recursive_search_to_leaf_node(KDNodeViewPtr node, Buffer& buffer) const {
+    auto recursive_search_to_leaf_node(KDNodeViewPtr node, Buffer& buffer) const -> decltype(node) {
         buffer.partial_search(node->indices_range_.first,
                               node->indices_range_.second,
-                              query_indexer_.begin(),
-                              query_indexer_.end(),
-                              query_indexer_.n_features());
+                              reference_indexer_.begin(),
+                              reference_indexer_.end(),
+                              reference_indexer_.n_features());
 
         // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
         if (!node->is_leaf()) {
             // get the pivot sample index in the dataset
             const auto pivot_index = node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = query_indexer_[pivot_index][node->cut_feature_index_];
+            const auto pivot_split_value = reference_indexer_[pivot_index][node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = buffer.centroid_begin()[node->cut_feature_index_];
 
@@ -104,14 +107,15 @@ class SingleTreeTraverser {
     }
 
     template <typename Buffer>
-    KDNodeViewPtr get_parent_node_after_sibling_traversal(const KDNodeViewPtr& node, Buffer& buffer) const {
+    auto get_parent_node_after_sibling_traversal(const KDNodeViewPtr& node, Buffer& buffer) const
+        -> decltype(node->parent_.lock()) {
         auto parent_node = node->parent_.lock();
         // if node has a parent
         if (parent_node) {
             // get the pivot sample index in the dataset
             const auto pivot_index = parent_node->indices_range_.first[0];
             // get the split value according to the current split dimension
-            const auto pivot_split_value = query_indexer_[pivot_index][parent_node->cut_feature_index_];
+            const auto pivot_split_value = reference_indexer_[pivot_index][parent_node->cut_feature_index_];
             // get the value of the query according to the split dimension
             const auto query_split_value = buffer.centroid_begin()[parent_node->cut_feature_index_];
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
@@ -138,7 +142,7 @@ class SingleTreeTraverser {
         return parent_node;
     }
 
-    Indexer query_indexer_;
+    ReferenceIndexer reference_indexer_;
 };
 
 }  // namespace ffcl::search

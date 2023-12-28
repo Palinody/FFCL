@@ -11,6 +11,8 @@ struct SplittingRulePolicy {
 
     SplittingRulePolicy() = default;
 
+    virtual ~SplittingRulePolicy() = default;
+
     inline virtual std::tuple<std::size_t,
                               bbox::IteratorPairType<IndicesIterator>,
                               bbox::IteratorPairType<IndicesIterator>,
@@ -27,6 +29,8 @@ template <typename IndicesIterator, typename SamplesIterator>
 struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, SamplesIterator> {
     static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
     static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
+    QuickselectMedianRange() = default;
 
     inline std::tuple<std::size_t,
                       bbox::IteratorPairType<IndicesIterator>,
