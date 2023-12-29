@@ -121,8 +121,8 @@ class BoruvkasAlgorithm {
             return components_.cend();
         }
 
-        auto minimum_spanning_tree() const {
-            return minimum_spanning_tree_;
+        auto&& minimum_spanning_tree() && {
+            return std::move(minimum_spanning_tree_);
         }
 
         void merge_components(const EdgeType& edge) {
@@ -467,7 +467,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
             }
         }
     }
-    return forest.minimum_spanning_tree();
+    return std::move(forest).minimum_spanning_tree();
 }
 
 }  // namespace ffcl
