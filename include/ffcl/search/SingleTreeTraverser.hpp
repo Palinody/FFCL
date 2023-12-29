@@ -121,11 +121,12 @@ class SingleTreeTraverser {
             // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
             // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
             // put to the right
-            bool visit_sibling = node->is_left_child()
-                                     ? buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <=
-                                                                    buffer.upper_bound(parent_node->cut_feature_index_)
-                                     : buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <
-                                                                    buffer.upper_bound(parent_node->cut_feature_index_);
+            const bool visit_sibling =
+                node->is_left_child()
+                    ? buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <=
+                                                   buffer.upper_bound(parent_node->cut_feature_index_)
+                    : buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <
+                                                   buffer.upper_bound(parent_node->cut_feature_index_);
             // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
             // closer to the query sample than the current nearest neighbor
             if (visit_sibling) {
