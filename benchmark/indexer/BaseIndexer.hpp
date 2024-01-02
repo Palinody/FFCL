@@ -7,7 +7,11 @@ namespace indexer {
 template <typename IndexContainer, typename SamplesIterator>
 class BaseIndexer {
   public:
-    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+    using IndexType = typename IndexContainer::value_type;
+    using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    using IndicesIteratorType = typename IndexContainer::iterator;
+    using SamplesIteratorType = SamplesIterator;
 
     class BaseNearestNeighborsBuffer {
       public:

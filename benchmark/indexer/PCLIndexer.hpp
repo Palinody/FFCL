@@ -11,7 +11,12 @@ namespace indexer {
 template <typename IndexContainer, typename SamplesIterator>
 class PCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
   public:
-    using DataType = typename BaseIndexer<IndexContainer, SamplesIterator>::DataType;
+    using IndexType = typename BaseIndexer<IndexContainer, SamplesIterator>::IndexType;
+    using DataType  = typename BaseIndexer<IndexContainer, SamplesIterator>::DataType;
+
+    using IndicesIteratorType = typename BaseIndexer<IndexContainer, SamplesIterator>::IndicesIteratorType;
+    using SamplesIteratorType = typename BaseIndexer<IndexContainer, SamplesIterator>::SamplesIteratorType;
+
     using BaseNearestNeighborsBuffer =
         typename BaseIndexer<IndexContainer, SamplesIterator>::BaseNearestNeighborsBuffer;
 

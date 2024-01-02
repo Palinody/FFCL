@@ -3,6 +3,9 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
 
+#include "ffcl/search/buffer/StaticBase.hpp"
+#include "ffcl/search/count/StaticBase.hpp"
+
 #include <sys/types.h>  // ssize_t
 #include <algorithm>
 #include <array>
@@ -35,15 +38,22 @@ struct KDNodeView {
 
     bool is_leaf() const;
 
-    bool is_left_child() const;
-
-    bool is_right_child() const;
-
     bool has_parent() const;
 
     bool has_children() const;
 
-    KDNodeViewPtr get_sibling_node() const;
+    template <typename Buffer>
+    auto select_sibling_node(const SamplesIterator& samples_range_first,
+                             const SamplesIterator& samples_range_last,
+                             std::size_t            n_features,
+                             const Buffer&          buffer) const
+        -> std::enable_if_t<common::is_crtp_of<Buffer, search::buffer::StaticBase>::value, KDNodeViewPtr>;
+
+    auto step_down(const SamplesIterator& samples_range_first,
+                   const SamplesIterator& samples_range_last,
+                   std::size_t            n_features,
+                   const SamplesIterator& query_features_range_first,
+                   const SamplesIterator& query_features_range_last) const -> KDNodeViewPtr;
 
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
                    const SamplesIterator&                      samples_range_first,
@@ -67,6 +77,13 @@ struct KDNodeView {
     KDNodeViewPtr right_;
     // A weak pointer to the unique parent node of this node. It allows traversal up the tree hierarchy.
     std::weak_ptr<KDNodeViewType> parent_;
+
+  private:
+    bool is_left_child() const;
+
+    bool is_right_child() const;
+
+    auto get_sibling_node() const -> KDNodeViewPtr;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -96,23 +113,17 @@ std::size_t KDNodeView<IndicesIterator, SamplesIterator>::n_samples() const {
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::is_leaf() const {
-    return left_ == nullptr && right_ == nullptr;
+    return !left_ && !right_;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::is_left_child() const {
-    if (has_parent()) {
-        return this == parent_.lock()->left_.get();
-    }
-    return false;
+    return this == parent_.lock()->left_.get();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::is_right_child() const {
-    if (has_parent()) {
-        return this == parent_.lock()->right_.get();
-    }
-    return false;
+    return this == parent_.lock()->right_.get();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -122,23 +133,78 @@ bool KDNodeView<IndicesIterator, SamplesIterator>::has_parent() const {
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::has_children() const {
-    return left_ != nullptr && right_ != nullptr;
+    return left_ && right_;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr
-KDNodeView<IndicesIterator, SamplesIterator>::get_sibling_node() const {
-    if (has_parent()) {
-        auto parent_shared_ptr = parent_.lock();
+template <typename Buffer>
+auto KDNodeView<IndicesIterator, SamplesIterator>::select_sibling_node(const SamplesIterator& samples_range_first,
+                                                                       const SamplesIterator& samples_range_last,
+                                                                       std::size_t            n_features,
+                                                                       const Buffer&          buffer) const
+    -> std::enable_if_t<common::is_crtp_of<Buffer, search::buffer::StaticBase>::value, KDNodeViewPtr> {
+    assert(has_parent());
+    common::ignore_parameters(samples_range_last);
 
-        if (this == parent_shared_ptr->left_.get()) {
-            return parent_shared_ptr->right_;
+    auto parent_node = parent_.lock();
 
-        } else if (this == parent_shared_ptr->right_.get()) {
-            return parent_shared_ptr->left_;
-        }
+    if (parent_node) {
+        // get the pivot sample index in the dataset
+        const auto pivot_index = parent_node->indices_range_.first[0];
+        // get the split value according to the current split dimension
+        const auto pivot_split_value = samples_range_first[pivot_index * n_features + parent_node->cut_feature_index_];
+        // get the value of the query according to the split dimension
+        const auto query_split_value = buffer.centroid_begin()[parent_node->cut_feature_index_];
+
+        const bool is_left_child_ret = is_left_child();
+        // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
+        // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
+        // put to the right
+        const bool visit_sibling = is_left_child_ret ? common::abs(pivot_split_value - query_split_value) <=
+                                                           buffer.upper_bound(parent_node->cut_feature_index_)
+                                                     : common::abs(pivot_split_value - query_split_value) <
+                                                           buffer.upper_bound(parent_node->cut_feature_index_);
+
+        return buffer.n_free_slots() || visit_sibling ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
+                                                      : nullptr;
     }
     return nullptr;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+auto KDNodeView<IndicesIterator, SamplesIterator>::get_sibling_node() const -> KDNodeViewPtr {
+    assert(has_parent());
+
+    auto parent_shared_ptr = parent_.lock();
+
+    if (this == parent_shared_ptr->left_.get()) {
+        return parent_shared_ptr->right_;
+
+    } else if (this == parent_shared_ptr->right_.get()) {
+        return parent_shared_ptr->left_;
+    }
+    return nullptr;
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+auto KDNodeView<IndicesIterator, SamplesIterator>::step_down(const SamplesIterator& samples_range_first,
+                                                             const SamplesIterator& samples_range_last,
+                                                             std::size_t            n_features,
+                                                             const SamplesIterator& query_features_range_first,
+                                                             const SamplesIterator& query_features_range_last) const
+    -> KDNodeViewPtr {
+    common::ignore_parameters(samples_range_last, query_features_range_last);
+
+    // get the pivot sample index in the dataset
+    const auto pivot_index = indices_range_.first[0];
+    // get the split value according to the current split dimension
+    const auto pivot_split_value = samples_range_first[pivot_index * n_features + cut_feature_index_];
+    // get the value of the query according to the split dimension
+    const auto query_split_value = query_features_range_first[cut_feature_index_];
+
+    // traverse either the left or right child node depending on where the target sample is located relatively
+    // to the cut value
+    return query_split_value < pivot_split_value ? left_ : right_;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -146,7 +212,7 @@ void KDNodeView<IndicesIterator, SamplesIterator>::serialize(rapidjson::Writer<r
                                                              const SamplesIterator& samples_range_first,
                                                              const SamplesIterator& samples_range_last,
                                                              std::size_t            n_features) const {
-    using DataType = bbox::DataType<SamplesIterator>;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdnode serialization");

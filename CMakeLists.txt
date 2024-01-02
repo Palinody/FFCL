@@ -36,10 +36,16 @@ set(HEADER_FILES
     include/ffcl/kmedoids/PAMUtils.hpp
     include/ffcl/kmedoids/PAMBuild.hpp
 
-    include/ffcl/search/buffer/Base.hpp
+    include/ffcl/dbscan/DBSCAN.hpp
+
+    include/ffcl/hdbscan/HDBSCAN.hpp
+
+    include/ffcl/search/buffer/StaticBase.hpp
     include/ffcl/search/buffer/Unsorted.hpp
     include/ffcl/search/buffer/WithMemory.hpp
     include/ffcl/search/buffer/WithUnionFind.hpp
+
+    include/ffcl/search/Search.hpp
 
     include/ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp
     include/ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp

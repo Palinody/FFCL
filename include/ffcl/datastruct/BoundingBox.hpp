@@ -13,10 +13,8 @@ template <typename SamplesIterator>
 using IteratorPairType = std::pair<SamplesIterator, SamplesIterator>;
 
 template <typename SamplesIterator>
-using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
-
-template <typename SamplesIterator>
-using RangeType = std::pair<DataType<SamplesIterator>, DataType<SamplesIterator>>;
+using RangeType = std::pair<typename std::iterator_traits<SamplesIterator>::value_type,
+                            typename std::iterator_traits<SamplesIterator>::value_type>;
 
 template <typename SamplesIterator>
 using HyperRangeType = std::vector<RangeType<SamplesIterator>>;
@@ -26,7 +24,7 @@ auto make_1d_bounding_box(const SamplesIterator& samples_range_first,
                           const SamplesIterator& samples_range_last,
                           std::size_t            n_features,
                           ssize_t                feature_index) {
-    using DataType = DataType<SamplesIterator>;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;  // DataType<SamplesIterator>;
 
     const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -55,7 +53,7 @@ auto make_1d_bounding_box(const IndicesIterator& indices_range_first,
                           const SamplesIterator& samples_range_last,
                           std::size_t            n_features,
                           ssize_t                feature_index) {
-    using DataType = DataType<SamplesIterator>;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;  // DataType<SamplesIterator>;
 
     common::ignore_parameters(samples_range_last);
 
@@ -84,7 +82,7 @@ template <typename SamplesIterator>
 auto make_kd_bounding_box(const SamplesIterator& samples_range_first,
                           const SamplesIterator& samples_range_last,
                           std::size_t            n_features) {
-    using DataType = DataType<SamplesIterator>;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;  // DataType<SamplesIterator>;
 
     const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
@@ -116,7 +114,7 @@ auto make_kd_bounding_box(const IndicesIterator& indices_range_first,
                           const SamplesIterator& samples_range_first,
                           const SamplesIterator& samples_range_last,
                           std::size_t            n_features) {
-    using DataType = DataType<SamplesIterator>;
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;  // DataType<SamplesIterator>;
 
     common::ignore_parameters(samples_range_last);
 

@@ -177,32 +177,37 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
 
 // Iterative with two matrix rows https://en.wikipedia.org/wiki/Levenshtein_distance
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
-std::size_t levenshtein_distance(const LeftFeaturesIterator&  left_features_range_first,
-                                 const LeftFeaturesIterator&  left_features_range_last,
-                                 const RightFeaturesIterator& right_features_range_first,
-                                 const RightFeaturesIterator& right_features_range_last) {
+auto levenshtein_distance(const LeftFeaturesIterator&  left_features_range_first,
+                          const LeftFeaturesIterator&  left_features_range_last,
+                          const RightFeaturesIterator& right_features_range_first,
+                          const RightFeaturesIterator& right_features_range_last)
+    -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
+                std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>()) {
     static_assert(std::is_integral_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
                   "Input1 must be integral.");
     static_assert(std::is_integral_v<typename std::iterator_traits<RightFeaturesIterator>::value_type>,
                   "Input2 must be integral.");
 
+    using IntegralCostType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
+                                      std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
+
     const std::size_t n_features_left  = std::distance(left_features_range_first, left_features_range_last);
     const std::size_t n_features_right = std::distance(right_features_range_first, right_features_range_last);
 
-    std::vector<std::size_t> previous_buffer(n_features_right + 1);
-    std::vector<std::size_t> current_buffer(n_features_right + 1);
+    std::vector<IntegralCostType> previous_buffer(n_features_right + 1);
+    std::vector<IntegralCostType> current_buffer(n_features_right + 1);
 
-    std::iota(previous_buffer.begin(), previous_buffer.end(), static_cast<std::size_t>(0));
+    std::iota(previous_buffer.begin(), previous_buffer.end(), static_cast<IntegralCostType>(0));
 
     for (std::size_t feature_index_left = 0; feature_index_left < n_features_left; ++feature_index_left) {
         current_buffer[0] = feature_index_left + 1;
 
         for (std::size_t feature_index_right = 0; feature_index_right < n_features_right; ++feature_index_right) {
-            const std::size_t deletion_cost = previous_buffer[feature_index_right + 1] + 1;
+            const IntegralCostType deletion_cost = previous_buffer[feature_index_right + 1] + 1;
 
-            const std::size_t insertion_cost = current_buffer[feature_index_right] + 1;
+            const IntegralCostType insertion_cost = current_buffer[feature_index_right] + 1;
 
-            const std::size_t substitution_cost =
+            const IntegralCostType substitution_cost =
                 left_features_range_first[feature_index_left] == right_features_range_first[feature_index_right]
                     ? previous_buffer[feature_index_right]
                     : previous_buffer[feature_index_right] + 1;

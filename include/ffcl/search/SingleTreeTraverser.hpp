@@ -57,90 +57,48 @@ class SingleTreeTraverser {
   private:
     template <typename Buffer>
     void single_tree_traversal(KDNodeViewPtr node, Buffer& buffer) const {
-        // current_node is currently a leaf node (and root in the special case where the entire tree is in a single
-        // node)
-        auto current_kdnode = recursive_search_to_leaf_node(
-            /**/ node,
-            /**/ buffer);
-
-        // performs a nearest neighbor search one step at a time from the leaf node until the input node is reached if
-        // node parameter is a subtree. A search through the entire tree
-        while (current_kdnode != node) {
-            // performs a nearest neighbor search starting from the specified node then returns its parent if it exists
+        // current_node is a leaf node (and root in the special case where the entire tree is in a single node)
+        auto current_node = recursive_search_to_leaf_node(node, buffer);
+        // performs a partial search one step at a time from the leaf node until the input node is reached if
+        // node parameter is a subtree
+        while (current_node != node) {
+            // performs a partial search starting from the specified node then returns its parent if it exists
             // (nullptr otherwise)
-            current_kdnode = get_parent_node_after_sibling_traversal(
-                /**/ current_kdnode,
-                /**/ buffer);
+            current_node = get_parent_node_after_sibling_traversal(current_node, buffer);
         }
     }
 
     template <typename Buffer>
-    auto recursive_search_to_leaf_node(KDNodeViewPtr node, Buffer& buffer) const -> decltype(node) {
+    auto recursive_search_to_leaf_node(KDNodeViewPtr node, Buffer& buffer) const -> KDNodeViewPtr {
         buffer.partial_search(node->indices_range_.first,
                               node->indices_range_.second,
                               reference_indexer_.begin(),
                               reference_indexer_.end(),
                               reference_indexer_.n_features());
-
         // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
         if (!node->is_leaf()) {
-            // get the pivot sample index in the dataset
-            const auto pivot_index = node->indices_range_.first[0];
-            // get the split value according to the current split dimension
-            const auto pivot_split_value = reference_indexer_[pivot_index][node->cut_feature_index_];
-            // get the value of the query according to the split dimension
-            const auto query_split_value = buffer.centroid_begin()[node->cut_feature_index_];
-
-            // traverse either the left or right child node depending on where the target sample is located relatively
-            // to the cut value
-            if (query_split_value < pivot_split_value) {
-                node = recursive_search_to_leaf_node(
-                    /**/ node->left_,
-                    /**/ buffer);
-            } else {
-                node = recursive_search_to_leaf_node(
-                    /**/ node->right_,
-                    /**/ buffer);
-            }
+            node = recursive_search_to_leaf_node(node->step_down(reference_indexer_.begin(),
+                                                                 reference_indexer_.end(),
+                                                                 reference_indexer_.n_features(),
+                                                                 buffer.centroid_begin(),
+                                                                 buffer.centroid_end()),
+                                                 buffer);
         }
         return node;
     }
 
     template <typename Buffer>
-    auto get_parent_node_after_sibling_traversal(const KDNodeViewPtr& node, Buffer& buffer) const
-        -> decltype(node->parent_.lock()) {
-        auto parent_node = node->parent_.lock();
-        // if node has a parent
-        if (parent_node) {
-            // get the pivot sample index in the dataset
-            const auto pivot_index = parent_node->indices_range_.first[0];
-            // get the split value according to the current split dimension
-            const auto pivot_split_value = reference_indexer_[pivot_index][parent_node->cut_feature_index_];
-            // get the value of the query according to the split dimension
-            const auto query_split_value = buffer.centroid_begin()[parent_node->cut_feature_index_];
-            // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
-            // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
-            // put to the right
-            const bool visit_sibling =
-                node->is_left_child()
-                    ? buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <=
-                                                   buffer.upper_bound(parent_node->cut_feature_index_)
-                    : buffer.n_free_slots() || common::abs(pivot_split_value - query_split_value) <
-                                                   buffer.upper_bound(parent_node->cut_feature_index_);
-            // we perform the nearest neighbor algorithm on the subtree starting from the sibling if the split value is
-            // closer to the query sample than the current nearest neighbor
-            if (visit_sibling) {
-                // if the sibling node is not nullptr
-                if (auto sibling_node = node->get_sibling_node()) {
-                    // get the nearest neighbor from the sibling node
-                    single_tree_traversal(
-                        /**/ sibling_node,
-                        /**/ buffer);
-                }
-            }
+    auto get_parent_node_after_sibling_traversal(const KDNodeViewPtr& node, Buffer& buffer) const -> KDNodeViewPtr {
+        // if a sibling node has been selected (is not nullptr)
+        if (auto sibling_node = node->select_sibling_node(/**/ reference_indexer_.begin(),
+                                                          /**/ reference_indexer_.end(),
+                                                          /**/ reference_indexer_.n_features(),
+                                                          /**/ buffer)) {
+            // search for other candidates from the sibling node
+            single_tree_traversal(sibling_node, buffer);
         }
         // returns nullptr if node doesnt have parent (or is root)
-        return parent_node;
+        return node->parent_.lock();
     }
 
     ReferenceIndexer reference_indexer_;

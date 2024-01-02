@@ -141,14 +141,14 @@ std::tuple<std::size_t,
            bbox::IteratorPairType<IndicesIterator>,
            bbox::IteratorPairType<IndicesIterator>,
            bbox::IteratorPairType<IndicesIterator>>
-shift_median_to_leftmost_equal_value(std::size_t                             median_index,
-                                     bbox::IteratorPairType<IndicesIterator> left_indices_range,
-                                     bbox::IteratorPairType<IndicesIterator> median_indices_range,
-                                     bbox::IteratorPairType<IndicesIterator> right_indices_range,
-                                     const SamplesIterator&                  samples_range_first,
-                                     const SamplesIterator&                  samples_range_last,
-                                     std::size_t                             n_features,
-                                     std::size_t                             feature_index) {
+shift_median_to_leftmost_equal_value(std::size_t                               median_index,
+                                     bbox::IteratorPairType<IndicesIterator>&& left_indices_range,
+                                     bbox::IteratorPairType<IndicesIterator>&& median_indices_range,
+                                     bbox::IteratorPairType<IndicesIterator>&& right_indices_range,
+                                     const SamplesIterator&                    samples_range_first,
+                                     const SamplesIterator&                    samples_range_last,
+                                     std::size_t                               n_features,
+                                     std::size_t                               feature_index) {
     ffcl::common::ignore_parameters(samples_range_last);
 
     const auto left_range_length = std::distance(left_indices_range.first, left_indices_range.second);
@@ -177,7 +177,10 @@ shift_median_to_leftmost_equal_value(std::size_t                             med
     right_indices_range.first   = median_indices_range.second;
     median_index                = std::distance(left_indices_range.first, median_indices_range.first);
 
-    return std::make_tuple(median_index, left_indices_range, median_indices_range, right_indices_range);
+    return std::make_tuple(median_index,
+                           std::forward<bbox::IteratorPairType<IndicesIterator>>(left_indices_range),
+                           std::forward<bbox::IteratorPairType<IndicesIterator>>(median_indices_range),
+                           std::forward<bbox::IteratorPairType<IndicesIterator>>(right_indices_range));
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -195,24 +198,24 @@ quickselect_median(const IndicesIterator& indices_range_first,
 
     std::size_t median_index = std::distance(indices_range_first, indices_range_last) / 2;
 
-    const auto median_indices_range = ffcl::common::algorithms::quickselect(indices_range_first,
-                                                                            indices_range_last,
-                                                                            samples_range_first,
-                                                                            samples_range_last,
-                                                                            n_features,
-                                                                            median_index,
-                                                                            feature_index);
+    auto median_indices_range = ffcl::common::algorithms::quickselect(indices_range_first,
+                                                                      indices_range_last,
+                                                                      samples_range_first,
+                                                                      samples_range_last,
+                                                                      n_features,
+                                                                      median_index,
+                                                                      feature_index);
 
     // all the points at the left of the pivot point
-    const auto left_indices_range = std::make_pair(indices_range_first, indices_range_first + median_index);
+    auto left_indices_range = std::make_pair(indices_range_first, indices_range_first + median_index);
 
     // all the points at the right of the pivot point
-    const auto right_indices_range = std::make_pair(indices_range_first + median_index + 1, indices_range_last);
+    auto right_indices_range = std::make_pair(indices_range_first + median_index + 1, indices_range_last);
 
     return shift_median_to_leftmost_equal_value(median_index,
-                                                left_indices_range,
-                                                median_indices_range,
-                                                right_indices_range,
+                                                std::move(left_indices_range),
+                                                std::move(median_indices_range),
+                                                std::move(right_indices_range),
                                                 samples_range_first,
                                                 samples_range_last,
                                                 n_features,

@@ -83,15 +83,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     timer.reset();
 
-    // /*
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search, radius);
-    // */
-    /*
-    const auto predictions =
-        dbscan.predict(indexer,
-                       &IndexerType::range_search_around_query_index,
-                       HyperRangeType<SamplesIterator>({{-0.25, 0.25}, {-0.25, 0.25}, {-0.5, 0.5}}));
-    */
+    const auto predictions = dbscan.predict(std::move(indexer));
 
     bench_summary.indexer_query_duration = timer.elapsed();
 
@@ -170,7 +162,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search, radius);
+    const auto predictions = dbscan.predict(std::move(indexer));
 
     bench_summary.indexer_query_duration = timer.elapsed();
 
@@ -249,7 +241,7 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
 
     timer.reset();
 
-    const auto predictions = dbscan.predict(indexer, &IndexerType::radius_search, radius);
+    const auto predictions = dbscan.predict(std::move(indexer));
 
     bench_summary.indexer_query_duration = timer.elapsed();
 
