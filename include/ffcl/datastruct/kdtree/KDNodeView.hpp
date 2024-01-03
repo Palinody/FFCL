@@ -118,11 +118,15 @@ bool KDNodeView<IndicesIterator, SamplesIterator>::is_leaf() const {
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::is_left_child() const {
+    assert(has_parent());
+
     return this == parent_.lock()->left_.get();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
 bool KDNodeView<IndicesIterator, SamplesIterator>::is_right_child() const {
+    assert(has_parent());
+
     return this == parent_.lock()->right_.get();
 }
 
