@@ -21,11 +21,13 @@ namespace ffcl {
 template <typename Indexer>
 class DBSCAN {
   public:
-    using DataType = typename Indexer::DataType;
+    using LabelType = typename Indexer::IndexType;
+    using DataType  = typename Indexer::DataType;
 
-    static_assert(std::is_floating_point<DataType>::value, "DBSCAN only allows floating point types.");
+    // static_assert(std::is_floating_point<DataType>::value, "DBSCAN only allows floating point types.");
 
-    using Label = std::size_t;
+    static_assert(std::is_trivial_v<LabelType>, "LabelType must be trivial.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
     struct Options {
         Options() = default;
@@ -70,7 +72,7 @@ class DBSCAN {
      * between.
      *
      * @param indexer the indexer that was used to index the dataset and rearranged the index
-     * @return auto std::vector<Label> that has the same length as the input index range:
+     * @return auto std::vector<LabelType> that has the same length as the input index range:
      * std::distance(global_index_first, global_index_last)
      */
     auto predict(Indexer&& indexer) const;
@@ -80,10 +82,10 @@ class DBSCAN {
     void predict_inner(NeighborsIndices&                neighbors_indices,
                        VisitedIndices&                  visited_indices,
                        Predictions&                     predictions,
-                       const Label&                     cluster_label,
+                       const LabelType&                 cluster_label,
                        const search::Searcher<Indexer>& searcher) const;
 
-    enum class SampleStatus : Label { noise = 0 };
+    enum class SampleStatus : LabelType { noise = 0 };
 
     Options options_;
 };
@@ -106,10 +108,10 @@ auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
     const std::size_t n_samples = searcher.n_samples();
 
     // vector keeping track of the cluster label for each index specified by the global index range
-    auto predictions = std::vector<Label>(n_samples);
+    auto predictions = std::vector<LabelType>(n_samples);
 
     // initialize the initial cluster counter that's in [0, n_samples)
-    Label cluster_label = static_cast<Label>(SampleStatus::noise);
+    auto cluster_label = static_cast<LabelType>(SampleStatus::noise);
 
     // boolean buffer that keep tracks of the samples that have been already visited
     auto visited_indices = std::make_unique<bool[]>(n_samples);
@@ -139,7 +141,7 @@ auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
                 // neighbors_indices will be populated with all the nearby samples that satisfy the density criterion
                 predict_inner(neighbors_indices, visited_indices, predictions, cluster_label, searcher);
             } else {
-                predictions[entry_point_candidate_index] = static_cast<Label>(SampleStatus::noise);
+                predictions[entry_point_candidate_index] = static_cast<LabelType>(SampleStatus::noise);
             }
         }
     }
@@ -151,7 +153,7 @@ template <typename NeighborsIndices, typename VisitedIndices, typename Predictio
 void DBSCAN<Indexer>::predict_inner(NeighborsIndices&                neighbors_indices,
                                     VisitedIndices&                  visited_indices,
                                     Predictions&                     predictions,
-                                    const Label&                     cluster_label,
+                                    const LabelType&                 cluster_label,
                                     const search::Searcher<Indexer>& searcher) const {
     // iterate over the samples that are assigned to the current cluster
     for (std::size_t cluster_sample_index = 0; cluster_sample_index < neighbors_indices.size();
@@ -182,7 +184,7 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndices&                neighbors_i
             }
         }
         // assign neighbor_index to a cluster if its not already the case
-        if (predictions[neighbor_index] == static_cast<Label>(SampleStatus::noise)) {
+        if (predictions[neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
             predictions[neighbor_index] = cluster_label;
         }
     }

@@ -104,8 +104,9 @@ class UnboundedBallView : public StaticBound<UnboundedBallView<FeaturesIterator>
                                  const OtherFeaturesIterator& other_features_range_last) const {
         assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
 
-        return common::math::heuristics::auto_distance(
-            other_features_range_first, other_features_range_last, centroid_features_range_first_);
+        return common::math::heuristics::auto_distance(/**/ other_features_range_first,
+                                                       /**/ other_features_range_last,
+                                                       /**/ centroid_features_range_first_);
     }
 
     template <typename OtherFeaturesIterator>

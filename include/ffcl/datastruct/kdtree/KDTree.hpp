@@ -118,12 +118,12 @@ class KDTree {
     };
 
   public:
-    KDTree(IndicesIterator indices_range_first,
-           IndicesIterator indices_range_last,
-           SamplesIterator samples_range_first,
-           SamplesIterator samples_range_last,
-           std::size_t     n_features,
-           const Options&  options = Options());
+    explicit KDTree(IndicesIterator indices_range_first,
+                    IndicesIterator indices_range_last,
+                    SamplesIterator samples_range_first,
+                    SamplesIterator samples_range_last,
+                    std::size_t     n_features,
+                    const Options&  options = Options());
 
     KDTree(const KDTree& other);
 

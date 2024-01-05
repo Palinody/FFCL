@@ -24,32 +24,21 @@ class Searcher {
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
     static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
-  public:
-    Searcher(const ReferenceIndexer& reference_indexer)
-      : single_tree_traverser_{reference_indexer} {}
+    using KDNodeViewPtr = typename ReferenceIndexer::KDNodeViewPtr;
 
-    Searcher(ReferenceIndexer&& reference_indexer)
-      : single_tree_traverser_{std::move(reference_indexer)} {}
+    static_assert(common::is_raw_or_smart_ptr<KDNodeViewPtr>(), "KDNodeViewPtr is not a row or smart pointer");
+
+  public:
+    explicit Searcher(ReferenceIndexer&& reference_indexer);
 
     template <typename Buffer>
-    Buffer operator()(Buffer&& buffer) const {
-        static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                      "Provided a Buffer that does not inherit from StaticBase<Derived>");
+    Buffer operator()(Buffer&& buffer) const;
 
-        return single_tree_traverser_(std::forward<Buffer>(buffer));
-    }
+    std::size_t n_samples() const;
 
-    std::size_t n_samples() const {
-        return single_tree_traverser_.n_samples();
-    }
+    constexpr auto features_range_first(std::size_t sample_index) const;
 
-    constexpr auto features_range_first(std::size_t sample_index) const {
-        return single_tree_traverser_.features_range_first(sample_index);
-    }
-
-    constexpr auto features_range_last(std::size_t sample_index) const {
-        return single_tree_traverser_.features_range_last(sample_index);
-    }
+    constexpr auto features_range_last(std::size_t sample_index) const;
 
   private:
     SingleTreeTraverser<ReferenceIndexer> single_tree_traverser_;
@@ -57,5 +46,33 @@ class Searcher {
 
 template <typename ReferenceIndexer>
 Searcher(ReferenceIndexer) -> Searcher<ReferenceIndexer>;
+
+template <typename ReferenceIndexer>
+Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
+  : single_tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
+
+template <typename ReferenceIndexer>
+template <typename Buffer>
+Buffer Searcher<ReferenceIndexer>::operator()(Buffer&& buffer) const {
+    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                  "Provided a Buffer that does not inherit from StaticBase<Derived>");
+
+    return single_tree_traverser_(std::forward<Buffer>(buffer));
+}
+
+template <typename ReferenceIndexer>
+std::size_t Searcher<ReferenceIndexer>::n_samples() const {
+    return single_tree_traverser_.n_samples();
+}
+
+template <typename ReferenceIndexer>
+constexpr auto Searcher<ReferenceIndexer>::features_range_first(std::size_t sample_index) const {
+    return single_tree_traverser_.features_range_first(sample_index);
+}
+
+template <typename ReferenceIndexer>
+constexpr auto Searcher<ReferenceIndexer>::features_range_last(std::size_t sample_index) const {
+    return single_tree_traverser_.features_range_last(sample_index);
+}
 
 }  // namespace ffcl::search
