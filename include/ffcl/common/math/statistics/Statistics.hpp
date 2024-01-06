@@ -147,9 +147,9 @@ std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_typ
 }
 
 template <typename SamplesIterator>
-auto compute_mean_per_feature(SamplesIterator samples_range_first,
-                              SamplesIterator samples_range_last,
-                              std::size_t     n_features) {
+auto compute_mean_per_feature(const SamplesIterator& samples_range_first,
+                              const SamplesIterator& samples_range_last,
+                              std::size_t            n_features) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
@@ -158,26 +158,27 @@ auto compute_mean_per_feature(SamplesIterator samples_range_first,
 
     auto mean_per_feature = std::vector<DataType>(n_features);
 
-    for (; samples_range_first != samples_range_last; std::advance(samples_range_first, n_features)) {
-        std::transform(samples_range_first,
-                       samples_range_first + n_features,
+    for (auto samples_range_it = samples_range_first; samples_range_it != samples_range_last;
+         samples_range_it += n_features) {
+        std::transform(samples_range_it,
+                       samples_range_it + n_features,
                        mean_per_feature.begin(),
                        mean_per_feature.begin(),
                        std::plus<>());
     }
-    std::transform(
-        mean_per_feature.begin(), mean_per_feature.end(), mean_per_feature.begin(), [n_samples](const auto& feature) {
-            return feature / n_samples;
-        });
+    std::transform(/**/ mean_per_feature.begin(),
+                   /**/ mean_per_feature.end(),
+                   /**/ mean_per_feature.begin(),
+                   [n_samples](const auto& feature) { return feature / n_samples; });
     return mean_per_feature;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-auto compute_mean_per_feature(IndicesIterator indices_range_first,
-                              IndicesIterator indices_range_last,
-                              SamplesIterator samples_range_first,
-                              SamplesIterator samples_range_last,
-                              std::size_t     n_features) {
+auto compute_mean_per_feature(const IndicesIterator& indices_range_first,
+                              const IndicesIterator& indices_range_last,
+                              const SamplesIterator& samples_range_first,
+                              const SamplesIterator& samples_range_last,
+                              std::size_t            n_features) {
     ignore_parameters(samples_range_last);
 
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
@@ -188,23 +189,23 @@ auto compute_mean_per_feature(IndicesIterator indices_range_first,
 
     auto mean_per_feature = std::vector<DataType>(n_features);
 
-    for (; indices_range_first != indices_range_last; ++indices_range_first) {
+    for (auto indices_range_it = indices_range_first; indices_range_it != indices_range_last; ++indices_range_it) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            mean_per_feature[feature_index] += samples_range_first[*indices_range_first * n_features + feature_index];
+            mean_per_feature[feature_index] += samples_range_first[*indices_range_it * n_features + feature_index];
         }
     }
-    std::transform(
-        mean_per_feature.begin(), mean_per_feature.end(), mean_per_feature.begin(), [n_samples](const auto& feature) {
-            return feature / n_samples;
-        });
+    std::transform(/**/ mean_per_feature.begin(),
+                   /**/ mean_per_feature.end(),
+                   /**/ mean_per_feature.begin(),
+                   [n_samples](const auto& feature) { return feature / n_samples; });
     return mean_per_feature;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-auto compute_mean_per_feature(IndicesIterator                 indices_range_first,
-                              IndicesIterator                 indices_range_last,
-                              SamplesIterator                 samples_range_first,
-                              SamplesIterator                 samples_range_last,
+auto compute_mean_per_feature(const IndicesIterator&          indices_range_first,
+                              const IndicesIterator&          indices_range_last,
+                              const SamplesIterator&          samples_range_first,
+                              const SamplesIterator&          samples_range_last,
                               std::size_t                     n_features,
                               const std::vector<std::size_t>& feature_mask) {
     ignore_parameters(samples_range_last);
@@ -217,23 +218,24 @@ auto compute_mean_per_feature(IndicesIterator                 indices_range_firs
 
     auto mean_per_feature = std::vector<DataType>(feature_mask.size());
 
-    for (; indices_range_first != indices_range_last; ++indices_range_first) {
+    for (auto indices_range_it = indices_range_first; indices_range_it != indices_range_last; ++indices_range_it) {
         for (std::size_t mask_index = 0; mask_index < feature_mask.size(); ++mask_index) {
             mean_per_feature[mask_index] +=
-                samples_range_first[*indices_range_first * n_features + feature_mask[mask_index]];
+                samples_range_first[*indices_range_it * n_features + feature_mask[mask_index]];
         }
     }
     std::transform(
-        mean_per_feature.begin(), mean_per_feature.end(), mean_per_feature.begin(), [n_samples](const auto& feature) {
-            return feature / n_samples;
-        });
+        /**/ mean_per_feature.begin(),
+        /**/ mean_per_feature.end(),
+        /**/ mean_per_feature.begin(),
+        [n_samples](const auto& feature) { return feature / n_samples; });
     return mean_per_feature;
 }
 
 template <typename SamplesIterator>
-auto compute_variance_per_feature(SamplesIterator samples_range_first,
-                                  SamplesIterator samples_range_last,
-                                  std::size_t     n_features) {
+auto compute_variance_per_feature(const SamplesIterator& samples_range_first,
+                                  const SamplesIterator& samples_range_last,
+                                  std::size_t            n_features) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
@@ -273,8 +275,8 @@ auto compute_variance_per_feature(SamplesIterator samples_range_first,
 template <typename IndicesIterator, typename SamplesIterator>
 auto compute_variance_per_feature(const IndicesIterator& indices_range_first,
                                   const IndicesIterator& indices_range_last,
-                                  SamplesIterator        samples_range_first,
-                                  SamplesIterator        samples_range_last,
+                                  const SamplesIterator& samples_range_first,
+                                  const SamplesIterator& samples_range_last,
                                   std::size_t            n_features) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
@@ -282,8 +284,11 @@ auto compute_variance_per_feature(const IndicesIterator& indices_range_first,
 
     assert(n_samples > 1);
 
-    const auto mean_per_feature = compute_mean_per_feature(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features);
+    const auto mean_per_feature = compute_mean_per_feature(/**/ indices_range_first,
+                                                           /**/ indices_range_last,
+                                                           /**/ samples_range_first,
+                                                           /**/ samples_range_last,
+                                                           /**/ n_features);
 
     auto variance_per_feature = std::vector<DataType>(n_features);
 
@@ -316,8 +321,8 @@ auto compute_variance_per_feature(const IndicesIterator& indices_range_first,
 template <typename IndicesIterator, typename SamplesIterator>
 auto compute_variance_per_feature(const IndicesIterator&          indices_range_first,
                                   const IndicesIterator&          indices_range_last,
-                                  SamplesIterator                 samples_range_first,
-                                  SamplesIterator                 samples_range_last,
+                                  const SamplesIterator&          samples_range_first,
+                                  const SamplesIterator&          samples_range_last,
                                   std::size_t                     n_features,
                                   const std::vector<std::size_t>& feature_mask) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
@@ -349,9 +354,9 @@ auto compute_variance_per_feature(const IndicesIterator&          indices_range_
 }
 
 template <typename SamplesIterator>
-std::size_t argmax_variance_per_feature(SamplesIterator samples_range_first,
-                                        SamplesIterator samples_range_last,
-                                        std::size_t     n_features) {
+std::size_t argmax_variance_per_feature(const SamplesIterator& samples_range_first,
+                                        const SamplesIterator& samples_range_last,
+                                        std::size_t            n_features) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
@@ -386,8 +391,8 @@ std::size_t argmax_variance_per_feature(SamplesIterator samples_range_first,
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t argmax_variance_per_feature(const IndicesIterator& indices_range_first,
                                         const IndicesIterator& indices_range_last,
-                                        SamplesIterator        samples_range_first,
-                                        SamplesIterator        samples_range_last,
+                                        const SamplesIterator& samples_range_first,
+                                        const SamplesIterator& samples_range_last,
                                         std::size_t            n_features) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
@@ -424,8 +429,8 @@ std::size_t argmax_variance_per_feature(const IndicesIterator& indices_range_fir
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t argmax_variance_per_feature(const IndicesIterator&          indices_range_first,
                                         const IndicesIterator&          indices_range_last,
-                                        SamplesIterator                 samples_range_first,
-                                        SamplesIterator                 samples_range_last,
+                                        const SamplesIterator&          samples_range_first,
+                                        const SamplesIterator&          samples_range_last,
                                         std::size_t                     n_features,
                                         const std::vector<std::size_t>& feature_mask) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
@@ -453,14 +458,18 @@ std::size_t argmax_variance_per_feature(const IndicesIterator&          indices_
 }
 
 template <typename SamplesIterator>
-typename std::iterator_traits<SamplesIterator>::value_type compute_variance(SamplesIterator samples_range_first,
-                                                                            SamplesIterator samples_range_last) {
+auto compute_variance(SamplesIterator samples_range_first, SamplesIterator samples_range_last) ->
+    typename std::iterator_traits<SamplesIterator>::value_type {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_elements = std::distance(samples_range_first, samples_range_last);
-    const auto sum        = std::accumulate(samples_range_first, samples_range_last, static_cast<DataType>(0));
-    const auto sum_of_squares =
-        std::inner_product(samples_range_first, samples_range_last, samples_range_first, static_cast<DataType>(0));
+
+    const auto sum = std::accumulate(samples_range_first, samples_range_last, static_cast<DataType>(0));
+
+    const auto sum_of_squares = std::inner_product(/**/ samples_range_first,
+                                                   /**/ samples_range_last,
+                                                   /**/ samples_range_first,
+                                                   /**/ static_cast<DataType>(0));
 
     return (sum_of_squares - sum * sum / n_elements) / (n_elements - 1);
 }

@@ -9,6 +9,8 @@
 #include <memory>
 #include <random>
 
+// for a list of pseudo-random number generation: https://en.cppreference.com/w/cpp/numeric/random
+
 namespace ffcl::common::math::random {
 
 static inline std::mt19937& thread_local_mersenne_engine() {

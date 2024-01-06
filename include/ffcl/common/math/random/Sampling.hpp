@@ -178,23 +178,25 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> init_spa
     // row vector buffers to keep track of min-max values
     auto min_buffer = std::vector<FloatType>(n_features, std::numeric_limits<FloatType>::max());
     auto max_buffer = std::vector<FloatType>(n_features, std::numeric_limits<FloatType>::min());
-    for (std::size_t i = 0; i < n_samples; ++i) {
-        for (std::size_t j = 0; j < n_features; ++j) {
-            const FloatType curr_elem = *(samples_range_first + j + i * n_features);
-            min_buffer[j]             = std::min(curr_elem, min_buffer[j]);
-            max_buffer[j]             = std::max(curr_elem, max_buffer[j]);
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            const FloatType curr_elem = *(samples_range_first + feature_index + sample_index * n_features);
+            min_buffer[feature_index] = std::min(curr_elem, min_buffer[feature_index]);
+            max_buffer[feature_index] = std::max(curr_elem, max_buffer[feature_index]);
         }
     }
-    using uniform_distr_ptr = typename std::unique_ptr<uniform_distribution<FloatType>>;
+    using UniformDistributionPtr = typename std::unique_ptr<uniform_distribution<FloatType>>;
     // initialize a uniform random generatore w.r.t. each feature
-    auto random_buffer = std::vector<uniform_distr_ptr>(n_features);
-    for (std::size_t f = 0; f < n_features; ++f) {
-        random_buffer[f] = std::make_unique<uniform_distribution<FloatType>>(min_buffer[f], max_buffer[f]);
+    auto random_buffer = std::vector<UniformDistributionPtr>(n_features);
+    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+        random_buffer[feature_index] =
+            std::make_unique<uniform_distribution<FloatType>>(min_buffer[feature_index], max_buffer[feature_index]);
     }
-    for (std::size_t k = 0; k < n_centroids; ++k) {
-        for (std::size_t f = 0; f < n_features; ++f) {
+    for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             // generate a centroid position that lies in the [min, max] range
-            centroids[f + k * n_features] = (*random_buffer[f])();
+            centroids[feature_index + centroid_index * n_features] = (*random_buffer[feature_index])();
         }
     }
     return centroids;
@@ -214,10 +216,11 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> init_uni
 
     const auto indices = select_from_range(n_centroids, {0, n_samples});
 
-    for (std::size_t k = 0; k < n_centroids; ++k) {
-        const auto idx = indices[k];
-        for (std::size_t f = 0; f < n_features; ++f) {
-            centroids[k * n_features + f] = *(samples_range_first + idx * n_features + f);
+    for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
+        const auto idx = indices[centroid_index];
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            centroids[centroid_index * n_features + feature_index] =
+                *(samples_range_first + idx * n_features + feature_index);
         }
     }
     return centroids;
