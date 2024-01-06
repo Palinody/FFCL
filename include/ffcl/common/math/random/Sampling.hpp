@@ -217,10 +217,10 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> init_uni
     const auto indices = select_from_range(n_centroids, {0, n_samples});
 
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
-        const auto idx = indices[centroid_index];
+        const auto index = indices[centroid_index];
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             centroids[centroid_index * n_features + feature_index] =
-                *(samples_range_first + idx * n_features + feature_index);
+                *(samples_range_first + index * n_features + feature_index);
         }
     }
     return centroids;
