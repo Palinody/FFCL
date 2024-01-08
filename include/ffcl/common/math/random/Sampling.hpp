@@ -179,7 +179,7 @@ auto init_uniform(const SamplesIterator& samples_range_first,
         const auto index = indices[centroid_index];
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             centroids[centroid_index * n_features + feature_index] =
-                *(samples_range_first + index * n_features + feature_index);
+                samples_range_first[index * n_features + feature_index];
         }
     }
     return centroids;
