@@ -24,10 +24,6 @@ namespace ffcl {
 
 template <typename SamplesIterator>
 class FasterPAM {
-    static_assert(std::is_floating_point_v<typename std::iterator_traits<SamplesIterator>::value_type> ||
-                      std::is_signed_v<typename std::iterator_traits<SamplesIterator>::value_type>,
-                  "FasterPAM allows floating point types or signed interger point types.");
-
   public:
     static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
 

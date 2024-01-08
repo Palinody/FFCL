@@ -111,12 +111,12 @@ class KMedoidsErrorsTest : public ::testing::Test {
         using KMedoids = ffcl::KMedoids<dType, true>;
         // using PAM = ffcl::FasterMSC;
 
-        auto kmedoids = KMedoids(n_medoids, n_features);
+        auto kmedoids = KMedoids(n_medoids);
 
         kmedoids.set_options(
             /*KMedoids options=*/KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(1));
 
-        const auto medoids   = kmedoids.fit<ffcl::FasterPAM>(inputs_first, inputs_last);
+        const auto medoids   = kmedoids.fit<ffcl::FasterPAM>(inputs_first, inputs_last, n_features);
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
     }
 
@@ -134,7 +134,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
         const auto            pairwise_distance_matrix =
             ffcl::datastruct::PairwiseDistanceMatrix<SamplesIterator>(dataset_descriptor);
 
-        auto kmedoids = KMedoids(n_medoids, n_features);
+        auto kmedoids = KMedoids(n_medoids);
 
         kmedoids.set_options(KMedoids::Options().max_iter(n_iterations).early_stopping(true).patience(0).n_init(10));
 
@@ -142,7 +142,7 @@ class KMedoidsErrorsTest : public ::testing::Test {
 
         const auto centroids = pam::utils::medoids_to_centroids(inputs_first, inputs_last, n_features, medoids);
 
-        const auto predictions = kmedoids.predict(inputs_first, inputs_last);
+        const auto predictions = kmedoids.predict(inputs_first, inputs_last, n_features);
 
         return std::make_pair(predictions, centroids);
     }
@@ -332,7 +332,7 @@ TEST_F(KMedoidsErrorsTest, ClusterInitializationTest) {
         }
         std::cout << std::endl;
     }
-    const auto centroids = math::random::init_uniform(data.begin(), data.end(), n_centroids, n_features);
+    const auto centroids = math::random::init_uniform(data.begin(), data.end(), n_features, n_centroids);
 
     std::cout << "centroids:" << std::endl;
 

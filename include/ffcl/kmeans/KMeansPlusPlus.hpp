@@ -33,18 +33,18 @@ namespace ffcl::kmeansplusplus {
  * @tparam SamplesIterator
  * @param samples_range_first
  * @param samples_range_last
- * @param n_centroids
  * @param n_features
+ * @param n_centroids
  * @return std::vector<typename std::iterator_traits<SamplesIterator>::value_type>
  */
 template <typename SamplesIterator>
-std::vector<typename std::iterator_traits<SamplesIterator>::value_type> make_centroids(
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_centroids,
-    std::size_t            n_features) {
-    static_assert(std::is_floating_point<typename std::iterator_traits<SamplesIterator>::value_type>::value,
-                  "Data should be a floating point type.");
+auto make_centroids(const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    std::size_t            n_centroids)
+    -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
+    static_assert(std::is_trivial_v<typename std::iterator_traits<SamplesIterator>::value_type>,
+                  "Data must be trivial.");
 
     auto centroids = common::math::random::select_random_sample(samples_range_first, samples_range_last, n_features);
 
@@ -75,18 +75,18 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> make_cen
  * @tparam SamplesIterator
  * @param samples_range_first
  * @param samples_range_last
- * @param n_centroids
  * @param n_features
+ * @param n_centroids
  * @return std::vector<typename std::iterator_traits<SamplesIterator>::value_type>
  */
 template <typename SamplesIterator>
-std::vector<typename std::iterator_traits<SamplesIterator>::value_type> make_centroids_from_previous_centroid(
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_centroids,
-    std::size_t            n_features) {
-    static_assert(std::is_floating_point<typename std::iterator_traits<SamplesIterator>::value_type>::value,
-                  "Data should be a floating point type.");
+auto make_centroids_from_previous_centroid(const SamplesIterator& samples_range_first,
+                                           const SamplesIterator& samples_range_last,
+                                           std::size_t            n_features,
+                                           std::size_t            n_centroids)
+    -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
+    static_assert(std::is_trivial_v<typename std::iterator_traits<SamplesIterator>::value_type>,
+                  "Data must be trivial.");
 
     auto previous_centroid =
         common::math::random::select_random_sample(samples_range_first, samples_range_last, n_features);

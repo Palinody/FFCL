@@ -67,15 +67,15 @@ class BoruvkasAlgorithm {
 
     class Forest {
       public:
-        using ComponentRepresentativeType = IndexType;
+        using RepresentativeType = IndexType;
 
-        using ComponentType = std::unordered_set<ComponentRepresentativeType>;
+        using ComponentType = std::unordered_set<RepresentativeType>;
 
-        using ForestType = std::map<ComponentRepresentativeType, ComponentType>;
+        using RepresentativeToComponentMapType = std::map<RepresentativeType, ComponentType>;
 
-        using UnionFindType = datastruct::UnionFind<ComponentRepresentativeType>;
+        using UnionFindType = datastruct::UnionFind<RepresentativeType>;
 
-        using MinimumSpanningTreeType = mst::MinimumSpanningTree<ComponentRepresentativeType, ValueType>;
+        using MinimumSpanningTreeType = mst::MinimumSpanningTree<RepresentativeType, ValueType>;
 
         Forest(std::size_t n_samples)
           : n_samples_{n_samples}
@@ -83,7 +83,7 @@ class BoruvkasAlgorithm {
           , components_{}
           , union_find_{UnionFindType(n_samples_)} {
             minimum_spanning_tree_.reserve(n_samples_ - 1);
-
+            // each sample starts as its own component representative
             for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
                 components_[sample_index] = ComponentType{sample_index};
             }
@@ -193,7 +193,7 @@ class BoruvkasAlgorithm {
         // the container that accumulates the edges for the minimum spanning tree
         MinimumSpanningTreeType minimum_spanning_tree_;
         // the container mapping each component representative to the set of actual sample indices
-        ForestType components_;
+        RepresentativeToComponentMapType components_;
         // a union find data structure used to merge clusters based on sample indices from distinct clusters
         UnionFindType union_find_;
     };
@@ -346,10 +346,10 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
                                                                 Forest&                          forest) const {
-    using ComponentRepresentativeType = typename Forest::ComponentRepresentativeType;
-    using ComponentType               = typename Forest::ComponentType;
+    using RepresentativeType = typename Forest::RepresentativeType;
+    using ComponentType      = typename Forest::ComponentType;
 
-    auto smallest_component_representative = common::infinity<ComponentRepresentativeType>();
+    auto smallest_component_representative = common::infinity<RepresentativeType>();
     auto smallest_component                = ComponentType{};
     auto current_smallest_component_size   = common::infinity<IndexType>();
 
@@ -393,10 +393,10 @@ template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
                                                                 const CoreDistancesArrayPtr&     core_distances,
                                                                 Forest&                          forest) const {
-    using ComponentRepresentativeType = typename Forest::ComponentRepresentativeType;
-    using ComponentType               = typename Forest::ComponentType;
+    using RepresentativeType = typename Forest::RepresentativeType;
+    using ComponentType      = typename Forest::ComponentType;
 
-    auto smallest_component_representative = common::infinity<ComponentRepresentativeType>();
+    auto smallest_component_representative = common::infinity<RepresentativeType>();
     auto smallest_component                = ComponentType{};
     auto current_smallest_component_size   = common::infinity<IndexType>();
 

@@ -5,7 +5,6 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/common/math/random/VosesAliasMethod.hpp"
 #include "ffcl/kmeans/KMeans.hpp"
 
 namespace kmeans::benchmark {

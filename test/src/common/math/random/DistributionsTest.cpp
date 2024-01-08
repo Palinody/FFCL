@@ -160,6 +160,29 @@ TEST(Test2, SelectFromRangeTest) {
 }
 */
 
+/*
+#include "ffcl/common/math/random/VosesAliasMethod.hpp"
+
+TEST(Test2, SelectFromRangeTest) {
+    const auto probabilities = std::vector<int>{1, 2, 3, 4};
+    auto       histogram     = std::vector<std::size_t>(probabilities.size());
+
+    auto voses_alias_method = ffcl::common::math::random::VosesAliasMethod(probabilities);
+
+    static constexpr std::size_t n_tries = 1e8;
+
+    for (std::size_t try_index = 0; try_index < n_tries; ++try_index) {
+        ++histogram[voses_alias_method()];
+    }
+    const auto histogram_sum = std::accumulate(histogram.begin(), histogram.end(), 0.0f);
+
+    for (const auto& index : histogram) {
+        std::cout << index / histogram_sum << ", ";
+    }
+    std::cout << "\n";
+}
+*/
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

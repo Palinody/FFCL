@@ -113,7 +113,7 @@ class KMeansErrorsTest : public ::testing::Test {
         std::size_t            n_iterations = 1) {
         using KMeans = ffcl::KMeans<dType>;
 
-        auto kmeans = KMeans(n_centroids, n_features);
+        auto kmeans = KMeans(n_centroids);
 
         kmeans.set_options(
             /*KMeans options=*/KMeans::Options()
@@ -123,10 +123,12 @@ class KMeansErrorsTest : public ::testing::Test {
                 .patience(0)
                 .n_init(10));
 
-        const auto centroids = kmeans.fit<ffcl::Hamerly>(
-            samples_first, samples_last, ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
+        const auto centroids = kmeans.fit<ffcl::Hamerly>(/**/ samples_first,
+                                                         /**/ samples_last,
+                                                         /**/ n_features,
+                                                         /**/ ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 
-        const auto predictions = kmeans.predict(samples_first, samples_last);
+        const auto predictions = kmeans.predict(samples_first, samples_last, n_features);
 
         return {predictions, centroids};
     }
@@ -158,14 +160,18 @@ TEST_F(KMeansErrorsTest, SilhouetteTest) {
     // range n_centroids/n_medoids in [2, 10[
     for (std::size_t k = k_min; k < k_max; ++k) {
         // use any clustering algorithm that better suits your use case
-        KMeans kmeans(k, n_features);
+        KMeans kmeans(k);
         // fit the centroids (or medoids if it was KMedoids)
-        kmeans.fit(data.begin(), data.end());
+        kmeans.fit(data.begin(), data.end(), n_features);
         // map the samples to their closest centroid/medoid
-        const auto predictions = kmeans.predict(data.begin(), data.end());
+        const auto predictions = kmeans.predict(data.begin(), data.end(), n_features);
         // compute the silhouette scores for each sample
         const auto samples_silhouette_values = ffcl::common::math::heuristics::silhouette(
-            data.begin(), data.end(), n_features, predictions.begin(), predictions.end());
+            /**/ data.begin(),
+            /**/ data.end(),
+            /**/ n_features,
+            /**/ predictions.begin(),
+            /**/ predictions.end());
         // get the average score
         const auto average_silhouette = ffcl::common::math::heuristics::get_average_silhouette(
             samples_silhouette_values.begin(), samples_silhouette_values.end());

@@ -11,9 +11,6 @@ namespace ffcl {
 
 template <typename SamplesIterator>
 class Lloyd {
-    static_assert(std::is_floating_point_v<typename std::iterator_traits<SamplesIterator>::value_type>,
-                  "Lloyd allows floating point types.");
-
   public:
     static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
 
@@ -61,7 +58,6 @@ class Lloyd {
     DataType update_buffers();
 
     DatasetDescriptorType    dataset_descriptor_;
-    std::size_t              n_samples_;
     std::vector<DataType>    centroids_;
     std::unique_ptr<Buffers> buffers_ptr_;
     DataType                 loss_;
@@ -82,9 +78,6 @@ Lloyd<SamplesIterator>::Lloyd(const DatasetDescriptorType& dataset_descriptor,
                               const std::vector<DataType>& centroids,
                               const DataType&              loss)
   : dataset_descriptor_{dataset_descriptor}
-  , n_samples_{common::get_n_samples(std::get<0>(dataset_descriptor_),
-                                     std::get<1>(dataset_descriptor_),
-                                     std::get<2>(dataset_descriptor_))}
   , centroids_{centroids}
   , buffers_ptr_{std::make_unique<Buffers>(dataset_descriptor, centroids_)}
   , loss_{loss} {}
@@ -167,9 +160,9 @@ void Lloyd<SamplesIterator>::update_clusters() {
     buffers_ptr_->cluster_position_sums_ =
         kmeans::utils::compute_cluster_positions_sum(samples_range_first,
                                                      samples_range_last,
+                                                     n_features,
                                                      buffers_ptr_->samples_to_nearest_centroid_indices_.begin(),
-                                                     n_centroids,
-                                                     n_features);
+                                                     n_centroids);
 }
 
 template <typename SamplesIterator>

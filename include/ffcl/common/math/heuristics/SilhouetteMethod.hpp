@@ -30,8 +30,8 @@ namespace ffcl::common::math::heuristics {
  * @return std::vector<IndexType>
  */
 template <typename ClusterLabelsIterator>
-auto get_cluster_sizes(ClusterLabelsIterator cluster_labels_range_first,
-                       ClusterLabelsIterator cluster_labels_range_last) {
+auto get_cluster_sizes(const ClusterLabelsIterator& cluster_labels_range_first,
+                       const ClusterLabelsIterator& cluster_labels_range_last) {
     using ClusterLabelType = typename std::iterator_traits<ClusterLabelsIterator>::value_type;
 
     static_assert(std::is_integral<ClusterLabelType>::value, "Cluster labels must be integer.");
@@ -41,8 +41,10 @@ auto get_cluster_sizes(ClusterLabelsIterator cluster_labels_range_first,
     // n_labels = 1 + largest_label_index
     auto labels_histogram = std::vector<ClusterLabelType>(n_centroids);
 
-    while (cluster_labels_range_first != cluster_labels_range_last) {
-        ++labels_histogram[*(cluster_labels_range_first++)];
+    auto cluster_labels_range_it = cluster_labels_range_first;
+
+    while (cluster_labels_range_it != cluster_labels_range_last) {
+        ++labels_histogram[*(cluster_labels_range_it++)];
     }
     return labels_histogram;
 }
@@ -74,7 +76,7 @@ auto cohesion(const SamplesIterator&       samples_range_first,
 
     using ClusterLabelType = typename std::iterator_traits<ClusterLabelsIterator>::value_type;
 
-    static_assert(std::is_floating_point<ElementType>::value, "Samples must be float.");
+    static_assert(std::is_trivial_v<ElementType>, "ElementType must be trivial.");
 
     static_assert(std::is_integral<ClusterLabelType>::value, "Cluster labels must be integer.");
 
@@ -140,7 +142,7 @@ auto separation(const SamplesIterator&       samples_range_first,
 
     using ClusterLabelType = typename std::iterator_traits<ClusterLabelsIterator>::value_type;
 
-    static_assert(std::is_floating_point<ElementType>::value, "Samples must be float.");
+    static_assert(std::is_trivial_v<ElementType>, "ElementType must be trivial.");
 
     static_assert(std::is_integral<ClusterLabelType>::value, "Cluster labels must be integer.");
 
@@ -216,7 +218,7 @@ auto silhouette(const SamplesIterator&       samples_range_first,
 
     using ClusterLabelType = typename std::iterator_traits<ClusterLabelsIterator>::value_type;
 
-    static_assert(std::is_floating_point<ElementType>::value, "Samples must be float.");
+    static_assert(std::is_trivial_v<ElementType>, "ElementType must be trivial.");
 
     static_assert(std::is_integral<ClusterLabelType>::value, "Cluster labels must be integer.");
 

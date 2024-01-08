@@ -12,9 +12,6 @@ namespace ffcl {
 
 template <typename SamplesIterator>
 class Hamerly {
-    static_assert(std::is_floating_point_v<typename std::iterator_traits<SamplesIterator>::value_type>,
-                  "Hamerly allows floating point types.");
-
   public:
     static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
 
@@ -68,7 +65,6 @@ class Hamerly {
     auto update_bounds();
 
     DatasetDescriptorType    dataset_descriptor_;
-    std::size_t              n_samples_;
     std::vector<DataType>    centroids_;
     std::unique_ptr<Buffers> buffers_ptr_;
     DataType                 loss_;
@@ -90,9 +86,6 @@ Hamerly<SamplesIterator>::Hamerly(const DatasetDescriptorType& dataset_descripto
                                   const std::vector<DataType>& centroids,
                                   const DataType&              loss)
   : dataset_descriptor_{dataset_descriptor}
-  , n_samples_{common::get_n_samples(std::get<0>(dataset_descriptor_),
-                                     std::get<1>(dataset_descriptor_),
-                                     std::get<2>(dataset_descriptor_))}
   , centroids_{centroids}
   , buffers_ptr_{std::make_unique<Buffers>(dataset_descriptor, centroids_)}
   , loss_{loss} {}
@@ -133,11 +126,15 @@ void Hamerly<SamplesIterator>::swap_bounds() {
     auto& cluster_sizes         = buffers_ptr_->cluster_sizes_;
     auto& cluster_position_sums = buffers_ptr_->cluster_position_sums_;
 
-    for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
+    const auto n_samples = common::get_n_samples(/**/ std::get<0>(dataset_descriptor_),
+                                                 /**/ std::get<1>(dataset_descriptor_),
+                                                 /**/ std::get<2>(dataset_descriptor_));
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
         // triangular inequality
         const auto upper_bound_comparison =
-            std::max(static_cast<DataType>(0.5) * centroid_to_nearest_centroid_distances[assigned_centroid_index],
+            std::max(centroid_to_nearest_centroid_distances[assigned_centroid_index] / 2,
                      samples_to_second_nearest_centroid_distances[sample_index]);
         // first bound test
         if (samples_to_nearest_centroid_distances[sample_index] > upper_bound_comparison) {
@@ -272,7 +269,11 @@ auto Hamerly<SamplesIterator>::update_bounds() {
     auto& samples_to_second_nearest_centroid_distances = buffers_ptr_->samples_to_second_nearest_centroid_distances_;
     const auto& centroid_velocities                    = buffers_ptr_->centroid_velocities_;
 
-    for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
+    const auto n_samples = common::get_n_samples(/**/ std::get<0>(dataset_descriptor_),
+                                                 /**/ std::get<1>(dataset_descriptor_),
+                                                 /**/ std::get<2>(dataset_descriptor_));
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         const auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
         // move the upper bound by the same distance its assigned centroid has moved
         samples_to_nearest_centroid_distances[sample_index] += centroid_velocities[assigned_centroid_index];
@@ -313,9 +314,9 @@ Hamerly<SamplesIterator>::Buffers::Buffers(const SamplesIterator&       samples_
                                                         centroids.size() / n_features)}
   , cluster_position_sums_{kmeans::utils::compute_cluster_positions_sum(samples_range_first,
                                                                         samples_range_last,
+                                                                        n_features,
                                                                         samples_to_nearest_centroid_indices_.begin(),
-                                                                        centroids.size() / n_features,
-                                                                        n_features)}
+                                                                        centroids.size() / n_features)}
   , centroid_velocities_{std::vector<DataType>(centroids.size() / n_features)} {}
 
 template <typename SamplesIterator>

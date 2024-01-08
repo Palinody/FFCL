@@ -21,14 +21,14 @@ static inline std::mt19937& thread_local_mersenne_engine() {
     return mersienne_engine_thread_instance;
 }
 
-static inline std::mt19937& thread_local_mersenne_engine(std::size_t value) {
+static inline std::mt19937& thread_local_mersenne_engine(std::size_t seed) {
 #if defined(_OPENMP) && THREADS_ENABLED == true
-    value += omp_get_thread_num();
+    seed += omp_get_thread_num();
 
 #elif !defined(_OPENMP) && THREADS_ENABLED == true
-    value += std::hash<std::thread::id>{}(std::this_thread::get_id());
+    seed += std::hash<std::thread::id>{}(std::this_thread::get_id());
 #endif
-    static thread_local std::mt19937 mersienne_engine_thread_instance(value);
+    static thread_local std::mt19937 mersienne_engine_thread_instance(seed);
 
     return mersienne_engine_thread_instance;
 }
@@ -48,12 +48,12 @@ class uniform_distribution {
         return distribution_(thread_local_mersenne_engine());
     }
 
-    inline DataType operator()(std::size_t value) {
-        return distribution_(thread_local_mersenne_engine(value));
+    inline DataType operator()(std::size_t seed) {
+        return distribution_(thread_local_mersenne_engine(seed));
     }
 
   private:
-    using UniformDistributionType = std::conditional_t<std::is_integral<DataType>::value,
+    using UniformDistributionType = std::conditional_t<std::is_integral_v<DataType>,
                                                        std::uniform_int_distribution<DataType>,
                                                        std::uniform_real_distribution<DataType>>;
     UniformDistributionType distribution_;
@@ -82,12 +82,12 @@ class normal_distribution {
         return distribution_(thread_local_mersenne_engine());
     }
 
-    inline DataType operator()(std::size_t value) {
-        return distribution_(thread_local_mersenne_engine(value));
+    inline DataType operator()(std::size_t seed) {
+        return distribution_(thread_local_mersenne_engine(seed));
     }
 
   private:
-    using NormalDistributionType = std::conditional_t<std::is_integral<DataType>::value,
+    using NormalDistributionType = std::conditional_t<std::is_integral_v<DataType>,
                                                       std::binomial_distribution<DataType>,
                                                       std::normal_distribution<DataType>>;
 

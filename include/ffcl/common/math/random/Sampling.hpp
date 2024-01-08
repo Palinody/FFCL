@@ -126,8 +126,8 @@ auto select_n_random_indices_from_indices(const IndicesIterator& index_first,
 template <typename SamplesIterator>
 auto init_spatial_uniform(const SamplesIterator& samples_range_first,
                           const SamplesIterator& samples_range_last,
-                          std::size_t            n_centroids,
-                          std::size_t            n_features)
+                          std::size_t            n_features,
+                          std::size_t            n_centroids)
     -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
@@ -165,8 +165,8 @@ auto init_spatial_uniform(const SamplesIterator& samples_range_first,
 template <typename SamplesIterator>
 auto init_uniform(const SamplesIterator& samples_range_first,
                   const SamplesIterator& samples_range_last,
-                  std::size_t            n_centroids,
-                  std::size_t n_features) -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
+                  std::size_t            n_features,
+                  std::size_t n_centroids) -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);

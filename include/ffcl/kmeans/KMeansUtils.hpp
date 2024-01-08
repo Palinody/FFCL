@@ -134,9 +134,9 @@ template <typename SamplesIterator, typename IndicesIterator>
 std::vector<typename std::iterator_traits<SamplesIterator>::value_type> compute_cluster_positions_sum(
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last,
+    std::size_t            n_features,
     const IndicesIterator& samples_to_nearest_centroid_indices_first,
-    std::size_t            n_centroids,
-    std::size_t            n_features) {
+    std::size_t            n_centroids) {
     static_assert(std::is_integral_v<typename std::iterator_traits<IndicesIterator>::value_type>,
                   "Input elements type should be integral.");
 
@@ -147,7 +147,7 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> compute_
         std::vector<typename std::iterator_traits<SamplesIterator>::value_type>(n_centroids * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        const auto assigned_centroid_index = *(samples_to_nearest_centroid_indices_first + sample_index);
+        const auto assigned_centroid_index = samples_to_nearest_centroid_indices_first[sample_index];
 
         std::transform(cluster_positions_sum.begin() + assigned_centroid_index * n_features,
                        cluster_positions_sum.begin() + assigned_centroid_index * n_features + n_features,
