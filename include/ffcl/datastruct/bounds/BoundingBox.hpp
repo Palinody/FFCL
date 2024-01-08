@@ -125,7 +125,8 @@ class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
     template <typename OtherFeaturesIterator>
     constexpr bool is_in_bounds_impl(const OtherFeaturesIterator& other_features_range_first,
                                      const OtherFeaturesIterator& other_features_range_last) const {
-        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+        assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
+                                        std::distance(other_features_range_first, other_features_range_last)));
 
         const std::size_t n_features = std::distance(other_features_range_first, other_features_range_last);
 
@@ -144,7 +145,8 @@ class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
     template <typename OtherFeaturesIterator>
     constexpr auto distance_impl(const OtherFeaturesIterator& other_features_range_first,
                                  const OtherFeaturesIterator& other_features_range_last) const {
-        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+        assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
+                                        std::distance(other_features_range_first, other_features_range_last)));
 
         return common::math::heuristics::auto_distance(
             other_features_range_first, other_features_range_last, centroid_features_range_first_);
@@ -154,7 +156,8 @@ class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
     constexpr auto compute_distance_if_within_bounds_impl(
         const OtherFeaturesIterator& other_features_range_first,
         const OtherFeaturesIterator& other_features_range_last) const {
-        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+        assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
+                                        std::distance(other_features_range_first, other_features_range_last)));
 
         return is_in_bounds_impl(other_features_range_first, other_features_range_last)
                    ? std::optional<ValueType>(distance_impl(other_features_range_first, other_features_range_last))

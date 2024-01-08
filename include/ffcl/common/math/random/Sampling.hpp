@@ -8,77 +8,37 @@
 
 namespace ffcl::common::math::random {
 
-/**
- * @brief might have overlaps when n_choices is close to the range size
- *
- * @param n_choices the number of indices that will be selected
- * @param indices_range the pool of indices to choose from
- * @return std::vector<std::size_t>
- */
+// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 inline std::vector<std::size_t> select_from_range(std::size_t                                n_choices,
                                                   const std::pair<std::size_t, std::size_t>& indices_range) {
-    assert(indices_range.second - indices_range.first >= n_choices &&
-           "The number of random choice indices should be less or equal than the indices candidates.");
-    // the unique indices
-    std::vector<std::size_t> random_distinct_indices;
-    // keeps track of the indices that have already been generated as unique objects
-    std::unordered_set<std::size_t> generated_indices;
-    // range: [0, n_indices-1], upper bound included
-    uniform_distribution<std::size_t> random_number_generator(indices_range.first, indices_range.second - 1);
+    const std::size_t range_size = indices_range.second - indices_range.first;
 
-    while (random_distinct_indices.size() < n_choices) {
-        const auto index_candidate = random_number_generator();
-        // check if the index candidate is already in the set and adds it to both datastruct if not
-        if (generated_indices.find(index_candidate) == generated_indices.end()) {
-            random_distinct_indices.emplace_back(index_candidate);
-            generated_indices.insert(index_candidate);
-        }
-    }
-    return random_distinct_indices;
-}
+    assert(indices_range.first <= indices_range.second &&
+           "The first value of the indices range should be less or equal than the second.");
 
-/**
- * @brief not recommended for very large ranges since it will create a buffer for it that might take this amount of
- * memory but it wont have overlaps for n_choices ~= n_indices_candidates
- *
- * @param n_choices the number of indices that will be selected
- * @param indices_range the pool of indices to choose from
- * @return std::vector<std::size_t>
- */
-inline std::vector<std::size_t> select_from_range_buffered(std::size_t                                n_choices,
-                                                           const std::pair<std::size_t, std::size_t>& indices_range) {
-    // indices_range upper bound excluded
-    std::size_t n_indices_candidates = indices_range.second - indices_range.first;
-
-    assert(n_indices_candidates >= n_choices &&
+    assert(range_size >= n_choices &&
            "The number of random choice indices should be less or equal than the indices candidates.");
 
-    // the unique indices
-    std::vector<std::size_t> random_distinct_indices(n_choices);
-    // generate the initial indices sequence which elements will be drawn from
-    std::vector<std::size_t> initial_indices_candidates(n_indices_candidates);
-    std::iota(initial_indices_candidates.begin(), initial_indices_candidates.end(), indices_range.first);
+    std::vector<std::size_t> indices(range_size);
+    // Initialize indices with sequential values
+    std::iota(indices.begin(), indices.end(), indices_range.first);
 
-    for (auto& selected_index : random_distinct_indices) {
-        // range: [0, N-1], upper bound is included
-        uniform_distribution<std::size_t> random_number_generator(0, initial_indices_candidates.size() - 1);
-        // generate the index of the indices vector
-        const auto index_index = random_number_generator();
-        // get the actual value
-        const auto index_value = initial_indices_candidates[index_index];
-        // save the index value
-        selected_index = index_value;
-        // and remove it from the candidates to make it unavalable for ther next iteration
-        initial_indices_candidates.erase(initial_indices_candidates.begin() + index_index);
+    // Perform a partial shuffle of the first n_choices elements
+    for (std::size_t index = 0; index < n_choices; ++index) {
+        // range: [i, n_indices-1], upper bound included
+        std::swap(indices[index], indices[uniform_distribution<std::size_t>{index, n_choices - 1}()]);
     }
-    return random_distinct_indices;
+    // Resize the vector to keep only the first n_choices elements
+    indices.resize(n_choices);
+
+    return indices;
 }
 
 template <typename SamplesIterator>
-std::vector<typename std::iterator_traits<SamplesIterator>::value_type> select_random_sample(
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_features) {
+auto select_random_sample(const SamplesIterator& samples_range_first,
+                          const SamplesIterator& samples_range_last,
+                          std::size_t            n_features)
+    -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
@@ -92,11 +52,11 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> select_r
 }
 
 template <typename SamplesIterator>
-std::vector<typename std::iterator_traits<SamplesIterator>::value_type> select_n_random_samples(
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_features,
-    std::size_t            n_choices) {
+auto select_n_random_samples(const SamplesIterator& samples_range_first,
+                             const SamplesIterator& samples_range_last,
+                             std::size_t            n_features,
+                             std::size_t            n_choices)
+    -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
@@ -116,13 +76,13 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> select_n
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::vector<typename std::iterator_traits<SamplesIterator>::value_type> select_n_random_samples_from_indices(
-    const IndicesIterator& index_first,
-    const IndicesIterator& index_last,
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_features,
-    std::size_t            n_choices) {
+auto select_n_random_samples_from_indices(const IndicesIterator& index_first,
+                                          const IndicesIterator& index_last,
+                                          const SamplesIterator& samples_range_first,
+                                          const SamplesIterator& samples_range_last,
+                                          std::size_t            n_features,
+                                          std::size_t            n_choices)
+    -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     ignore_parameters(samples_range_last);
@@ -164,34 +124,34 @@ auto select_n_random_indices_from_indices(const IndicesIterator& index_first,
 }
 
 template <typename SamplesIterator>
-std::vector<typename std::iterator_traits<SamplesIterator>::value_type> init_spatial_uniform(
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_centroids,
-    std::size_t            n_features) {
-    using FloatType = typename std::iterator_traits<SamplesIterator>::value_type;
+auto init_spatial_uniform(const SamplesIterator& samples_range_first,
+                          const SamplesIterator& samples_range_last,
+                          std::size_t            n_centroids,
+                          std::size_t            n_features)
+    -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    auto centroids = std::vector<FloatType>(n_centroids * n_features);
+    auto centroids = std::vector<DataType>(n_centroids * n_features);
 
     // row vector buffers to keep track of min-max values
-    auto min_buffer = std::vector<FloatType>(n_features, std::numeric_limits<FloatType>::max());
-    auto max_buffer = std::vector<FloatType>(n_features, std::numeric_limits<FloatType>::min());
+    auto min_buffer = std::vector<DataType>(n_features, std::numeric_limits<DataType>::max());
+    auto max_buffer = std::vector<DataType>(n_features, std::numeric_limits<DataType>::min());
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            const FloatType curr_elem = *(samples_range_first + feature_index + sample_index * n_features);
+            const auto curr_elem      = samples_range_first[feature_index + sample_index * n_features];
             min_buffer[feature_index] = std::min(curr_elem, min_buffer[feature_index]);
             max_buffer[feature_index] = std::max(curr_elem, max_buffer[feature_index]);
         }
     }
-    using UniformDistributionPtr = typename std::unique_ptr<uniform_distribution<FloatType>>;
+    using UniformDistributionPtr = typename std::unique_ptr<uniform_distribution<DataType>>;
     // initialize a uniform random generatore w.r.t. each feature
     auto random_buffer = std::vector<UniformDistributionPtr>(n_features);
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
         random_buffer[feature_index] =
-            std::make_unique<uniform_distribution<FloatType>>(min_buffer[feature_index], max_buffer[feature_index]);
+            std::make_unique<uniform_distribution<DataType>>(min_buffer[feature_index], max_buffer[feature_index]);
     }
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -203,16 +163,15 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> init_spa
 }
 
 template <typename SamplesIterator>
-std::vector<typename std::iterator_traits<SamplesIterator>::value_type> init_uniform(
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_centroids,
-    std::size_t            n_features) {
-    using FloatType = typename std::iterator_traits<SamplesIterator>::value_type;
+auto init_uniform(const SamplesIterator& samples_range_first,
+                  const SamplesIterator& samples_range_last,
+                  std::size_t            n_centroids,
+                  std::size_t n_features) -> std::vector<typename std::iterator_traits<SamplesIterator>::value_type> {
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    auto centroids = std::vector<FloatType>(n_centroids * n_features);
+    auto centroids = std::vector<DataType>(n_centroids * n_features);
 
     const auto indices = select_from_range(n_centroids, {0, n_samples});
 

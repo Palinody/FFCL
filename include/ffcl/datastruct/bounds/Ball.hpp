@@ -104,7 +104,8 @@ class BallView : public StaticBound<BallView<FeaturesIterator>> {
     template <typename OtherFeaturesIterator>
     constexpr bool is_in_bounds_impl(const OtherFeaturesIterator& other_features_range_first,
                                      const OtherFeaturesIterator& other_features_range_last) const {
-        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+        assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
+                                        std::distance(other_features_range_first, other_features_range_last)));
 
         return distance_impl(other_features_range_first, other_features_range_last) < radius_;
     }
@@ -112,7 +113,8 @@ class BallView : public StaticBound<BallView<FeaturesIterator>> {
     template <typename OtherFeaturesIterator>
     constexpr auto distance_impl(const OtherFeaturesIterator& other_features_range_first,
                                  const OtherFeaturesIterator& other_features_range_last) const {
-        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+        assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
+                                        std::distance(other_features_range_first, other_features_range_last)));
 
         return common::math::heuristics::auto_distance(
             other_features_range_first, other_features_range_last, centroid_features_range_first_);
@@ -122,7 +124,8 @@ class BallView : public StaticBound<BallView<FeaturesIterator>> {
     constexpr auto compute_distance_if_within_bounds_impl(
         const OtherFeaturesIterator& other_features_range_first,
         const OtherFeaturesIterator& other_features_range_last) const {
-        assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
+        assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
+                                        std::distance(other_features_range_first, other_features_range_last)));
 
         const auto feature_distance = distance_impl(other_features_range_first, other_features_range_last);
 

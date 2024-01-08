@@ -121,6 +121,45 @@ TEST(Test2, OpenMPThreadsTest) {
 #endif
 }
 
+/*
+#include "ffcl/common/math/random/Sampling.hpp"
+
+#include <chrono>
+#include <iostream>
+#include <utility>
+
+template <typename Func, typename... Args>
+auto measure_execution_time(Func&& func, Args&&... args) {
+    using namespace std::chrono;
+
+    auto start = high_resolution_clock::now();
+    std::forward<Func>(func)(std::forward<Args>(args)...);  // Forwarding the function and its arguments
+    auto end = high_resolution_clock::now();
+
+    return duration_cast<microseconds>(end - start).count();  // You can change the time unit here
+}
+
+TEST(Test2, SelectFromRangeTest) {
+    for (std::size_t range_size = 9990; range_size < 10000; ++range_size) {
+        std::pair<std::size_t, std::size_t> indices_range = {0, range_size};
+        for (std::size_t n_choices = 9990; n_choices < range_size; ++n_choices) {
+            auto elapsed_time = measure_execution_time(
+                ffcl::common::math::random::select_from_range_deprecated, n_choices, indices_range);
+
+            std::cout << "range_size, n_choices: " << range_size << ", " << n_choices << " | " << elapsed_time
+                      << " microseconds\n";
+        }
+    }
+
+    const auto indices = ffcl::common::math::random::select_from_range(15, {5, 20});
+
+    for (const auto& index : indices) {
+        std::cout << index << ", ";
+    }
+    std::cout << "\n";
+}
+*/
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
