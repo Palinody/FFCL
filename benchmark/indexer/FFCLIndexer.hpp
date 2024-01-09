@@ -2,7 +2,7 @@
 
 #include "BaseIndexer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDTree.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
 #include <cmath>
 

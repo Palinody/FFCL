@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/spanning_tree/MinimumSpanningTree.hpp"
+#include "ffcl/datastruct/graph/spanning_tree/MinimumSpanningTree.hpp"
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
@@ -42,7 +42,7 @@ class BoruvkasAlgorithm {
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
     static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
-    using EdgeType = mst::Edge<IndexType, ValueType>;
+    using EdgeType = datastruct::mst::Edge<IndexType, ValueType>;
 
     using CoreDistancesArray    = std::unique_ptr<ValueType[]>;
     using CoreDistancesArrayPtr = std::shared_ptr<CoreDistancesArray>;
@@ -75,7 +75,7 @@ class BoruvkasAlgorithm {
 
         using UnionFindType = datastruct::UnionFind<RepresentativeType>;
 
-        using MinimumSpanningTreeType = mst::EdgesList<RepresentativeType, ValueType>;
+        using MinimumSpanningTreeType = datastruct::mst::EdgesList<RepresentativeType, ValueType>;
 
         Forest(std::size_t n_samples)
           : n_samples_{n_samples}

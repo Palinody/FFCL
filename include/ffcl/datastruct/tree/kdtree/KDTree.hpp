@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDNodeView.hpp"
-#include "ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp"
-#include "ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDNodeView.hpp"
+#include "ffcl/datastruct/tree/kdtree/policy/AxisSelectionPolicy.hpp"
+#include "ffcl/datastruct/tree/kdtree/policy/SplittingRulePolicy.hpp"
 
 #include "ffcl/common/math/random/Distributions.hpp"
 

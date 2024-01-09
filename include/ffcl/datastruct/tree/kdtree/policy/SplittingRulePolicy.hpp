@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp"
 
 namespace ffcl::datastruct::kdtree::policy {
 
@@ -43,10 +43,6 @@ struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, Samp
                std::size_t            n_features,
                std::size_t            feature_index) const;
 };
-
-}  // namespace ffcl::datastruct::kdtree::policy
-
-namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::tuple<std::size_t,

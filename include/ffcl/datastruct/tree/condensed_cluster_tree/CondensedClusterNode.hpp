@@ -2,11 +2,11 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
+#include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
 
 #include <memory>
 
-namespace ffcl {
+namespace ffcl::datastruct {
 
 template <typename Index, typename Value>
 struct CondensedClusterNode {
@@ -82,4 +82,4 @@ void CondensedClusterNode<Index, Value>::add_excess_of_mass(
     stability_ += single_linkage_cluster_node->size() * (lambda_value - lambda_min_);
 }
 
-}  // namespace ffcl
+}  // namespace ffcl::datastruct

@@ -1,13 +1,14 @@
+
 #include "ffcl/common/Utils.hpp"
 
 #include "Range2DBaseFixture.hpp"
 
 #include "gtest/gtest.h"
 
-#include "ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp"
+#include "ffcl/datastruct/tree/kdtree/policy/AxisSelectionPolicy.hpp"
 
 template <typename DataType>
-class SplittingRulePolicyTestFixture : public Range2DBaseFixture<DataType> {
+class AxisSelectionPolicyTestFixture : public Range2DBaseFixture<DataType> {
   public:
     void SetUp() override {
         if constexpr (std::is_integral_v<DataType> && std::is_signed_v<DataType>) {
@@ -38,9 +39,9 @@ class SplittingRulePolicyTestFixture : public Range2DBaseFixture<DataType> {
 };
 
 using DataTypes = ::testing::Types<int, std::size_t, float, double>;
-TYPED_TEST_SUITE(SplittingRulePolicyTestFixture, DataTypes);
+TYPED_TEST_SUITE(AxisSelectionPolicyTestFixture, DataTypes);
 
-TYPED_TEST(SplittingRulePolicyTestFixture, MainTest) {}
+TYPED_TEST(AxisSelectionPolicyTestFixture, MainTest) {}
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -3,7 +3,7 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDTree.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/hdbscan/HDBSCAN.hpp"
 
 #include <sys/types.h>  // std::ssize_t

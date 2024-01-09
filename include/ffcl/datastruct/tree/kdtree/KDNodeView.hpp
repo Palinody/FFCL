@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
+#include "ffcl/datastruct/BoundingBox.hpp"
 
 #include "ffcl/search/buffer/StaticBase.hpp"
 #include "ffcl/search/count/StaticBase.hpp"

@@ -3,9 +3,8 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDTree.hpp"
-#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
-#include "ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp"
+#include "ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>
@@ -16,7 +15,7 @@
 
 namespace fs = std::filesystem;
 
-class SingleLinkageClusterTreeErrorsTest : public ::testing::Test {
+class BoruvkasAlgorithmErrorsTest : public ::testing::Test {
   public:
     using dType = float;
 
@@ -149,11 +148,10 @@ class SingleLinkageClusterTreeErrorsTest : public ::testing::Test {
     static constexpr std::size_t n_iterations_global = 100;
     static constexpr std::size_t n_centroids_global  = 4;
 
-    const fs::path slink_folder_root_      = fs::path("../bin/single_linkage_cluster_tree");
-    const fs::path clustering_folder_root_ = fs::path("../bin/clustering");
-    const fs::path inputs_folder_          = clustering_folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_         = clustering_folder_root_ / fs::path("targets");
-    const fs::path predictions_folder_     = clustering_folder_root_ / fs::path("predictions");
+    const fs::path folder_root_        = fs::path("../bin/clustering");
+    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
+    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
+    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
 };
 
 std::vector<std::size_t> generate_indices(std::size_t n_samples) {
@@ -162,7 +160,7 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "noisy_circles.txt";
@@ -200,33 +198,20 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
-
-    fs::path slink_filename = filename.stem().string() + ".json";
-
-    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
-
-    const auto predictions = single_linkage_cluster_tree.predict();
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "noisy_moons.txt";
@@ -264,33 +249,20 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
-
-    fs::path slink_filename = filename.stem().string() + ".json";
-
-    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
-
-    const auto predictions = single_linkage_cluster_tree.predict();
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "varied.txt";
@@ -328,33 +300,20 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
-
-    fs::path slink_filename = filename.stem().string() + ".json";
-
-    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
-
-    const auto predictions = single_linkage_cluster_tree.predict();
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "aniso.txt";
@@ -392,33 +351,20 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
-
-    fs::path slink_filename = filename.stem().string() + ".json";
-
-    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
-
-    const auto predictions = single_linkage_cluster_tree.predict();
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "blobs.txt";
@@ -456,33 +402,20 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
-
-    fs::path slink_filename = filename.stem().string() + ".json";
-
-    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
-
-    const auto predictions = single_linkage_cluster_tree.predict();
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "no_structure.txt";
@@ -520,33 +453,20 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
-
-    fs::path slink_filename = filename.stem().string() + ".json";
-
-    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
-
-    const auto predictions = single_linkage_cluster_tree.predict();
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "unbalanced_blobs.txt";
@@ -584,52 +504,23 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
+
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
 
     timer.print_elapsed_seconds(9);
 
-    timer.reset();
-
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    single_linkage_cluster_tree.set_options(
-        ffcl::SingleLinkageClusterTree<std::size_t, dType>::Options().cut_level(1.4).min_cluster_size(15));
-
-    fs::path slink_filename = filename.stem().string() + ".json";
-
-    single_linkage_cluster_tree.serialize(slink_folder_root_ / slink_filename);
-
-    const auto predictions = single_linkage_cluster_tree.predict();
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
+TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
-    auto data = std::vector<float>({/**/ 1,
-                                    2,
-                                    /**/ 1.5,
-                                    2.2,
-                                    /**/ 2.5,
-                                    2.9,
-                                    /**/ 2,
-                                    3,
-                                    /**/ 4,
-                                    2,
-                                    /**/ 3,
-                                    3,
-                                    /**/ 3.5,
-                                    2.2,
-                                    /**/ 2.3,
-                                    2});
-
+    auto              data       = std::vector<float>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
     const std::size_t n_features = 2;
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
@@ -662,13 +553,15 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
 
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(5));
+    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(6));
 
     timer.reset();
 
     auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
 
-    ffcl::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
+    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
+
+    ffcl::datastruct::mst::print(ffcl::datastruct::mst::sort(std::move(minimum_spanning_tree)));
 
     timer.print_elapsed_seconds(9);
 }

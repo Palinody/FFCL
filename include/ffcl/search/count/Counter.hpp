@@ -17,7 +17,7 @@
 namespace ffcl::search::count {
 
 template <typename DistancesIterator, typename Bound>
-class Counter : public StaticCBase<Counter<DistancesIterator, Bound>> {
+class Counter : public StaticBase<Counter<DistancesIterator, Bound>> {
   public:
     static_assert(common::is_iterator<DistancesIterator>::value, "DistancesIterator is not an iterator");
 

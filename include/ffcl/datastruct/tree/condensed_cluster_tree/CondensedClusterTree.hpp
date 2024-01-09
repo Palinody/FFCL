@@ -1,14 +1,14 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDTree.hpp"
-#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
-#include "ffcl/hdbscan/CondensedClusterNode.hpp"
+#include "ffcl/datastruct/tree/condensed_cluster_tree/CondensedClusterNode.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
+#include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
 
 #include <map>
 #include <memory>
 
-namespace ffcl {
+namespace ffcl::datastruct {
 
 namespace fs = std::filesystem;
 
@@ -298,4 +298,4 @@ void CondensedClusterTree<Index, Value>::preorder_traversal_fill_shallowest_sele
     }
 }
 
-}  // namespace ffcl
+}  // namespace ffcl::datastruct

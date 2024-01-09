@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ffcl/datastruct/UnionFind.hpp"
-#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
-#include "ffcl/datastruct/spanning_tree/MinimumSpanningTree.hpp"
+#include "ffcl/datastruct/graph/spanning_tree/MinimumSpanningTree.hpp"
+#include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
 
 #include <memory>
 #include <numeric>
@@ -13,7 +13,7 @@
 
 #include "rapidjson/writer.h"
 
-namespace ffcl {
+namespace ffcl::datastruct {
 
 namespace fs = std::filesystem;
 
@@ -23,7 +23,7 @@ class SingleLinkageClusterTree {
     static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
 
   public:
-    using MinimumSpanningTreeType = mst::EdgesList<IndexType, ValueType>;
+    using MinimumSpanningTreeType = datastruct::mst::EdgesList<IndexType, ValueType>;
     using UnionFindType           = datastruct::UnionFind<IndexType>;
 
     using SingleLinkageClusterNodeType = SingleLinkageClusterNode<IndexType, ValueType>;
@@ -96,25 +96,25 @@ class SingleLinkageClusterTree {
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst)
-  : sorted_mst_{ffcl::mst::sort_copy(mst)}
+  : sorted_mst_{datastruct::mst::sort_copy(mst)}
   , root_{build()} {}
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst,
                                                                          const Options&                 options)
-  : sorted_mst_{ffcl::mst::sort_copy(mst)}
+  : sorted_mst_{datastruct::mst::sort_copy(mst)}
   , root_{build()}
   , options_{options} {}
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
-  : sorted_mst_{ffcl::mst::sort(std::move(mst))}
+  : sorted_mst_{datastruct::mst::sort(std::move(mst))}
   , root_{build()} {}
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst,
                                                                          const Options&            options)
-  : sorted_mst_{ffcl::mst::sort(std::move(mst))}
+  : sorted_mst_{datastruct::mst::sort(std::move(mst))}
   , root_{build()}
   , options_{options} {}
 
@@ -283,4 +283,4 @@ void SingleLinkageClusterTree<IndexType, ValueType>::serialize(const fs::path& f
     output_file.close();
 }
 
-}  // namespace ffcl
+}  // namespace ffcl::datastruct

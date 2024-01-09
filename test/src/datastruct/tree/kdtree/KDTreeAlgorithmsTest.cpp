@@ -1,4 +1,4 @@
-#include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp"
 #include "ffcl/common/Utils.hpp"
 
 #include "Range2DBaseFixture.hpp"

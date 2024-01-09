@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
-#include "ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp"
-#include "ffcl/hdbscan/CondensedClusterTree.hpp"
+#include "ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp"
+#include "ffcl/datastruct/tree/condensed_cluster_tree/CondensedClusterTree.hpp"
+#include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -92,23 +92,23 @@ template <typename Indexer>
 template <typename ForwardedIndexer>
 auto HDBSCAN<Indexer>::predict(ForwardedIndexer&& indexer) const {
     using BoruvkasAlgorithmOptionsType    = typename BoruvkasAlgorithm<Indexer>::Options;
-    using CondensedClusterTreeOptionsType = typename CondensedClusterTree<IndexType, ValueType>::Options;
+    using CondensedClusterTreeOptionsType = typename datastruct::CondensedClusterTree<IndexType, ValueType>::Options;
 
     const auto boruvkas_algorithm =
         BoruvkasAlgorithm<Indexer>(BoruvkasAlgorithmOptionsType().k_nearest_neighbors(options_.k_nearest_neighbors_));
 
     const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::forward<ForwardedIndexer>(indexer));
 
-    const auto single_linkage_cluster_tree = SingleLinkageClusterTree(std::move(minimum_spanning_tree));
+    const auto single_linkage_cluster_tree = datastruct::SingleLinkageClusterTree(std::move(minimum_spanning_tree));
 
     const auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
 
-    const auto condensed_cluster_tree =
-        CondensedClusterTree<IndexType, ValueType>(single_linkage_cluster_tree_root,
-                                                   CondensedClusterTreeOptionsType()
-                                                       .min_cluster_size(options_.min_cluster_size_)
-                                                       .return_leaf_nodes(options_.return_leaf_nodes_)
-                                                       .allow_single_cluster(options_.allow_single_cluster_));
+    const auto condensed_cluster_tree = datastruct::CondensedClusterTree<IndexType, ValueType>(
+        single_linkage_cluster_tree_root,
+        CondensedClusterTreeOptionsType()
+            .min_cluster_size(options_.min_cluster_size_)
+            .return_leaf_nodes(options_.return_leaf_nodes_)
+            .allow_single_cluster(options_.allow_single_cluster_));
 
     return condensed_cluster_tree.predict();
 }

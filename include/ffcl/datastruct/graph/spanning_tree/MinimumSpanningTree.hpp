@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-namespace ffcl::mst {
+namespace ffcl::datastruct::mst {
 
 template <typename Index, typename Distance>
 using Edge = std::tuple<Index, Index, Distance>;
@@ -48,4 +48,4 @@ void print(const EdgesList<Index, Distance>& mst) {
     std::cout << "\n";
 }
 
-}  // namespace ffcl::mst
+}  // namespace ffcl::datastruct::mst

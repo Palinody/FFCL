@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "ffcl/common/Timer.hpp"
-#include "ffcl/datastruct/kdtree/KDTree.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
 #include <sys/types.h>  // std::ssize_t
 #include <filesystem>

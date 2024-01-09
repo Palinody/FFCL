@@ -8,7 +8,7 @@
 
 #include "rapidjson/writer.h"
 
-namespace ffcl {
+namespace ffcl::datastruct {
 
 template <typename IndexType, typename ValueType>
 struct SingleLinkageClusterNode {
@@ -98,4 +98,4 @@ void SingleLinkageClusterNode<IndexType, ValueType>::serialize(
     writer.Int64(cluster_size_);
 }
 
-}  // namespace ffcl
+}  // namespace ffcl::datastruct

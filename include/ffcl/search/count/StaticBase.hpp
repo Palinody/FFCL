@@ -9,7 +9,7 @@
 namespace ffcl::search::count {
 
 template <class DerivedCounter>
-struct StaticCBase {
+struct StaticBase {
     template <typename DerivedType = DerivedCounter>
     constexpr auto centroid_begin() const {
         return static_cast<const DerivedType*>(this)->centroid_begin_impl();

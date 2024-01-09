@@ -5,7 +5,7 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/kdtree/KDTree.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>

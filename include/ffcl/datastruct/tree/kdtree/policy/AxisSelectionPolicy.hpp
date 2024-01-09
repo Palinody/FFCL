@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/FeatureMaskArray.hpp"
-#include "ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp"
+#include "ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp"
 
 #include <array>
 
@@ -136,10 +136,6 @@ class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIt
     // contains the sequence of feature indices of interest
     std::vector<std::size_t> feature_mask_;
 };
-
-}  // namespace ffcl::datastruct::kdtree::policy
-
-namespace ffcl::datastruct::kdtree::policy {
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(

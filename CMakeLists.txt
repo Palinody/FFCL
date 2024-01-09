@@ -47,21 +47,21 @@ set(HEADER_FILES
 
     include/ffcl/search/Search.hpp
 
-    include/ffcl/datastruct/kdtree/policy/AxisSelectionPolicy.hpp
-    include/ffcl/datastruct/kdtree/policy/SplittingRulePolicy.hpp
-    include/ffcl/datastruct/kdtree/KDNodeView.hpp
-    include/ffcl/datastruct/kdtree/KDTreeAlgorithms.hpp
-    include/ffcl/datastruct/kdtree/KDTree.hpp
+    include/ffcl/datastruct/tree/kdtree/policy/AxisSelectionPolicy.hpp
+    include/ffcl/datastruct/tree/kdtree/policy/SplittingRulePolicy.hpp
+    include/ffcl/datastruct/tree/kdtree/KDNodeView.hpp
+    include/ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp
+    include/ffcl/datastruct/tree/kdtree/KDTree.hpp
+
+    include/ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
+
+    include/ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp
 
     include/ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp
     include/ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp
 
     include/ffcl/datastruct/FeatureMaskArray.hpp
     include/ffcl/datastruct/BoundingBox.hpp
-
-    include/ffcl/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
-
-    include/ffcl/datastruct/spanning_tree/BoruvkasAlgorithm.hpp
 
     include/ffcl/common/math/random/Distributions.hpp
     include/ffcl/common/math/random/VosesAliasMethod.hpp
@@ -436,7 +436,7 @@ elseif(MODE STREQUAL "gtest")
         CondensedClusterTreeTest
 
         # ---
-        test/src/hdbscan/CondensedClusterTreeTest.cpp
+        test/src/datastruct/tree/condensed_cluster_tree/CondensedClusterTreeTest.cpp
     )
     target_link_libraries(
         CondensedClusterTreeTest
@@ -476,7 +476,7 @@ elseif(MODE STREQUAL "gtest")
         KDTreeAlgorithmsTest
 
         # ---
-        test/src/datastruct/kdtree/KDTreeAlgorithmsTest.cpp
+        test/src/datastruct/tree/kdtree/KDTreeAlgorithmsTest.cpp
     )
     target_link_libraries(
         KDTreeAlgorithmsTest
@@ -496,7 +496,7 @@ elseif(MODE STREQUAL "gtest")
         SplittingRulePolicyTest
 
         # ---
-        test/src/datastruct/kdtree/policy/SplittingRulePolicyTest.cpp
+        test/src/datastruct/tree/kdtree/policy/SplittingRulePolicyTest.cpp
     )
     target_link_libraries(
         SplittingRulePolicyTest
@@ -516,7 +516,7 @@ elseif(MODE STREQUAL "gtest")
         AxisSelectionPolicyTest
 
         # ---
-        test/src/datastruct/kdtree/policy/AxisSelectionPolicyTest.cpp
+        test/src/datastruct/tree/kdtree/policy/AxisSelectionPolicyTest.cpp
     )
     target_link_libraries(
         AxisSelectionPolicyTest
@@ -536,7 +536,7 @@ elseif(MODE STREQUAL "gtest")
         KDTreeTest
 
         # ---
-        test/src/datastruct/kdtree/KDTreeTest.cpp
+        test/src/datastruct/tree/kdtree/KDTreeTest.cpp
     )
     target_link_libraries(
         KDTreeTest
@@ -556,7 +556,7 @@ elseif(MODE STREQUAL "gtest")
         BoruvkasAlgorithmTest
 
         # ---
-        test/src/datastruct/spanning_tree/BoruvkasAlgorithmTest.cpp
+        test/src/datastruct/graph/spanning_tree/BoruvkasAlgorithmTest.cpp
     )
     target_link_libraries(
         BoruvkasAlgorithmTest
@@ -576,7 +576,7 @@ elseif(MODE STREQUAL "gtest")
         SingleLinkageClusterTreeTest
 
         # ---
-        test/src/datastruct/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
+        test/src/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
     )
     target_link_libraries(
         SingleLinkageClusterTreeTest
