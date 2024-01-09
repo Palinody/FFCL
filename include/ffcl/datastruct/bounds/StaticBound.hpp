@@ -47,6 +47,16 @@ struct StaticBound {
     }
 
     template <typename DerivedType = DerivedClass>
+    constexpr auto upper_bound() const {
+        return upper_bound();
+    }
+
+    template <typename DerivedType = DerivedClass>
+    constexpr auto upper_bound(std::size_t feature_index) const {
+        return upper_bound(feature_index);
+    }
+
+    template <typename DerivedType = DerivedClass>
     constexpr auto centroid_begin() const {
         return static_cast<const DerivedType*>(this)->centroid_begin_impl();
     }
