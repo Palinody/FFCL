@@ -48,12 +48,12 @@ struct StaticBound {
 
     template <typename DerivedType = DerivedClass>
     constexpr auto upper_bound() const {
-        return upper_bound();
+        return length_from_centroid();
     }
 
     template <typename DerivedType = DerivedClass>
     constexpr auto upper_bound(std::size_t feature_index) const {
-        return upper_bound(feature_index);
+        return length_from_centroid(feature_index);
     }
 
     template <typename DerivedType = DerivedClass>
