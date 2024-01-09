@@ -130,39 +130,33 @@ class BoruvkasAlgorithm {
             const auto sample_index_1 = std::get<0>(edge);
             const auto sample_index_2 = std::get<1>(edge);
 
-            // get which components they belong to
-            const auto component_label_1 = union_find_.find(sample_index_1);
-            const auto component_label_2 = union_find_.find(sample_index_2);
+            // get which component belongs to which representative before the merge
+            const auto representative_1 = union_find_.find(sample_index_1);
+            const auto representative_2 = union_find_.find(sample_index_2);
 
             // return if both samples belong to the same component
-            if (component_label_1 == component_label_2) {
+            if (representative_1 == representative_2) {
                 return;
             }
-            // theres nothing to merge if the components is empty
-            if (components_[component_label_1].empty()) {
-                components_.erase(component_label_1);
-                return;
-            }
-            // theres nothing to merge if the components is empty
-            if (components_[component_label_2].empty()) {
-                components_.erase(component_label_2);
-                return;
-            }
-            // merge the samples in the union find datastructure
-            union_find_.merge(sample_index_1, sample_index_2);
+            // merge the sets based on the 2 samples and return the common representative of the newly formed set
+            const auto common_representative = union_find_.merge(sample_index_1, sample_index_2);
 
-            // find the component that will be the final one and the discarded one based on the union_find structure
-            const auto [final_component, discarded_component] =
-                (component_label_1 == union_find_.find(sample_index_1))
-                    ? std::make_pair(component_label_1, component_label_2)
-                    : std::make_pair(component_label_2, component_label_1);
+            // Determine which component will be retained and which will be discarded.
+            // The Union-Find structure selects the final representative based on rank comparison,
+            // ensuring that the component with the smaller size is the one that gets moved.
+            // This decision is made by comparing the representatives before the merge to the common representative
+            // determined by UnionFind after the merge.
+            const auto [retained_representative, discarded_representative] =
+                (representative_1 == common_representative) ? std::make_pair(representative_1, representative_2)
+                                                            : std::make_pair(representative_2, representative_1);
 
             // move the indices from the component that will be discarded to the final one
-            components_[final_component].insert(std::make_move_iterator(components_[discarded_component].cbegin()),
-                                                std::make_move_iterator(components_[discarded_component].cend()));
+            components_[retained_representative].insert(
+                std::make_move_iterator(components_[discarded_representative].cbegin()),
+                std::make_move_iterator(components_[discarded_representative].cend()));
 
             // now that the old component has been merged with the final one, clear it
-            components_.erase(discarded_component);
+            components_.erase(discarded_representative);
 
             // update the minimum spanning tree
             minimum_spanning_tree_.emplace_back(edge);

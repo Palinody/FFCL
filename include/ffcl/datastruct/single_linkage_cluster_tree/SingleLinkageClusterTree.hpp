@@ -188,16 +188,16 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
         nodes[cluster_index] = std::make_shared<SingleLinkageClusterNodeType>(cluster_index);
     }
     for (const auto& [sample_index_1, sample_index_2, samples_edge_weight] : sorted_mst_) {
-        // find in which cluster index the samples are currently in
+        // find in which cluster index the samples are currently in, before being merged
         const auto representative_1 = union_find.find(sample_index_1);
         const auto representative_2 = union_find.find(sample_index_2);
-
-        if (union_find.merge(sample_index_1, sample_index_2)) {
-            const auto new_representative = union_find.find(sample_index_1);
-
+        // merge the disjoints sets based on the 2 samples and return the common representative of the newly formed set
+        const auto common_representative = union_find.merge(sample_index_1, sample_index_2);
+        // this condition checks if a merge happened based on the old representative values
+        if (common_representative != representative_1 || common_representative != representative_2) {
             // create a new node, if we have reached a new level, that will agglomerate its children
             auto cluster_node = std::make_shared<SingleLinkageClusterNodeType>(
-                new_representative,
+                common_representative,
                 samples_edge_weight,
                 nodes[representative_1]->size() + nodes[representative_2]->size());
 
@@ -213,7 +213,7 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
             nodes.erase(representative_1);
             nodes.erase(representative_2);
             // place the new cluster node. It might be created at one of the prevous nodes' emplacement
-            nodes[new_representative] = std::move(cluster_node);
+            nodes[common_representative] = std::move(cluster_node);
         }
     }
     return nodes.begin()->second;

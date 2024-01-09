@@ -8,14 +8,14 @@
 
 namespace ffcl::mst {
 
-template <typename Index, typename Value>
-using Edge = std::tuple<Index, Index, Value>;
+template <typename Index, typename Distance>
+using Edge = std::tuple<Index, Index, Distance>;
 
-template <typename Index, typename Value>
-using EdgesList = std::vector<Edge<Index, Value>>;
+template <typename Index, typename Distance>
+using EdgesList = std::vector<Edge<Index, Distance>>;
 
-template <typename Index, typename Value>
-auto sort(EdgesList<Index, Value>&& mst) {
+template <typename Index, typename Distance>
+auto sort(EdgesList<Index, Distance>&& mst) {
     auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
         return std::get<2>(edge_1) < std::get<2>(edge_2);
     };
@@ -25,8 +25,8 @@ auto sort(EdgesList<Index, Value>&& mst) {
     return mst;
 }
 
-template <typename Index, typename Value>
-auto sort_copy(const EdgesList<Index, Value>& mst) {
+template <typename Index, typename Distance>
+auto sort_copy(const EdgesList<Index, Distance>& mst) {
     auto mst_copy = mst;
 
     auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
@@ -38,8 +38,8 @@ auto sort_copy(const EdgesList<Index, Value>& mst) {
     return mst_copy;
 }
 
-template <typename Index, typename Value>
-void print(const EdgesList<Index, Value>& mst) {
+template <typename Index, typename Distance>
+void print(const EdgesList<Index, Distance>& mst) {
     std::cout << "Minimum Spanning Tree (MST):\n";
 
     for (const auto& edge : mst) {
