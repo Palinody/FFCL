@@ -75,7 +75,7 @@ class BoruvkasAlgorithm {
 
         using UnionFindType = datastruct::UnionFind<RepresentativeType>;
 
-        using MinimumSpanningTreeType = mst::MinimumSpanningTree<RepresentativeType, ValueType>;
+        using MinimumSpanningTreeType = mst::EdgesList<RepresentativeType, ValueType>;
 
         Forest(std::size_t n_samples)
           : n_samples_{n_samples}

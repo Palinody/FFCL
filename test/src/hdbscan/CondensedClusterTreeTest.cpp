@@ -129,21 +129,20 @@ TEST_F(CondensedClusterTreeErrorsTest, MainTest) {
     printf("Boruvka's MST build:\n");
     timer.reset();
 
-    auto minimum_spanning_tree =
-        ffcl::mst::MinimumSpanningTree<IndexType, ValueType>{ ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{},
-                                                              ffcl::mst::Edge<IndexType, ValueType>{}};
+    auto minimum_spanning_tree = ffcl::mst::EdgesList<IndexType, ValueType>{ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{},
+                                                                            ffcl::mst::Edge<IndexType, ValueType>{}};
 
     timer.print_elapsed_seconds(9);
 

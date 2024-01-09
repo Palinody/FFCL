@@ -25,30 +25,31 @@ class UnionFind {
 
   private:
     std::size_t                  n_samples_;
-    std::unique_ptr<IndexType[]> labels_;
+    std::unique_ptr<IndexType[]> parents_;
     std::unique_ptr<IndexType[]> ranks_;
 };
 
 template <typename IndexType>
 UnionFind<IndexType>::UnionFind(std::size_t n_samples)
   : n_samples_{n_samples}
-  , labels_{std::make_unique<IndexType[]>(n_samples)}
+  , parents_{std::make_unique<IndexType[]>(n_samples)}
   , ranks_{std::make_unique<IndexType[]>(n_samples)} {
-    std::iota(labels_.get(), labels_.get() + n_samples, static_cast<IndexType>(0));
+    // set each element as its own parent
+    std::iota(parents_.get(), parents_.get() + n_samples, static_cast<IndexType>(0));
 }
 
 template <typename IndexType>
 UnionFind<IndexType>::UnionFind(std::size_t n_samples, std::unique_ptr<IndexType[]> labels)
   : n_samples_{n_samples}
-  , labels_{std::move(labels)}
+  , parents_{std::move(labels)}
   , ranks_{std::make_unique<IndexType[]>(n_samples)} {}
 
 template <typename IndexType>
 IndexType UnionFind<IndexType>::find(IndexType index) const {
-    while (index != labels_[index]) {
-        // set the label of each examined node to the root
-        const auto temp = labels_[index];
-        labels_[index]  = labels_[temp];
+    while (index != parents_[index]) {
+        // set the label of each examined node to the representative
+        const auto temp = parents_[index];
+        parents_[index] = parents_[temp];
         index           = temp;
     }
     return index;
@@ -63,14 +64,14 @@ bool UnionFind<IndexType>::merge(const IndexType& index_1, const IndexType& inde
         return false;
 
     } else if (ranks_[representative_1] == ranks_[representative_2]) {
-        labels_[representative_2] = labels_[representative_1];
+        parents_[representative_2] = parents_[representative_1];
         ++ranks_[representative_1];
 
     } else if (ranks_[representative_1] > ranks_[representative_2]) {
-        labels_[representative_2] = representative_1;
+        parents_[representative_2] = representative_1;
 
     } else {
-        labels_[representative_1] = representative_2;
+        parents_[representative_1] = representative_2;
     }
     return true;
 }
@@ -85,7 +86,7 @@ void UnionFind<IndexType>::print() const {
 
     std::cout << "Parents:\n";
     for (std::size_t index = 0; index < n_samples_; ++index) {
-        std::cout << labels_[index] << " ";
+        std::cout << parents_[index] << " ";
     }
     std::cout << "\n";
 

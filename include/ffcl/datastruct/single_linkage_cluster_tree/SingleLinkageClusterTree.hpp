@@ -23,7 +23,7 @@ class SingleLinkageClusterTree {
     static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
 
   public:
-    using MinimumSpanningTreeType = mst::MinimumSpanningTree<IndexType, ValueType>;
+    using MinimumSpanningTreeType = mst::EdgesList<IndexType, ValueType>;
     using UnionFindType           = datastruct::UnionFind<IndexType>;
 
     using SingleLinkageClusterNodeType = SingleLinkageClusterNode<IndexType, ValueType>;
