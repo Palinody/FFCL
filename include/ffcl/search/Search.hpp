@@ -24,15 +24,15 @@ class Searcher {
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
     static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
-    using KDNodeViewPtr = typename ReferenceIndexer::KDNodeViewPtr;
+    using NodePtr = typename ReferenceIndexer::NodePtr;
 
-    static_assert(common::is_raw_or_smart_ptr<KDNodeViewPtr>(), "KDNodeViewPtr is not a row or smart pointer");
+    static_assert(common::is_raw_or_smart_ptr<NodePtr>(), "NodePtr is not a raw or smart pointer");
 
   public:
     explicit Searcher(ReferenceIndexer&& reference_indexer);
 
-    template <typename Buffer>
-    Buffer operator()(Buffer&& buffer) const;
+    template <typename ForwardedBuffer>
+    ForwardedBuffer operator()(ForwardedBuffer&& buffer) const;
 
     std::size_t n_samples() const;
 
@@ -52,12 +52,12 @@ Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
   : single_tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
-template <typename Buffer>
-Buffer Searcher<ReferenceIndexer>::operator()(Buffer&& buffer) const {
-    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                  "Provided a Buffer that does not inherit from StaticBase<Derived>");
+template <typename ForwardedBuffer>
+ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
+    static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
+                  "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
 
-    return single_tree_traverser_(std::forward<Buffer>(buffer));
+    return single_tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
 }
 
 template <typename ReferenceIndexer>

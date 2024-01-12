@@ -14,9 +14,9 @@ struct SplittingRulePolicy {
     virtual ~SplittingRulePolicy() = default;
 
     inline virtual std::tuple<std::size_t,
-                              bbox::IteratorPairType<IndicesIterator>,
-                              bbox::IteratorPairType<IndicesIterator>,
-                              bbox::IteratorPairType<IndicesIterator>>
+                              std::pair<IndicesIterator, IndicesIterator>,
+                              std::pair<IndicesIterator, IndicesIterator>,
+                              std::pair<IndicesIterator, IndicesIterator>>
     operator()(const IndicesIterator& indices_range_first,
                const IndicesIterator& indices_range_last,
                const SamplesIterator& samples_range_first,
@@ -32,29 +32,28 @@ struct QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, Samp
 
     QuickselectMedianRange() = default;
 
-    inline std::tuple<std::size_t,
-                      bbox::IteratorPairType<IndicesIterator>,
-                      bbox::IteratorPairType<IndicesIterator>,
-                      bbox::IteratorPairType<IndicesIterator>>
-    operator()(const IndicesIterator& indices_range_first,
-               const IndicesIterator& indices_range_last,
-               const SamplesIterator& samples_range_first,
-               const SamplesIterator& samples_range_last,
-               std::size_t            n_features,
-               std::size_t            feature_index) const;
+    inline auto operator()(const IndicesIterator& indices_range_first,
+                           const IndicesIterator& indices_range_last,
+                           const SamplesIterator& samples_range_first,
+                           const SamplesIterator& samples_range_last,
+                           std::size_t            n_features,
+                           std::size_t            feature_index) const -> std::tuple<std::size_t,
+                                                                          std::pair<IndicesIterator, IndicesIterator>,
+                                                                          std::pair<IndicesIterator, IndicesIterator>,
+                                                                          std::pair<IndicesIterator, IndicesIterator>>;
 };
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::tuple<std::size_t,
-           bbox::IteratorPairType<IndicesIterator>,
-           bbox::IteratorPairType<IndicesIterator>,
-           bbox::IteratorPairType<IndicesIterator>>
-QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(const IndicesIterator& indices_range_first,
-                                                                     const IndicesIterator& indices_range_last,
-                                                                     const SamplesIterator& samples_range_first,
-                                                                     const SamplesIterator& samples_range_last,
-                                                                     std::size_t            n_features,
-                                                                     std::size_t            feature_index) const {
+auto QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(const IndicesIterator& indices_range_first,
+                                                                          const IndicesIterator& indices_range_last,
+                                                                          const SamplesIterator& samples_range_first,
+                                                                          const SamplesIterator& samples_range_last,
+                                                                          std::size_t            n_features,
+                                                                          std::size_t            feature_index) const
+    -> std::tuple<std::size_t,
+                  std::pair<IndicesIterator, IndicesIterator>,
+                  std::pair<IndicesIterator, IndicesIterator>,
+                  std::pair<IndicesIterator, IndicesIterator>> {
     return kdtree::algorithms::quickselect_median(
         /**/ indices_range_first,
         /**/ indices_range_last,

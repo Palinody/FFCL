@@ -30,22 +30,22 @@ namespace fs = std::filesystem;
 template <typename IndicesIterator, typename SamplesIterator>
 class KDTree {
   public:
-    using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
-    using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
-
-    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
-    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
-
     using IndicesIteratorType = IndicesIterator;
     using SamplesIteratorType = SamplesIterator;
 
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
     static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
-    using KDNodeViewType = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewType;
-    using KDNodeViewPtr  = typename KDNodeView<IndicesIterator, SamplesIterator>::KDNodeViewPtr;
+    using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
+    using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
 
-    using HyperRangeType = bbox::HyperRangeType<SamplesIterator>;
+    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
+    using NodeType = typename KDNodeView<IndicesIterator, DataType>::NodeType;
+    using NodePtr  = typename KDNodeView<IndicesIterator, DataType>::NodePtr;
+
+    using HyperIntervalType = HyperInterval<SamplesIterator>;
 
     struct Options {
         Options()
@@ -58,7 +58,7 @@ class KDTree {
 
         Options(const Options&) = default;
 
-        Options& operator=(const Options& options) = default;
+        Options& operator=(const Options&) = default;
 
         Options& bucket_size(std::size_t bucket_size) {
             bucket_size_ = bucket_size;
@@ -151,16 +151,16 @@ class KDTree {
 
     // serialization
 
-    void serialize(const KDNodeViewPtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
+    void serialize(const NodePtr& kdnode, rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 
     void serialize(const fs::path& filepath) const;
 
   private:
-    KDNodeViewPtr build(const IndicesIterator& indices_range_first,
-                        const IndicesIterator& indices_range_last,
-                        ssize_t                cut_feature_index,
-                        std::size_t            depth,
-                        HyperRangeType&        kd_bounding_box);
+    NodePtr build(const IndicesIterator& indices_range_first,
+                  const IndicesIterator& indices_range_last,
+                  ssize_t                feature_cut_index,
+                  std::size_t            depth,
+                  HyperIntervalType&     hyper_interval);
 
     // Options used to configure the indexing structure.
     Options options_;
@@ -172,9 +172,9 @@ class KDTree {
     std::size_t n_features_;
     // A hyperrectangle (bounding box) specifying the value bounds of the subset of data represented by the index array
     // from the entire dataset. This hyperrectangle is defined with respect to each dimension.
-    HyperRangeType kd_bounding_box_;
+    HyperIntervalType hyper_interval_;
     // The root node of the indexing structure.
-    KDNodeViewPtr root_;
+    NodePtr root_;
 };
 
 //  Class Template Argument Deduction (CTAD) guide
@@ -197,11 +197,11 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
   , samples_range_first_{samples_range_first}
   , samples_range_last_{samples_range_last}
   , n_features_{n_features}
-  , kd_bounding_box_{bbox::make_kd_bounding_box(indices_range_first,
-                                                indices_range_last,
-                                                samples_range_first_,
-                                                samples_range_last_,
-                                                n_features_)}
+  , hyper_interval_{make_hyper_interval(indices_range_first,
+                                        indices_range_last,
+                                        samples_range_first_,
+                                        samples_range_last_,
+                                        n_features_)}
   , root_{build(indices_range_first,
                 indices_range_last,
                 (*options_.axis_selection_policy_ptr_)(indices_range_first,
@@ -210,9 +210,9 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
                                                        samples_range_last_,
                                                        n_features_,
                                                        0,
-                                                       kd_bounding_box_),
+                                                       hyper_interval_),
                 0,
-                kd_bounding_box_)} {}
+                hyper_interval_)} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
@@ -220,7 +220,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
   , samples_range_first_{other.samples_range_first_}
   , samples_range_last_{other.samples_range_last_}
   , n_features_{other.n_features_}
-  , kd_bounding_box_{other.kd_bounding_box_}
+  , hyper_interval_{other.hyper_interval_}
   , root_{other.root_} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -229,7 +229,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(KDTree&& other) noexcept
   , samples_range_first_{std::move(other.samples_range_first_)}
   , samples_range_last_{std::move(other.samples_range_last_)}
   , n_features_{std::move(other.n_features_)}
-  , kd_bounding_box_{std::move(other.kd_bounding_box_)}
+  , hyper_interval_{std::move(other.hyper_interval_)}
   , root_{std::move(other.root_)} {}
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -283,26 +283,26 @@ constexpr auto KDTree<IndicesIterator, SamplesIterator>::features_range_last(std
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesIterator, SamplesIterator>::build(
+typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterator, SamplesIterator>::build(
     const IndicesIterator& indices_range_first,
     const IndicesIterator& indices_range_last,
-    ssize_t                cut_feature_index,
+    ssize_t                feature_cut_index,
     std::size_t            depth,
-    HyperRangeType&        kd_bounding_box) {
-    KDNodeViewPtr kdnode;
+    HyperIntervalType&     hyper_interval) {
+    NodePtr kdnode;
     // number of samples in the current node
     const std::size_t n_node_samples = std::distance(indices_range_first, indices_range_last);
     // if the current number of samples is greater than the target bucket size, the node is not leaf
     if (depth < options_.max_depth_ && n_node_samples > options_.bucket_size_) {
-        // select the cut_feature_index according to the one with the most spread (min-max values)
-        cut_feature_index = (*options_.axis_selection_policy_ptr_)(
+        // select the feature_cut_index according to the one with the most spread (min-max values)
+        feature_cut_index = (*options_.axis_selection_policy_ptr_)(
             /**/ indices_range_first,
             /**/ indices_range_last,
             /**/ samples_range_first_,
             /**/ samples_range_last_,
             /**/ n_features_,
             /**/ depth,
-            /**/ kd_bounding_box);
+            /**/ hyper_interval);
 
         // left_partition_range, middle_partition_range, right_partition_range
         auto [cut_index, left_indices_range, cut_indices_range, right_indices_range] =
@@ -312,58 +312,61 @@ typename KDTree<IndicesIterator, SamplesIterator>::KDNodeViewPtr KDTree<IndicesI
                 /**/ samples_range_first_,
                 /**/ samples_range_last_,
                 /**/ n_features_,
-                /**/ cut_feature_index);
+                /**/ feature_cut_index);
 
         common::ignore_parameters(cut_index);
 
-        kdnode =
-            std::make_shared<KDNodeViewType>(cut_indices_range, cut_feature_index, kd_bounding_box[cut_feature_index]);
+        const auto feature_cut_value =
+            samples_range_first_[cut_indices_range.first[0] * n_features_ + feature_cut_index];
 
-        const auto cut_feature_value = samples_range_first_[*cut_indices_range.first * n_features_ + cut_feature_index];
+        kdnode = std::make_shared<NodeType>(/**/ cut_indices_range,
+                                            /**/ feature_cut_index,
+                                            /**/ hyper_interval[feature_cut_index]);
+
         {
             // set the right bound of the left child to the cut value
-            kd_bounding_box[cut_feature_index].second = cut_feature_value;
+            hyper_interval[feature_cut_index].second() = feature_cut_value;
 
             kdnode->left_ = build(/**/ left_indices_range.first,
                                   /**/ left_indices_range.second,
-                                  /**/ cut_feature_index,
+                                  /**/ feature_cut_index,
                                   /**/ depth + 1,
-                                  /**/ kd_bounding_box);
+                                  /**/ hyper_interval);
             // provide a parent pointer to the child node for reversed traversal of the kdtree
             kdnode->left_->parent_ = kdnode;
 
             // reset the right bound of the bounding box to the current kdnode right bound
-            kd_bounding_box[cut_feature_index].second = kdnode->cut_feature_range_.second;
+            hyper_interval[feature_cut_index].second() = kdnode->axis_interval_.second();
         }
         {
             // set the left bound of the right child to the cut value
-            kd_bounding_box[cut_feature_index].first = cut_feature_value;
+            hyper_interval[feature_cut_index].first() = feature_cut_value;
 
             kdnode->right_ = build(/**/ right_indices_range.first,
                                    /**/ right_indices_range.second,
-                                   /**/ cut_feature_index,
+                                   /**/ feature_cut_index,
                                    /**/ depth + 1,
-                                   /**/ kd_bounding_box);
+                                   /**/ hyper_interval);
             // provide a parent pointer to the child node for reversed traversal of the kdtree
             kdnode->right_->parent_ = kdnode;
 
             // reset the left bound of the bounding box to the current kdnode left bound
-            kd_bounding_box[cut_feature_index].first = kdnode->cut_feature_range_.first;
+            hyper_interval[feature_cut_index].first() = kdnode->axis_interval_.first();
         }
     } else {
-        kdnode = std::make_shared<KDNodeViewType>(std::make_pair(indices_range_first, indices_range_last),
-                                                  kd_bounding_box[cut_feature_index]);
+        kdnode = std::make_shared<NodeType>(std::make_pair(indices_range_first, indices_range_last),
+                                            hyper_interval[feature_cut_index]);
     }
     return kdnode;
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-void KDTree<IndicesIterator, SamplesIterator>::serialize(const KDNodeViewPtr&                        kdnode,
+void KDTree<IndicesIterator, SamplesIterator>::serialize(const NodePtr&                              kdnode,
                                                          rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     writer.StartObject();
     {
         writer.String("axis");
-        writer.Int64(kdnode->cut_feature_index_);
+        writer.Int64(kdnode->cut_axis_feature_index_);
 
         writer.String("points");
         kdnode->serialize(writer, samples_range_first_, samples_range_last_, n_features_);
@@ -410,12 +413,12 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepat
             writer.StartArray();
 
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(kd_bounding_box_[feature_index].first);
-                writer.Int64(kd_bounding_box_[feature_index].second);
+                writer.Int64(hyper_interval_[feature_index].first);
+                writer.Int64(hyper_interval_[feature_index].second);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(kd_bounding_box_[feature_index].first);
-                writer.Double(kd_bounding_box_[feature_index].second);
+                writer.Double(hyper_interval_[feature_index].first);
+                writer.Double(hyper_interval_[feature_index].second);
             }
             writer.EndArray();
         }

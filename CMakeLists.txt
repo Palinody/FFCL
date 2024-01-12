@@ -61,7 +61,7 @@ set(HEADER_FILES
     include/ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp
 
     include/ffcl/datastruct/FeatureMaskArray.hpp
-    include/ffcl/datastruct/BoundingBox.hpp
+    include/ffcl/datastruct/Interval.hpp
 
     include/ffcl/common/math/random/Distributions.hpp
     include/ffcl/common/math/random/VosesAliasMethod.hpp

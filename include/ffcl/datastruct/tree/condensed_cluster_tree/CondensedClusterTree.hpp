@@ -14,10 +14,10 @@ namespace fs = std::filesystem;
 
 template <typename Index, typename Value>
 class CondensedClusterTree {
+  public:
     static_assert(std::is_fundamental<Index>::value, "Index must be a fundamental type.");
     static_assert(std::is_fundamental<Value>::value, "Value must be a fundamental type.");
 
-  public:
     using CondensedClusterNodeType = CondensedClusterNode<Index, Value>;
     using CondensedClusterNodePtr  = std::shared_ptr<CondensedClusterNodeType>;
 
@@ -193,10 +193,9 @@ void CondensedClusterTree<Index, Value>::preorder_traversal_build(
             condensed_cluster_node->is_selected() = true;
         }
     }
-    // if single_linkage_cluster_node is a leaf node, then we simply mark the current condensed_cluster_node as selected
-    // as its also a leaf node
+    // if single_linkage_cluster_node is a leaf node,
     else {
-        // theres no need to compute the excess of mass here since falling in that branch means that either the parent
+        // theres no need to compute the excess of mass since falling in that branch means that either the parent
         // node already added the right excess of mass or the condensed cluster node is root. In the latter case,
         // there's no need to compute the excess of mass so we just flag the condensed cluster as selected
         condensed_cluster_node->is_selected() = true;

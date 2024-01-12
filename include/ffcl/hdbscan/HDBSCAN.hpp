@@ -26,7 +26,7 @@ class HDBSCAN {
     struct Options {
         Options() = default;
 
-        Options(const Options& other) = default;
+        Options(const Options&) = default;
 
         Options& k_nearest_neighbors(std::size_t k_nearest_neighbors) {
             k_nearest_neighbors_ = k_nearest_neighbors;

@@ -16,8 +16,8 @@ struct CondensedClusterNode {
     using NodeType = CondensedClusterNode<Index, Value>;
     using NodePtr  = std::shared_ptr<NodeType>;
 
-    using SingleLinkageClusterNodeType = SingleLinkageClusterNode<Index, Value>;
-    using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterNodeType::NodePtr;
+    using SingleLinkageClusterNodeType = typename SingleLinkageClusterNode<Index, Value>::NodeType;
+    using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterNode<Index, Value>::NodePtr;
 
     CondensedClusterNode(SingleLinkageClusterNodePtr single_linkage_cluster_node);
 

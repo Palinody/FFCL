@@ -23,6 +23,22 @@ class MiddleAndLength : public StaticSegmentRepresentation<MiddleAndLength<Value
         segment_representation_.second /= 2;
     }
 
+    constexpr auto read_only_first_impl() const {
+        return segment_representation_.first;
+    }
+
+    auto& read_write_first_impl() {
+        return segment_representation_.first;
+    }
+
+    constexpr auto read_only_second_impl() const {
+        return segment_representation_.second;
+    }
+
+    auto& read_write_second_impl() {
+        return segment_representation_.second;
+    }
+
     constexpr auto length_from_centroid_impl() const {
         return segment_representation_.second;
     }

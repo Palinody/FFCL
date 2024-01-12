@@ -32,7 +32,7 @@ class DBSCAN {
     struct Options {
         Options() = default;
 
-        Options(const Options& other) = default;
+        Options(const Options&) = default;
 
         Options& min_samples(std::size_t min_samples) {
             min_samples_ = min_samples;

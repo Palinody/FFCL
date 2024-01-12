@@ -9,24 +9,24 @@ namespace ffcl::datastruct {
 /**
  * @brief A read-only feature mask array
  *
- * @tparam IndexType
+ * @tparam Index
  * @tparam NFeatures
  */
-template <typename IndexType, std::size_t NFeatures>
+template <typename Index, std::size_t NFeatures>
 class FeatureMaskArray {
   public:
-    static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
+    static_assert(std::is_trivial_v<Index>, "Index must be trivial.");
 
-    using VariantType          = std::variant<std::vector<IndexType>, std::array<IndexType, NFeatures>>;
+    using VariantType          = std::variant<std::vector<Index>, std::array<Index, NFeatures>>;
     using ConstIndicesIterator = typename VariantType::value_type::const_iterator;
 
-    FeatureMaskArray(const std::vector<IndexType>& vector)
+    FeatureMaskArray(const std::vector<Index>& vector)
       : indices_{vector} {}
 
-    FeatureMaskArray(const std::array<IndexType, NFeatures>& array)
+    FeatureMaskArray(const std::array<Index, NFeatures>& array)
       : indices_{array} {}
 
-    constexpr IndexType operator[](std::size_t index) const {
+    constexpr Index operator[](std::size_t index) const {
         return indices_[index];
     }
 

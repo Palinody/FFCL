@@ -22,14 +22,14 @@ class SingleTreeTraverser {
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
     static_assert(common::is_iterator<SamplesIteratorType>::value, "SamplesIteratorType is not an iterator");
 
-    using ReferenceNodePtr = typename ReferenceIndexer::KDNodeViewPtr;
+    using ReferenceNodePtr = typename ReferenceIndexer::NodePtr;
 
-    static_assert(common::is_raw_or_smart_ptr<ReferenceNodePtr>(), "ReferenceNodePtr is not a row or smart pointer");
+    static_assert(common::is_raw_or_smart_ptr<ReferenceNodePtr>(), "ReferenceNodePtr is not a raw or smart pointer");
 
     explicit SingleTreeTraverser(ReferenceIndexer&& reference_indexer);
 
-    template <typename Buffer>
-    Buffer operator()(Buffer&& input_buffer) const;
+    template <typename ForwardedBuffer>
+    ForwardedBuffer operator()(ForwardedBuffer&& forwarded_buffer) const;
 
     std::size_t n_samples() const;
 
@@ -56,12 +56,12 @@ SingleTreeTraverser<ReferenceIndexer>::SingleTreeTraverser(ReferenceIndexer&& re
   : reference_indexer_{std::forward<ReferenceIndexer>(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
-template <typename Buffer>
-Buffer SingleTreeTraverser<ReferenceIndexer>::operator()(Buffer&& input_buffer) const {
-    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                  "Provided a Buffer that does not inherit from StaticBase<Derived>");
+template <typename ForwardedBuffer>
+ForwardedBuffer SingleTreeTraverser<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
+    static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
+                  "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
 
-    auto processed_buffer = std::forward<Buffer>(input_buffer);
+    auto processed_buffer = std::forward<ForwardedBuffer>(forwarded_buffer);
     single_tree_traversal(reference_indexer_.root(), processed_buffer);
     return processed_buffer;
 }
