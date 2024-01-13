@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ffcl/common/Utils.hpp"
+
 #include "ffcl/datastruct/bounds/segment_representation/StaticSegmentRepresentation.hpp"
 
 namespace ffcl::datastruct::bounds::segment_representation {
@@ -36,11 +38,12 @@ class MinAndMax : public StaticSegmentRepresentation<MinAndMax<Value>> {
     }
 
     constexpr auto length_from_centroid_impl() const {
-        return (segment_representation_.second - segment_representation_.first) / 2;
+        return common::compute_size_from_middle_with_left_rounding(segment_representation_.first,
+                                                                   segment_representation_.second);
     }
 
     constexpr auto centroid_impl() const {
-        return (segment_representation_.first + segment_representation_.second) / 2;
+        return common::compute_middle_with_left_rounding(segment_representation_.first, segment_representation_.second);
     }
 
   private:

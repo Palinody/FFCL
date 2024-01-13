@@ -208,6 +208,50 @@ constexpr auto division(const T& numerator, const U& denominator, const U& defau
     return numerator / denominator;
 }
 
+template <typename T, typename U>
+constexpr auto compute_middle_with_left_rounding(const T& min, const U& max) -> std::common_type_t<T, U> {
+    static_assert(std::is_trivial_v<T>, "T must be trivial.");
+    static_assert(std::is_trivial_v<U>, "U must be trivial.");
+
+    const auto min_plus_max = min + max;
+
+    if constexpr (std::is_integral_v<std::common_type_t<T, U>>) {
+        return min_plus_max < 0 ? min_plus_max / 2 - 1 : min_plus_max / 2;
+
+    } else {
+        // For floating point, regular calculation suffices
+        return min_plus_max / 2;
+    }
+}
+
+template <typename T, typename U>
+constexpr auto compute_size_from_middle_with_left_rounding(const T& min, const U& max) -> std::common_type_t<T, U> {
+    static_assert(std::is_trivial_v<T>, "T must be trivial.");
+    static_assert(std::is_trivial_v<U>, "U must be trivial.");
+
+    // Adjust size for integer ranges
+    if constexpr (std::is_integral_v<std::common_type_t<T, U>>) {
+        const auto middle = compute_middle_with_left_rounding(min, max);
+        return 1 + max - middle;
+
+    } else {
+        // For floating point, regular calculation suffices
+        return (max - min) / 2;
+    }
+}
+
+/*
+// Example usage
+int main() {
+    using Type = int;
+    const Type min = -2;
+    const Type max = 0;
+    std::cout << "Middle: " << compute_middle_with_left_rounding(min, max) << "\n";
+    std::cout << "Size: " << compute_size_from_middle_with_left_rounding(min, max) << "\n";
+    return 0;
+}
+*/
+
 template <typename TargetType, typename DataIterator>
 std::vector<TargetType> to_type(const DataIterator& data_range_first, const DataIterator& data_range_last) {
     using InputType = typename std::iterator_traits<DataIterator>::value_type;

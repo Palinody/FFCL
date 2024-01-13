@@ -9,8 +9,8 @@
 #include "ffcl/search/buffer/Unsorted.hpp"
 
 #include "ffcl/datastruct/bounds/segment_representation/MiddleAndLength.hpp"
+#include "ffcl/datastruct/bounds/segment_representation/MinAndLength.hpp"
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
-#include "ffcl/datastruct/bounds/segment_representation/PositionAndLength.hpp"
 
 #include "ffcl/datastruct/bounds/Ball.hpp"
 #include "ffcl/datastruct/bounds/BoundingBox.hpp"

@@ -45,7 +45,7 @@ class KDTree {
     using NodeType = typename KDNodeView<IndicesIterator, DataType>::NodeType;
     using NodePtr  = typename KDNodeView<IndicesIterator, DataType>::NodePtr;
 
-    using HyperIntervalType = HyperInterval<SamplesIterator>;
+    using HyperIntervalType = HyperInterval<DataType>;
 
     struct Options {
         Options()
@@ -319,10 +319,13 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
         const auto feature_cut_value =
             samples_range_first_[cut_indices_range.first[0] * n_features_ + feature_cut_index];
 
-        kdnode = std::make_shared<NodeType>(/**/ cut_indices_range,
-                                            /**/ feature_cut_index,
-                                            /**/ hyper_interval[feature_cut_index]);
-
+        // make the current node
+        {
+            kdnode = std::make_shared<NodeType>(/**/ cut_indices_range,
+                                                /**/ feature_cut_index,
+                                                /**/ hyper_interval[feature_cut_index]);
+        }
+        // make the left node
         {
             // set the right bound of the left child to the cut value
             hyper_interval[feature_cut_index].second() = feature_cut_value;
@@ -338,6 +341,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
             // reset the right bound of the bounding box to the current kdnode right bound
             hyper_interval[feature_cut_index].second() = kdnode->axis_interval_.second();
         }
+        // make the right node
         {
             // set the left bound of the right child to the cut value
             hyper_interval[feature_cut_index].first() = feature_cut_value;

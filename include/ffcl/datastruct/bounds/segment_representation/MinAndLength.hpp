@@ -5,18 +5,18 @@
 namespace ffcl::datastruct::bounds::segment_representation {
 
 template <typename Value>
-class PositionAndLength : public StaticSegmentRepresentation<PositionAndLength<Value>> {
+class MinAndLength : public StaticSegmentRepresentation<MinAndLength<Value>> {
   public:
     using ValueType   = Value;
     using SegmentType = std::pair<ValueType, ValueType>;
 
-    PositionAndLength(const ValueType& position, const ValueType& length)
-      : PositionAndLength(std::make_pair(position, length)) {}
+    MinAndLength(const ValueType& position, const ValueType& length)
+      : MinAndLength(std::make_pair(position, length)) {}
 
-    PositionAndLength(const SegmentType& segment_representation)
+    MinAndLength(const SegmentType& segment_representation)
       : segment_representation_{segment_representation} {}
 
-    PositionAndLength(SegmentType&& segment_representation) noexcept
+    MinAndLength(SegmentType&& segment_representation) noexcept
       : segment_representation_{std::move(segment_representation)} {}
 
     constexpr auto read_only_first_impl() const {
@@ -36,11 +36,13 @@ class PositionAndLength : public StaticSegmentRepresentation<PositionAndLength<V
     }
 
     constexpr auto length_from_centroid_impl() const {
-        return segment_representation_.second / 2;
+        return common::compute_size_from_middle_with_left_rounding(
+            segment_representation_.first, segment_representation_.first + segment_representation_.second);
     }
 
     constexpr auto centroid_impl() const {
-        return segment_representation_.first + length_from_centroid_impl();
+        return common::compute_middle_with_left_rounding(
+            segment_representation_.first, segment_representation_.first + segment_representation_.second);
     }
 
   private:

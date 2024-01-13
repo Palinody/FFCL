@@ -195,8 +195,11 @@ quickselect_median(const IndicesIterator& indices_range_first,
                    std::size_t            n_features,
                    std::size_t            feature_index) {
     assert(feature_index < n_features);
+    assert(std::distance(indices_range_first, indices_range_last) > 0);
 
-    std::size_t median_index = std::distance(indices_range_first, indices_range_last) / 2;
+    const std::size_t indices_range_size = std::distance(indices_range_first, indices_range_last);
+    // the median index uses left rounding for ranges of sizes that are even
+    const std::size_t median_index = (indices_range_size - 1) / 2;
 
     auto median_indices_range = ffcl::common::algorithms::quickselect(indices_range_first,
                                                                       indices_range_last,
@@ -211,7 +214,7 @@ quickselect_median(const IndicesIterator& indices_range_first,
 
     // all the points at the right of the pivot point
     auto right_indices_range = std::make_pair(indices_range_first + median_index + 1, indices_range_last);
-
+    /*
     return shift_median_to_leftmost_equal_value(median_index,
                                                 std::move(left_indices_range),
                                                 std::move(median_indices_range),
@@ -220,6 +223,8 @@ quickselect_median(const IndicesIterator& indices_range_first,
                                                 samples_range_last,
                                                 n_features,
                                                 feature_index);
+    */
+    return std::make_tuple(median_index, left_indices_range, median_indices_range, right_indices_range);
 }
 
 }  // namespace ffcl::datastruct::kdtree::algorithms
