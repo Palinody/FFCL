@@ -37,12 +37,12 @@ class MinAndLength : public StaticSegmentRepresentation<MinAndLength<Value>> {
 
     constexpr auto length_from_centroid_impl() const {
         return common::compute_size_from_middle_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second);
+            segment_representation_.first, segment_representation_.first + segment_representation_.second - 1);
     }
 
     constexpr auto centroid_impl() const {
         return common::compute_middle_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second);
+            segment_representation_.first, segment_representation_.first + segment_representation_.second - 1);
     }
 
   private:

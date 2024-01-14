@@ -151,10 +151,10 @@ shift_median_to_leftmost_equal_value(std::size_t                                
                                      std::size_t                                   feature_index) {
     ffcl::common::ignore_parameters(samples_range_last);
 
-    const auto left_range_length = std::distance(left_indices_range.first, left_indices_range.second);
+    const auto left_indices_range_length = std::distance(left_indices_range.first, left_indices_range.second);
 
     // return if the left range is empty because no left shift is possible
-    if (!left_range_length) {
+    if (!left_indices_range_length) {
         return std::make_tuple(median_index, left_indices_range, median_indices_range, right_indices_range);
     }
     // the target value of the median
@@ -214,7 +214,7 @@ quickselect_median(const IndicesIterator& indices_range_first,
 
     // all the points at the right of the pivot point
     auto right_indices_range = std::make_pair(indices_range_first + median_index + 1, indices_range_last);
-    /*
+
     return shift_median_to_leftmost_equal_value(median_index,
                                                 std::move(left_indices_range),
                                                 std::move(median_indices_range),
@@ -223,8 +223,6 @@ quickselect_median(const IndicesIterator& indices_range_first,
                                                 samples_range_last,
                                                 n_features,
                                                 feature_index);
-    */
-    return std::make_tuple(median_index, left_indices_range, median_indices_range, right_indices_range);
 }
 
 }  // namespace ffcl::datastruct::kdtree::algorithms

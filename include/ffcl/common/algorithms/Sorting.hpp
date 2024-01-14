@@ -17,58 +17,29 @@ std::size_t median_index_of_three(const IndicesIterator& indices_range_first,
                                   std::size_t            feature_index) {
     ignore_parameters(samples_range_last);
 
-    const std::size_t n_samples    = std::distance(indices_range_first, indices_range_last);
-    std::size_t       middle_index = n_samples / 2;
-
-    if (n_samples < 3) {
-        return middle_index;
+    const std::size_t indices_range_size = std::distance(indices_range_first, indices_range_last);
+    // return 'median_index=0' if the range is empty or contains 1 or 2 elements (left rounding median index)
+    if (indices_range_size < 3) {
+        return 0;
     }
     std::size_t left_index  = 0;
-    std::size_t right_index = n_samples - 1;
+    std::size_t right_index = indices_range_size - 1;
+    // the median index uses left rounding for ranges of sizes that are even
+    std::size_t median_index = right_index / 2;
 
-    if (samples_range_first[indices_range_first[middle_index] * n_features + feature_index] <
+    if (samples_range_first[indices_range_first[median_index] * n_features + feature_index] <
         samples_range_first[indices_range_first[left_index] * n_features + feature_index]) {
-        std::swap(middle_index, left_index);
+        std::swap(median_index, left_index);
     }
     if (samples_range_first[indices_range_first[right_index] * n_features + feature_index] <
         samples_range_first[indices_range_first[left_index] * n_features + feature_index]) {
         std::swap(right_index, left_index);
     }
-    if (samples_range_first[indices_range_first[middle_index] * n_features + feature_index] <
+    if (samples_range_first[indices_range_first[median_index] * n_features + feature_index] <
         samples_range_first[indices_range_first[right_index] * n_features + feature_index]) {
-        std::swap(middle_index, right_index);
+        std::swap(median_index, right_index);
     }
     return right_index;
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-std::pair<SamplesIterator, SamplesIterator> median_values_range_of_three(const IndicesIterator& indices_range_first,
-                                                                         const IndicesIterator& indices_range_last,
-                                                                         const SamplesIterator& samples_range_first,
-                                                                         const SamplesIterator& samples_range_last,
-                                                                         std::size_t            n_features,
-                                                                         std::size_t            feature_index) {
-    const std::size_t median_index = median_index_of_three(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, feature_index);
-
-    return {samples_range_first + indices_range_first[median_index] * n_features,
-            samples_range_first + indices_range_first[median_index] * n_features + n_features};
-}
-
-template <typename IndicesIterator, typename SamplesIterator>
-std::pair<std::size_t, std::pair<SamplesIterator, SamplesIterator>> median_index_and_values_range_of_three(
-    const IndicesIterator& indices_range_first,
-    const IndicesIterator& indices_range_last,
-    const SamplesIterator& samples_range_first,
-    const SamplesIterator& samples_range_last,
-    std::size_t            n_features,
-    std::size_t            feature_index) {
-    const std::size_t median_index = median_index_of_three(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, feature_index);
-
-    return {median_index,
-            {samples_range_first + indices_range_first[median_index] * n_features,
-             samples_range_first + indices_range_first[median_index] * n_features + n_features}};
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -85,14 +56,16 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
+    assert(n_samples);
+
     // no op if the input contains only one feature vector
     if (n_samples == 1) {
         return pivot_index;
     }
     // Initialize the left and right indices to be out of bounds, so that they never go out of bounds when incremented
     // or decremented in the loops
-    ssize_t left_index  = -1;
-    ssize_t right_index = n_samples;
+    std::ptrdiff_t left_index  = -1;
+    std::ptrdiff_t right_index = n_samples;
 
     const auto pivot_value = samples_range_first[indices_range_first[pivot_index] * n_features + feature_index];
 

@@ -63,93 +63,14 @@ TYPED_TEST(SortingTestFixture, MedianIndexOfThreeRangesTest) {
 
                 // test on all the possible feature data_indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto index = ffcl::common::algorithms::median_index_of_three(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
+                    const auto index = ffcl::common::algorithms::median_index_of_three(/**/ data_indices.begin(),
+                                                                                       /**/ data_indices.end(),
+                                                                                       /**/ data.begin(),
+                                                                                       /**/ data.end(),
+                                                                                       /**/ features,
+                                                                                       /**/ feature_index);
 
-                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
-                }
-            }
-        }
-    }
-}
-
-TYPED_TEST(SortingTestFixture, MedianValuesRangeOfThreeRangesTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->max_n_samples_ samples
-        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
-            // tests on data from 1 to this->n_features_ features
-            for (std::size_t features = 1; features <= this->n_features_; ++features) {
-                const auto data =
-                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
-                const auto data_indices = this->generate_indices(samples);
-
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [row_first, row_last] = ffcl::common::algorithms::median_values_range_of_three(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
-
-                    const auto [first_row_candidate_first, first_row_candidate_last] =
-                        this->get_range_at_row(data.begin(), data.end(), features, 0);
-
-                    const auto [median_row_candidate_first, median_row_candidate_last] =
-                        this->get_range_at_row(data.begin(), data.end(), features, samples / 2);
-
-                    const auto [last_row_candidate_first, last_row_candidate_last] =
-                        this->get_range_at_row(data.begin(), data.end(), features, samples - 1);
-
-                    ASSERT_TRUE(
-                        this->ranges_equality(
-                            row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        this->ranges_equality(
-                            row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        this->ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
-                }
-            }
-        }
-    }
-}
-
-TYPED_TEST(SortingTestFixture, MedianIndexAndValuesRangeOfThreeRangesTest) {
-    // range values should be equal to one of the ranges at row 0, median or last row
-
-    // the number of times to perform the tests
-    for (std::size_t test_index = 0; test_index < this->n_random_tests_; ++test_index) {
-        // tests on data from 1 to this->max_n_samples_ samples
-        for (std::size_t samples = this->min_n_samples_; samples <= this->max_n_samples_; ++samples) {
-            // tests on data from 1 to this->n_features_ features
-            for (std::size_t features = 1; features <= this->n_features_; ++features) {
-                const auto data =
-                    this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
-
-                const auto data_indices = this->generate_indices(samples);
-
-                // test on all the possible feature indices
-                for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [index, range] = ffcl::common::algorithms::median_index_and_values_range_of_three(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
-
-                    const auto [row_first, row_last] = range;
-
-                    const auto [first_row_candidate_first, first_row_candidate_last] =
-                        this->get_range_at_row(data.begin(), data.end(), features, 0);
-
-                    const auto [median_row_candidate_first, median_row_candidate_last] =
-                        this->get_range_at_row(data.begin(), data.end(), features, samples / 2);
-
-                    const auto [last_row_candidate_first, last_row_candidate_last] =
-                        this->get_range_at_row(data.begin(), data.end(), features, samples - 1);
-
-                    ASSERT_TRUE(index == 0 || index == samples / 2 || index == samples - 1);
-
-                    ASSERT_TRUE(
-                        this->ranges_equality(
-                            row_first, row_last, first_row_candidate_first, first_row_candidate_last) ||
-                        this->ranges_equality(
-                            row_first, row_last, median_row_candidate_first, median_row_candidate_last) ||
-                        this->ranges_equality(row_first, row_last, last_row_candidate_first, last_row_candidate_last));
+                    ASSERT_TRUE(index == 0 || index == (samples - 1) / 2 || index == samples - 1);
                 }
             }
         }
