@@ -98,10 +98,16 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
         }
         */
         // /*
-        // if the values at the pivot and at the right index are not equal
+
+        // at this point:
+        // (left_value <= pivot_value && pivot_value >= right_value)
+        // &&
+        // left_index (!= || ==) pivot_index && pivot_index (!= || ==) right_index
+
+        // pivot_value > right_value
         if (inequality(pivot_value,
                        samples_range_first[indices_range_first[right_index] * n_features + feature_index])) {
-            // swap the ranges at the left index and right index
+            // swap left_value and right_value
             std::iter_swap(indices_range_first + left_index, indices_range_first + right_index);
             // if the pivot was swapped because left index was equal to pivot index, update it to the index it was
             // swapped with (right index in this case)
@@ -112,12 +118,12 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
                 ++right_index;
             }
         }
-        // the values at the pivot and the right index are equal
+        // else if pivot_value == right_value
         else {
-            // if the value at the left index is equal to the value at the pivot index
+            // if left_value == pivot_value
             if (equality(samples_range_first[indices_range_first[left_index] * n_features + feature_index],
                          pivot_value)) {
-                // dont swap if the left range and pivot range are actually confounded
+                // dont swap if the left_index == pivot_index
                 if (static_cast<std::size_t>(left_index) != pivot_index) {
                     // swap the ranges so that the range of the left index is put at the right of the pivot
                     std::iter_swap(indices_range_first + left_index, indices_range_first + pivot_index);

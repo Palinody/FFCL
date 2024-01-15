@@ -168,8 +168,9 @@ shift_median_to_leftmost_equal_value(std::size_t                                
     while (std::distance(left_indices_range.first, left_neighbor_value_it) >= 0 &&
            ffcl::common::equality(samples_range_first[left_neighbor_value_it[0] * n_features + feature_index],
                                   cut_value)) {
-        --left_neighbor_value_it;
-        --median_indices_range.first;
+        // the median indices range takes the address of its left neighbor. The left neighbor is further decremented to
+        // its own neighbor.
+        median_indices_range.first = left_neighbor_value_it--;
     }
     // update the ranges accordingly
     left_indices_range.second   = median_indices_range.first;

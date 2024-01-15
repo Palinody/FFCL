@@ -256,6 +256,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
 TYPED_TEST(KDTreeAlgorithmsTestFixture, PrintQuickselectMedianRangeTest) {
     // auto data = std::vector<float>{2, 1, 2, 3, 2, 1, 2, 3, -1, -2, 3, 0, 0, 0, 0, 9, 9, 7};
     auto data = std::vector<float>{1, 2, 3, -1, 5, -6, -2, 3, 0, 0, 0};
+    // auto data = std::vector<int>{0, 10, -10};
 
     const std::size_t n_samples     = data.size();
     const std::size_t n_features    = 1;
