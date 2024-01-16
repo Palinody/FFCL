@@ -28,6 +28,8 @@ ssize_t select_axis_with_largest_bounding_box_difference(const HyperInterval<Sam
                                                          const std::vector<std::size_t>&       feature_mask) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
     // feature index of the greatest range dimension in the kd bounding box at the indices of the feature_mask
     std::size_t current_max_range_feature_index = 0;
     DataType    current_max_range               = 0;
@@ -53,6 +55,15 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator& indices_range_f
                                           std::size_t            n_features,
                                           double                 n_samples_rate) {
     assert(n_samples_rate >= 0 && n_samples_rate <= 1);
+
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
+    using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
+    using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_integral_v<IndexType>, "IndexType must be integer.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
@@ -96,6 +107,15 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          indice
                                           const std::vector<std::size_t>& feature_mask) {
     assert(0 <= n_samples_rate && n_samples_rate <= 1);
 
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
+    using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
+    using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_integral_v<IndexType>, "IndexType must be integer.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
     // set the number of samples as a fraction of the input
@@ -135,53 +155,73 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          indice
     // return a random axis if theres only one sample left
     return ffcl::common::math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
 }
-
-template <typename IndicesIterator, typename SamplesIterator>
-std::tuple<std::size_t,
-           std::pair<IndicesIterator, IndicesIterator>,
-           std::pair<IndicesIterator, IndicesIterator>,
-           std::pair<IndicesIterator, IndicesIterator>>
-shift_median_to_leftmost_equal_value(std::size_t                                   median_index,
-                                     std::pair<IndicesIterator, IndicesIterator>&& left_indices_range,
-                                     std::pair<IndicesIterator, IndicesIterator>&& median_indices_range,
-                                     std::pair<IndicesIterator, IndicesIterator>&& right_indices_range,
-                                     const SamplesIterator&                        samples_range_first,
-                                     const SamplesIterator&                        samples_range_last,
-                                     std::size_t                                   n_features,
-                                     std::size_t                                   feature_index) {
+template <typename ForwardedIndicesIteratorPair, typename SamplesIterator>
+auto shift_median_to_leftmost_equal_value(std::size_t                    median_index,
+                                          ForwardedIndicesIteratorPair&& left_indices_range,
+                                          ForwardedIndicesIteratorPair&& median_indices_range,
+                                          ForwardedIndicesIteratorPair&& right_indices_range,
+                                          const SamplesIterator&         samples_range_first,
+                                          const SamplesIterator&         samples_range_last,
+                                          std::size_t                    n_features,
+                                          std::size_t                    feature_index) -> std::
+    tuple<std::size_t, ForwardedIndicesIteratorPair, ForwardedIndicesIteratorPair, ForwardedIndicesIteratorPair> {
     ffcl::common::ignore_parameters(samples_range_last);
 
-    const auto left_indices_range_length = std::distance(left_indices_range.first, left_indices_range.second);
+    using FirstIndicesIteratorType  = typename ForwardedIndicesIteratorPair::first_type;
+    using SecondIndicesIteratorType = typename ForwardedIndicesIteratorPair::second_type;
 
-    // return if the left range is empty because no left shift is possible
-    if (!left_indices_range_length) {
-        return std::make_tuple(median_index, left_indices_range, median_indices_range, right_indices_range);
+    static_assert(common::is_iterator<FirstIndicesIteratorType>::value, "FirstIndicesIteratorType is not an iterator");
+    static_assert(common::is_iterator<SecondIndicesIteratorType>::value,
+                  "SecondIndicesIteratorType is not an iterator");
+
+    static_assert(
+        std::is_same_v<ForwardedIndicesIteratorPair, std::pair<FirstIndicesIteratorType, SecondIndicesIteratorType>>,
+        "ForwardedIndicesIteratorPair must be an std::pair");
+
+    using FirstIndexType  = typename std::iterator_traits<FirstIndicesIteratorType>::value_type;
+    using SecondIndexType = typename std::iterator_traits<SecondIndicesIteratorType>::value_type;
+
+    static_assert(std::is_trivial_v<FirstIndexType>, "FirstIndexType must be trivial.");
+    static_assert(std::is_trivial_v<SecondIndexType>, "SecondIndexType must be trivial.");
+
+    static_assert(common::is_iterator<FirstIndicesIteratorType>::value && std::is_integral_v<FirstIndexType>,
+                  "The first element of FirstIndicesIteratorType must be an iterator of integers");
+
+    static_assert(common::is_iterator<SecondIndicesIteratorType>::value && std::is_integral_v<SecondIndexType>,
+                  "The first element of SecondIndicesIteratorType must be an iterator of integers");
+
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
+
+    // no left shift is possible if the left_indices_range is empty
+    if (left_indices_range.first != left_indices_range.second) {
+        // The target value of the median
+        const auto cut_value = samples_range_first[median_indices_range.first[0] * n_features + feature_index];
+
+        // The left range iterator at the value the current pointer will be compared to at each iteration
+        auto left_neighbor_it = std::prev(left_indices_range.second);
+
+        // Decrement the iterators while the left range isn't empty and the neighbor value at the left of the median is
+        // still equal to the cut value at the corresponding feature index
+        while (
+            left_neighbor_it >= left_indices_range.first &&
+            ffcl::common::equality(samples_range_first[left_neighbor_it[0] * n_features + feature_index], cut_value)) {
+            --left_neighbor_it;
+        }
+        // Update the ranges accordingly
+        median_indices_range.first  = std::next(left_neighbor_it);
+        median_indices_range.second = median_indices_range.first + 1;
+        right_indices_range.first   = median_indices_range.second;
+        left_indices_range.second   = median_indices_range.first;
+        median_index                = std::distance(left_indices_range.first, median_indices_range.first);
     }
-    // the target value of the median
-    const auto cut_value = samples_range_first[median_indices_range.first[0] * n_features + feature_index];
-
-    // the left range iterator at the value the current pointer will be compared to at each iteration
-    auto left_neighbor_value_it = left_indices_range.second - 1;
-
-    // decrement the iterators while the left range isnt empty and the neighbor value at the left of the median is still
-    // equal to the cut value at the corresponding feature index
-    while (std::distance(left_indices_range.first, left_neighbor_value_it) >= 0 &&
-           ffcl::common::equality(samples_range_first[left_neighbor_value_it[0] * n_features + feature_index],
-                                  cut_value)) {
-        // the median indices range takes the address of its left neighbor. The left neighbor is further decremented to
-        // its own neighbor.
-        median_indices_range.first = left_neighbor_value_it--;
-    }
-    // update the ranges accordingly
-    left_indices_range.second   = median_indices_range.first;
-    median_indices_range.second = median_indices_range.first + 1;
-    right_indices_range.first   = median_indices_range.second;
-    median_index                = std::distance(left_indices_range.first, median_indices_range.first);
-
     return std::make_tuple(median_index,
-                           std::forward<std::pair<IndicesIterator, IndicesIterator>>(left_indices_range),
-                           std::forward<std::pair<IndicesIterator, IndicesIterator>>(median_indices_range),
-                           std::forward<std::pair<IndicesIterator, IndicesIterator>>(right_indices_range));
+                           std::forward<ForwardedIndicesIteratorPair>(left_indices_range),
+                           std::forward<ForwardedIndicesIteratorPair>(median_indices_range),
+                           std::forward<ForwardedIndicesIteratorPair>(right_indices_range));
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
@@ -197,6 +237,15 @@ quickselect_median(const IndicesIterator& indices_range_first,
                    std::size_t            feature_index) {
     assert(feature_index < n_features);
     assert(std::distance(indices_range_first, indices_range_last) > 0);
+
+    static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
+    static_assert(common::is_iterator<SamplesIterator>::value, "SamplesIterator is not an iterator");
+
+    using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
+    using DataType  = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    static_assert(std::is_integral_v<IndexType>, "IndexType must be integer.");
+    static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
     const std::size_t indices_range_size = std::distance(indices_range_first, indices_range_last);
     // the median index uses left rounding for ranges of sizes that are even
