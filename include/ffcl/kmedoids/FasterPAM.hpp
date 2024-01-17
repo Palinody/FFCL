@@ -246,16 +246,17 @@ auto FasterPAM<SamplesIterator>::swap_buffers(std::size_t medoid_candidate_index
                 // START: update second nearest medoid
                 std::size_t index_tmp    = best_swap_index;
                 auto        distance_tmp = distance_oc;
-                for (std::size_t idx = 0; idx < medoids_.size(); ++idx) {
-                    if (idx != index_1 && idx != best_swap_index) {
+                for (std::size_t medoid_index = 0; medoid_index < medoids_.size(); ++medoid_index) {
+                    if (medoid_index != index_1 && medoid_index != best_swap_index) {
                         // distance from other object to looped medoid
-                        const auto distance_om =
-                            std::holds_alternative<FirstVariantType>(storage_variant_)
-                                ? std::get<FirstVariantType>(storage_variant_)(medoids_[idx], other_sample_index)
-                                : std::get<SecondVariantType>(storage_variant_)(medoids_[idx], other_sample_index);
+                        const auto distance_om = std::holds_alternative<FirstVariantType>(storage_variant_)
+                                                     ? std::get<FirstVariantType>(storage_variant_)(
+                                                           medoids_[medoid_index], other_sample_index)
+                                                     : std::get<SecondVariantType>(storage_variant_)(
+                                                           medoids_[medoid_index], other_sample_index);
 
                         if (distance_om < distance_tmp) {
-                            index_tmp    = idx;
+                            index_tmp    = medoid_index;
                             distance_tmp = distance_om;
                         }
                     }
@@ -281,16 +282,17 @@ auto FasterPAM<SamplesIterator>::swap_buffers(std::size_t medoid_candidate_index
                 // START: update second nearest medoid
                 std::size_t index_tmp    = best_swap_index;
                 auto        distance_tmp = distance_oc;
-                for (std::size_t idx = 0; idx < medoids_.size(); ++idx) {
-                    if (idx != index_1 && idx != best_swap_index) {
+                for (std::size_t medoid_index = 0; medoid_index < medoids_.size(); ++medoid_index) {
+                    if (medoid_index != index_1 && medoid_index != best_swap_index) {
                         // distance from other object to looped medoid
-                        const auto distance_om =
-                            std::holds_alternative<FirstVariantType>(storage_variant_)
-                                ? std::get<FirstVariantType>(storage_variant_)(medoids_[idx], other_sample_index)
-                                : std::get<SecondVariantType>(storage_variant_)(medoids_[idx], other_sample_index);
+                        const auto distance_om = std::holds_alternative<FirstVariantType>(storage_variant_)
+                                                     ? std::get<FirstVariantType>(storage_variant_)(
+                                                           medoids_[medoid_index], other_sample_index)
+                                                     : std::get<SecondVariantType>(storage_variant_)(
+                                                           medoids_[medoid_index], other_sample_index);
 
                         if (distance_om < distance_tmp) {
-                            index_tmp    = idx;
+                            index_tmp    = medoid_index;
                             distance_tmp = distance_om;
                         }
                     }

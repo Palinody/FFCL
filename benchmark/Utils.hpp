@@ -2,9 +2,9 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include <sys/types.h>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>  // std::size_t
 #include <iomanip>
 #include <iostream>
 #include <iterator>

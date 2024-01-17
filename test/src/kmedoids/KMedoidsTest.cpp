@@ -6,7 +6,7 @@
 #include "ffcl/kmedoids/KMedoids.hpp"
 #include "ffcl/kmedoids/PAMBuild.hpp"
 
-#include <sys/types.h>  // std::ssize_t
+#include <sys/types.h>  // ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>

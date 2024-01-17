@@ -126,10 +126,7 @@ std::pair<std::size_t, typename std::iterator_traits<SamplesIterator>::value_typ
     std::size_t            n) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
-    if (n > static_cast<std::size_t>(samples_range_last - samples_range_first)) {
-        throw std::invalid_argument("N-th smallest requested element shouldn't be greater that the container's size.");
-    }
-    assert(0 < n && n <= static_cast<std::ptrdiff_t>(std::distance(samples_range_first, samples_range_last)) &&
+    assert(n <= static_cast<std::size_t>(std::distance(samples_range_first, samples_range_last)) &&
            "N-th smallest requested element shouldn't be greater than the container's size.");
 
     std::vector<DataType> data_sorted(samples_range_last - samples_range_first);
@@ -153,8 +150,6 @@ auto compute_mean_per_feature(const SamplesIterator& samples_range_first,
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
-
-    assert(n_samples > 0);
 
     auto mean_per_feature = std::vector<DataType>(n_features);
 
@@ -185,8 +180,6 @@ auto compute_mean_per_feature(const IndicesIterator& indices_range_first,
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    assert(n_samples > 0);
-
     auto mean_per_feature = std::vector<DataType>(n_features);
 
     for (auto indices_range_it = indices_range_first; indices_range_it != indices_range_last; ++indices_range_it) {
@@ -214,8 +207,6 @@ auto compute_mean_per_feature(const IndicesIterator&          indices_range_firs
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    assert(n_samples > 0);
-
     auto mean_per_feature = std::vector<DataType>(feature_mask.size());
 
     for (auto indices_range_it = indices_range_first; indices_range_it != indices_range_last; ++indices_range_it) {
@@ -239,8 +230,6 @@ auto compute_variance_per_feature(const SamplesIterator& samples_range_first,
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
-
-    assert(n_samples > 1);
 
     const auto mean_per_feature = compute_mean_per_feature(samples_range_first, samples_range_last, n_features);
 
@@ -281,8 +270,6 @@ auto compute_variance_per_feature(const IndicesIterator& indices_range_first,
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
-    assert(n_samples > 1);
 
     const auto mean_per_feature = compute_mean_per_feature(/**/ indices_range_first,
                                                            /**/ indices_range_last,
@@ -329,8 +316,6 @@ auto compute_variance_per_feature(const IndicesIterator&          indices_range_
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    assert(n_samples > 1);
-
     const auto mean_per_feature = compute_mean_per_feature(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, feature_mask);
 
@@ -360,8 +345,6 @@ std::size_t argmax_variance_per_feature(const SamplesIterator& samples_range_fir
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
-
-    assert(n_samples > 1);
 
     const auto mean_per_feature = compute_mean_per_feature(samples_range_first, samples_range_last, n_features);
 
@@ -397,8 +380,6 @@ std::size_t argmax_variance_per_feature(const IndicesIterator& indices_range_fir
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
-    assert(n_samples > 1);
 
     const auto mean_per_feature = compute_mean_per_feature(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features);
@@ -436,8 +417,6 @@ std::size_t argmax_variance_per_feature(const IndicesIterator&          indices_
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
-    assert(n_samples > 1);
 
     const auto mean_per_feature = compute_mean_per_feature(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, feature_mask);

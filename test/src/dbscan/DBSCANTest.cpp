@@ -6,7 +6,7 @@
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/dbscan/DBSCAN.hpp"
 
-#include <sys/types.h>  // std::ssize_t
+#include <sys/types.h>  // ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -148,8 +148,8 @@ TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -197,8 +197,8 @@ TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -246,8 +246,8 @@ TEST_F(DBSCANErrorsTest, VariedTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -295,8 +295,8 @@ TEST_F(DBSCANErrorsTest, AnisoTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -344,8 +344,8 @@ TEST_F(DBSCANErrorsTest, BlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -393,8 +393,8 @@ TEST_F(DBSCANErrorsTest, NoStructureTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -442,8 +442,8 @@ TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 

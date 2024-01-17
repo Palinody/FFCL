@@ -6,7 +6,7 @@
 #include "ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp"
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
-#include <sys/types.h>  // std::ssize_t
+#include <sys/types.h>  // ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -191,8 +191,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -242,8 +242,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -293,8 +293,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -344,8 +344,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -395,8 +395,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -446,8 +446,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -497,8 +497,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -546,8 +546,8 @@ TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 

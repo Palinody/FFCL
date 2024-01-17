@@ -96,13 +96,13 @@ TYPED_TEST(SortingTestFixture, PartitionAroundNTHRangeTest) {
                     // check on all the possible pivot indices
                     for (std::size_t pivot_index = 0; pivot_index < samples; ++pivot_index) {
                         const auto new_pivot_index =
-                            ffcl::common::algorithms::partition_around_nth_index(data_indices.begin(),
-                                                                                 data_indices.end(),
-                                                                                 data.begin(),
-                                                                                 data.end(),
-                                                                                 features,
-                                                                                 pivot_index,
-                                                                                 feature_index);
+                            ffcl::common::algorithms::partition_around_pivot_index(data_indices.begin(),
+                                                                                   data_indices.end(),
+                                                                                   data.begin(),
+                                                                                   data.end(),
+                                                                                   features,
+                                                                                   pivot_index,
+                                                                                   feature_index);
 
                         // the values before the pivot according to the feature_index dimension should be less
                         // the values after the pivot according to the feature_index dimension should be greater or

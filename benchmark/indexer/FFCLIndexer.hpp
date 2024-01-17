@@ -47,8 +47,8 @@ class FFCLIndexer : public BaseIndexer<IndexContainer, SamplesIterator> {
             OptionsType()
                 .bucket_size(max_leaf_size_)
                 .max_depth(std::log2(this->n_samples_))
-                .axis_selection_policy(AxisSelectionPolicyType())
-                .splitting_rule_policy(SplittingRulePolicyType()))} {}
+                .axis_selection_policy(AxisSelectionPolicyType{})
+                .splitting_rule_policy(SplittingRulePolicyType{}))} {}
 
     std::size_t n_samples() const override {
         return this->n_samples_;

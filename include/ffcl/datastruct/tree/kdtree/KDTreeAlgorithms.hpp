@@ -7,25 +7,25 @@
 #include "ffcl/common/math/statistics/Statistics.hpp"
 #include "ffcl/datastruct/Interval.hpp"
 
-#include <sys/types.h>  // ssize_t
 #include <cmath>
+#include <cstddef>  // std::size_t
 #include <limits>
 #include <vector>
 
 namespace ffcl::datastruct::kdtree::algorithms {
 
 template <typename SamplesIterator>
-ssize_t select_axis_with_largest_bounding_box_difference(const HyperInterval<SamplesIterator>& hyper_interval) {
+std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval<SamplesIterator>& hyper_interval) {
     const auto comparison = [](const auto& lhs, const auto& rhs) {
-        return ffcl::common::abs(lhs.first() - lhs.second()) < ffcl::common::abs(rhs.first() - rhs.second());
+        return common::abs(lhs.first() - lhs.second()) < common::abs(rhs.first() - rhs.second());
     };
     const auto it = std::max_element(hyper_interval.begin(), hyper_interval.end(), comparison);
     return std::distance(hyper_interval.begin(), it);
 }
 
 template <typename SamplesIterator>
-ssize_t select_axis_with_largest_bounding_box_difference(const HyperInterval<SamplesIterator>& hyper_interval,
-                                                         const std::vector<std::size_t>&       feature_mask) {
+std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval<SamplesIterator>& hyper_interval,
+                                                             const std::vector<std::size_t>&       feature_mask) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
@@ -37,7 +37,7 @@ ssize_t select_axis_with_largest_bounding_box_difference(const HyperInterval<Sam
     // "feature_index"s are only the ones specified in the feature_mask
     for (std::size_t feature_index : feature_mask) {
         const auto max_range_candidate =
-            ffcl::common::abs(hyper_interval[feature_index].second() - hyper_interval[feature_index].first());
+            common::abs(hyper_interval[feature_index].second() - hyper_interval[feature_index].first());
 
         if (max_range_candidate > current_max_range) {
             current_max_range_feature_index = feature_index;
@@ -48,12 +48,12 @@ ssize_t select_axis_with_largest_bounding_box_difference(const HyperInterval<Sam
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-ssize_t select_axis_with_largest_variance(const IndicesIterator& indices_range_first,
-                                          const IndicesIterator& indices_range_last,
-                                          const SamplesIterator& samples_range_first,
-                                          const SamplesIterator& samples_range_last,
-                                          std::size_t            n_features,
-                                          double                 n_samples_rate) {
+std::size_t select_axis_with_largest_variance(const IndicesIterator& indices_range_first,
+                                              const IndicesIterator& indices_range_last,
+                                              const SamplesIterator& samples_range_first,
+                                              const SamplesIterator& samples_range_last,
+                                              std::size_t            n_features,
+                                              double                 n_samples_rate) {
     assert(n_samples_rate >= 0 && n_samples_rate <= 1);
 
     static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
@@ -72,19 +72,19 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator& indices_range_f
 
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
-        const auto random_indices = ffcl::common::math::random::select_n_random_indices_from_indices(
-            indices_range_first, indices_range_last, n_choices);
+        const auto random_indices =
+            common::math::random::select_n_random_values(indices_range_first, indices_range_last, n_choices);
         // return the feature index with the maximum variance
-        return ffcl::common::math::statistics::argmax_variance_per_feature(
+        return common::math::statistics::argmax_variance_per_feature(
             random_indices.begin(), random_indices.end(), samples_range_first, samples_range_last, n_features);
     }
     // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
     // compute the variance with the minimum number of samples, which is 3
     if (n_samples > 2) {
-        const auto random_indices = ffcl::common::math::random::select_n_random_indices_from_indices(
-            indices_range_first, indices_range_last, 3);
+        const auto random_indices =
+            common::math::random::select_n_random_values(indices_range_first, indices_range_last, 3);
         // return the feature index with the maximum variance
-        return ffcl::common::math::statistics::argmax_variance_per_feature(
+        return common::math::statistics::argmax_variance_per_feature(
             random_indices.begin(), random_indices.end(), samples_range_first, samples_range_last, n_features);
     }
     // select the axis according to the dimension with the most spread between 2 points
@@ -94,17 +94,17 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator& indices_range_f
         return select_axis_with_largest_bounding_box_difference<SamplesIterator>(hyper_interval);
     }
     // return a random axis if theres only one sample left
-    return ffcl::common::math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
+    return common::math::random::uniform_distribution<std::size_t>(0, n_features - 1)();
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-ssize_t select_axis_with_largest_variance(const IndicesIterator&          indices_range_first,
-                                          const IndicesIterator&          indices_range_last,
-                                          const SamplesIterator&          samples_range_first,
-                                          const SamplesIterator&          samples_range_last,
-                                          std::size_t                     n_features,
-                                          double                          n_samples_rate,
-                                          const std::vector<std::size_t>& feature_mask) {
+std::size_t select_axis_with_largest_variance(const IndicesIterator&          indices_range_first,
+                                              const IndicesIterator&          indices_range_last,
+                                              const SamplesIterator&          samples_range_first,
+                                              const SamplesIterator&          samples_range_last,
+                                              std::size_t                     n_features,
+                                              double                          n_samples_rate,
+                                              const std::vector<std::size_t>& feature_mask) {
     assert(0 <= n_samples_rate && n_samples_rate <= 1);
 
     static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
@@ -123,28 +123,28 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          indice
 
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
-        const auto random_indices = ffcl::common::math::random::select_n_random_indices_from_indices(
-            indices_range_first, indices_range_last, n_choices);
+        const auto random_indices =
+            common::math::random::select_n_random_values(indices_range_first, indices_range_last, n_choices);
         // return the feature index with the maximum variance
-        return ffcl::common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
-                                                                           random_indices.end(),
-                                                                           samples_range_first,
-                                                                           samples_range_last,
-                                                                           n_features,
-                                                                           feature_mask);
+        return common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
+                                                                     random_indices.end(),
+                                                                     samples_range_first,
+                                                                     samples_range_last,
+                                                                     n_features,
+                                                                     feature_mask);
     }
     // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
     // compute the variance with the minimum number of samples, which is 3
     if (n_samples > 2) {
-        const auto random_indices = ffcl::common::math::random::select_n_random_indices_from_indices(
-            indices_range_first, indices_range_last, 3);
+        const auto random_indices =
+            common::math::random::select_n_random_values(indices_range_first, indices_range_last, 3);
         // return the feature index with the maximum variance
-        return ffcl::common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
-                                                                           random_indices.end(),
-                                                                           samples_range_first,
-                                                                           samples_range_last,
-                                                                           n_features,
-                                                                           feature_mask);
+        return common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
+                                                                     random_indices.end(),
+                                                                     samples_range_first,
+                                                                     samples_range_last,
+                                                                     n_features,
+                                                                     feature_mask);
     }
     // select the axis according to the dimension with the most spread between 2 points
     if (n_samples == 2) {
@@ -153,7 +153,7 @@ ssize_t select_axis_with_largest_variance(const IndicesIterator&          indice
         return select_axis_with_largest_bounding_box_difference<SamplesIterator>(hyper_interval, feature_mask);
     }
     // return a random axis if theres only one sample left
-    return ffcl::common::math::random::uniform_distribution<ssize_t>(0, n_features - 1)();
+    return common::math::random::uniform_distribution<std::size_t>(0, n_features - 1)();
 }
 template <typename ForwardedIndicesIteratorPair, typename SamplesIterator>
 auto shift_median_to_leftmost_equal_value(std::size_t                    median_index,
@@ -165,7 +165,7 @@ auto shift_median_to_leftmost_equal_value(std::size_t                    median_
                                           std::size_t                    n_features,
                                           std::size_t                    feature_index) -> std::
     tuple<std::size_t, ForwardedIndicesIteratorPair, ForwardedIndicesIteratorPair, ForwardedIndicesIteratorPair> {
-    ffcl::common::ignore_parameters(samples_range_last);
+    common::ignore_parameters(samples_range_last);
 
     using FirstIndicesIteratorType  = typename ForwardedIndicesIteratorPair::first_type;
     using SecondIndicesIteratorType = typename ForwardedIndicesIteratorPair::second_type;
@@ -206,9 +206,8 @@ auto shift_median_to_leftmost_equal_value(std::size_t                    median_
 
         // Decrement the iterators while the left range isn't empty and the neighbor value at the left of the median is
         // still equal to the cut value at the corresponding feature index
-        while (
-            left_neighbor_it >= left_indices_range.first &&
-            ffcl::common::equality(samples_range_first[left_neighbor_it[0] * n_features + feature_index], cut_value)) {
+        while (left_neighbor_it >= left_indices_range.first &&
+               common::equality(samples_range_first[left_neighbor_it[0] * n_features + feature_index], cut_value)) {
             --left_neighbor_it;
         }
         // Update the ranges accordingly
@@ -251,13 +250,13 @@ quickselect_median(const IndicesIterator& indices_range_first,
     // the median index uses left rounding for ranges of sizes that are even
     const std::size_t median_index = (indices_range_size - 1) / 2;
 
-    auto median_indices_range = ffcl::common::algorithms::quickselect(indices_range_first,
-                                                                      indices_range_last,
-                                                                      samples_range_first,
-                                                                      samples_range_last,
-                                                                      n_features,
-                                                                      median_index,
-                                                                      feature_index);
+    auto median_indices_range = common::algorithms::quickselect(indices_range_first,
+                                                                indices_range_last,
+                                                                samples_range_first,
+                                                                samples_range_last,
+                                                                n_features,
+                                                                median_index,
+                                                                feature_index);
 
     // all the points at the left of the pivot point
     auto left_indices_range = std::make_pair(indices_range_first, indices_range_first + median_index);

@@ -101,16 +101,16 @@ It'll stay that way for now for practicality.
 
 ### KDTree
 
-| KDTree library                         | build time (s)  | 10K queries time (s)| build + queries (%) |
-|----------------------------------------|-----------------|---------------------|---------------------|
-| KDTree (FFCL) 10000 queries | 0.000694        |          0.097632   |        0.098638     |
-| KDTree (PCL) 10000 queries  | 0.001181        |          0.119764   |        0.121376     |
-| KDTree (FLANN) 10000 queries| 0.000558        |          0.125653   |        0.126366     |
+| KDTree library               | build time (s) | 10K queries time (s) | build + queries (%) |
+| ---------------------------- | -------------- | -------------------- | ------------------- |
+| KDTree (FFCL) 10000 queries  | 0.000694       | 0.097632             | 0.098638            |
+| KDTree (PCL) 10000 queries   | 0.001181       | 0.119764             | 0.121376            |
+| KDTree (FLANN) 10000 queries | 0.000558       | 0.125653             | 0.126366            |
 
-| KDTree library                         | build speedup (%)  | 10K queries speedup (%)| build + queries (%) |
-|----------------------------------------|--------------------|------------------------|---------------------|
-| FFCL over PCL                          | 41.235             |          18.480        |        18.733       |
-| FFCL over FLANN                        | -24.326            |          22.300        |        21.943       |
+| KDTree library  | build speedup (%) | 10K queries speedup (%) | build + queries (%) |
+| --------------- | ----------------- | ----------------------- | ------------------- |
+| FFCL over PCL   | 41.235            | 18.480                  | 18.733              |
+| FFCL over FLANN | -24.326           | 22.300                  | 21.943              |
 
 ### KMedoids algorithms
 
@@ -119,20 +119,20 @@ It'll stay that way for now for practicality.
 
 The following table summarizes the results of single runs made with different parameters. It provides a rough estimate about what one could expect from the present library. For a more in depth analysis of the performance of the algorithms, refer to the articles [(1)](https://arxiv.org/pdf/2209.12553.pdf) and [(2)](https://arxiv.org/pdf/2008.05171.pdf)
 
-|                         | **type**    |**n_samples**|**n_features**|**n_centroids**|**n_iter (converged)**| **n_threads**|**computation time (s)**|
-------                    | -----       | -----       |---           |------         |---                   | ---          |-                       |
-**FasterPAM**             | float       | 15,000      |784           | 10            |2                     |1             | 1.7                    |
-**FasterPAM**             | float       | 15,000      |784           |100            |4                     |1             | 4.5                    |
-**FasterPAM**             | float       | 30,000      |784           | 10            |3                     |1             |11.1                    |
-**FasterPAM**             | float       | 30,000      |784           |100            |4                     |1             |  17                    |
-**FasterMSC**             | float       | 15,000      |784           | 10            |2                     |1             | 3.3                    |
-**FasterMSC**             | float       | 15,000      |784           |100            |2                     |1             | 6.4                    |
-**FasterMSC**             | float       | 30,000      |784           | 10            |2                     |1             |12.8                    |
-**FasterMSC**             | float       | 30,000      |784           |100            |3                     |1             |27.1                    |
-**PairwiseDistanceMatrix**| float       | 15,000      |784           |               |                      |1             |  40                    |
-**PairwiseDistanceMatrix**| float       | 30,000      |784           |               |                      |1             | 162                    |
-**PairwiseDistanceMatrix**| float       | 15,000      |784           |               |                      |6             |6.27                    |
-**PairwiseDistanceMatrix**| float       | 30,000      |784           |               |                      |6             |25.6                    |
+|                            | **type** | **n_samples** | **n_features** | **n_centroids** | **n_iter (converged)** | **n_threads** | **computation time (s)** |
+| -------------------------- | -------- | ------------- | -------------- | --------------- | ---------------------- | ------------- | ------------------------ |
+| **FasterPAM**              | float    | 15,000        | 784            | 10              | 2                      | 1             | 1.7                      |
+| **FasterPAM**              | float    | 15,000        | 784            | 100             | 4                      | 1             | 4.5                      |
+| **FasterPAM**              | float    | 30,000        | 784            | 10              | 3                      | 1             | 11.1                     |
+| **FasterPAM**              | float    | 30,000        | 784            | 100             | 4                      | 1             | 17                       |
+| **FasterMSC**              | float    | 15,000        | 784            | 10              | 2                      | 1             | 3.3                      |
+| **FasterMSC**              | float    | 15,000        | 784            | 100             | 2                      | 1             | 6.4                      |
+| **FasterMSC**              | float    | 30,000        | 784            | 10              | 2                      | 1             | 12.8                     |
+| **FasterMSC**              | float    | 30,000        | 784            | 100             | 3                      | 1             | 27.1                     |
+| **PairwiseDistanceMatrix** | float    | 15,000        | 784            |                 |                        | 1             | 40                       |
+| **PairwiseDistanceMatrix** | float    | 30,000        | 784            |                 |                        | 1             | 162                      |
+| **PairwiseDistanceMatrix** | float    | 15,000        | 784            |                 |                        | 6             | 6.27                     |
+| **PairwiseDistanceMatrix** | float    | 30,000        | 784            |                 |                        | 6             | 25.6                     |
 
 ## Installation
 
@@ -291,8 +291,8 @@ auto kdtree = ffcl::datastruct::KDTree(indices.begin(),
                                               OptionsType()
                                                   .bucket_size(std::sqrt(n_samples))
                                                   .max_depth(std::log2(n_samples))
-                                                  .axis_selection_policy(AxisSelectionPolicyType().feature_mask({0, 1}))
-                                                  .splitting_rule_policy(SplittingRulePolicyType())
+                                                  .axis_selection_policy(AxisSelectionPolicyType{}.feature_mask({0, 1}))
+                                                  .splitting_rule_policy(SplittingRulePolicyType{})
 
 
 auto dbscan = ffcl::DBSCAN<dType>();

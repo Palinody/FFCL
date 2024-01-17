@@ -68,8 +68,8 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType() /*.feature_mask({0, 1, 2})*/)
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{} /*.feature_mask({0, 1, 2})*/)
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     bench_summary.indexer_build_duration = timer.elapsed();
 
@@ -146,8 +146,8 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType() /*.feature_mask({0, 1, 2})*/)
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{} /*.feature_mask({0, 1, 2})*/)
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     bench_summary.indexer_build_duration = timer.elapsed();
 

@@ -28,7 +28,6 @@ class Searcher {
 
     static_assert(common::is_raw_or_smart_ptr<NodePtr>(), "NodePtr is not a raw or smart pointer");
 
-  public:
     explicit Searcher(ReferenceIndexer&& reference_indexer);
 
     template <typename ForwardedBuffer>

@@ -8,7 +8,7 @@
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
 
-#include <sys/types.h>  // std::ssize_t
+#include <sys/types.h>  // ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -211,8 +211,8 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -292,8 +292,8 @@ TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -373,8 +373,8 @@ TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -454,8 +454,8 @@ TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -535,8 +535,8 @@ TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -616,8 +616,8 @@ TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -697,8 +697,8 @@ TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 

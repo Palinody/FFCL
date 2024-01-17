@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>  // std::size_t
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/FeatureMaskArray.hpp"
 #include "ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp"
@@ -30,7 +31,7 @@ class AxisSelectionPolicy {
                                    SamplesIterator                 samples_range_first,
                                    SamplesIterator                 samples_range_last,
                                    std::size_t                     n_features,
-                                   ssize_t                         depth,
+                                   std::size_t                     depth,
                                    HyperInterval<SamplesIterator>& hyper_interval) const = 0;
 };
 
@@ -54,7 +55,7 @@ class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, Sample
                            SamplesIterator                 samples_range_first,
                            SamplesIterator                 samples_range_last,
                            std::size_t                     n_features,
-                           ssize_t                         depth,
+                           std::size_t                     depth,
                            HyperInterval<SamplesIterator>& hyper_interval) const;
 
   private:
@@ -87,7 +88,7 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
                            SamplesIterator                 samples_range_first,
                            SamplesIterator                 samples_range_last,
                            std::size_t                     n_features,
-                           ssize_t                         depth,
+                           std::size_t                     depth,
                            HyperInterval<SamplesIterator>& hyper_interval) const;
 
   private:
@@ -117,7 +118,7 @@ class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIt
                            SamplesIterator                 samples_range_first,
                            SamplesIterator                 samples_range_last,
                            std::size_t                     n_features,
-                           ssize_t                         depth,
+                           std::size_t                     depth,
                            HyperInterval<SamplesIterator>& hyper_interval) const;
 
   private:
@@ -132,7 +133,7 @@ std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
     SamplesIterator                 samples_range_first,
     SamplesIterator                 samples_range_last,
     std::size_t                     n_features,
-    ssize_t                         depth,
+    std::size_t                     depth,
     HyperInterval<SamplesIterator>& hyper_interval) const {
     ffcl::common::ignore_parameters(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, hyper_interval);
@@ -152,7 +153,7 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
     SamplesIterator                 samples_range_first,
     SamplesIterator                 samples_range_last,
     std::size_t                     n_features,
-    ssize_t                         depth,
+    std::size_t                     depth,
     HyperInterval<SamplesIterator>& hyper_interval) const {
     ffcl::common::ignore_parameters(depth, hyper_interval);
 
@@ -183,7 +184,7 @@ std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
     SamplesIterator                 samples_range_first,
     SamplesIterator                 samples_range_last,
     std::size_t                     n_features,
-    ssize_t                         depth,
+    std::size_t                     depth,
     HyperInterval<SamplesIterator>& hyper_interval) const {
     ffcl::common::ignore_parameters(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, depth);

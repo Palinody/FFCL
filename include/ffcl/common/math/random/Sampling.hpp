@@ -103,22 +103,20 @@ auto select_n_random_samples_from_indices(const IndicesIterator& index_first,
     return random_samples;
 }
 
-template <typename IndicesIterator>
-auto select_n_random_indices_from_indices(const IndicesIterator& index_first,
-                                          const IndicesIterator& index_last,
-                                          std::size_t            n_choices) {
-    using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
+template <typename Iterator>
+auto select_n_random_values(const Iterator& first, const Iterator& last, std::size_t n_choices) {
+    using Type = typename std::iterator_traits<Iterator>::value_type;
 
-    const std::size_t n_samples = std::distance(index_first, index_last);
+    const std::size_t n_samples = std::distance(first, last);
     // clip n_choices to prevent overflows
     n_choices = std::min(n_choices, n_samples);
     // return n_choices distinctive indices from the pool of indices defined by the desired indices range
     const auto random_distinct_indices = select_from_range(n_choices, {0, n_samples});
 
-    auto random_indices = std::vector<IndexType>(n_choices);
+    auto random_indices = std::vector<Type>(n_choices);
 
     for (std::size_t index_index = 0; index_index < n_choices; ++index_index) {
-        random_indices[index_index] = index_first[random_distinct_indices[index_index]];
+        random_indices[index_index] = first[random_distinct_indices[index_index]];
     }
     return random_indices;
 }

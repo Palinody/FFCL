@@ -2,9 +2,8 @@
 
 #include "ffcl/common/math/random/Distributions.hpp"
 
-#include <sys/types.h>
 #include <algorithm>
-#include <cstddef>
+#include <cstddef>  // std::size_t
 #include <limits>
 #include <memory>
 #include <stdexcept>

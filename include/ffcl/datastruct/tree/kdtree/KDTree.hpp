@@ -7,9 +7,9 @@
 
 #include "ffcl/common/math/random/Distributions.hpp"
 
-#include <sys/types.h>  // ssize_t
 #include <algorithm>
 #include <array>
+#include <cstddef>  // std::size_t
 #include <memory>
 #include <tuple>
 
@@ -158,7 +158,7 @@ class KDTree {
   private:
     NodePtr build(const IndicesIterator& indices_range_first,
                   const IndicesIterator& indices_range_last,
-                  ssize_t                feature_cut_index,
+                  std::size_t            feature_cut_index,
                   std::size_t            depth,
                   HyperIntervalType&     hyper_interval);
 
@@ -286,7 +286,7 @@ template <typename IndicesIterator, typename SamplesIterator>
 typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterator, SamplesIterator>::build(
     const IndicesIterator& indices_range_first,
     const IndicesIterator& indices_range_last,
-    ssize_t                feature_cut_index,
+    std::size_t            feature_cut_index,
     std::size_t            depth,
     HyperIntervalType&     hyper_interval) {
     NodePtr kdnode;

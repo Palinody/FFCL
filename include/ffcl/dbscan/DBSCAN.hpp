@@ -24,8 +24,6 @@ class DBSCAN {
     using LabelType = typename Indexer::IndexType;
     using DataType  = typename Indexer::DataType;
 
-    // static_assert(std::is_floating_point<DataType>::value, "DBSCAN only allows floating point types.");
-
     static_assert(std::is_trivial_v<LabelType>, "LabelType must be trivial.");
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 

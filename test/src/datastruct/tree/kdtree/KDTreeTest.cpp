@@ -4,7 +4,7 @@
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
-#include <sys/types.h>  // std::ssize_t
+#include <sys/types.h>  // ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>

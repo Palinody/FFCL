@@ -17,7 +17,7 @@
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"
 #include "ffcl/datastruct/bounds/Vertex.hpp"
 
-#include <sys/types.h>  // std::ssize_t
+#include <sys/types.h>  // ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>

@@ -4,8 +4,8 @@
 
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
 
-#include <sys/types.h>  // ssize_t
 #include <cmath>
+#include <cstddef>  // std::size_t
 #include <limits>
 #include <vector>
 
@@ -34,7 +34,7 @@ template <typename SamplesIterator>
 auto make_interval(const SamplesIterator& samples_range_first,
                    const SamplesIterator& samples_range_last,
                    std::size_t            n_features,
-                   ssize_t                feature_index) {
+                   std::size_t            feature_index) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
@@ -62,7 +62,7 @@ auto make_interval(const IndicesIterator& indices_range_first,
                    const SamplesIterator& samples_range_first,
                    const SamplesIterator& samples_range_last,
                    std::size_t            n_features,
-                   ssize_t                feature_index) {
+                   std::size_t            feature_index) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     common::ignore_parameters(samples_range_last);

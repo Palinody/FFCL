@@ -2,7 +2,9 @@
 
 #include "ffcl/common/Utils.hpp"
 
+#include <sys/types.h>  // ssize_t
 #include <algorithm>
+#include <cstddef>  // std::size_t
 #include <memory>
 #include <vector>
 
@@ -43,13 +45,13 @@ std::size_t median_index_of_three(const IndicesIterator& indices_range_first,
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
-std::size_t partition_around_nth_index(const IndicesIterator& indices_range_first,
-                                       const IndicesIterator& indices_range_last,
-                                       const SamplesIterator& samples_range_first,
-                                       const SamplesIterator& samples_range_last,
-                                       std::size_t            n_features,
-                                       std::size_t            pivot_index,
-                                       std::size_t            feature_index) {
+std::size_t partition_around_pivot_index(const IndicesIterator& indices_range_first,
+                                         const IndicesIterator& indices_range_last,
+                                         const SamplesIterator& samples_range_first,
+                                         const SamplesIterator& samples_range_last,
+                                         std::size_t            n_features,
+                                         std::size_t            pivot_index,
+                                         std::size_t            feature_index) {
     static_assert(std::is_integral_v<typename IndicesIterator::value_type>, "Index input should be integral.");
 
     ignore_parameters(samples_range_last);
@@ -64,8 +66,8 @@ std::size_t partition_around_nth_index(const IndicesIterator& indices_range_firs
     }
     // Initialize the left and right indices to be out of bounds, so that they never go out of bounds when incremented
     // or decremented in the loops
-    std::ptrdiff_t left_index  = -1;
-    std::ptrdiff_t right_index = n_samples;
+    ssize_t left_index  = -1;
+    ssize_t right_index = n_samples;
 
     const auto pivot_value = samples_range_first[indices_range_first[pivot_index] * n_features + feature_index];
 
@@ -172,13 +174,13 @@ auto quickselect(const IndicesIterator& indices_range_first,
 
         // partition the range around the pivot, which has moved to its sorted index. The pivot index is relative to the
         // left_index, so to get its absolute index, we need to shift it by the same amount
-        pivot_index = left_index + partition_around_nth_index(indices_range_first + left_index,
-                                                              indices_range_first + right_index + 1,
-                                                              samples_range_first,
-                                                              samples_range_last,
-                                                              n_features,
-                                                              pivot_index,
-                                                              feature_index);
+        pivot_index = left_index + partition_around_pivot_index(indices_range_first + left_index,
+                                                                indices_range_first + right_index + 1,
+                                                                samples_range_first,
+                                                                samples_range_last,
+                                                                n_features,
+                                                                pivot_index,
+                                                                feature_index);
 
         if (kth_smallest == pivot_index) {
             return std::make_pair(indices_range_first + pivot_index, indices_range_first + pivot_index + 1);
@@ -207,13 +209,13 @@ std::size_t quicksort(const IndicesIterator& indices_range_first,
         return initial_pivot_index;
     }
     // partial sort ranges around new pivot index
-    const std::size_t new_pivot_index = partition_around_nth_index(indices_range_first,
-                                                                   indices_range_last,
-                                                                   samples_range_first,
-                                                                   samples_range_last,
-                                                                   n_features,
-                                                                   initial_pivot_index,
-                                                                   feature_index);
+    const std::size_t new_pivot_index = partition_around_pivot_index(indices_range_first,
+                                                                     indices_range_last,
+                                                                     samples_range_first,
+                                                                     samples_range_last,
+                                                                     n_features,
+                                                                     initial_pivot_index,
+                                                                     feature_index);
 
     // compute the median of the subranges
 

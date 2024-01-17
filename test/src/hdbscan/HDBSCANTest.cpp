@@ -6,7 +6,7 @@
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/hdbscan/HDBSCAN.hpp"
 
-#include <sys/types.h>  // std::ssize_t
+#include <sys/types.h>  // ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -149,8 +149,8 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
                                             OptionsType()
                                                 .bucket_size(std::sqrt(n_samples))
                                                 .max_depth(std::log2(n_samples))
-                                                .axis_selection_policy(AxisSelectionPolicyType())
-                                                .splitting_rule_policy(SplittingRulePolicyType()));
+                                                .axis_selection_policy(AxisSelectionPolicyType{})
+                                                .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -203,8 +203,8 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -257,8 +257,8 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -311,8 +311,8 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -365,8 +365,8 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -419,8 +419,8 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 
@@ -473,8 +473,8 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     timer.print_elapsed_seconds(9);
 

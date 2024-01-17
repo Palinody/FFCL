@@ -8,7 +8,6 @@
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/hdbscan/HDBSCAN.hpp"
 
-#include <sys/types.h>  // std::ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -81,8 +80,8 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
                                OptionsType()
                                    .bucket_size(std::sqrt(n_samples))
                                    .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType())
-                                   .splitting_rule_policy(SplittingRulePolicyType()));
+                                   .axis_selection_policy(AxisSelectionPolicyType{})
+                                   .splitting_rule_policy(SplittingRulePolicyType{}));
 
     bench_summary.indexer_build_duration = timer.elapsed();
 

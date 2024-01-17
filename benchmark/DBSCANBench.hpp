@@ -13,7 +13,6 @@
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/dbscan/DBSCAN.hpp"
 
-#include <sys/types.h>  // std::ssize_t
 #include <filesystem>
 #include <fstream>
 #include <iostream>
