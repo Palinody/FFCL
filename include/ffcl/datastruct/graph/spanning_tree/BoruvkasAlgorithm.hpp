@@ -18,7 +18,6 @@
 #include <memory>
 #include <numeric>
 #include <tuple>
-#include <type_traits>  // std::remove_const_t
 #include <unordered_set>
 #include <vector>
 
@@ -65,6 +64,18 @@ class BoruvkasAlgorithm {
         std::size_t k_nearest_neighbors_ = 3;
     };
 
+    BoruvkasAlgorithm() = default;
+
+    BoruvkasAlgorithm(const Options& options);
+
+    BoruvkasAlgorithm(const BoruvkasAlgorithm&) = delete;
+
+    BoruvkasAlgorithm<Indexer>& set_options(const Options& options);
+
+    template <typename ForwardedIndexer>
+    auto make_tree(ForwardedIndexer&& indexer) const;
+
+  private:
     class Forest {
       public:
         using RepresentativeType = IndexType;
@@ -182,7 +193,6 @@ class BoruvkasAlgorithm {
             std::cout << "\n";
         }
 
-      private:
         std::size_t n_samples_;
         // the container that accumulates the edges for the minimum spanning tree
         MinimumSpanningTreeType minimum_spanning_tree_;
@@ -192,19 +202,6 @@ class BoruvkasAlgorithm {
         UnionFindType union_find_;
     };
 
-  public:
-    BoruvkasAlgorithm() = default;
-
-    BoruvkasAlgorithm(const Options& options);
-
-    BoruvkasAlgorithm(const BoruvkasAlgorithm&) = delete;
-
-    BoruvkasAlgorithm<Indexer>& set_options(const Options& options);
-
-    template <typename ForwardedIndexer>
-    auto make_tree(ForwardedIndexer&& indexer) const;
-
-  private:
     auto make_core_distances_ptr(const search::Searcher<Indexer>& searcher, const IndexType& k_nearest_neighbors) const;
 
     void step_sequential(const search::Searcher<Indexer>& searcher, Forest& forest) const;
