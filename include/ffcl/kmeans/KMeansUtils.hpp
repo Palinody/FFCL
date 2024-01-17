@@ -28,7 +28,8 @@ std::vector<std::size_t> samples_to_nearest_centroid_indices(
             const DataType sample_to_centroid_distance = ffcl::common::math::heuristics::auto_distance(
                 samples_range_first + sample_index * n_features,
                 samples_range_first + sample_index * n_features + n_features,
-                centroids.begin() + centroid_index * n_features);
+                centroids.begin() + centroid_index * n_features,
+                centroids.begin() + centroid_index * n_features + n_features);
 
             if (sample_to_centroid_distance < min_distance) {
                 min_distance = sample_to_centroid_distance;
@@ -61,7 +62,8 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_
             const auto nearest_candidate = ffcl::common::math::heuristics::auto_distance(
                 samples_range_first + sample_index * n_features,
                 samples_range_first + sample_index * n_features + n_features,
-                centroids.begin() + centroid_index * n_features);
+                centroids.begin() + centroid_index * n_features,
+                centroids.begin() + centroid_index * n_features + n_features);
 
             if (nearest_candidate < min_distance) {
                 min_distance = nearest_candidate;
@@ -95,7 +97,8 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_
             const auto second_nearest_candidate = ffcl::common::math::heuristics::auto_distance(
                 samples_range_first + sample_index * n_features,
                 samples_range_first + sample_index * n_features + n_features,
-                centroids.begin() + centroid_index * n_features);
+                centroids.begin() + centroid_index * n_features,
+                centroids.begin() + centroid_index * n_features + n_features);
 
             if (second_nearest_candidate < first_min_distance) {
                 second_min_distance = first_min_distance;
@@ -175,10 +178,11 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> nearest_
 
         for (std::size_t other_row_index = 0; other_row_index < n_rows; ++other_row_index) {
             if (row_index != other_row_index) {
-                const auto nearest_candidate =
-                    ffcl::common::math::heuristics::auto_distance(data_first + row_index * n_features,
-                                                                  data_first + row_index * n_features + n_features,
-                                                                  data_first + other_row_index * n_features);
+                const auto nearest_candidate = ffcl::common::math::heuristics::auto_distance(
+                    data_first + row_index * n_features,
+                    data_first + row_index * n_features + n_features,
+                    data_first + other_row_index * n_features,
+                    data_first + other_row_index * n_features + n_features);
 
                 if (nearest_candidate < min_distance) {
                     min_distance = nearest_candidate;

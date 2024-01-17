@@ -140,10 +140,11 @@ void Hamerly<SamplesIterator>::swap_bounds() {
         if (samples_to_nearest_centroid_distances[sample_index] > upper_bound_comparison) {
             const auto [samples_range_first, samples_range_last, n_features] = dataset_descriptor_;
             // tighten upper bound
-            auto upper_bound =
-                common::math::heuristics::auto_distance(samples_range_first + sample_index * n_features,
-                                                        samples_range_first + sample_index * n_features + n_features,
-                                                        centroids_.begin() + assigned_centroid_index * n_features);
+            auto upper_bound = common::math::heuristics::auto_distance(
+                samples_range_first + sample_index * n_features,
+                samples_range_first + sample_index * n_features + n_features,
+                centroids_.begin() + assigned_centroid_index * n_features,
+                centroids_.begin() + assigned_centroid_index * n_features + n_features);
 
             const auto previous_assigned_centroid_distance = samples_to_nearest_centroid_distances[sample_index];
 
@@ -160,7 +161,8 @@ void Hamerly<SamplesIterator>::swap_bounds() {
                         const auto other_nearest_candidate = common::math::heuristics::auto_distance(
                             samples_range_first + sample_index * n_features,
                             samples_range_first + sample_index * n_features + n_features,
-                            centroids_.begin() + other_centroid_index * n_features);
+                            centroids_.begin() + other_centroid_index * n_features,
+                            centroids_.begin() + other_centroid_index * n_features + n_features);
 
                         // if another center is closer than the current assignment
                         if (other_nearest_candidate < upper_bound) {
@@ -250,7 +252,8 @@ void Hamerly<SamplesIterator>::update_centroids_velocities(const std::vector<Dat
         centroid_velocities[centroid_index] = common::math::heuristics::auto_distance(
             previous_centroids.begin() + centroid_index * n_features,
             previous_centroids.begin() + centroid_index * n_features + n_features,
-            centroids_.begin() + centroid_index * n_features);
+            centroids_.begin() + centroid_index * n_features,
+            centroids_.begin() + centroid_index * n_features + n_features);
     }
 }
 

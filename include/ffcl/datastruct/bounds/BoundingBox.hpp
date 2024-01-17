@@ -54,7 +54,8 @@ class BoundingBox : public StaticBound<BoundingBox<Segment>> {
                                  const FeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return common::math::heuristics::auto_distance(features_range_first, features_range_last, centroid_.begin());
+        return common::math::heuristics::auto_distance(
+            features_range_first, features_range_last, centroid_.begin(), centroid_.end());
     }
 
     template <typename FeaturesIterator>
@@ -148,8 +149,10 @@ class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
         assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
                                         std::distance(other_features_range_first, other_features_range_last)));
 
-        return common::math::heuristics::auto_distance(
-            other_features_range_first, other_features_range_last, centroid_features_range_first_);
+        return common::math::heuristics::auto_distance(other_features_range_first,
+                                                       other_features_range_last,
+                                                       centroid_features_range_first_,
+                                                       centroid_features_range_last_);
     }
 
     template <typename OtherFeaturesIterator>

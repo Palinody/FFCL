@@ -66,7 +66,8 @@ template <typename SamplesIterator>
 auto PairwiseDistanceMatrixDynamic<SamplesIterator>::operator()(std::size_t row_index, std::size_t column_index) const {
     return common::math::heuristics::auto_distance(samples_first_ + row_index * n_features_,
                                                    samples_first_ + row_index * n_features_ + n_features_,
-                                                   samples_first_ + column_index * n_features_);
+                                                   samples_first_ + column_index * n_features_,
+                                                   samples_first_ + column_index * n_features_ + n_features_);
 }
 
 template <typename SamplesIterator>

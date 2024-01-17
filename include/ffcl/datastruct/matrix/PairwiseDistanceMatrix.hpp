@@ -109,7 +109,8 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_paralle
             low_triangle_distance_matrix[flat_index + column_index] =
                 common::math::heuristics::auto_distance(samples_range_first + row_index * n_features,
                                                         samples_range_first + row_index * n_features + n_features,
-                                                        samples_range_first + column_index * n_features);
+                                                        samples_range_first + column_index * n_features,
+                                                        samples_range_first + column_index * n_features + n_features);
         }
     }
     return low_triangle_distance_matrix;
@@ -131,7 +132,8 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_sequent
             low_triangle_distance_matrix[flat_index + column_index] =
                 common::math::heuristics::auto_distance(samples_range_first + row_index * n_features,
                                                         samples_range_first + row_index * n_features + n_features,
-                                                        samples_range_first + column_index * n_features);
+                                                        samples_range_first + column_index * n_features,
+                                                        samples_range_first + column_index * n_features + n_features);
         }
     }
     return low_triangle_distance_matrix;

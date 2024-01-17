@@ -33,7 +33,8 @@ auto squared_euclidean_distance_from_origin(const FeaturesIterator& features_ran
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto squared_euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
                                 const LeftFeaturesIterator&  left_features_range_last,
-                                const RightFeaturesIterator& right_features_range_first)
+                                const RightFeaturesIterator& right_features_range_first,
+                                const RightFeaturesIterator& right_features_range_last)
     -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
                 std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>()) {
     static_assert(std::is_floating_point_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
@@ -43,6 +44,8 @@ auto squared_euclidean_distance(const LeftFeaturesIterator&  left_features_range
 
     using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
                                 std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>());
+
+    common::ignore_parameters(right_features_range_last);
 
     return std::transform_reduce(left_features_range_first,
                                  left_features_range_last,
@@ -64,9 +67,14 @@ auto euclidean_distance_from_origin(const FeaturesIterator& features_range_first
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
                         const LeftFeaturesIterator&  left_features_range_last,
-                        const RightFeaturesIterator& right_features_range_first) {
-    return std::sqrt(
-        squared_euclidean_distance(left_features_range_first, left_features_range_last, right_features_range_first));
+                        const RightFeaturesIterator& right_features_range_first,
+                        const RightFeaturesIterator& right_features_range_last) {
+    common::ignore_parameters(right_features_range_last);
+
+    return std::sqrt(squared_euclidean_distance(/**/ left_features_range_first,
+                                                /**/ left_features_range_last,
+                                                /**/ right_features_range_first,
+                                                /**/ right_features_range_last));
 }
 
 template <typename FeaturesIterator>
@@ -88,7 +96,8 @@ auto manhattan_distance_from_origin(const FeaturesIterator& features_range_first
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto manhattan_distance(const LeftFeaturesIterator&  left_features_range_first,
                         const LeftFeaturesIterator&  left_features_range_last,
-                        const RightFeaturesIterator& right_features_range_first)
+                        const RightFeaturesIterator& right_features_range_first,
+                        const RightFeaturesIterator& right_features_range_last)
     -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
                 std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>()) {
     static_assert(std::is_signed<typename std::iterator_traits<LeftFeaturesIterator>::value_type>::value,
@@ -98,6 +107,8 @@ auto manhattan_distance(const LeftFeaturesIterator&  left_features_range_first,
 
     using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
                                 std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>());
+
+    common::ignore_parameters(right_features_range_last);
 
     return std::transform_reduce(left_features_range_first,
                                  left_features_range_last,
@@ -126,7 +137,8 @@ auto unsigned_manhattan_distance_from_origin(const FeaturesIterator& features_ra
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto unsigned_manhattan_distance(const LeftFeaturesIterator&  left_features_range_first,
                                  const LeftFeaturesIterator&  left_features_range_last,
-                                 const RightFeaturesIterator& right_features_range_first)
+                                 const RightFeaturesIterator& right_features_range_first,
+                                 const RightFeaturesIterator& right_features_range_last)
     -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() -
                 std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>()) {
     static_assert(std::is_unsigned_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
@@ -136,6 +148,8 @@ auto unsigned_manhattan_distance(const LeftFeaturesIterator&  left_features_rang
 
     using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() -
                                 std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
+
+    common::ignore_parameters(right_features_range_last);
 
     return std::transform_reduce(left_features_range_first,
                                  left_features_range_last,
@@ -148,7 +162,8 @@ auto unsigned_manhattan_distance(const LeftFeaturesIterator&  left_features_rang
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
                        const LeftFeaturesIterator&  left_features_range_last,
-                       const RightFeaturesIterator& right_features_range_first)
+                       const RightFeaturesIterator& right_features_range_first,
+                       const RightFeaturesIterator& right_features_range_last)
     -> decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
                 std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>()) {
     static_assert(std::is_floating_point_v<typename std::iterator_traits<LeftFeaturesIterator>::value_type>,
@@ -159,13 +174,19 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
     using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
                                 std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
 
+    common::ignore_parameters(right_features_range_last);
+
     const std::size_t n_features = std::distance(left_features_range_first, left_features_range_last);
 
-    const ResultType dot_product = std::inner_product(
-        left_features_range_first, left_features_range_last, right_features_range_first, static_cast<ResultType>(0));
+    const ResultType dot_product = std::inner_product(/**/ left_features_range_first,
+                                                      /**/ left_features_range_last,
+                                                      /**/ right_features_range_first,
+                                                      /**/ static_cast<ResultType>(0));
 
-    const ResultType magnitude_1 = sqrt(std::inner_product(
-        left_features_range_first, left_features_range_last, left_features_range_first, static_cast<ResultType>(0)));
+    const ResultType magnitude_1 = sqrt(std::inner_product(/**/ left_features_range_first,
+                                                           /**/ left_features_range_last,
+                                                           /**/ left_features_range_first,
+                                                           /**/ static_cast<ResultType>(0)));
 
     const ResultType magnitude_2 = sqrt(std::inner_product(right_features_range_first,
                                                            right_features_range_first + n_features,
@@ -190,6 +211,8 @@ auto levenshtein_distance(const LeftFeaturesIterator&  left_features_range_first
 
     using IntegralCostType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
                                       std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
+
+    common::ignore_parameters(right_features_range_last);
 
     const std::size_t n_features_left  = std::distance(left_features_range_first, left_features_range_last);
     const std::size_t n_features_right = std::distance(right_features_range_first, right_features_range_last);
@@ -244,7 +267,8 @@ auto auto_distance_from_origin(const FeaturesIterator& features_range_first,
 template <typename LeftFeaturesIterator, typename RightFeaturesIterator>
 auto auto_distance(const LeftFeaturesIterator&  left_features_range_first,
                    const LeftFeaturesIterator&  left_features_range_last,
-                   const RightFeaturesIterator& right_features_range_first) {
+                   const RightFeaturesIterator& right_features_range_first,
+                   const RightFeaturesIterator& right_features_range_last) {
     using FeatureType1 = typename std::iterator_traits<LeftFeaturesIterator>::value_type;
     using FeatureType2 = typename std::iterator_traits<RightFeaturesIterator>::value_type;
 
@@ -253,20 +277,31 @@ auto auto_distance(const LeftFeaturesIterator&  left_features_range_first,
     static_assert(std::is_same_v<FeatureType1, FeatureType2>);
 
     if constexpr (std::is_floating_point_v<FeatureType1>) {
-        return euclidean_distance(left_features_range_first, left_features_range_last, right_features_range_first);
+        return euclidean_distance(/**/ left_features_range_first,
+                                  /**/ left_features_range_last,
+                                  /**/ right_features_range_first,
+                                  /**/ right_features_range_last);
 
     } else if constexpr (std::is_signed_v<FeatureType1>) {
-        return manhattan_distance(left_features_range_first, left_features_range_last, right_features_range_first);
+        return manhattan_distance(/**/ left_features_range_first,
+                                  /**/ left_features_range_last,
+                                  /**/ right_features_range_first,
+                                  /**/ right_features_range_last);
 
     } else if constexpr (std::is_unsigned_v<FeatureType1>) {
-        return unsigned_manhattan_distance(
-            left_features_range_first, left_features_range_last, right_features_range_first);
+        return unsigned_manhattan_distance(/**/ left_features_range_first,
+                                           /**/ left_features_range_last,
+                                           /**/ right_features_range_first,
+                                           /**/ right_features_range_last);
 
     } else {
 #if defined(VERBOSE) && VERBOSE == true
         std::cout << "[WARN] requested type for auto_distance not handled. Using default: euclidean.\n";
 #endif
-        return euclidean_distance(left_features_range_first, left_features_range_last, right_features_range_first);
+        return euclidean_distance(/**/ left_features_range_first,
+                                  /**/ left_features_range_last,
+                                  /**/ right_features_range_first,
+                                  /**/ right_features_range_last);
     }
 }
 

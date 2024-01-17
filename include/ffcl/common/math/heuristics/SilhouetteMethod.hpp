@@ -99,7 +99,8 @@ auto cohesion(const SamplesIterator&       samples_range_first,
                 samples_cohesion_scores[sample_index] +=
                     auto_distance(samples_range_first + sample_index * n_features,
                                   samples_range_first + sample_index * n_features + n_features,
-                                  samples_range_first + other_sample_index * n_features);
+                                  samples_range_first + other_sample_index * n_features,
+                                  samples_range_first + other_sample_index * n_features + n_features);
             }
         }
         // number of samples in the current centroid
@@ -167,7 +168,8 @@ auto separation(const SamplesIterator&       samples_range_first,
                 sample_to_other_cluster_samples_distance_mean[other_centroid_index] +=
                     auto_distance(samples_range_first + sample_index * n_features,
                                   samples_range_first + sample_index * n_features + n_features,
-                                  samples_range_first + other_sample_index * n_features);
+                                  samples_range_first + other_sample_index * n_features,
+                                  samples_range_first + other_sample_index * n_features + n_features);
             }
         }
         // normalize each cluster mean distance sum by each cluster's number of samples

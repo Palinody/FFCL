@@ -34,7 +34,8 @@ build(const SamplesIterator& samples_range_first,
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
                                                              samples_range_first + left_idx * n_features + n_features,
-                                                             samples_range_first + right_idx * n_features);
+                                                             samples_range_first + right_idx * n_features,
+                                                             samples_range_first + right_idx * n_features + n_features);
     };
 
     // select the remaining medoids

@@ -36,7 +36,8 @@ std::vector<std::size_t> samples_to_nearest_medoid_indices(const SamplesIterator
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
                                                              samples_range_first + left_idx * n_features + n_features,
-                                                             samples_range_first + right_idx * n_features);
+                                                             samples_range_first + right_idx * n_features,
+                                                             samples_range_first + right_idx * n_features + n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -107,7 +108,8 @@ std::vector<std::size_t> samples_to_second_nearest_medoid_indices(const SamplesI
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
                                                              samples_range_first + left_idx * n_features + n_features,
-                                                             samples_range_first + right_idx * n_features);
+                                                             samples_range_first + right_idx * n_features,
+                                                             samples_range_first + right_idx * n_features + n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -197,7 +199,8 @@ std::vector<std::size_t> samples_to_third_nearest_medoid_indices(const SamplesIt
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
                                                              samples_range_first + left_idx * n_features + n_features,
-                                                             samples_range_first + right_idx * n_features);
+                                                             samples_range_first + right_idx * n_features,
+                                                             samples_range_first + right_idx * n_features + n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -365,7 +368,8 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
                                                              samples_range_first + left_idx * n_features + n_features,
-                                                             samples_range_first + right_idx * n_features);
+                                                             samples_range_first + right_idx * n_features,
+                                                             samples_range_first + right_idx * n_features + n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -434,7 +438,8 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
                                                              samples_range_first + left_idx * n_features + n_features,
-                                                             samples_range_first + right_idx * n_features);
+                                                             samples_range_first + right_idx * n_features,
+                                                             samples_range_first + right_idx * n_features + n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -515,7 +520,8 @@ std::vector<typename std::iterator_traits<SamplesIterator>::value_type> samples_
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
                                                              samples_range_first + left_idx * n_features + n_features,
-                                                             samples_range_first + right_idx * n_features);
+                                                             samples_range_first + right_idx * n_features,
+                                                             samples_range_first + right_idx * n_features + n_features);
     };
     // iterate over all the samples
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
@@ -722,7 +728,8 @@ std::pair<typename std::iterator_traits<SamplesIterator>::value_type, std::size_
             loss_acc += ffcl::common::math::heuristics::auto_distance(
                 samples_range_first + medoid_candidate_idx * n_features,
                 samples_range_first + medoid_candidate_idx * n_features + n_features,
-                samples_range_first + other_sample_index * n_features);
+                samples_range_first + other_sample_index * n_features,
+                samples_range_first + other_sample_index * n_features + n_features);
         }
         // if the candidate total deviation is lower than the current total deviation
         if (loss_acc < total_deviation) {
