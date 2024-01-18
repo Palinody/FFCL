@@ -92,7 +92,8 @@ template <typename Indexer>
 template <typename ForwardedIndexer>
 auto HDBSCAN<Indexer>::predict(ForwardedIndexer&& indexer) const {
     using BoruvkasAlgorithmOptionsType    = typename BoruvkasAlgorithm<Indexer>::Options;
-    using CondensedClusterTreeOptionsType = typename datastruct::CondensedClusterTree<IndexType, ValueType>::Options;
+    using CondensedClusterTreeType        = datastruct::CondensedClusterTree<IndexType, ValueType>;
+    using CondensedClusterTreeOptionsType = typename CondensedClusterTreeType::Options;
 
     const auto boruvkas_algorithm =
         BoruvkasAlgorithm<Indexer>(BoruvkasAlgorithmOptionsType().k_nearest_neighbors(options_.k_nearest_neighbors_));
@@ -103,12 +104,12 @@ auto HDBSCAN<Indexer>::predict(ForwardedIndexer&& indexer) const {
 
     const auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
 
-    const auto condensed_cluster_tree = datastruct::CondensedClusterTree<IndexType, ValueType>(
-        single_linkage_cluster_tree_root,
-        CondensedClusterTreeOptionsType()
-            .min_cluster_size(options_.min_cluster_size_)
-            .return_leaf_nodes(options_.return_leaf_nodes_)
-            .allow_single_cluster(options_.allow_single_cluster_));
+    const auto condensed_cluster_tree =
+        CondensedClusterTreeType(single_linkage_cluster_tree_root,
+                                 CondensedClusterTreeOptionsType()
+                                     .min_cluster_size(options_.min_cluster_size_)
+                                     .return_leaf_nodes(options_.return_leaf_nodes_)
+                                     .allow_single_cluster(options_.allow_single_cluster_));
 
     return condensed_cluster_tree.predict();
 }

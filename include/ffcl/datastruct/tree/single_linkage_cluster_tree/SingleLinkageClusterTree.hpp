@@ -20,23 +20,26 @@ namespace fs = std::filesystem;
 template <typename Index, typename Value>
 class SingleLinkageClusterTree {
   public:
-    static_assert(std::is_fundamental<Index>::value, "Index must be a fundamental type.");
-    static_assert(std::is_fundamental<Value>::value, "Value must be a fundamental type.");
+    using IndexType = Index;
+    using ValueType = Value;
 
-    using MinimumSpanningTreeType = datastruct::mst::EdgesList<Index, Value>;
-    using UnionFindType           = datastruct::UnionFind<Index>;
+    static_assert(std::is_fundamental<IndexType>::value, "IndexType must be a fundamental type.");
+    static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
 
-    using SingleLinkageClusterNodeType = SingleLinkageClusterNode<Index, Value>;
+    using MinimumSpanningTreeType = datastruct::mst::EdgesList<IndexType, ValueType>;
+    using UnionFindType           = datastruct::UnionFind<IndexType>;
+
+    using SingleLinkageClusterNodeType = SingleLinkageClusterNode<IndexType, ValueType>;
     using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterNodeType::NodePtr;
 
-    using ClusterIndexType = Index;
+    using ClusterIndexType = IndexType;
 
     struct Options {
         Options() = default;
 
         Options(const Options& other) = default;
 
-        Options& cut_level(const Value& cut_level) {
+        Options& cut_level(const ValueType& cut_level) {
             cut_level_ = cut_level;
             return *this;
         }
@@ -52,7 +55,7 @@ class SingleLinkageClusterTree {
             return *this;
         }
 
-        Value       cut_level_        = common::infinity<Value>();
+        ValueType   cut_level_        = common::infinity<ValueType>();
         std::size_t min_cluster_size_ = 1;
     };
 
@@ -64,7 +67,7 @@ class SingleLinkageClusterTree {
 
     SingleLinkageClusterTree(MinimumSpanningTreeType&& mst, const Options& options);
 
-    SingleLinkageClusterTree<Index, Value>& set_options(const Options& options);
+    SingleLinkageClusterTree<IndexType, ValueType>& set_options(const Options& options);
 
     constexpr auto root() const;
 
@@ -94,42 +97,44 @@ class SingleLinkageClusterTree {
     Options options_;
 };
 
-template <typename Index, typename Value>
-SingleLinkageClusterTree<Index, Value>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst)
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst)
   : sorted_mst_{datastruct::mst::sort_copy(mst)}
   , root_{build()} {}
 
-template <typename Index, typename Value>
-SingleLinkageClusterTree<Index, Value>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst,
-                                                                 const Options&                 options)
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst,
+                                                                         const Options&                 options)
   : sorted_mst_{datastruct::mst::sort_copy(mst)}
   , root_{build()}
   , options_{options} {}
 
-template <typename Index, typename Value>
-SingleLinkageClusterTree<Index, Value>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
   : sorted_mst_{datastruct::mst::sort(std::move(mst))}
   , root_{build()} {}
 
-template <typename Index, typename Value>
-SingleLinkageClusterTree<Index, Value>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst, const Options& options)
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst,
+                                                                         const Options&            options)
   : sorted_mst_{datastruct::mst::sort(std::move(mst))}
   , root_{build()}
   , options_{options} {}
 
-template <typename Index, typename Value>
-SingleLinkageClusterTree<Index, Value>& SingleLinkageClusterTree<Index, Value>::set_options(const Options& options) {
+template <typename IndexType, typename ValueType>
+SingleLinkageClusterTree<IndexType, ValueType>& SingleLinkageClusterTree<IndexType, ValueType>::set_options(
+    const Options& options) {
     options_ = options;
     return *this;
 }
 
-template <typename Index, typename Value>
-constexpr auto SingleLinkageClusterTree<Index, Value>::root() const {
+template <typename IndexType, typename ValueType>
+constexpr auto SingleLinkageClusterTree<IndexType, ValueType>::root() const {
     return root_;
 }
 
-template <typename Index, typename Value>
-auto SingleLinkageClusterTree<Index, Value>::extract_flat_clusters() const {
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::extract_flat_clusters() const {
     auto flat_cluster = std::vector<ClusterIndexType>(root_->size());
 
     preorder_traversal_single_linkage_clustering(root_->representative_, root_, flat_cluster);
@@ -137,13 +142,13 @@ auto SingleLinkageClusterTree<Index, Value>::extract_flat_clusters() const {
     return flat_cluster;
 }
 
-template <typename Index, typename Value>
-auto SingleLinkageClusterTree<Index, Value>::predict() const {
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::predict() const {
     return extract_flat_clusters();
 }
 
-template <typename Index, typename Value>
-void SingleLinkageClusterTree<Index, Value>::preorder_traversal_single_linkage_clustering(
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::preorder_traversal_single_linkage_clustering(
     ClusterIndexType                   cluster_label,
     const SingleLinkageClusterNodePtr& single_linkage_cluster_node,
     std::vector<ClusterIndexType>&     flat_cluster) const {
@@ -171,8 +176,8 @@ void SingleLinkageClusterTree<Index, Value>::preorder_traversal_single_linkage_c
     }
 }
 
-template <typename Index, typename Value>
-auto SingleLinkageClusterTree<Index, Value>::build() {
+template <typename IndexType, typename ValueType>
+auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
     const std::size_t n_samples = sorted_mst_.size() + 1;
 
     // union find data structure to keep track of the cluster id
@@ -217,13 +222,13 @@ auto SingleLinkageClusterTree<Index, Value>::build() {
     return nodes.begin()->second;
 }
 
-template <typename Index, typename Value>
-void SingleLinkageClusterTree<Index, Value>::print() const {
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::print() const {
     print_node(root_);
 }
 
-template <typename Index, typename Value>
-void SingleLinkageClusterTree<Index, Value>::print_node(const SingleLinkageClusterNodePtr& node) const {
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::print_node(const SingleLinkageClusterNodePtr& node) const {
     std::cout << "representative "
               << "(" << node->level_ << "): " << node->representative_ << "\n---\n";
 
@@ -233,9 +238,10 @@ void SingleLinkageClusterTree<Index, Value>::print_node(const SingleLinkageClust
     }
 }
 
-template <typename Index, typename Value>
-void SingleLinkageClusterTree<Index, Value>::serialize(const SingleLinkageClusterNodePtr&          node,
-                                                       rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::serialize(
+    const SingleLinkageClusterNodePtr&          node,
+    rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     writer.StartObject();
     {
         node->serialize(writer);
@@ -252,8 +258,8 @@ void SingleLinkageClusterTree<Index, Value>::serialize(const SingleLinkageCluste
     writer.EndObject();
 }
 
-template <typename Index, typename Value>
-void SingleLinkageClusterTree<Index, Value>::serialize(const fs::path& filepath) const {
+template <typename IndexType, typename ValueType>
+void SingleLinkageClusterTree<IndexType, ValueType>::serialize(const fs::path& filepath) const {
     rapidjson::Document document;
 
     rapidjson::StringBuffer buffer;
