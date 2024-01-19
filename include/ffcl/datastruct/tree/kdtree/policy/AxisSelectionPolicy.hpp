@@ -159,7 +159,7 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most variance
-        return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator>(
+        return kdtree::algorithms::select_axis_with_largest_variance(
             /**/ indices_range_first,
             /**/ indices_range_last,
             /**/ samples_range_first,
@@ -167,7 +167,7 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
             /**/ n_features,
             /**/ sampling_rate_);
     }
-    return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator>(
+    return kdtree::algorithms::select_axis_with_largest_variance(
         /**/ indices_range_first,
         /**/ indices_range_last,
         /**/ samples_range_first,
