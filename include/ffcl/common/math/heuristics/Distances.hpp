@@ -69,8 +69,6 @@ auto euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
                         const LeftFeaturesIterator&  left_features_range_last,
                         const RightFeaturesIterator& right_features_range_first,
                         const RightFeaturesIterator& right_features_range_last) {
-    common::ignore_parameters(right_features_range_last);
-
     return std::sqrt(squared_euclidean_distance(/**/ left_features_range_first,
                                                 /**/ left_features_range_last,
                                                 /**/ right_features_range_first,
@@ -174,8 +172,6 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
     using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
                                 std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
 
-    common::ignore_parameters(right_features_range_last);
-
     const std::size_t n_features = std::distance(left_features_range_first, left_features_range_last);
 
     const ResultType dot_product = std::inner_product(/**/ left_features_range_first,
@@ -183,15 +179,15 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
                                                       /**/ right_features_range_first,
                                                       /**/ static_cast<ResultType>(0));
 
-    const ResultType magnitude_1 = sqrt(std::inner_product(/**/ left_features_range_first,
-                                                           /**/ left_features_range_last,
-                                                           /**/ left_features_range_first,
-                                                           /**/ static_cast<ResultType>(0)));
+    const ResultType magnitude_1 = std::sqrt(std::inner_product(/**/ left_features_range_first,
+                                                                /**/ left_features_range_last,
+                                                                /**/ left_features_range_first,
+                                                                /**/ static_cast<ResultType>(0)));
 
-    const ResultType magnitude_2 = sqrt(std::inner_product(right_features_range_first,
-                                                           right_features_range_first + n_features,
-                                                           right_features_range_first,
-                                                           static_cast<ResultType>(0)));
+    const ResultType magnitude_2 = std::sqrt(std::inner_product(/**/ right_features_range_first,
+                                                                /**/ right_features_range_last,
+                                                                /**/ right_features_range_first,
+                                                                /**/ static_cast<ResultType>(0)));
     // returns "infinity" if the denominator is zero
     return division(dot_product, magnitude_1 * magnitude_2, infinity<ResultType>());
 }
@@ -211,8 +207,6 @@ auto levenshtein_distance(const LeftFeaturesIterator&  left_features_range_first
 
     using IntegralCostType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() +
                                       std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
-
-    common::ignore_parameters(right_features_range_last);
 
     const std::size_t n_features_left  = std::distance(left_features_range_first, left_features_range_last);
     const std::size_t n_features_right = std::distance(right_features_range_first, right_features_range_last);

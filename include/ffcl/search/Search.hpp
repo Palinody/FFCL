@@ -5,6 +5,7 @@
 #include "ffcl/search/buffer/StaticBase.hpp"
 #include "ffcl/search/count/StaticBase.hpp"
 
+#include "ffcl/search/DualTreeTraverser.hpp"
 #include "ffcl/search/SingleTreeTraverser.hpp"
 
 namespace ffcl::search {
@@ -33,6 +34,9 @@ class Searcher {
     template <typename ForwardedBuffer>
     ForwardedBuffer operator()(ForwardedBuffer&& buffer) const;
 
+    template <typename Buffer>
+    std::vector<Buffer> operator()(std::vector<Buffer>&& buffer_batch) const;
+
     std::size_t n_samples() const;
 
     constexpr auto features_range_first(std::size_t sample_index) const;
@@ -57,6 +61,37 @@ ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forward
                   "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
 
     return single_tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
+}
+
+/*
+template <typename ReferenceIndexer>
+template <typename Buffer>
+std::vector<Buffer> Searcher<ReferenceIndexer>::operator()(std::vector<Buffer>&& buffer_batch) const {
+    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                  "Provided a Buffer inside std::vector that does not inherit from StaticBase<Derived>");
+
+    auto processed_buffer_batch = std::forward<std::vector<Buffer>>(buffer_batch);
+
+    for (auto& buffer : processed_buffer_batch) {
+        buffer = (*this)(std::forward<Buffer>(buffer));
+    }
+    return processed_buffer_batch;
+}
+*/
+
+template <typename ReferenceIndexer>
+template <typename Buffer>
+std::vector<Buffer> Searcher<ReferenceIndexer>::operator()(std::vector<Buffer>&& buffer_batch) const {
+    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                  "Provided a Buffer inside std::vector that does not inherit from StaticBase<Derived>");
+
+    std::vector<Buffer> processed_buffer_batch;
+    processed_buffer_batch.reserve(buffer_batch.size());
+
+    for (auto& buffer : buffer_batch) {
+        processed_buffer_batch.emplace_back((*this)(std::move(buffer)));
+    }
+    return processed_buffer_batch;
 }
 
 template <typename ReferenceIndexer>
