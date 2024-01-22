@@ -34,9 +34,6 @@ class Searcher {
     template <typename ForwardedBuffer>
     ForwardedBuffer operator()(ForwardedBuffer&& buffer) const;
 
-    template <typename Buffer>
-    std::vector<Buffer> operator()(std::vector<Buffer>&& buffer_batch) const;
-
     std::size_t n_samples() const;
 
     constexpr auto features_range_first(std::size_t sample_index) const;
@@ -44,6 +41,9 @@ class Searcher {
     constexpr auto features_range_last(std::size_t sample_index) const;
 
   private:
+    template <typename Buffer>
+    std::vector<Buffer> operator()(std::vector<Buffer>&& buffer_batch) const;
+
     SingleTreeTraverser<ReferenceIndexer> single_tree_traverser_;
 };
 
@@ -62,22 +62,6 @@ ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forward
 
     return single_tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
 }
-
-/*
-template <typename ReferenceIndexer>
-template <typename Buffer>
-std::vector<Buffer> Searcher<ReferenceIndexer>::operator()(std::vector<Buffer>&& buffer_batch) const {
-    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                  "Provided a Buffer inside std::vector that does not inherit from StaticBase<Derived>");
-
-    auto processed_buffer_batch = std::forward<std::vector<Buffer>>(buffer_batch);
-
-    for (auto& buffer : processed_buffer_batch) {
-        buffer = (*this)(std::forward<Buffer>(buffer));
-    }
-    return processed_buffer_batch;
-}
-*/
 
 template <typename ReferenceIndexer>
 template <typename Buffer>
