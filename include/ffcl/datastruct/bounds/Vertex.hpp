@@ -90,7 +90,7 @@ class Vertex {
         return values_[index];
     }
 
-    constexpr const Value& operator[](std::size_t index) const {
+    constexpr Value& operator[](std::size_t index) const {
         return values_[index];
     }
 

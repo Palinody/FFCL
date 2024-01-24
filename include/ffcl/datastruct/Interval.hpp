@@ -150,39 +150,39 @@ auto make_hyper_interval(const IndicesIterator& indices_range_first,
     return hyper_interval;
 }
 
-template <typename SamplesIterator>
-bool is_sample_in_hyper_interval(const SamplesIterator&                feature_first,
-                                 const SamplesIterator&                feature_last,
-                                 const HyperInterval<SamplesIterator>& hyper_interval) {
-    const std::size_t n_features = std::distance(feature_first, feature_last);
+template <typename FeaturesIterator>
+bool is_sample_in_hyper_interval(const FeaturesIterator&                features_range_first,
+                                 const FeaturesIterator&                features_range_last,
+                                 const HyperInterval<FeaturesIterator>& hyper_interval) {
+    const std::size_t n_features = std::distance(features_range_first, features_range_last);
 
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
         // A sample is inside the bounding box if p is in [lo, hi]
-        if (feature_first[feature_index] < hyper_interval[feature_index].first() ||
-            feature_first[feature_index] > hyper_interval[feature_index].second()) {
+        if (features_range_first[feature_index] < hyper_interval[feature_index].first() ||
+            features_range_first[feature_index] > hyper_interval[feature_index].second()) {
             return false;
         }
     }
     return true;
 }
 
-template <typename SamplesIterator>
-auto relative_to_absolute_hyper_interval_coordinates(const SamplesIterator&           feature_first,
-                                                     const SamplesIterator&           feature_last,
-                                                     HyperInterval<SamplesIterator>&& relative_coordinates_sequence) {
-    const std::size_t n_features = std::distance(feature_first, feature_last);
+template <typename FeaturesIterator>
+auto relative_to_absolute_hyper_interval_coordinates(const FeaturesIterator&           features_range_first,
+                                                     const FeaturesIterator&           features_range_last,
+                                                     HyperInterval<FeaturesIterator>&& relative_coordinates_sequence) {
+    const std::size_t n_features = std::distance(features_range_first, features_range_last);
 
-    // make a copy that will be the translated version
-    auto range_bounding_box = std::forward<HyperInterval<SamplesIterator>>(relative_coordinates_sequence);
+    // make a copy that will be the translated version or use move semantics on the original data
+    auto hyper_interval = std::forward<HyperInterval<FeaturesIterator>>(relative_coordinates_sequence);
 
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
         // get the 1D bounding box (or range) w.r.t. the current dimension
-        auto& range = range_bounding_box[feature_index];
+        auto& range = hyper_interval[feature_index];
         // shift it by the amount specified at the right dimension
-        range.first += feature_first[feature_index];
-        range.second += feature_first[feature_index];
+        range.first += features_range_first[feature_index];
+        range.second += features_range_first[feature_index];
     }
-    return range_bounding_box;
+    return hyper_interval;
 }
 
 }  // namespace ffcl::datastruct
