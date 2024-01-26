@@ -442,15 +442,17 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
                                     ? make_core_distances_ptr(searcher, options_.k_nearest_neighbors_)
                                     : CoreDistancesArrayPtr{nullptr};
 
-    while (forest.n_components() > 1) {
-        if (core_distances) {
+    if (core_distances) {
+        while (forest.n_components() > 1) {
             if (forest.n_components() == 2) {
                 dual_component_step_sequential(searcher, core_distances, forest);
 
             } else {
                 step_sequential(searcher, core_distances, forest);
             }
-        } else {
+        }
+    } else {
+        while (forest.n_components() > 1) {
             if (forest.n_components() == 2) {
                 dual_component_step_sequential(searcher, forest);
 
