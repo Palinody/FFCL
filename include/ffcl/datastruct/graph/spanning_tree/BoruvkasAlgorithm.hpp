@@ -91,17 +91,17 @@ class BoruvkasAlgorithm {
         Forest(std::size_t n_samples)
           : n_samples_{n_samples}
           , minimum_spanning_tree_{}
-          , components_{}
+          , representatives_to_components_map_{}
           , union_find_{UnionFindType(n_samples_)} {
             minimum_spanning_tree_.reserve(n_samples_ - 1);
             // each sample starts as its own component representative
             for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
-                components_[sample_index] = ComponentType{sample_index};
+                representatives_to_components_map_[sample_index] = ComponentType{sample_index};
             }
         }
 
         std::size_t n_components() const {
-            return std::distance(components_.begin(), components_.end());
+            return std::distance(representatives_to_components_map_.begin(), representatives_to_components_map_.end());
         }
 
         const auto& get_union_find_const_reference() {
@@ -109,27 +109,27 @@ class BoruvkasAlgorithm {
         }
 
         constexpr auto begin() {
-            return components_.begin();
+            return representatives_to_components_map_.begin();
         }
 
         constexpr auto end() {
-            return components_.end();
+            return representatives_to_components_map_.end();
         }
 
         constexpr auto begin() const {
-            return components_.begin();
+            return representatives_to_components_map_.begin();
         }
 
         constexpr auto end() const {
-            return components_.end();
+            return representatives_to_components_map_.end();
         }
 
         constexpr auto cbegin() const {
-            return components_.cbegin();
+            return representatives_to_components_map_.cbegin();
         }
 
         constexpr auto cend() const {
-            return components_.cend();
+            return representatives_to_components_map_.cend();
         }
 
         auto&& minimum_spanning_tree() && {
@@ -162,12 +162,12 @@ class BoruvkasAlgorithm {
                                                             : std::make_pair(representative_2, representative_1);
 
             // move the indices from the component that will be discarded to the final one
-            components_[retained_representative].insert(
-                std::make_move_iterator(components_[discarded_representative].cbegin()),
-                std::make_move_iterator(components_[discarded_representative].cend()));
+            representatives_to_components_map_[retained_representative].insert(
+                std::make_move_iterator(representatives_to_components_map_[discarded_representative].cbegin()),
+                std::make_move_iterator(representatives_to_components_map_[discarded_representative].cend()));
 
             // now that the old component has been merged with the final one, clear it
-            components_.erase(discarded_representative);
+            representatives_to_components_map_.erase(discarded_representative);
 
             // update the minimum spanning tree
             minimum_spanning_tree_.emplace_back(edge);
@@ -175,7 +175,7 @@ class BoruvkasAlgorithm {
 
         void print() const {
             std::cout << "components:\n";
-            for (const auto& [component_index, component] : components_) {
+            for (const auto& [component_index, component] : representatives_to_components_map_) {
                 std::cout << component_index << ": ";
 
                 for (const auto& sample_index : component) {
@@ -197,7 +197,7 @@ class BoruvkasAlgorithm {
         // the container that accumulates the edges for the minimum spanning tree
         MinimumSpanningTreeType minimum_spanning_tree_;
         // the container mapping each component representative to the set of actual sample indices
-        RepresentativeToComponentMapType components_;
+        RepresentativeToComponentMapType representatives_to_components_map_;
         // a union find data structure used to merge clusters based on sample indices from distinct clusters
         UnionFindType union_find_;
     };
@@ -248,7 +248,7 @@ template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>& searcher, Forest& forest) const {
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
-    auto components_closest_edge = std::map<IndexType, EdgeType>();
+    auto components_closest_edge = std::map<IndexType, EdgeType>{};
 
     for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
@@ -292,7 +292,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
                                                  Forest&                          forest) const {
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
-    auto components_closest_edge = std::map<IndexType, EdgeType>();
+    auto components_closest_edge = std::map<IndexType, EdgeType>{};
 
     for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
@@ -438,8 +438,9 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
     const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
 
     // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
-    const auto core_distances =
-        options_.k_nearest_neighbors_ > 1 ? make_core_distances_ptr(searcher, options_.k_nearest_neighbors_) : nullptr;
+    const auto core_distances = options_.k_nearest_neighbors_ > 1
+                                    ? make_core_distances_ptr(searcher, options_.k_nearest_neighbors_)
+                                    : CoreDistancesArrayPtr{nullptr};
 
     while (forest.n_components() > 1) {
         if (core_distances) {
