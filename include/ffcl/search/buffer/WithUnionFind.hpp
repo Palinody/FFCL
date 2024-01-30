@@ -152,17 +152,16 @@ class WithUnionFind : public StaticBase<WithUnionFind<DistancesIterator, Bound>>
                              std::size_t            n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
 
-        const std::size_t n_subrange_samples = std::distance(indices_range_first, indices_range_last);
-
-        for (std::size_t subrange_index = 0; subrange_index < n_subrange_samples; ++subrange_index) {
-            const std::size_t reference_index = indices_range_first[subrange_index];
-
+        // reference_index_it is an iterator that iterates over all the indices from the indices_range_first to
+        // indices_range_last range
+        for (auto reference_index_it = indices_range_first; reference_index_it != indices_range_last;
+             ++reference_index_it) {
             const auto optional_candidate_distance = bound_.compute_distance_if_within_bounds(
-                samples_range_first + reference_index * n_features,
-                samples_range_first + reference_index * n_features + n_features);
+                samples_range_first + *reference_index_it * n_features,
+                samples_range_first + *reference_index_it * n_features + n_features);
 
             if (optional_candidate_distance) {
-                update_impl(reference_index, *optional_candidate_distance);
+                update_impl(*reference_index_it, *optional_candidate_distance);
             }
         }
     }
