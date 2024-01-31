@@ -31,8 +31,12 @@ class Searcher {
 
     explicit Searcher(ReferenceIndexer&& reference_indexer);
 
-    template <typename ForwardedBuffer>
-    ForwardedBuffer operator()(ForwardedBuffer&& buffer) const;
+    template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, int> = 0>
+    ForwardedBuffer operator()(ForwardedBuffer&& forwarded_buffer) const;
+
+    template <typename ForwardedBufferBatch,
+              typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, int> = 0>
+    ForwardedBufferBatch operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const;
 
     std::size_t n_samples() const;
 
@@ -41,9 +45,6 @@ class Searcher {
     constexpr auto features_range_last(std::size_t sample_index) const;
 
   private:
-    template <typename Buffer>
-    std::vector<Buffer> operator()(std::vector<Buffer>&& buffer_batch) const;
-
     SingleTreeTraverser<ReferenceIndexer> single_tree_traverser_;
 };
 
@@ -55,7 +56,7 @@ Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
   : single_tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
-template <typename ForwardedBuffer>
+template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, int>>
 ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
     static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
                   "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
@@ -64,18 +65,21 @@ ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forward
 }
 
 template <typename ReferenceIndexer>
-template <typename Buffer>
-std::vector<Buffer> Searcher<ReferenceIndexer>::operator()(std::vector<Buffer>&& buffer_batch) const {
-    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                  "Provided a Buffer inside std::vector that does not inherit from StaticBase<Derived>");
+template <typename ForwardedBufferBatch, typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, int>>
+ForwardedBufferBatch Searcher<ReferenceIndexer>::operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const {
+    static_assert(common::is_iterable_v<ForwardedBufferBatch>, "ForwardedBufferBatch must be an iterable container");
 
-    std::vector<Buffer> processed_buffer_batch;
-    processed_buffer_batch.reserve(buffer_batch.size());
+    using BufferType = typename ForwardedBufferBatch::value_type;
+
+    static_assert(common::is_crtp_of<BufferType, buffer::StaticBase>::value,
+                  "Elements of ForwardedBufferBatch must inherit from StaticBase<Derived>");
+
+    auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
 
     for (auto& buffer : buffer_batch) {
-        processed_buffer_batch.emplace_back((*this)(std::move(buffer)));
+        buffer = (*this)(std::move(buffer));
     }
-    return processed_buffer_batch;
+    return buffer_batch;
 }
 
 template <typename ReferenceIndexer>

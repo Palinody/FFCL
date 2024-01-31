@@ -152,6 +152,17 @@ int main() {
 */
 // END is_std_container
 
+// Utility to check if a type is iterable
+template <typename T, typename = void>
+struct is_iterable : std::false_type {};
+
+template <typename T>
+struct is_iterable<T, std::void_t<decltype(std::begin(std::declval<T>())), decltype(std::end(std::declval<T>()))>>
+  : std::true_type {};
+
+template <typename T>
+inline constexpr bool is_iterable_v = is_iterable<T>::value;
+
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}
 
