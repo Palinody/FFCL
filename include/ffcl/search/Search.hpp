@@ -31,11 +31,11 @@ class Searcher {
 
     explicit Searcher(ReferenceIndexer&& reference_indexer);
 
-    template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, int> = 0>
+    template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, bool> = true>
     ForwardedBuffer operator()(ForwardedBuffer&& forwarded_buffer) const;
 
     template <typename ForwardedBufferBatch,
-              typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, int> = 0>
+              typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, bool> = true>
     ForwardedBufferBatch operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const;
 
     std::size_t n_samples() const;
@@ -56,7 +56,7 @@ Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
   : single_tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
-template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, int>>
+template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, bool>>
 ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
     static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
                   "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
@@ -65,7 +65,7 @@ ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forward
 }
 
 template <typename ReferenceIndexer>
-template <typename ForwardedBufferBatch, typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, int>>
+template <typename ForwardedBufferBatch, typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, bool>>
 ForwardedBufferBatch Searcher<ReferenceIndexer>::operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const {
     static_assert(common::is_iterable_v<ForwardedBufferBatch>, "ForwardedBufferBatch must be an iterable container");
 
