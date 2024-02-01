@@ -104,7 +104,7 @@ class BoruvkasAlgorithm {
             return std::distance(representatives_to_components_map_.begin(), representatives_to_components_map_.end());
         }
 
-        const auto& get_union_find_const_reference() {
+        const auto& get_union_find_const_reference() const {
             return union_find_;
         }
 
@@ -232,7 +232,10 @@ BoruvkasAlgorithm<Indexer>& BoruvkasAlgorithm<Indexer>::set_options(const Option
 template <typename Indexer>
 auto BoruvkasAlgorithm<Indexer>::make_core_distances_ptr(const search::Searcher<Indexer>& searcher,
                                                          const IndexType&                 k_nearest_neighbors) const {
-    auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::make_unique<ValueType[]>(searcher.n_samples()));
+    // just a temporary array that allocates enough memory for the core distances
+    auto core_distances = std::make_unique<ValueType[]>(searcher.n_samples());
+    // that we then wrap in a shared ptr by transfering its ownership
+    auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::move(core_distances));
 
     for (std::size_t sample_index = 0; sample_index < searcher.n_samples(); ++sample_index) {
         auto nn_buffer_query = search::buffer::Unsorted(searcher.features_range_first(sample_index),
