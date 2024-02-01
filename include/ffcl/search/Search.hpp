@@ -6,7 +6,7 @@
 #include "ffcl/search/count/StaticBase.hpp"
 
 #include "ffcl/search/DualTreeTraverser.hpp"
-#include "ffcl/search/SingleTreeTraverser.hpp"
+#include "ffcl/search/TreeTraverser.hpp"
 
 namespace ffcl::search {
 
@@ -45,7 +45,7 @@ class Searcher {
     constexpr auto features_range_last(std::size_t sample_index) const;
 
   private:
-    SingleTreeTraverser<ReferenceIndexer> single_tree_traverser_;
+    TreeTraverser<ReferenceIndexer> tree_traverser_;
 };
 
 template <typename ReferenceIndexer>
@@ -53,7 +53,7 @@ Searcher(ReferenceIndexer) -> Searcher<ReferenceIndexer>;
 
 template <typename ReferenceIndexer>
 Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
-  : single_tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
+  : tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
 template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, bool>>
@@ -61,7 +61,7 @@ ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forward
     static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
                   "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
 
-    return single_tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
+    return tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
 }
 
 template <typename ReferenceIndexer>
@@ -76,25 +76,25 @@ ForwardedBufferBatch Searcher<ReferenceIndexer>::operator()(ForwardedBufferBatch
 
     auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
 
-    for (auto& buffer : buffer_batch) {
-        buffer = (*this)(std::move(buffer));
-    }
+    std::for_each(
+        buffer_batch.begin(), buffer_batch.end(), [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
+
     return buffer_batch;
 }
 
 template <typename ReferenceIndexer>
 std::size_t Searcher<ReferenceIndexer>::n_samples() const {
-    return single_tree_traverser_.n_samples();
+    return tree_traverser_.n_samples();
 }
 
 template <typename ReferenceIndexer>
 constexpr auto Searcher<ReferenceIndexer>::features_range_first(std::size_t sample_index) const {
-    return single_tree_traverser_.features_range_first(sample_index);
+    return tree_traverser_.features_range_first(sample_index);
 }
 
 template <typename ReferenceIndexer>
 constexpr auto Searcher<ReferenceIndexer>::features_range_last(std::size_t sample_index) const {
-    return single_tree_traverser_.features_range_last(sample_index);
+    return tree_traverser_.features_range_last(sample_index);
 }
 
 }  // namespace ffcl::search
