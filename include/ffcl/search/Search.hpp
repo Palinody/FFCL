@@ -31,7 +31,10 @@ class Searcher {
 
     explicit Searcher(ReferenceIndexer&& reference_indexer);
 
-    template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, bool> = true>
+    template <typename ForwardedBuffer,
+              typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer> &&
+                                            common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
+                                        bool> = true>
     ForwardedBuffer operator()(ForwardedBuffer&& forwarded_buffer) const;
 
     template <typename ForwardedBufferBatch,
@@ -56,7 +59,10 @@ Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
   : tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
-template <typename ForwardedBuffer, typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer>, bool>>
+template <typename ForwardedBuffer,
+          typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer> &&
+                                        common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
+                                    bool>>
 ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
     static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
                   "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
@@ -76,8 +82,10 @@ ForwardedBufferBatch Searcher<ReferenceIndexer>::operator()(ForwardedBufferBatch
 
     auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
 
-    std::for_each(
-        buffer_batch.begin(), buffer_batch.end(), [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
+    std::for_each(buffer_batch.begin(),
+                  buffer_batch.end(),
+                  // update each buffer inplace
+                  [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
 
     return buffer_batch;
 }

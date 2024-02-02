@@ -95,7 +95,7 @@ for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]
 
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=5,
-        min_samples=6,
+        min_samples=1,
         gen_min_span_tree=True,
         approx_min_span_tree=False,
         core_dist_n_jobs=1,
