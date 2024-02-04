@@ -163,6 +163,18 @@ struct is_iterable<T, std::void_t<decltype(std::begin(std::declval<T>())), declt
 template <typename T>
 inline constexpr bool is_iterable_v = is_iterable<T>::value;
 
+// New trait to check if the iterable's value_type inherits TargetCRTP
+template <typename Iterable, template <typename> class TargetCRTP, typename = void>
+struct is_iterable_of_static_base : std::false_type {};
+
+template <typename Iterable, template <typename> class TargetCRTP>
+struct is_iterable_of_static_base<
+    Iterable,
+    TargetCRTP,
+    std::void_t<
+        std::enable_if_t<is_iterable_v<Iterable> && is_crtp_of<typename Iterable::value_type, TargetCRTP>::value>>>
+  : std::true_type {};
+
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}
 

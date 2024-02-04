@@ -31,6 +31,12 @@ class Searcher {
 
     explicit Searcher(ReferenceIndexer&& reference_indexer);
 
+    std::size_t n_samples() const;
+
+    constexpr auto features_range_first(std::size_t sample_index) const;
+
+    constexpr auto features_range_last(std::size_t sample_index) const;
+
     template <typename ForwardedBuffer,
               typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer> &&
                                             common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
@@ -41,11 +47,11 @@ class Searcher {
               typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, bool> = true>
     ForwardedBufferBatch operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const;
 
-    std::size_t n_samples() const;
-
-    constexpr auto features_range_first(std::size_t sample_index) const;
-
-    constexpr auto features_range_last(std::size_t sample_index) const;
+    template <typename ForwardedQueryIndexer,
+              typename std::enable_if_t<!common::is_iterable_v<ForwardedQueryIndexer> &&
+                                            !common::is_crtp_of<ForwardedQueryIndexer, buffer::StaticBase>::value,
+                                        bool> = true>
+    ForwardedQueryIndexer operator()(ForwardedQueryIndexer&& forwarded_query_indexer) const;
 
   private:
     TreeTraverser<ReferenceIndexer> tree_traverser_;
@@ -57,38 +63,6 @@ Searcher(ReferenceIndexer) -> Searcher<ReferenceIndexer>;
 template <typename ReferenceIndexer>
 Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
   : tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
-
-template <typename ReferenceIndexer>
-template <typename ForwardedBuffer,
-          typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer> &&
-                                        common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
-                                    bool>>
-ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
-    static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
-                  "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
-
-    return tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
-}
-
-template <typename ReferenceIndexer>
-template <typename ForwardedBufferBatch, typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, bool>>
-ForwardedBufferBatch Searcher<ReferenceIndexer>::operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const {
-    static_assert(common::is_iterable_v<ForwardedBufferBatch>, "ForwardedBufferBatch must be an iterable container");
-
-    using BufferType = typename ForwardedBufferBatch::value_type;
-
-    static_assert(common::is_crtp_of<BufferType, buffer::StaticBase>::value,
-                  "Elements of ForwardedBufferBatch must inherit from StaticBase<Derived>");
-
-    auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
-
-    std::for_each(buffer_batch.begin(),
-                  buffer_batch.end(),
-                  // update each buffer inplace
-                  [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
-
-    return buffer_batch;
-}
 
 template <typename ReferenceIndexer>
 std::size_t Searcher<ReferenceIndexer>::n_samples() const {
@@ -103,6 +77,37 @@ constexpr auto Searcher<ReferenceIndexer>::features_range_first(std::size_t samp
 template <typename ReferenceIndexer>
 constexpr auto Searcher<ReferenceIndexer>::features_range_last(std::size_t sample_index) const {
     return tree_traverser_.features_range_last(sample_index);
+}
+
+template <typename ReferenceIndexer>
+template <typename ForwardedBuffer,
+          typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer> &&
+                                        common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
+                                    bool>>
+ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
+    return tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
+}
+
+template <typename ReferenceIndexer>
+template <typename ForwardedBufferBatch, typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, bool>>
+ForwardedBufferBatch Searcher<ReferenceIndexer>::operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const {
+    auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
+
+    std::for_each(buffer_batch.begin(),
+                  buffer_batch.end(),
+                  // update each buffer inplace
+                  [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
+
+    return buffer_batch;
+}
+
+template <typename ReferenceIndexer>
+template <typename ForwardedQueryIndexer,
+          typename std::enable_if_t<!common::is_iterable_v<ForwardedQueryIndexer> &&
+                                        !common::is_crtp_of<ForwardedQueryIndexer, buffer::StaticBase>::value,
+                                    bool>>
+ForwardedQueryIndexer Searcher<ReferenceIndexer>::operator()(ForwardedQueryIndexer&& forwarded_query_indexer) const {
+    return tree_traverser_(std::forward<ForwardedQueryIndexer>(forwarded_query_indexer));
 }
 
 }  // namespace ffcl::search

@@ -40,9 +40,17 @@ class TreeTraverser {
                                         bool> = true>
     ForwardedBuffer operator()(ForwardedBuffer&& forwarded_buffer) const;
 
-    template <typename ForwardedBufferBatch,
-              typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, bool> = true>
+    template <
+        typename ForwardedBufferBatch,
+        typename std::enable_if_t<common::is_iterable_of_static_base<ForwardedBufferBatch, buffer::StaticBase>::value,
+                                  bool> = true>
     ForwardedBufferBatch operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const;
+
+    template <typename ForwardedQueryIndexer,
+              typename std::enable_if_t<!common::is_iterable_v<ForwardedQueryIndexer> &&
+                                            !common::is_crtp_of<ForwardedQueryIndexer, buffer::StaticBase>::value,
+                                        bool> = true>
+    ForwardedQueryIndexer operator()(ForwardedQueryIndexer&& forwarded_query_indexer) const;
 
   private:
     template <typename Buffer>
@@ -91,19 +99,26 @@ ForwardedBuffer TreeTraverser<ReferenceIndexer>::operator()(ForwardedBuffer&& fo
 }
 
 template <typename ReferenceIndexer>
-template <typename ForwardedBufferBatch, typename std::enable_if_t<common::is_iterable_v<ForwardedBufferBatch>, bool>>
+template <typename ForwardedBufferBatch,
+          typename std::enable_if_t<common::is_iterable_of_static_base<ForwardedBufferBatch, buffer::StaticBase>::value,
+                                    bool>>
 ForwardedBufferBatch TreeTraverser<ReferenceIndexer>::operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const {
-    using BufferType = typename ForwardedBufferBatch::value_type;
-
-    static_assert(common::is_crtp_of<BufferType, buffer::StaticBase>::value,
-                  "Elements of ForwardedBufferBatch must inherit from StaticBase<Derived>");
-
     auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
 
     std::for_each(
         buffer_batch.begin(), buffer_batch.end(), [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
 
     return buffer_batch;
+}
+
+template <typename ReferenceIndexer>
+template <typename ForwardedQueryIndexer,
+          typename std::enable_if_t<!common::is_iterable_v<ForwardedQueryIndexer> &&
+                                        !common::is_crtp_of<ForwardedQueryIndexer, buffer::StaticBase>::value,
+                                    bool>>
+ForwardedQueryIndexer TreeTraverser<ReferenceIndexer>::operator()(
+    ForwardedQueryIndexer&& forwarded_query_indexer) const {
+    return std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 }
 
 template <typename ReferenceIndexer>
