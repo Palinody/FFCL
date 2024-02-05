@@ -5,6 +5,8 @@
 #include "ffcl/search/buffer/StaticBase.hpp"
 #include "ffcl/search/count/StaticBase.hpp"
 
+#include "ffcl/search/buffer/Unsorted.hpp"
+
 namespace ffcl::search {
 
 template <typename ReferenceIndexer>
@@ -63,6 +65,9 @@ class TreeTraverser {
     auto get_parent_node_after_sibling_traversal(const ReferenceNodePtr& node, Buffer& buffer) const
         -> ReferenceNodePtr;
 
+    template <typename QueryNodePtr, typename Buffer>
+    void dual_tree_traversal(ReferenceNodePtr reference_node, QueryNodePtr query_node, Buffer& buffer) const;
+
     ReferenceIndexer reference_indexer_;
 };
 
@@ -118,7 +123,21 @@ template <typename ForwardedQueryIndexer,
                                     bool>>
 ForwardedQueryIndexer TreeTraverser<ReferenceIndexer>::operator()(
     ForwardedQueryIndexer&& forwarded_query_indexer) const {
-    return std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
+    auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
+
+    auto buffer = search::buffer::Unsorted(query_indexer.features_range_first(0), query_indexer.features_range_last(0));
+
+    dual_tree_traversal(reference_indexer_.root(), query_indexer.root(), buffer);
+
+    return std::forward<ForwardedQueryIndexer>(query_indexer);
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename Buffer>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(ReferenceNodePtr reference_node,
+                                                          QueryNodePtr     query_node,
+                                                          Buffer&          buffer) const {
+    //
 }
 
 template <typename ReferenceIndexer>
