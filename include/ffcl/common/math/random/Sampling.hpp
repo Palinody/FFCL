@@ -4,34 +4,44 @@
 #include "ffcl/common/math/random/Distributions.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <vector>
 
 namespace ffcl::common::math::random {
 
-// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
-inline std::vector<std::size_t> select_from_range(std::size_t                                n_choices,
-                                                  const std::pair<std::size_t, std::size_t>& indices_range) {
-    const std::size_t range_size = indices_range.second - indices_range.first;
+template <typename Iterator>
+auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t n_elements)
+    -> std::vector<typename std::iterator_traits<Iterator>::value_type> {
+    auto selected_elements = std::vector(first, last);
 
-    assert(indices_range.first <= indices_range.second &&
-           "The first value of the indices range should be less or equal than the second.");
-
-    assert(range_size >= n_choices &&
-           "The number of random choice indices should be less or equal than the indices candidates.");
-
-    std::vector<std::size_t> indices(range_size);
-    // Initialize indices with sequential values
-    std::iota(indices.begin(), indices.end(), indices_range.first);
-
-    // Perform a partial shuffle of the first n_choices elements
-    for (std::size_t index = 0; index < n_choices; ++index) {
+    // Perform a partial shuffle of the first n_elements elements
+    for (std::size_t element_index = 0; element_index < n_elements; ++element_index) {
         // range: [i, n_indices-1], upper bound included
-        std::swap(indices[index], indices[uniform_distribution<std::size_t>{index, n_choices - 1}()]);
+        std::swap(selected_elements[element_index],
+                  selected_elements[uniform_distribution<std::size_t>{element_index, n_elements - 1}()]);
     }
-    // Resize the vector to keep only the first n_choices elements
-    indices.resize(n_choices);
+    // Resize the vector to keep only the first n_elements elements
+    selected_elements.resize(n_elements);
 
-    return indices;
+    return selected_elements;
+}
+
+// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+template <typename Data>
+inline std::vector<Data> select_n_elements_from_interval(std::size_t n_choices, const std::pair<Data, Data>& interval) {
+    const std::size_t interval_length = interval.second - interval.first;
+
+    assert(interval.first <= interval.second &&
+           "The first value of the interval should be less or equal than the second.");
+
+    assert(interval_length >= n_choices &&
+           "The number of random choice should be less or equal than the interval candidates.");
+
+    std::vector<Data> elements(interval_length);
+    // Initialize elements with sequential values
+    std::iota(elements.begin(), elements.end(), static_cast<Data>(interval.first));
+
+    return select_n_elements(elements.begin(), elements.end(), n_choices);
 }
 
 template <typename SamplesIterator>
@@ -63,7 +73,7 @@ auto select_n_random_samples(const SamplesIterator& samples_range_first,
     // clip n_choices to prevent overflows
     n_choices = std::min(n_choices, n_samples);
     // return n_choices distinctive indices from the pool of indices defined by the desired indices range
-    const auto random_distinct_indices = select_from_range(n_choices, {0, n_samples});
+    const auto random_distinct_indices = select_n_elements_from_interval<std::size_t>(n_choices, {0, n_samples});
 
     auto random_samples = std::vector<DataType>(n_choices * n_features);
 
@@ -91,34 +101,16 @@ auto select_n_random_samples_from_indices(const IndicesIterator& index_first,
     // clip n_choices to prevent overflows
     n_choices = std::min(n_choices, n_samples);
     // return n_choices distinctive indices from the pool of indices defined by the desired indices range
-    const auto random_distinct_indices = select_from_range(n_choices, {0, n_samples});
+    const auto random_distinct_indices = select_n_elements(index_first, index_last);
 
     auto random_samples = std::vector<DataType>(n_choices * n_features);
 
     for (std::size_t sample_index = 0; sample_index < n_choices; ++sample_index) {
-        std::copy(samples_range_first + index_first[random_distinct_indices[sample_index]] * n_features,
-                  samples_range_first + index_first[random_distinct_indices[sample_index]] * n_features + n_features,
+        std::copy(samples_range_first + random_distinct_indices[sample_index] * n_features,
+                  samples_range_first + random_distinct_indices[sample_index] * n_features + n_features,
                   random_samples.begin() + sample_index * n_features);
     }
     return random_samples;
-}
-
-template <typename Iterator>
-auto select_n_random_values(const Iterator& first, const Iterator& last, std::size_t n_choices) {
-    using Type = typename std::iterator_traits<Iterator>::value_type;
-
-    const std::size_t n_samples = std::distance(first, last);
-    // clip n_choices to prevent overflows
-    n_choices = std::min(n_choices, n_samples);
-    // return n_choices distinctive indices from the pool of indices defined by the desired indices range
-    const auto random_distinct_indices = select_from_range(n_choices, {0, n_samples});
-
-    auto random_indices = std::vector<Type>(n_choices);
-
-    for (std::size_t index_index = 0; index_index < n_choices; ++index_index) {
-        random_indices[index_index] = first[random_distinct_indices[index_index]];
-    }
-    return random_indices;
 }
 
 template <typename SamplesIterator>
@@ -171,7 +163,7 @@ auto init_uniform(const SamplesIterator& samples_range_first,
 
     auto centroids = std::vector<DataType>(n_centroids * n_features);
 
-    const auto indices = select_from_range(n_centroids, {0, n_samples});
+    const auto indices = select_n_elements_from_interval<std::size_t>(n_centroids, {0, n_samples});
 
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
         const auto index = indices[centroid_index];

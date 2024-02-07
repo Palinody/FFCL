@@ -73,7 +73,7 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator& indices_ran
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
         const auto random_indices =
-            common::math::random::select_n_random_values(indices_range_first, indices_range_last, n_choices);
+            common::math::random::select_n_elements(indices_range_first, indices_range_last, n_choices);
         // return the feature index with the maximum variance
         return common::math::statistics::argmax_variance_per_feature(
             random_indices.begin(), random_indices.end(), samples_range_first, samples_range_last, n_features);
@@ -81,8 +81,7 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator& indices_ran
     // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
     // compute the variance with the minimum number of samples, which is 3
     if (n_samples > 2) {
-        const auto random_indices =
-            common::math::random::select_n_random_values(indices_range_first, indices_range_last, 3);
+        const auto random_indices = common::math::random::select_n_elements(indices_range_first, indices_range_last, 3);
         // return the feature index with the maximum variance
         return common::math::statistics::argmax_variance_per_feature(
             random_indices.begin(), random_indices.end(), samples_range_first, samples_range_last, n_features);
@@ -124,7 +123,7 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator&          in
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
         const auto random_indices =
-            common::math::random::select_n_random_values(indices_range_first, indices_range_last, n_choices);
+            common::math::random::select_n_elements(indices_range_first, indices_range_last, n_choices);
         // return the feature index with the maximum variance
         return common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
                                                                      random_indices.end(),
@@ -136,8 +135,7 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator&          in
     // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
     // compute the variance with the minimum number of samples, which is 3
     if (n_samples > 2) {
-        const auto random_indices =
-            common::math::random::select_n_random_values(indices_range_first, indices_range_last, 3);
+        const auto random_indices = common::math::random::select_n_elements(indices_range_first, indices_range_last, 3);
         // return the feature index with the maximum variance
         return common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
                                                                      random_indices.end(),
