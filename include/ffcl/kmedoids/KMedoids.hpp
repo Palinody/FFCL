@@ -164,7 +164,7 @@ std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     // default initialization of the medoids if not initialized
     if (medoids_.empty()) {
         for (std::size_t medoid_index = 0; medoid_index < options_.n_init_; ++medoid_index) {
-            const auto random_medoids = common::math::random::select_n_elements_from_interval<std::size_t>(
+            const auto random_medoids = common::math::random::make_n_elements_from_interval<std::size_t>(
                 n_medoids_, {0, common::get_n_samples(samples_range_first, samples_range_last, n_features)});
 
             // default initialization of the medoids indices if not initialized
@@ -261,7 +261,7 @@ std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     // default initialization of the medoids if not initialized
     if (medoids_.empty()) {
         for (std::size_t medoid_index = 0; medoid_index < options_.n_init_; ++medoid_index) {
-            const auto random_medoids = common::math::random::select_n_elements_from_interval<std::size_t>(
+            const auto random_medoids = common::math::random::make_n_elements_from_interval<std::size_t>(
                 n_medoids_, {0, pairwise_distance_matrix.n_rows()});
 
             // default initialization of the medoids indices if not initialized

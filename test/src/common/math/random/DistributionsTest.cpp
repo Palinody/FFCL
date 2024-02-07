@@ -151,7 +151,7 @@ TEST(Test2, SelectFromRangeTest) {
         }
     }
 
-    const auto indices = ffcl::common::math::random::select_n_elements_from_interval<std::size_t>(15, {5, 20});
+    const auto indices = ffcl::common::math::random::make_n_elements_from_interval<std::size_t>(15, {5, 20});
 
     for (const auto& index : indices) {
         std::cout << index << ", ";

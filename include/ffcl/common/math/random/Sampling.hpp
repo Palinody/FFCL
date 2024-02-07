@@ -11,8 +11,7 @@ namespace ffcl::common::math::random {
 
 // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 template <typename Iterator>
-auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t n_elements)
-    -> std::vector<typename std::iterator_traits<Iterator>::value_type> {
+auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t n_elements) {
     auto selected_elements = std::vector(first, last);
 
     // Perform a partial shuffle of the first n_elements elements
@@ -27,7 +26,7 @@ auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t 
 }
 
 template <typename Data>
-std::vector<Data> select_n_elements_from_interval(std::size_t n_choices, const std::pair<Data, Data>& interval) {
+std::vector<Data> make_n_elements_from_interval(std::size_t n_choices, const std::pair<Data, Data>& interval) {
     const std::size_t interval_length = interval.second - interval.first;
 
     assert(interval.first <= interval.second &&
@@ -72,7 +71,7 @@ auto select_n_random_samples(const SamplesIterator& samples_range_first,
     // clip n_choices to prevent overflows
     n_choices = std::min(n_choices, n_samples);
     // return n_choices distinctive indices from the pool of indices defined by the desired indices range
-    const auto random_distinct_indices = select_n_elements_from_interval<std::size_t>(n_choices, {0, n_samples});
+    const auto random_distinct_indices = make_n_elements_from_interval<std::size_t>(n_choices, {0, n_samples});
 
     auto random_samples = std::vector<DataType>(n_choices * n_features);
 
@@ -162,7 +161,7 @@ auto init_uniform(const SamplesIterator& samples_range_first,
 
     auto centroids = std::vector<DataType>(n_centroids * n_features);
 
-    const auto indices = select_n_elements_from_interval<std::size_t>(n_centroids, {0, n_samples});
+    const auto indices = make_n_elements_from_interval<std::size_t>(n_centroids, {0, n_samples});
 
     for (std::size_t centroid_index = 0; centroid_index < n_centroids; ++centroid_index) {
         const auto index = indices[centroid_index];
