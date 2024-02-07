@@ -9,6 +9,7 @@
 
 namespace ffcl::common::math::random {
 
+// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 template <typename Iterator>
 auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t n_elements)
     -> std::vector<typename std::iterator_traits<Iterator>::value_type> {
@@ -16,9 +17,8 @@ auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t 
 
     // Perform a partial shuffle of the first n_elements elements
     for (std::size_t element_index = 0; element_index < n_elements; ++element_index) {
-        // range: [i, n_indices-1], upper bound included
         std::swap(selected_elements[element_index],
-                  selected_elements[uniform_distribution<std::size_t>{element_index, n_elements - 1}()]);
+                  selected_elements[uniform_distribution{element_index, n_elements - 1}()]);
     }
     // Resize the vector to keep only the first n_elements elements
     selected_elements.resize(n_elements);
@@ -26,9 +26,8 @@ auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t 
     return selected_elements;
 }
 
-// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 template <typename Data>
-inline std::vector<Data> select_n_elements_from_interval(std::size_t n_choices, const std::pair<Data, Data>& interval) {
+std::vector<Data> select_n_elements_from_interval(std::size_t n_choices, const std::pair<Data, Data>& interval) {
     const std::size_t interval_length = interval.second - interval.first;
 
     assert(interval.first <= interval.second &&
