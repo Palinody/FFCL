@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <numeric>
+#include <unordered_map>
 #include <vector>
 
 #include <cstdio>
@@ -184,7 +185,7 @@ auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
     UnionFindType union_find(n_samples);
 
     // cluster indices mapped to their node that may contain descendants
-    auto nodes = std::map<ClusterIndexType, SingleLinkageClusterNodePtr>{};
+    auto nodes = std::unordered_map<ClusterIndexType, SingleLinkageClusterNodePtr>{};
 
     // init each sample as its own cluster/component
     for (std::size_t cluster_index = 0; cluster_index < n_samples; ++cluster_index) {

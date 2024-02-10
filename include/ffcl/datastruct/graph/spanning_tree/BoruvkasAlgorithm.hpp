@@ -14,10 +14,10 @@
 #include <cassert>
 #include <cstddef>
 #include <functional>
-#include <map>
 #include <memory>
 #include <numeric>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -82,7 +82,7 @@ class BoruvkasAlgorithm {
 
         using ComponentType = std::unordered_set<RepresentativeType>;
 
-        using RepresentativeToComponentMapType = std::map<RepresentativeType, ComponentType>;
+        using RepresentativeToComponentMapType = std::unordered_map<RepresentativeType, ComponentType>;
 
         using UnionFindType = datastruct::UnionFind<RepresentativeType>;
 
@@ -251,7 +251,7 @@ template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>& searcher, Forest& forest) const {
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
-    auto components_closest_edge = std::map<IndexType, EdgeType>{};
+    auto components_closest_edge = std::unordered_map<IndexType, EdgeType>{};
 
     for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
@@ -295,7 +295,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
                                                  Forest&                          forest) const {
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
-    auto components_closest_edge = std::map<IndexType, EdgeType>{};
+    auto components_closest_edge = std::unordered_map<IndexType, EdgeType>{};
 
     for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
