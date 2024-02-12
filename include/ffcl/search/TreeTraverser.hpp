@@ -7,7 +7,41 @@
 
 #include "ffcl/search/buffer/Unsorted.hpp"
 
+#include <iterator>
+#include <memory>
+#include <unordered_map>
+
 namespace ffcl::search {
+
+/*
+template <typename ReferenceIndex, typename Buffer>
+class BufferMap {
+  public:
+    using ReferenceIndexType = ReferenceIndex;
+
+    static_assert(std::is_trivial_v<ReferenceIndexType>, "ReferenceIndexType must be trivial.");
+
+    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                  "Buffer must inherit from StaticBase<Derived>");
+
+    Buffer& operator[](const ReferenceIndex& reference_index);
+
+    auto find(const ReferenceIndex& reference_index);
+
+  private:
+    std::unordered_map<ReferenceIndexType, Buffer> query_index_to_buffer_map_;
+};
+
+template <typename ReferenceIndex, typename Buffer>
+Buffer& BufferMap<ReferenceIndex, Buffer>::operator[](const ReferenceIndex& reference_index) {
+    return query_index_to_buffer_map_[reference_index];
+}
+
+template <typename ReferenceIndex, typename Buffer>
+auto BufferMap<ReferenceIndex, Buffer>::find(const ReferenceIndex& reference_index) {
+    return query_index_to_buffer_map_.find(reference_index);
+}
+*/
 
 template <typename ReferenceIndexer>
 class TreeTraverser {
@@ -65,8 +99,13 @@ class TreeTraverser {
     auto get_parent_node_after_sibling_traversal(const ReferenceNodePtr& node, Buffer& buffer) const
         -> ReferenceNodePtr;
 
-    template <typename QueryNodePtr, typename Buffer>
-    void dual_tree_traversal(ReferenceNodePtr reference_node, QueryNodePtr query_node, Buffer& buffer) const;
+    template <typename QueryNodePtr, typename SamplesIterator, typename BufferMap>
+    void dual_tree_traversal(ReferenceNodePtr       reference_node,
+                             QueryNodePtr           query_node,
+                             const SamplesIterator& query_samples_range_first,
+                             const SamplesIterator& query_samples_range_last,
+                             std::size_t            query_n_features,
+                             BufferMap&             buffer_map) const;
 
     ReferenceIndexer reference_indexer_;
 };
@@ -123,21 +162,96 @@ template <typename ForwardedQueryIndexer,
                                     bool>>
 ForwardedQueryIndexer TreeTraverser<ReferenceIndexer>::operator()(
     ForwardedQueryIndexer&& forwarded_query_indexer) const {
+    using QueryIndexType = typename ForwardedQueryIndexer::IndexType;
+
+    static_assert(std::is_trivial_v<QueryIndexType>, "QueryIndexType must be trivial.");
+
+    using QuerySamplesIteratorType = typename ForwardedQueryIndexer::SamplesIteratorType;
+
+    static_assert(common::is_iterator<QuerySamplesIteratorType>::value, "QuerySamplesIteratorType is not an iterator");
+
     auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
-    auto buffer = search::buffer::Unsorted(query_indexer.features_range_first(0), query_indexer.features_range_last(0));
+    auto buffer_map = std::unordered_map<QueryIndexType, buffer::Unsorted<QuerySamplesIteratorType>>{};
 
-    dual_tree_traversal(reference_indexer_.root(), query_indexer.root(), buffer);
+    dual_tree_traversal(reference_indexer_.root(),
+                        query_indexer.root(),
+                        query_indexer.begin(),
+                        query_indexer.end(),
+                        query_indexer.n_samples(),
+                        buffer_map);
 
     return std::forward<ForwardedQueryIndexer>(query_indexer);
 }
 
 template <typename ReferenceIndexer>
-template <typename QueryNodePtr, typename Buffer>
-void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(ReferenceNodePtr reference_node,
-                                                          QueryNodePtr     query_node,
-                                                          Buffer&          buffer) const {
-    //
+template <typename QueryNodePtr, typename SamplesIterator, typename BufferMap>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(ReferenceNodePtr       reference_node,
+                                                          QueryNodePtr           query_node,
+                                                          const SamplesIterator& query_samples_range_first,
+                                                          const SamplesIterator& query_samples_range_last,
+                                                          std::size_t            query_n_features,
+                                                          BufferMap&             buffer_map) const {
+    common::ignore_parameters(query_samples_range_last);
+
+    if (true) {
+        return;
+    }
+    // Iterate through all query indices within the specified range of the query node.
+    for (auto query_index_it = query_node->indices_range_.first; query_index_it != query_node->indices_range_.second;
+         ++query_index_it) {
+        // Attempt to find the buffer associated with the current query index in the buffer map.
+        auto query_and_buffer_pair_it = buffer_map.find(*query_index_it);
+        // If the current query index does not have an associated buffer in the map,
+        if (query_and_buffer_pair_it == buffer_map.end()) {
+            // create a new Unsorted buffer
+            auto unsorted_buffer =
+                buffer::Unsorted(query_samples_range_first + *query_index_it * query_n_features,
+                                 query_samples_range_first + *query_index_it * query_n_features + query_n_features);
+            // Attempt to insert the newly created buffer into the map. If an element with the same
+            // query index already exists, emplace does nothing. Otherwise, it inserts the new element.
+            // The method returns a pair, where the first element is an iterator to the inserted element
+            // (or to the element that prevented the insertion) and the second element is a boolean
+            // indicating whether the insertion took place.
+            // We are only interested in the first element of the pair.
+            query_and_buffer_pair_it = buffer_map.emplace(*query_index_it, std::move(unsorted_buffer)).first;
+        }
+        // Regardless of whether the buffer was just inserted or already existed, perform a partial search
+        // operation on the buffer. This operation updates the buffer based on a range of reference indices,
+        // the beginning and end of the reference indexer, and the number of features in the reference indexer.
+        query_and_buffer_pair_it->second.partial_search(reference_node->indices_range_.first,
+                                                        reference_node->indices_range_.second,
+                                                        reference_indexer_.begin(),
+                                                        reference_indexer_.end(),
+                                                        reference_indexer_.n_features());
+    }
+    dual_tree_traversal(reference_node->left_,
+                        query_node->left_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        buffer_map);
+
+    dual_tree_traversal(reference_node->left_,
+                        query_node->right_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        buffer_map);
+
+    dual_tree_traversal(reference_node->right_,
+                        query_node->left_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        buffer_map);
+
+    dual_tree_traversal(reference_node->right_,
+                        query_node->right_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        buffer_map);
 }
 
 template <typename ReferenceIndexer>
