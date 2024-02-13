@@ -13,36 +13,6 @@
 
 namespace ffcl::search {
 
-/*
-template <typename ReferenceIndex, typename Buffer>
-class BufferMap {
-  public:
-    using ReferenceIndexType = ReferenceIndex;
-
-    static_assert(std::is_trivial_v<ReferenceIndexType>, "ReferenceIndexType must be trivial.");
-
-    static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                  "Buffer must inherit from StaticBase<Derived>");
-
-    Buffer& operator[](const ReferenceIndex& reference_index);
-
-    auto find(const ReferenceIndex& reference_index);
-
-  private:
-    std::unordered_map<ReferenceIndexType, Buffer> query_index_to_buffer_map_;
-};
-
-template <typename ReferenceIndex, typename Buffer>
-Buffer& BufferMap<ReferenceIndex, Buffer>::operator[](const ReferenceIndex& reference_index) {
-    return query_index_to_buffer_map_[reference_index];
-}
-
-template <typename ReferenceIndex, typename Buffer>
-auto BufferMap<ReferenceIndex, Buffer>::find(const ReferenceIndex& reference_index) {
-    return query_index_to_buffer_map_.find(reference_index);
-}
-*/
-
 template <typename ReferenceIndexer>
 class TreeTraverser {
   public:
@@ -89,6 +59,54 @@ class TreeTraverser {
     ForwardedQueryIndexer operator()(ForwardedQueryIndexer&& forwarded_query_indexer) const;
 
   private:
+    template <typename ReferenceIndex, typename Buffer>
+    class QueryToBufferMap_PRIVATE {
+      public:
+        using ReferenceIndexType = ReferenceIndex;
+
+        static_assert(std::is_trivial_v<ReferenceIndexType>, "ReferenceIndexType must be trivial.");
+
+        static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
+                      "Buffer must inherit from StaticBase<Derived>");
+
+        constexpr auto find(const ReferenceIndex& query_index) {
+            return query_index_to_buffer_map_.find(query_index);
+        }
+
+        constexpr auto emplace(const ReferenceIndex& query_index, buffer::Unsorted<ReferenceIndex>&& buffer)
+            -> std::pair<typename std::unordered_map<ReferenceIndex, buffer::Unsorted<ReferenceIndex>>::iterator,
+                         bool> {
+            return query_index_to_buffer_map_.emplace(query_index, std::move(buffer));
+        }
+
+        constexpr auto begin() {
+            return query_index_to_buffer_map_.begin();
+        }
+
+        constexpr auto end() {
+            return query_index_to_buffer_map_.end();
+        }
+
+        constexpr auto begin() const {
+            return query_index_to_buffer_map_.begin();
+        }
+
+        constexpr auto end() const {
+            return query_index_to_buffer_map_.end();
+        }
+
+        constexpr auto cbegin() const {
+            return query_index_to_buffer_map_.cbegin();
+        }
+
+        constexpr auto cend() const {
+            return query_index_to_buffer_map_.cend();
+        }
+
+      private:
+        std::unordered_map<ReferenceIndexType, Buffer> query_index_to_buffer_map_;
+    };
+
     template <typename Buffer>
     void single_tree_traversal(ReferenceNodePtr node, Buffer& buffer) const;
 
@@ -99,13 +117,20 @@ class TreeTraverser {
     auto get_parent_node_after_sibling_traversal(const ReferenceNodePtr& node, Buffer& buffer) const
         -> ReferenceNodePtr;
 
-    template <typename QueryNodePtr, typename SamplesIterator, typename BufferMap>
+    template <typename QueryNodePtr, typename SamplesIterator, typename QueryToBufferMap>
     void dual_tree_traversal(ReferenceNodePtr       reference_node,
                              QueryNodePtr           query_node,
                              const SamplesIterator& query_samples_range_first,
                              const SamplesIterator& query_samples_range_last,
                              std::size_t            query_n_features,
-                             BufferMap&             buffer_map) const;
+                             QueryToBufferMap&      query_to_buffer_map) const;
+
+    template <typename QueryNodePtr, typename SamplesIterator>
+    auto dual_nodes_score(ReferenceNodePtr       reference_node,
+                          QueryNodePtr           query_node,
+                          const SamplesIterator& query_samples_range_first,
+                          const SamplesIterator& query_samples_range_last,
+                          std::size_t            query_n_features) const;
 
     ReferenceIndexer reference_indexer_;
 };
@@ -172,86 +197,16 @@ ForwardedQueryIndexer TreeTraverser<ReferenceIndexer>::operator()(
 
     auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
-    auto buffer_map = std::unordered_map<QueryIndexType, buffer::Unsorted<QuerySamplesIteratorType>>{};
+    auto query_to_buffer_map = std::unordered_map<QueryIndexType, buffer::Unsorted<QuerySamplesIteratorType>>{};
 
     dual_tree_traversal(reference_indexer_.root(),
                         query_indexer.root(),
                         query_indexer.begin(),
                         query_indexer.end(),
                         query_indexer.n_samples(),
-                        buffer_map);
+                        query_to_buffer_map);
 
     return std::forward<ForwardedQueryIndexer>(query_indexer);
-}
-
-template <typename ReferenceIndexer>
-template <typename QueryNodePtr, typename SamplesIterator, typename BufferMap>
-void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(ReferenceNodePtr       reference_node,
-                                                          QueryNodePtr           query_node,
-                                                          const SamplesIterator& query_samples_range_first,
-                                                          const SamplesIterator& query_samples_range_last,
-                                                          std::size_t            query_n_features,
-                                                          BufferMap&             buffer_map) const {
-    common::ignore_parameters(query_samples_range_last);
-
-    if (true) {
-        return;
-    }
-    // Iterate through all query indices within the specified range of the query node.
-    for (auto query_index_it = query_node->indices_range_.first; query_index_it != query_node->indices_range_.second;
-         ++query_index_it) {
-        // Attempt to find the buffer associated with the current query index in the buffer map.
-        auto query_and_buffer_pair_it = buffer_map.find(*query_index_it);
-        // If the current query index does not have an associated buffer in the map,
-        if (query_and_buffer_pair_it == buffer_map.end()) {
-            // create a new Unsorted buffer
-            auto unsorted_buffer =
-                buffer::Unsorted(query_samples_range_first + *query_index_it * query_n_features,
-                                 query_samples_range_first + *query_index_it * query_n_features + query_n_features);
-            // Attempt to insert the newly created buffer into the map. If an element with the same
-            // query index already exists, emplace does nothing. Otherwise, it inserts the new element.
-            // The method returns a pair, where the first element is an iterator to the inserted element
-            // (or to the element that prevented the insertion) and the second element is a boolean
-            // indicating whether the insertion took place.
-            // We are only interested in the first element of the pair.
-            query_and_buffer_pair_it = buffer_map.emplace(*query_index_it, std::move(unsorted_buffer)).first;
-        }
-        // Regardless of whether the buffer was just inserted or already existed, perform a partial search
-        // operation on the buffer. This operation updates the buffer based on a range of reference indices,
-        // the beginning and end of the reference indexer, and the number of features in the reference indexer.
-        query_and_buffer_pair_it->second.partial_search(reference_node->indices_range_.first,
-                                                        reference_node->indices_range_.second,
-                                                        reference_indexer_.begin(),
-                                                        reference_indexer_.end(),
-                                                        reference_indexer_.n_features());
-    }
-    dual_tree_traversal(reference_node->left_,
-                        query_node->left_,
-                        query_samples_range_first,
-                        query_samples_range_last,
-                        query_n_features,
-                        buffer_map);
-
-    dual_tree_traversal(reference_node->left_,
-                        query_node->right_,
-                        query_samples_range_first,
-                        query_samples_range_last,
-                        query_n_features,
-                        buffer_map);
-
-    dual_tree_traversal(reference_node->right_,
-                        query_node->left_,
-                        query_samples_range_first,
-                        query_samples_range_last,
-                        query_n_features,
-                        buffer_map);
-
-    dual_tree_traversal(reference_node->right_,
-                        query_node->right_,
-                        query_samples_range_first,
-                        query_samples_range_last,
-                        query_n_features,
-                        buffer_map);
 }
 
 template <typename ReferenceIndexer>
@@ -304,6 +259,85 @@ auto TreeTraverser<ReferenceIndexer>::get_parent_node_after_sibling_traversal(co
     }
     // returns nullptr if node doesnt have parent (or is root)
     return reference_node->parent_.lock();
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename SamplesIterator, typename QueryToBufferMap>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(ReferenceNodePtr       reference_node,
+                                                          QueryNodePtr           query_node,
+                                                          const SamplesIterator& query_samples_range_first,
+                                                          const SamplesIterator& query_samples_range_last,
+                                                          std::size_t            query_n_features,
+                                                          QueryToBufferMap&      query_to_buffer_map) const {
+    common::ignore_parameters(query_samples_range_last);
+
+    if (true) {
+        return;
+    }
+    // Iterate through all query indices within the specified range of the query node.
+    for (auto query_index_it = query_node->indices_range_.first; query_index_it != query_node->indices_range_.second;
+         ++query_index_it) {
+        // Attempt to find the buffer associated with the current query index in the buffer map.
+        auto query_and_buffer_pair_it = query_to_buffer_map.find(*query_index_it);
+        // If the current query index does not have an associated buffer in the map,
+        if (query_and_buffer_pair_it == query_to_buffer_map.end()) {
+            // create a new Unsorted buffer
+            auto unsorted_buffer =
+                buffer::Unsorted(query_samples_range_first + *query_index_it * query_n_features,
+                                 query_samples_range_first + *query_index_it * query_n_features + query_n_features);
+            // Attempt to insert the newly created buffer into the map. If an element with the same
+            // query index already exists, emplace does nothing. Otherwise, it inserts the new element.
+            // The method returns a pair, where the first element is an iterator to the inserted element
+            // (or to the element that prevented the insertion) and the second element is a boolean
+            // indicating whether the insertion took place.
+            // We are only interested in the first element of the pair.
+            query_and_buffer_pair_it = query_to_buffer_map.emplace(*query_index_it, std::move(unsorted_buffer)).first;
+        }
+        // Regardless of whether the buffer was just inserted or already existed, perform a partial search
+        // operation on the buffer. This operation updates the buffer based on a range of reference samples.
+        query_and_buffer_pair_it->second.partial_search(reference_node->indices_range_.first,
+                                                        reference_node->indices_range_.second,
+                                                        reference_indexer_.begin(),
+                                                        reference_indexer_.end(),
+                                                        reference_indexer_.n_features());
+    }
+    dual_tree_traversal(reference_node->left_,
+                        query_node->left_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        query_to_buffer_map);
+
+    dual_tree_traversal(reference_node->left_,
+                        query_node->right_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        query_to_buffer_map);
+
+    dual_tree_traversal(reference_node->right_,
+                        query_node->left_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        query_to_buffer_map);
+
+    dual_tree_traversal(reference_node->right_,
+                        query_node->right_,
+                        query_samples_range_first,
+                        query_samples_range_last,
+                        query_n_features,
+                        query_to_buffer_map);
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename SamplesIterator>
+auto TreeTraverser<ReferenceIndexer>::dual_nodes_score(ReferenceNodePtr       reference_node,
+                                                       QueryNodePtr           query_node,
+                                                       const SamplesIterator& query_samples_range_first,
+                                                       const SamplesIterator& query_samples_range_last,
+                                                       std::size_t            query_n_features) const {
+    return int{};
 }
 
 }  // namespace ffcl::search
