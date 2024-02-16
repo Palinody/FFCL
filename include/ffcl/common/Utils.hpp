@@ -6,6 +6,8 @@
 #include <cstddef>  // std::size_t
 #include <iterator>
 #include <limits>
+#include <list>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
@@ -40,7 +42,6 @@ struct remove_pointer<std::shared_ptr<T>> {
     using type = T;
 };
 
-// Helper type alias
 template <typename T>
 using remove_pointer_t = typename remove_pointer<T>::type;
 
@@ -80,22 +81,17 @@ struct is_smart_ptr<std::shared_ptr<T>> : std::true_type {};
 template <typename T>
 struct is_smart_ptr<std::weak_ptr<T>> : std::true_type {};
 
-// Function to check if T is a raw or smart pointer
 template <typename T>
-constexpr bool is_raw_or_smart_ptr() {
-    return std::is_pointer<T>::value || is_smart_ptr<T>::value;
-}
+inline constexpr bool is_raw_or_smart_ptr = std::is_pointer<T>::value || is_smart_ptr<T>::value;
 
-/*
 // EXAMPLE USAGE
-int main() {
-    static_assert(is_raw_or_smart_ptr<int*>(), "int* is a raw pointer");
-    static_assert(is_raw_or_smart_ptr<std::unique_ptr<int>>(), "std::unique_ptr<int> is a smart pointer");
-    static_assert(is_raw_or_smart_ptr<std::shared_ptr<int>>(), "std::shared_ptr<int> is a smart pointer");
-    static_assert(is_raw_or_smart_ptr<std::weak_ptr<int>>(), "std::weak_ptr<int> is a smart pointer");
-    static_assert(!is_raw_or_smart_ptr<int>(), "int is not a pointer");
-    return 0;
-}
+/*
+static_assert(is_raw_or_smart_ptr<int*>, "int* should be considered a raw or smart pointer");
+static_assert(is_raw_or_smart_ptr<std::unique_ptr<int>>,
+              "std::unique_ptr<int> should be considered a raw or smart pointer");
+static_assert(is_raw_or_smart_ptr<std::shared_ptr<int>>,
+              "std::shared_ptr<int> should be considered a raw or smart pointer");
+static_assert(!is_raw_or_smart_ptr<int>, "int should not be considered a raw or smart pointer");
 */
 // END: is_raw_or_smart_ptr
 
@@ -113,15 +109,16 @@ struct is_iterator<
     static constexpr bool value = true;
 };
 
-/*
+template <typename T>
+inline constexpr bool is_iterator_v = is_iterator<T>::value;
+
 // Example usage
-#include <vector>
-int main() {
-    static_assert(is_iterator_v<std::vector<int>::iterator>(), "std::vector<int>::iterator is an iterator");
-    static_assert(is_iterator_v<int*>(), "int* is an iterator (as a raw pointer)");
-    static_assert(!is_iterator_v<int>(), "int is not an iterator");
-    return 0;
-}
+/*
+static_assert(is_iterator_v<std::vector<int>::iterator>, "std::vector<int>::iterator should be an iterator");
+static_assert(is_iterator_v<std::list<int>::iterator>, "std::list<int>::iterator should be an iterator");
+static_assert(is_iterator_v<std::map<int, int>::iterator>, "std::map<int, int>::iterator should be an iterator");
+static_assert(!is_iterator_v<int>, "int should not be an iterator");
+static_assert(!is_iterator_v<std::vector<int>>, "std::vector<int> should not be an iterator");
 */
 // END: is_iterator_v
 
@@ -138,30 +135,36 @@ struct is_std_container {
 };
 
 template <typename T>
-constexpr bool is_std_container_v() {
-    return is_std_container<T>::value;
-}
+inline constexpr bool is_std_container_v = is_std_container<T>::value;
 
-/*
 // Example usage
-int main() {
-    static_assert(is_std_container<std::vector<int>>::value, "It's a container!");
-    static_assert(!is_std_container<int>::value, "Not a container!");
-    return 0;
-}
+/*
+static_assert(is_std_container_v<std::vector<int>>, "std::vector<int> is a container");
+static_assert(!is_std_container_v<int>, "int is not a container");
 */
 // END is_std_container
 
-// Utility to check if a type is iterable
 template <typename T, typename = void>
-struct is_iterable : std::false_type {};
+struct is_iterable : std::false_type {
+    using value_type = void;
+};
 
 template <typename T>
 struct is_iterable<T, std::void_t<decltype(std::begin(std::declval<T>())), decltype(std::end(std::declval<T>()))>>
-  : std::true_type {};
+  : std::true_type {
+    using value_type = typename std::decay_t<T>::value_type;
+};
 
 template <typename T>
 inline constexpr bool is_iterable_v = is_iterable<T>::value;
+
+/*
+static_assert(!is_iterable_v<int>, "int should not be iterable");
+static_assert(is_iterable_v<std::vector<int>>, "std::vector<int> should be iterable");
+static_assert(is_iterable_v<std::map<int, std::vector<int>>>,
+              "is_iterable_v<std::map<int, std::vector<int>>> should be iterable");
+static_assert(is_iterable_v<std::vector<int*>>, "std::vector<int*> should be iterable");
+*/
 
 // New trait to check if the iterable's value_type inherits TargetCRTP
 template <typename Iterable, template <typename> class TargetCRTP, typename = void>
@@ -174,6 +177,84 @@ struct is_iterable_of_static_base<
     std::void_t<
         std::enable_if_t<is_iterable_v<Iterable> && is_crtp_of<typename Iterable::value_type, TargetCRTP>::value>>>
   : std::true_type {};
+
+template <typename T, typename = void>
+struct nested_iterable_depth : std::integral_constant<std::size_t, 0> {};
+
+template <typename T>
+struct nested_iterable_depth<T, std::enable_if_t<is_iterable_v<T>>>
+  : std::integral_constant<std::size_t, 1 + nested_iterable_depth<typename is_iterable<T>::value_type>::value> {};
+
+template <typename T>
+inline constexpr std::size_t nested_iterable_depth_v = nested_iterable_depth<T>::value;
+
+/*
+static_assert(nested_iterable_depth_v<std::vector<int>> == 1, "std::vector<int> depth should be 1");
+static_assert(nested_iterable_depth_v<std::vector<std::vector<int>>> == 2,
+              "std::vector<std::vector<int>> depth should be 2");
+static_assert(nested_iterable_depth_v<std::vector<std::map<int, std::string>>> == 2,
+              "std::vector<std::map<int, std::string>> depth should be 2");
+*/
+
+// Primary template for general types (base case, assumes T is not a container).
+template <typename T, typename = void>
+struct leaf_value_type {
+    using type = T;
+};
+
+// Specialization for types that are iterable (have a value_type member).
+template <typename T>
+struct leaf_value_type<T, std::void_t<typename T::value_type>> {
+    using type = typename leaf_value_type<typename T::value_type>::type;
+};
+
+template <typename T>
+using leaf_value_type_t = typename leaf_value_type<T>::type;
+
+/*
+static_assert(std::is_same_v<leaf_value_type_t<int>, int>, "int nested value type should be int");
+static_assert(std::is_same_v<leaf_value_type_t<float*>, float*>, "float* nested value type should be float*");
+static_assert(std::is_same_v<leaf_value_type_t<std::vector<int>>, int>,
+              "std::vector<int> nested value type should be int");
+static_assert(std::is_same_v<leaf_value_type_t<std::vector<std::vector<std::vector<float>>>>, float>,
+              "std::vector<std::vector<std::vector<float>>>> nested value type should be float");
+static_assert(std::is_same_v<leaf_value_type_t<std::vector<int>>, int>,
+              "std::vector<int> nested value type should be int");
+static_assert(!std::is_same_v<leaf_value_type_t<std::vector<int*>>, int>,
+              "std::vector<int*> nested value type should not be int");
+*/
+
+// Utility to get the value type of an iterable
+template <typename T>
+struct iterable_value_type {
+    using type = typename std::iterator_traits<decltype(std::begin(std::declval<T>()))>::value_type;
+};
+
+template <typename T>
+using iterable_value_type_t = typename std::iterator_traits<decltype(std::begin(std::declval<T>()))>::value_type;
+
+// Utility to check if a type is homogeneous
+template <typename T, typename = void>
+struct is_leaf_homogeneous : std::is_trivial<T> {};  // True for trivial types
+
+// Specialization for iterable types
+template <typename T>
+struct is_leaf_homogeneous<T, std::enable_if_t<is_iterable<T>::value>> : is_leaf_homogeneous<iterable_value_type_t<T>> {
+};  // recursive call until it reaches a non iterable type. Returns false if the type is not trivial.
+
+template <typename T>
+inline constexpr bool is_leaf_homogeneous_v = is_leaf_homogeneous<T>::value;
+
+/*
+static_assert(is_leaf_homogeneous_v<int>, "int should be homogeneous");
+static_assert(is_leaf_homogeneous_v<std::vector<int>>, "std::vector<int> should be homogeneous");
+static_assert(is_leaf_homogeneous_v<std::vector<std::vector<int>>>,
+              "std::vector<std::vector<int>> should be homogeneous");
+static_assert(is_leaf_homogeneous_v<std::vector<std::vector<int*>>>,
+              "std::vector<std::vector<int*>> should be homogeneous");
+static_assert(!is_leaf_homogeneous_v<std::vector<std::map<int, float>>>,
+              "std::vector<std::map<int, float>> should not be homogeneous");
+*/
 
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}
