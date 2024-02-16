@@ -2,8 +2,8 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include <sys/types.h>  // ssize_t
 #include <algorithm>
+#include <cstddef>  // std::ptrdiff_t
 #include <cstddef>  // std::size_t
 #include <memory>
 #include <vector>
@@ -66,8 +66,8 @@ std::size_t partition_around_pivot_index(const IndicesIterator& indices_range_fi
     }
     // Initialize the left and right indices to be out of bounds, so that they never go out of bounds when incremented
     // or decremented in the loops
-    ssize_t left_index  = -1;
-    ssize_t right_index = n_samples;
+    std::ptrdiff_t left_index  = -1;
+    std::ptrdiff_t right_index = n_samples;
 
     const auto pivot_value = samples_range_first[indices_range_first[pivot_index] * n_features + feature_index];
 

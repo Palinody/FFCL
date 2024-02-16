@@ -8,9 +8,9 @@
 
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
 
-#include <sys/types.h>  // ssize_t
 #include <algorithm>
 #include <array>
+#include <cstddef>  // std::ptrdiff_t
 #include <memory>
 
 #include "rapidjson/writer.h"
@@ -38,13 +38,13 @@ struct KDNodeView {
     KDNodeView(const IteratorPairType& indices_range, const IntervalType& axis_interval);
 
     KDNodeView(const IteratorPairType& indices_range,
-               ssize_t                 cut_axis_feature_index,
+               std::ptrdiff_t          cut_axis_feature_index,
                const IntervalType&     axis_interval);
 
     KDNodeView(const IteratorPairType&& indices_range, const IntervalType& axis_interval);
 
     KDNodeView(const IteratorPairType&& indices_range,
-               ssize_t                  cut_axis_feature_index,
+               std::ptrdiff_t           cut_axis_feature_index,
                const IntervalType&      axis_interval);
 
     KDNodeView(const KDNodeView&) = delete;
@@ -83,7 +83,7 @@ struct KDNodeView {
     // This window can represent various ranges: empty, a 1 value range for pivot, or 1+ values range for a leaf node.
     IteratorPairType indices_range_;
     // The index of the feature dimension selected for cutting the dataset at this node. -1 means no cut (leaf node)
-    ssize_t cut_axis_feature_index_;
+    std::ptrdiff_t cut_axis_feature_index_;
     // A 1D bounding box window that stores the actual dataset values referred to by the indices_range_.
     // The first value in this range represents the minimum value, while the second value represents the maximum value
     // within the dataset along the cut dimension for this node.
@@ -111,7 +111,7 @@ KDNodeView(const IteratorPairType&, const bounds::segment_representation::MinAnd
                   typename bounds::segment_representation::MinAndMax<DataType>::ValueType>;
 
 template <typename IteratorPairType, typename DataType>
-KDNodeView(const IteratorPairType&, ssize_t, const bounds::segment_representation::MinAndMax<DataType>&)
+KDNodeView(const IteratorPairType&, std::ptrdiff_t, const bounds::segment_representation::MinAndMax<DataType>&)
     -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
                   typename bounds::segment_representation::MinAndMax<DataType>::ValueType>;
 
@@ -121,7 +121,7 @@ KDNodeView(IteratorPairType&&, const bounds::segment_representation::MinAndMax<D
                   typename bounds::segment_representation::MinAndMax<DataType>::ValueType>;
 
 template <typename IteratorPairType, typename DataType>
-KDNodeView(IteratorPairType&&, ssize_t, const bounds::segment_representation::MinAndMax<DataType>&)
+KDNodeView(IteratorPairType&&, std::ptrdiff_t, const bounds::segment_representation::MinAndMax<DataType>&)
     -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
                   typename bounds::segment_representation::MinAndMax<DataType>::ValueType>;
 
@@ -133,7 +133,7 @@ KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType& indices_ra
 
 template <typename IndicesIterator, typename Data>
 KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType& indices_range,
-                                              ssize_t                 cut_axis_feature_index,
+                                              std::ptrdiff_t          cut_axis_feature_index,
                                               const IntervalType&     axis_interval)
   : indices_range_{indices_range}
   , cut_axis_feature_index_{cut_axis_feature_index}
@@ -147,7 +147,7 @@ KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType&& indices_r
 
 template <typename IndicesIterator, typename Data>
 KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType&& indices_range,
-                                              ssize_t                  cut_axis_feature_index,
+                                              std::ptrdiff_t           cut_axis_feature_index,
                                               const IntervalType&      axis_interval)
   : indices_range_{std::move(indices_range)}
   , cut_axis_feature_index_{cut_axis_feature_index}
