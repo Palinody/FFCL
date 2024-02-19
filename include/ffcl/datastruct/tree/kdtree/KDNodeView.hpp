@@ -59,25 +59,25 @@ struct KDNodeView {
 
     bool has_children() const;
 
-    template <typename OtherSamplesIterator, typename Buffer>
-    auto select_sibling_node(const OtherSamplesIterator& samples_range_first,
-                             const OtherSamplesIterator& samples_range_last,
-                             std::size_t                 n_features,
-                             const Buffer&               buffer) const
-        -> std::enable_if_t<common::is_crtp_of<Buffer, search::buffer::StaticBase>::value, NodePtr>;
+    template <typename ReferenceSamplesIterator, typename QueryBuffer>
+    auto select_sibling_node(const ReferenceSamplesIterator& reference_samples_range_first,
+                             const ReferenceSamplesIterator& reference_samples_range_last,
+                             std::size_t                     reference_n_features,
+                             const QueryBuffer&              query_buffer) const
+        -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBase>::value, NodePtr>;
 
-    template <typename OtherSamplesIterator>
-    auto step_down(const OtherSamplesIterator& samples_range_first,
-                   const OtherSamplesIterator& samples_range_last,
-                   std::size_t                 n_features,
-                   const OtherSamplesIterator& query_features_range_first,
-                   const OtherSamplesIterator& query_features_range_last) const -> NodePtr;
+    template <typename ReferenceSamplesIterator, typename QuerySamplesIterator>
+    auto step_down(const ReferenceSamplesIterator& reference_samples_range_first,
+                   const ReferenceSamplesIterator& reference_samples_range_last,
+                   std::size_t                     reference_n_features,
+                   const QuerySamplesIterator&     query_features_range_first,
+                   const QuerySamplesIterator&     query_features_range_last) const -> NodePtr;
 
-    template <typename OtherSamplesIterator>
+    template <typename ReferenceSamplesIterator>
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
-                   const OtherSamplesIterator&                 samples_range_first,
-                   const OtherSamplesIterator&                 samples_range_last,
-                   std::size_t                                 n_features) const;
+                   const ReferenceSamplesIterator&             reference_samples_range_first,
+                   const ReferenceSamplesIterator&             reference_samples_range_last,
+                   std::size_t                                 reference_n_features) const;
 
     // A pair of iterators representing a window in the index array, referring to samples in the dataset.
     // This window can represent various ranges: empty, a 1 value range for pivot, or 1+ values range for a leaf node.
@@ -193,16 +193,17 @@ bool KDNodeView<IndicesIterator, Data>::has_children() const {
 }
 
 template <typename IndicesIterator, typename Data>
-template <typename OtherSamplesIterator, typename Buffer>
-auto KDNodeView<IndicesIterator, Data>::select_sibling_node(const OtherSamplesIterator& samples_range_first,
-                                                            const OtherSamplesIterator& samples_range_last,
-                                                            std::size_t                 n_features,
-                                                            const Buffer&               buffer) const
-    -> std::enable_if_t<common::is_crtp_of<Buffer, search::buffer::StaticBase>::value, NodePtr> {
-    static_assert(common::is_iterator<OtherSamplesIterator>::value, "OtherSamplesIterator is not an iterator");
+template <typename ReferenceSamplesIterator, typename QueryBuffer>
+auto KDNodeView<IndicesIterator, Data>::select_sibling_node(
+    const ReferenceSamplesIterator& reference_samples_range_first,
+    const ReferenceSamplesIterator& reference_samples_range_last,
+    std::size_t                     reference_n_features,
+    const QueryBuffer&              query_buffer) const
+    -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBase>::value, NodePtr> {
+    static_assert(common::is_iterator<ReferenceSamplesIterator>::value, "ReferenceSamplesIterator is not an iterator");
 
     assert(has_parent());
-    common::ignore_parameters(samples_range_last);
+    common::ignore_parameters(reference_samples_range_last);
 
     auto parent_node = parent_.lock();
 
@@ -211,21 +212,23 @@ auto KDNodeView<IndicesIterator, Data>::select_sibling_node(const OtherSamplesIt
         const auto pivot_index = parent_node->indices_range_.first[0];
         // get the split value according to the current split dimension
         const auto pivot_split_value =
-            samples_range_first[pivot_index * n_features + parent_node->cut_axis_feature_index_];
+            reference_samples_range_first[pivot_index * reference_n_features + parent_node->cut_axis_feature_index_];
         // get the value of the query according to the split dimension
-        const auto query_split_value = buffer.centroid_begin()[parent_node->cut_axis_feature_index_];
+        const auto query_split_value = query_buffer.centroid_begin()[parent_node->cut_axis_feature_index_];
 
         const bool is_left_child_ret = is_left_child();
         // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
         // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
         // put to the right
-        const bool visit_sibling = is_left_child_ret ? common::abs(pivot_split_value - query_split_value) <=
-                                                           buffer.upper_bound(parent_node->cut_axis_feature_index_)
-                                                     : common::abs(pivot_split_value - query_split_value) <
-                                                           buffer.upper_bound(parent_node->cut_axis_feature_index_);
+        const bool visit_sibling = is_left_child_ret
+                                       ? common::abs(pivot_split_value - query_split_value) <=
+                                             query_buffer.upper_bound(parent_node->cut_axis_feature_index_)
+                                       : common::abs(pivot_split_value - query_split_value) <
+                                             query_buffer.upper_bound(parent_node->cut_axis_feature_index_);
 
-        return buffer.n_free_slots() || visit_sibling ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
-                                                      : nullptr;
+        return query_buffer.n_free_slots() || visit_sibling
+                   ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
+                   : nullptr;
     }
     return nullptr;
 }
@@ -246,21 +249,23 @@ auto KDNodeView<IndicesIterator, Data>::get_sibling_node() const -> NodePtr {
 }
 
 template <typename IndicesIterator, typename Data>
-template <typename OtherSamplesIterator>
-auto KDNodeView<IndicesIterator, Data>::step_down(const OtherSamplesIterator& samples_range_first,
-                                                  const OtherSamplesIterator& samples_range_last,
-                                                  std::size_t                 n_features,
-                                                  const OtherSamplesIterator& query_features_range_first,
-                                                  const OtherSamplesIterator& query_features_range_last) const
+template <typename ReferenceSamplesIterator, typename QuerySamplesIterator>
+auto KDNodeView<IndicesIterator, Data>::step_down(const ReferenceSamplesIterator& reference_samples_range_first,
+                                                  const ReferenceSamplesIterator& reference_samples_range_last,
+                                                  std::size_t                     reference_n_features,
+                                                  const QuerySamplesIterator&     query_features_range_first,
+                                                  const QuerySamplesIterator&     query_features_range_last) const
     -> NodePtr {
-    static_assert(common::is_iterator<OtherSamplesIterator>::value, "OtherSamplesIterator is not an iterator");
+    static_assert(common::is_iterator<ReferenceSamplesIterator>::value, "ReferenceSamplesIterator is not an iterator");
+    static_assert(common::is_iterator<QuerySamplesIterator>::value, "QuerySamplesIterator is not an iterator");
 
-    common::ignore_parameters(samples_range_last, query_features_range_last);
+    common::ignore_parameters(reference_samples_range_last, query_features_range_last);
 
     // get the pivot sample index in the dataset
     const auto pivot_index = indices_range_.first[0];
     // get the split value according to the current split dimension
-    const auto pivot_split_value = samples_range_first[pivot_index * n_features + cut_axis_feature_index_];
+    const auto pivot_split_value =
+        reference_samples_range_first[pivot_index * reference_n_features + cut_axis_feature_index_];
     // get the value of the query according to the split dimension
     const auto query_split_value = query_features_range_first[cut_axis_feature_index_];
 
@@ -270,29 +275,31 @@ auto KDNodeView<IndicesIterator, Data>::step_down(const OtherSamplesIterator& sa
 }
 
 template <typename IndicesIterator, typename Data>
-template <typename OtherSamplesIterator>
+template <typename ReferenceSamplesIterator>
 void KDNodeView<IndicesIterator, Data>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
-                                                  const OtherSamplesIterator&                 samples_range_first,
-                                                  const OtherSamplesIterator&                 samples_range_last,
-                                                  std::size_t                                 n_features) const {
-    static_assert(common::is_iterator<OtherSamplesIterator>::value, "OtherSamplesIterator is not an iterator");
+                                                  const ReferenceSamplesIterator& reference_samples_range_first,
+                                                  const ReferenceSamplesIterator& reference_samples_range_last,
+                                                  std::size_t                     reference_n_features) const {
+    static_assert(common::is_iterator<ReferenceSamplesIterator>::value, "ReferenceSamplesIterator is not an iterator");
 
     writer.StartArray();
     const auto [indices_range_first, indices_range_last] = indices_range_;
 
-    common::ignore_parameters(samples_range_last);
+    common::ignore_parameters(reference_samples_range_last);
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // sample (feature vector) array
         writer.StartArray();
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+        for (std::size_t feature_index = 0; feature_index < reference_n_features; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(samples_range_first[indices_range_first[sample_index] * n_features + feature_index]);
+                writer.Int64(reference_samples_range_first[indices_range_first[sample_index] * reference_n_features +
+                                                           feature_index]);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(samples_range_first[indices_range_first[sample_index] * n_features + feature_index]);
+                writer.Double(reference_samples_range_first[indices_range_first[sample_index] * reference_n_features +
+                                                            feature_index]);
             }
         }
         writer.EndArray();
