@@ -316,12 +316,13 @@ auto TreeTraverser<ReferenceIndexer>::recursive_search_to_leaf_node(ReferenceNod
                           reference_indexer_.n_features());
     // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
     if (!reference_node->is_leaf()) {
-        reference_node = recursive_search_to_leaf_node(reference_node->step_down(reference_indexer_.begin(),
-                                                                                 reference_indexer_.end(),
-                                                                                 reference_indexer_.n_features(),
-                                                                                 buffer.centroid_begin(),
-                                                                                 buffer.centroid_end()),
-                                                       buffer);
+        reference_node =
+            recursive_search_to_leaf_node(reference_node->select_closest_child_node(reference_indexer_.begin(),
+                                                                                    reference_indexer_.end(),
+                                                                                    reference_indexer_.n_features(),
+                                                                                    buffer.centroid_begin(),
+                                                                                    buffer.centroid_end()),
+                                          buffer);
     }
     return reference_node;
 }
