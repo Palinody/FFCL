@@ -67,11 +67,11 @@ struct KDNodeView {
         -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBase>::value, NodePtr>;
 
     template <typename ReferenceSamplesIterator, typename QuerySamplesIterator>
-    auto select_closest_child_node(const ReferenceSamplesIterator& reference_samples_range_first,
-                                   const ReferenceSamplesIterator& reference_samples_range_last,
-                                   std::size_t                     reference_n_features,
-                                   const QuerySamplesIterator&     query_features_range_first,
-                                   const QuerySamplesIterator&     query_features_range_last) const -> NodePtr;
+    auto select_closest_child(const ReferenceSamplesIterator& reference_samples_range_first,
+                              const ReferenceSamplesIterator& reference_samples_range_last,
+                              std::size_t                     reference_n_features,
+                              const QuerySamplesIterator&     query_features_range_first,
+                              const QuerySamplesIterator&     query_features_range_last) const -> NodePtr;
 
     template <typename ReferenceSamplesIterator>
     void serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
@@ -250,7 +250,7 @@ auto KDNodeView<IndicesIterator, Data>::get_sibling_node() const -> NodePtr {
 
 template <typename IndicesIterator, typename Data>
 template <typename ReferenceSamplesIterator, typename QuerySamplesIterator>
-auto KDNodeView<IndicesIterator, Data>::select_closest_child_node(
+auto KDNodeView<IndicesIterator, Data>::select_closest_child(
     const ReferenceSamplesIterator& reference_samples_range_first,
     const ReferenceSamplesIterator& reference_samples_range_last,
     std::size_t                     reference_n_features,
