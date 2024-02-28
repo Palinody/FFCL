@@ -7,7 +7,7 @@
 #include <iterator>
 #include <tuple>
 
-namespace ffcl::common::algorithms {
+namespace ffcl::search::algorithms {
 
 template <typename Index, typename Distance>
 using Edge = std::tuple<Index, Index, Distance>;
@@ -65,8 +65,6 @@ auto dual_set_closest_edge(const IndicesIterator&      indices_range_first,
                            const OtherSamplesIterator& other_samples_range_first,
                            const OtherSamplesIterator& other_samples_range_last,
                            std::size_t                 other_n_features) {
-    common::ignore_parameters(samples_range_last, other_samples_range_last);
-
     using IndexType    = typename std::iterator_traits<IndicesIterator>::value_type;
     using DistanceType = typename std::iterator_traits<SamplesIterator>::value_type;
 
@@ -226,4 +224,4 @@ auto dual_set_closest_edge(NodePtr                     node,
     return shortest_edge;
 }
 
-}  // namespace ffcl::common::algorithms
+}  // namespace ffcl::search::algorithms
