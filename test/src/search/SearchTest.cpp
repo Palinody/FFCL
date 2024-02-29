@@ -128,7 +128,7 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
-TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
+TEST_F(SearcherErrorsTest, NoStructureTest) {
     fs::path filename = "no_structure.txt";
 
     using IndexType = std::size_t;
@@ -200,11 +200,10 @@ TEST_F(SearcherErrorsTest, NoisyCirclesTest) {
     for (const auto& index : returned_indices) {
         predictions[index] = 1;
     }
-
     write_data<IndexType>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
 
-TEST_F(SearcherErrorsTest, NoisyCirclesBenchmarkTest) {
+TEST_F(SearcherErrorsTest, NoStructureBenchmarkTest) {
     fs::path filename = "no_structure.txt";
 
     using IndexType = std::size_t;
@@ -257,6 +256,77 @@ TEST_F(SearcherErrorsTest, NoisyCirclesBenchmarkTest) {
     }
     std::cout << "returned_indices_counter: " << returned_indices_counter << "\n";
 }
+
+// /*
+TEST_F(SearcherErrorsTest, DualTreeTest) {
+    fs::path filename = "no_structure.txt";
+
+    using IndexType = std::size_t;
+    using ValueType = dType;
+
+    auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
+    const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+
+    const IndexType n_queries_samples   = n_samples / 2;
+    const IndexType n_reference_samples = n_samples - n_queries_samples;
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto reference_indexer = IndexerType(indices.begin() + n_queries_samples,
+                                         indices.begin() + n_reference_samples,
+                                         data.begin(),
+                                         data.end(),
+                                         n_features,
+                                         OptionsType()
+                                             .bucket_size(std::sqrt(n_samples - n_queries_samples))
+                                             .max_depth(std::log2(n_samples - n_queries_samples))
+                                             .axis_selection_policy(AxisSelectionPolicyType{})
+                                             .splitting_rule_policy(SplittingRulePolicyType{}));
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto query_indexer = IndexerType(indices.begin(),
+                                     indices.begin() + n_queries_samples,
+                                     data.begin(),
+                                     data.end(),
+                                     n_features,
+                                     OptionsType()
+                                         .bucket_size(std::sqrt(n_queries_samples))
+                                         .max_depth(std::log2(n_queries_samples))
+                                         .axis_selection_policy(AxisSelectionPolicyType{})
+                                         .splitting_rule_policy(SplittingRulePolicyType{}));
+
+    auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+
+    const auto shortest_edge = searcher.dual_tree_closest_edge(std::move(query_indexer));
+
+    auto labels = std::vector<IndexType>(n_samples);
+
+    for (auto query_index_it = indices.begin(); query_index_it != indices.begin() + n_queries_samples;
+         ++query_index_it) {
+        labels[*query_index_it] = 0;
+    }
+    for (auto reference_index_it = indices.begin() + n_queries_samples;
+         reference_index_it != indices.begin() + n_reference_samples;
+         ++reference_index_it) {
+        labels[*reference_index_it] = 1;
+    }
+    labels[std::get<0>(shortest_edge)] = 2;
+    labels[std::get<1>(shortest_edge)] = 3;
+
+    write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
+}
+// */
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
