@@ -55,6 +55,18 @@ def plot_closest_edge(dataset, labels, axis=None):
         plt.show()
 
 
+def nth_closest_pair(dist_matrix, n):
+    flat_dist_matrix = dist_matrix.flatten()
+
+    # Find the n-th smallest distance's index in the flattened array
+    n_th_index = np.argpartition(flat_dist_matrix, n - 1)[n - 1]
+
+    # Convert the flattened index back to a pair of indices in the 2D matrix
+    n_th_min_indices = np.unravel_index(n_th_index, dist_matrix.shape)
+
+    return n_th_min_indices
+
+
 def scipy_plot_closest_edges(dataset, labels, axis=None):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -79,11 +91,13 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
     dist_matrix = distance_matrix(queries_samples, reference_samples)
 
     # Find the indices of the closest pair
-    min_dist_indices = np.unravel_index(np.argmin(dist_matrix), dist_matrix.shape)
+    # min_dist_indices = np.unravel_index(np.argmin(dist_matrix), dist_matrix.shape)
+
+    kth_closest_dist_indices = nth_closest_pair(dist_matrix, 10)
 
     # Extract the closest pair of points
-    closest_pair_query_point = queries_samples[min_dist_indices[0]]
-    closest_pair_reference_point = reference_samples[min_dist_indices[1]]
+    closest_pair_query_point = queries_samples[kth_closest_dist_indices[0]]
+    closest_pair_reference_point = reference_samples[kth_closest_dist_indices[1]]
 
     # Plotting
     axis.scatter(

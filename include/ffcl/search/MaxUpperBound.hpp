@@ -23,13 +23,11 @@ auto find_max_upper_bound(const IndicesIterator&     indices_range_first,
             const auto& buffer_at_index = index_to_buffer_it->second;
             // Similarly to when the buffer corresponding to the current index hasn't been found, we return infinity
             // early if one of the buffer is empty.
-            if (buffer_at_index.n_free_slots()) {
+            if (buffer_at_index.empty()) {
                 return common::infinity<Distance>();
 
-            } else {
-                if (buffer_at_index.upper_bound() > max_upper_bound) {
-                    max_upper_bound = buffer_at_index.upper_bound();
-                }
+            } else if (buffer_at_index.upper_bound() > max_upper_bound) {
+                max_upper_bound = buffer_at_index.upper_bound();
             }
         }
     }

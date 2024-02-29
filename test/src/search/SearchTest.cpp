@@ -257,7 +257,82 @@ TEST_F(SearcherErrorsTest, NoStructureBenchmarkTest) {
     std::cout << "returned_indices_counter: " << returned_indices_counter << "\n";
 }
 
-// /*
+template <typename IndicesIterator>
+void shuffle_indices(IndicesIterator indices_first, IndicesIterator indices_last) {
+    std::shuffle(indices_first, indices_last, std::mt19937{std::random_device{}()});
+}
+
+TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+
+    fs::path filename = "no_structure.txt";
+
+    using IndexType = std::size_t;
+    using ValueType = dType;
+
+    auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
+    const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    ValueType dummy_acc = 0;
+
+    static constexpr std::uint8_t n_decimals = 9;
+    printf("times_array = [");
+
+    for (std::size_t split_index = 1; split_index < n_samples; ++split_index) {
+        shuffle_indices(indices.begin(), indices.end());
+
+        timer.reset();
+
+        // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+        auto query_indexer = IndexerType(indices.begin(),
+                                         indices.begin() + split_index,
+                                         data.begin(),
+                                         data.end(),
+                                         n_features,
+                                         OptionsType()
+                                             .axis_selection_policy(AxisSelectionPolicyType{})
+                                             .splitting_rule_policy(SplittingRulePolicyType{}));
+
+        // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+        auto reference_indexer = IndexerType(indices.begin() + split_index,
+                                             indices.end(),
+                                             data.begin(),
+                                             data.end(),
+                                             n_features,
+                                             OptionsType()
+                                                 .axis_selection_policy(AxisSelectionPolicyType{})
+                                                 .splitting_rule_policy(SplittingRulePolicyType{}));
+
+        auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+
+        const auto shortest_edge = searcher.dual_tree_closest_edge(std::move(query_indexer));
+
+        dummy_acc += std::get<2>(shortest_edge);
+
+        // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
+
+        if (split_index == n_samples - 1) {
+            printf("%.*f] ", n_decimals, (timer.elapsed() * 1e-9f));
+
+        } else {
+            printf("%.*f, ", n_decimals, (timer.elapsed() * 1e-9f));
+        }
+    }
+    std::cout << dummy_acc << "\n";
+}
+
 TEST_F(SearcherErrorsTest, DualTreeTest) {
     fs::path filename = "no_structure.txt";
 
@@ -268,8 +343,7 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
     const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
     const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
-    const IndexType n_queries_samples   = n_samples / 2;
-    const IndexType n_reference_samples = n_samples - n_queries_samples;
+    const IndexType n_queries_samples = std::min(std::size_t{10}, n_samples - 3);
 
     auto indices = generate_indices(n_samples);
 
@@ -283,18 +357,6 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto reference_indexer = IndexerType(indices.begin() + n_queries_samples,
-                                         indices.begin() + n_reference_samples,
-                                         data.begin(),
-                                         data.end(),
-                                         n_features,
-                                         OptionsType()
-                                             .bucket_size(std::sqrt(n_samples - n_queries_samples))
-                                             .max_depth(std::log2(n_samples - n_queries_samples))
-                                             .axis_selection_policy(AxisSelectionPolicyType{})
-                                             .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
     auto query_indexer = IndexerType(indices.begin(),
                                      indices.begin() + n_queries_samples,
                                      data.begin(),
@@ -306,6 +368,18 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
                                          .axis_selection_policy(AxisSelectionPolicyType{})
                                          .splitting_rule_policy(SplittingRulePolicyType{}));
 
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto reference_indexer = IndexerType(indices.begin() + n_queries_samples,
+                                         indices.end(),
+                                         data.begin(),
+                                         data.end(),
+                                         n_features,
+                                         OptionsType()
+                                             .bucket_size(std::sqrt(n_samples - n_queries_samples))
+                                             .max_depth(std::log2(n_samples - n_queries_samples))
+                                             .axis_selection_policy(AxisSelectionPolicyType{})
+                                             .splitting_rule_policy(SplittingRulePolicyType{}));
+
     auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
 
     const auto shortest_edge = searcher.dual_tree_closest_edge(std::move(query_indexer));
@@ -316,8 +390,8 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
          ++query_index_it) {
         labels[*query_index_it] = 0;
     }
-    for (auto reference_index_it = indices.begin() + n_queries_samples;
-         reference_index_it != indices.begin() + n_reference_samples;
+
+    for (auto reference_index_it = indices.begin() + n_queries_samples; reference_index_it != indices.end();
          ++reference_index_it) {
         labels[*reference_index_it] = 1;
     }
@@ -326,7 +400,6 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
 
     write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 }
-// */
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

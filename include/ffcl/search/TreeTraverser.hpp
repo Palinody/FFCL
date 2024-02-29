@@ -331,10 +331,6 @@ template <typename ReferenceIndexer>
 template <typename ForwardedQueryIndexer,
           typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool>>
 auto TreeTraverser<ReferenceIndexer>::dual_tree_closest_edge(ForwardedQueryIndexer&& forwarded_query_indexer) const {
-    using QueryIndexType = typename ForwardedQueryIndexer::IndexType;
-
-    static_assert(std::is_trivial_v<QueryIndexType>, "QueryIndexType must be trivial.");
-
     using QuerySamplesIteratorType = typename ForwardedQueryIndexer::SamplesIteratorType;
 
     static_assert(common::is_iterator<QuerySamplesIteratorType>::value, "QuerySamplesIteratorType is not an iterator");
