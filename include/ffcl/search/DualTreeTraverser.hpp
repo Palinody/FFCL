@@ -24,7 +24,7 @@ class DualTreeTraverser {
 
     using ReferenceNodePtr = typename ReferenceIndexer::NodePtr;
 
-    static_assert(common::is_raw_or_smart_ptr<ReferenceNodePtr>(), "ReferenceNodePtr is not a raw or smart pointer");
+    static_assert(common::is_raw_or_smart_ptr<ReferenceNodePtr>, "ReferenceNodePtr is not a raw or smart pointer");
 
     explicit DualTreeTraverser(ReferenceIndexer&& reference_indexer);
 

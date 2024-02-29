@@ -57,10 +57,8 @@ class TreeTraverser {
     ForwardedBufferBatch operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const;
 
     template <typename ForwardedQueryIndexer,
-              typename std::enable_if_t<!common::is_iterable_v<ForwardedQueryIndexer> &&
-                                            !common::is_crtp_of<ForwardedQueryIndexer, buffer::StaticBase>::value,
-                                        bool> = true>
-    auto operator()(ForwardedQueryIndexer&& forwarded_query_indexer) const;
+              typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
+    auto dual_tree_closest_edge(ForwardedQueryIndexer&& forwarded_query_indexer) const;
 
   private:
     template <typename Buffer>
@@ -77,20 +75,43 @@ class TreeTraverser {
         static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
                       "Buffer must inherit from StaticBase<Derived>");
 
-        using IndexToBufferMapType = std::unordered_map<IndexType, BufferType>;
+        using IndexToBufferMapType          = std::unordered_map<IndexType, BufferType>;
+        using IndexToBufferMapIterator      = typename IndexToBufferMapType::iterator;
+        using IndexToBufferMapConstIterator = typename std::unordered_map<IndexType, BufferType>::const_iterator;
 
         constexpr auto&& tightest_edge() && {
             return std::move(tightest_edge_);
         }
 
-        // TODO: might not need
-        /*
-        constexpr auto&& loosest_edge() && {
-            return std::move(loosest_edge_);
+        constexpr auto begin() {
+            return index_to_buffer_map_.begin();
         }
-        */
 
-        constexpr auto find(const IndexType& query_index) -> typename IndexToBufferMapType::iterator {
+        constexpr auto end() {
+            return index_to_buffer_map_.end();
+        }
+
+        constexpr auto begin() const {
+            return index_to_buffer_map_.begin();
+        }
+
+        constexpr auto end() const {
+            return index_to_buffer_map_.end();
+        }
+
+        constexpr auto cbegin() const {
+            return index_to_buffer_map_.cbegin();
+        }
+
+        constexpr auto cend() const {
+            return index_to_buffer_map_.cend();
+        }
+
+        constexpr auto find(const IndexType& query_index) -> IndexToBufferMapIterator {
+            return index_to_buffer_map_.find(query_index);
+        }
+
+        constexpr auto find(const IndexType& query_index) const -> IndexToBufferMapConstIterator {
             return index_to_buffer_map_.find(query_index);
         }
 
@@ -98,7 +119,7 @@ class TreeTraverser {
         constexpr auto find_or_make_buffer_at(const IndexType&       index,
                                               const SamplesIterator& samples_range_first,
                                               const SamplesIterator& samples_range_last,
-                                              std::size_t n_features) -> typename IndexToBufferMapType::iterator {
+                                              std::size_t            n_features) -> IndexToBufferMapIterator {
             common::ignore_parameters(samples_range_last);
 
             // Attempt to find the buffer associated with the current index in the buffer map.
@@ -119,7 +140,8 @@ class TreeTraverser {
             return index_to_buffer_it;
         }
 
-        constexpr auto emplace(const IndexType& index, BufferType&& buffer) -> typename IndexToBufferMapType::iterator {
+        constexpr auto emplace(const IndexType& index, BufferType&& buffer)
+            -> std::pair<IndexToBufferMapIterator, bool> {
             return index_to_buffer_map_.emplace(index, std::move(buffer));
         }
 
@@ -156,18 +178,10 @@ class TreeTraverser {
                                                                reference_n_features);
 
                 if (buffer_at_query_index_reference.upper_bound() < std::get<2>(tightest_edge_)) {
-                    tightest_edge_ = make_edge(/**/ *query_index_it,
-                                               /**/ buffer_at_query_index_reference.upper_bound_index(),
-                                               /**/ buffer_at_query_index_reference.upper_bound());
+                    tightest_edge_ = algorithms::make_edge(/**/ *query_index_it,
+                                                           /**/ buffer_at_query_index_reference.upper_bound_index(),
+                                                           /**/ buffer_at_query_index_reference.upper_bound());
                 }
-                // TODO: might not need
-                /*
-                if (buffer_at_query_index_reference.upper_bound() > std::get<2>(tightest_edge_)) {
-                    loosest_edge_ = make_edge(*query_index_it,
-                                              buffer_at_query_index_reference.upper_bound_index(),
-                                              buffer_at_query_index_reference.upper_bound());
-                }
-                */
             }
         }
 
@@ -179,13 +193,6 @@ class TreeTraverser {
             algorithms::make_edge(common::infinity<IndexType>(),
                                   common::infinity<IndexType>(),
                                   common::infinity<DistanceType>());
-
-        // TODO: might not need
-        /*
-        // query_index in the query set, reference_index in the reference set and their distance
-        algorithms::Edge<IndexType, DistanceType> loosest_edge_ =
-            algorithms::make_edge(common::infinity<IndexType>(), common::infinity<IndexType>(), DistanceType{});
-        */
     };
 
     template <typename Buffer>
@@ -199,22 +206,25 @@ class TreeTraverser {
         -> ReferenceNodePtr;
 
     template <typename QueryNodePtr, typename QuerySamplesIterator, typename QueriesToBuffersMap>
-    void dual_tree_traversal(QueryNodePtr                query_node,
+    auto dual_tree_traversal(QueryNodePtr                query_node,
                              const QuerySamplesIterator& query_samples_range_first,
                              const QuerySamplesIterator& query_samples_range_last,
                              std::size_t                 query_n_features,
                              ReferenceNodePtr            reference_node,
                              QueriesToBuffersMap&        queries_to_buffers_map,
-                             DataType&                   shortest_edge_distance,
-                             DataType&                   queries_max_upper_bound) const;
+                             const std::tuple<algorithms::Edge<IndexType, DataType>, DataType>& cache) const
+        -> std::tuple<algorithms::Edge<IndexType, DataType>, DataType>;
 
     template <typename QueryNodePtr, typename QuerySamplesIterator, typename QueriesToBuffersMap>
-    auto update_cache(QueryNodePtr                query_node,
-                      const QuerySamplesIterator& query_samples_range_first,
-                      const QuerySamplesIterator& query_samples_range_last,
-                      std::size_t                 query_n_features,
-                      ReferenceNodePtr            reference_node,
-                      QueriesToBuffersMap&        queries_to_buffers_map) const -> std::optional<DataType>;
+    auto update_cache_at_current_recursion_depth(
+        QueryNodePtr                                                       query_node,
+        const QuerySamplesIterator&                                        query_samples_range_first,
+        const QuerySamplesIterator&                                        query_samples_range_last,
+        std::size_t                                                        query_n_features,
+        ReferenceNodePtr                                                   reference_node,
+        const QueriesToBuffersMap&                                         queries_to_buffers_map,
+        const std::tuple<algorithms::Edge<IndexType, DataType>, DataType>& cache) const
+        -> std::tuple<algorithms::Edge<IndexType, DataType>, DataType>;
 
     ReferenceIndexer reference_indexer_;
 };
@@ -262,39 +272,6 @@ ForwardedBufferBatch TreeTraverser<ReferenceIndexer>::operator()(ForwardedBuffer
         buffer_batch.begin(), buffer_batch.end(), [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
 
     return buffer_batch;
-}
-
-template <typename ReferenceIndexer>
-template <typename ForwardedQueryIndexer,
-          typename std::enable_if_t<!common::is_iterable_v<ForwardedQueryIndexer> &&
-                                        !common::is_crtp_of<ForwardedQueryIndexer, buffer::StaticBase>::value,
-                                    bool>>
-auto TreeTraverser<ReferenceIndexer>::operator()(ForwardedQueryIndexer&& forwarded_query_indexer) const {
-    using QueryIndexType = typename ForwardedQueryIndexer::IndexType;
-
-    static_assert(std::is_trivial_v<QueryIndexType>, "QueryIndexType must be trivial.");
-
-    using QuerySamplesIteratorType = typename ForwardedQueryIndexer::SamplesIteratorType;
-
-    static_assert(common::is_iterator<QuerySamplesIteratorType>::value, "QuerySamplesIteratorType is not an iterator");
-
-    auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
-
-    auto queries_to_buffers_map = IndicesToBuffersMap<buffer::Unsorted<QuerySamplesIteratorType>>{};
-
-    auto shortest_edge_distance  = common::infinity<DataType>();
-    auto queries_max_upper_bound = DataType{0};
-
-    dual_tree_traversal(query_indexer.root(),
-                        query_indexer.begin(),
-                        query_indexer.end(),
-                        query_indexer.n_features(),
-                        reference_indexer_.root(),
-                        queries_to_buffers_map,
-                        shortest_edge_distance,
-                        queries_max_upper_bound);
-
-    return std::move(queries_to_buffers_map).tightest_edge();
 }
 
 template <typename ReferenceIndexer>
@@ -351,22 +328,64 @@ auto TreeTraverser<ReferenceIndexer>::get_parent_node_after_sibling_traversal(co
 }
 
 template <typename ReferenceIndexer>
-template <typename QueryNodePtr, typename QuerySamplesIterator, typename QueriesToBuffersMap>
-void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(QueryNodePtr                query_node,
-                                                          const QuerySamplesIterator& query_samples_range_first,
-                                                          const QuerySamplesIterator& query_samples_range_last,
-                                                          std::size_t                 query_n_features,
-                                                          ReferenceNodePtr            reference_node,
-                                                          QueriesToBuffersMap&        queries_to_buffers_map,
-                                                          DataType&                   shortest_edge_distance,
-                                                          DataType&                   queries_max_upper_bound) const {
-    std::tie(shortest_edge_distance, queries_max_upper_bound) = update_cache(query_node,
-                                                                             query_samples_range_first,
-                                                                             query_samples_range_last,
-                                                                             query_n_features,
-                                                                             reference_node,
-                                                                             queries_to_buffers_map);
+template <typename ForwardedQueryIndexer,
+          typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool>>
+auto TreeTraverser<ReferenceIndexer>::dual_tree_closest_edge(ForwardedQueryIndexer&& forwarded_query_indexer) const {
+    using QueryIndexType = typename ForwardedQueryIndexer::IndexType;
 
+    static_assert(std::is_trivial_v<QueryIndexType>, "QueryIndexType must be trivial.");
+
+    using QuerySamplesIteratorType = typename ForwardedQueryIndexer::SamplesIteratorType;
+
+    static_assert(common::is_iterator<QuerySamplesIteratorType>::value, "QuerySamplesIteratorType is not an iterator");
+
+    auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
+
+    auto queries_to_buffers_map = IndicesToBuffersMap<buffer::Unsorted<QuerySamplesIteratorType>>{};
+
+    auto shortest_edge = algorithms::make_edge(/**/ common::infinity<IndexType>(),
+                                               /**/ common::infinity<IndexType>(),
+                                               /**/ common::infinity<DataType>());
+
+    auto queries_max_upper_bound = common::infinity<DataType>();
+
+    const auto cache = std::make_tuple(std::move(shortest_edge), std::move(queries_max_upper_bound));
+
+    dual_tree_traversal(query_indexer.root(),
+                        query_indexer.begin(),
+                        query_indexer.end(),
+                        query_indexer.n_features(),
+                        reference_indexer_.root(),
+                        queries_to_buffers_map,
+                        cache);
+
+    return std::move(queries_to_buffers_map).tightest_edge();
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename QuerySamplesIterator, typename QueriesToBuffersMap>
+auto TreeTraverser<ReferenceIndexer>::dual_tree_traversal(
+    QueryNodePtr                                                       query_node,
+    const QuerySamplesIterator&                                        query_samples_range_first,
+    const QuerySamplesIterator&                                        query_samples_range_last,
+    std::size_t                                                        query_n_features,
+    ReferenceNodePtr                                                   reference_node,
+    QueriesToBuffersMap&                                               queries_to_buffers_map,
+    const std::tuple<algorithms::Edge<IndexType, DataType>, DataType>& cache) const
+    -> std::tuple<algorithms::Edge<IndexType, DataType>, DataType> {
+    auto updated_cache = update_cache_at_current_recursion_depth(query_node,
+                                                                 query_samples_range_first,
+                                                                 query_samples_range_last,
+                                                                 query_n_features,
+                                                                 reference_node,
+                                                                 queries_to_buffers_map,
+                                                                 cache);
+
+    const auto& [shortest_edge, queries_max_upper_bound] = updated_cache;
+
+    if (std::get<2>(shortest_edge) >= queries_max_upper_bound) {
+        return updated_cache;
+    }
     // updates the buffers w.r.t. each query and each reference while storing the shortest edge
     queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
                                                          query_node->indices_range_.second,
@@ -381,124 +400,109 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(QueryNodePtr          
 
     if (!query_node->is_leaf()) {
         if (!reference_node->is_leaf()) {
-            dual_tree_traversal(query_node->left_,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node->left_,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
+            updated_cache = dual_tree_traversal(query_node->left_,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node->left_,
+                                                queries_to_buffers_map,
+                                                updated_cache);
 
-            dual_tree_traversal(query_node->left_,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node->right_,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
+            updated_cache = dual_tree_traversal(query_node->left_,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node->right_,
+                                                queries_to_buffers_map,
+                                                updated_cache);
 
-            dual_tree_traversal(query_node->right_,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node->left_,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
+            updated_cache = dual_tree_traversal(query_node->right_,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node->left_,
+                                                queries_to_buffers_map,
+                                                updated_cache);
 
-            dual_tree_traversal(query_node->right_,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node->right_,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
+            updated_cache = dual_tree_traversal(query_node->right_,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node->right_,
+                                                queries_to_buffers_map,
+                                                updated_cache);
         } else {
-            dual_tree_traversal(query_node->left_,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
+            updated_cache = dual_tree_traversal(query_node->left_,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node,
+                                                queries_to_buffers_map,
+                                                updated_cache);
 
-            dual_tree_traversal(query_node->right_,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
+            updated_cache = dual_tree_traversal(query_node->right_,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node,
+                                                queries_to_buffers_map,
+                                                updated_cache);
         }
     } else {
         if (!reference_node->is_leaf()) {
-            dual_tree_traversal(query_node,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node->left_,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
+            updated_cache = dual_tree_traversal(query_node,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node->left_,
+                                                queries_to_buffers_map,
+                                                updated_cache);
 
-            dual_tree_traversal(query_node,
-                                query_samples_range_first,
-                                query_samples_range_last,
-                                query_n_features,
-                                reference_node->right_,
-                                queries_to_buffers_map,
-                                shortest_edge_distance,
-                                queries_max_upper_bound);
-        }
-        // if query_node and reference_node are both leaf, don't recurse further.
-        else {
-            return;
+            updated_cache = dual_tree_traversal(query_node,
+                                                query_samples_range_first,
+                                                query_samples_range_last,
+                                                query_n_features,
+                                                reference_node->right_,
+                                                queries_to_buffers_map,
+                                                updated_cache);
         }
     }
+    // if query_node and reference_node are both leaf, return the cache without further recursion.
+    return updated_cache;
 }
 
 template <typename ReferenceIndexer>
 template <typename QueryNodePtr, typename QuerySamplesIterator, typename QueriesToBuffersMap>
-auto TreeTraverser<ReferenceIndexer>::update_cache(QueryNodePtr                query_node,
-                                                   const QuerySamplesIterator& query_samples_range_first,
-                                                   const QuerySamplesIterator& query_samples_range_last,
-                                                   std::size_t                 query_n_features,
-                                                   ReferenceNodePtr            reference_node,
-                                                   QueriesToBuffersMap&        queries_to_buffers_map) const
-    -> std::optional<DataType> {
-    const auto& [query_index, reference_index, shortest_edge_distance] =
-        dual_set_closest_edge(query_node->indices_range_.first,
-                              query_node->indices_range_.second,
-                              query_samples_range_first,
-                              query_samples_range_last,
-                              query_n_features,
-                              reference_node->indices_range_.first,
-                              reference_node->indices_range_.second,
-                              reference_indexer_.begin(),
-                              reference_indexer_.end(),
-                              reference_indexer_.n_features());
+auto TreeTraverser<ReferenceIndexer>::update_cache_at_current_recursion_depth(
+    QueryNodePtr                                                       query_node,
+    const QuerySamplesIterator&                                        query_samples_range_first,
+    const QuerySamplesIterator&                                        query_samples_range_last,
+    std::size_t                                                        query_n_features,
+    ReferenceNodePtr                                                   reference_node,
+    const QueriesToBuffersMap&                                         queries_to_buffers_map,
+    const std::tuple<algorithms::Edge<IndexType, DataType>, DataType>& cache) const
+    -> std::tuple<algorithms::Edge<IndexType, DataType>, DataType> {
+    const auto& [shortest_edge, queries_max_upper_bound] = cache;
 
-    common::ignore_parameters(query_index, reference_index);
+    const auto updated_shortest_edge = algorithms::dual_set_shortest_edge(query_node->indices_range_.first,
+                                                                          query_node->indices_range_.second,
+                                                                          query_samples_range_first,
+                                                                          query_samples_range_last,
+                                                                          query_n_features,
+                                                                          reference_node->indices_range_.first,
+                                                                          reference_node->indices_range_.second,
+                                                                          reference_indexer_.begin(),
+                                                                          reference_indexer_.end(),
+                                                                          reference_indexer_.n_features(),
+                                                                          shortest_edge);
 
-    const auto queries_max_upper_bound = dual_set_closest_edge(query_node->indices_range_.first,
-                                                               query_node->indices_range_.second,
-                                                               query_samples_range_first,
-                                                               query_samples_range_last,
-                                                               query_n_features,
-                                                               queries_to_buffers_map);
+    const auto updated_queries_max_upper_bound =
+        algorithms::find_max_upper_bound(/**/ query_node->indices_range_.first,
+                                         /**/ query_node->indices_range_.second,
+                                         /**/ queries_to_buffers_map,
+                                         /**/ queries_max_upper_bound);
 
-    return make_tuple(shortest_edge_distance, queries_max_upper_bound);
-    /*
-    if (shortest_edge_distance < queries_max_upper_bound) {
-        return shortest_edge_distance;
-    }
-    return std::nullopt;
-    */
+    return make_tuple(updated_shortest_edge, updated_queries_max_upper_bound);
 }
 
 }  // namespace ffcl::search

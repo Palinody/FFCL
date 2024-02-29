@@ -22,18 +22,20 @@ template <typename IndicesIterator,
           typename OtherIndicesIterator,
           typename OtherSamplesIterator,
           typename EdgeType>
-void dual_set_closest_edge(const IndicesIterator&      indices_range_first,
-                           const IndicesIterator&      indices_range_last,
-                           const SamplesIterator&      samples_range_first,
-                           const SamplesIterator&      samples_range_last,
-                           std::size_t                 n_features,
-                           const OtherIndicesIterator& other_indices_range_first,
-                           const OtherIndicesIterator& other_indices_range_last,
-                           const OtherSamplesIterator& other_samples_range_first,
-                           const OtherSamplesIterator& other_samples_range_last,
-                           std::size_t                 other_n_features,
-                           EdgeType&                   shortest_edge) {
+auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
+                            const IndicesIterator&      indices_range_last,
+                            const SamplesIterator&      samples_range_first,
+                            const SamplesIterator&      samples_range_last,
+                            std::size_t                 n_features,
+                            const OtherIndicesIterator& other_indices_range_first,
+                            const OtherIndicesIterator& other_indices_range_last,
+                            const OtherSamplesIterator& other_samples_range_first,
+                            const OtherSamplesIterator& other_samples_range_last,
+                            std::size_t                 other_n_features,
+                            const EdgeType&             initial_shortest_edge) {
     common::ignore_parameters(samples_range_last, other_samples_range_last);
+
+    auto shortest_edge = initial_shortest_edge;
 
     for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
         for (auto other_index_it = other_indices_range_first; other_index_it != other_indices_range_last;
@@ -49,39 +51,41 @@ void dual_set_closest_edge(const IndicesIterator&      indices_range_first,
             }
         }
     }
+    return shortest_edge;
 }
 
 template <typename IndicesIterator,
           typename SamplesIterator,
           typename OtherIndicesIterator,
           typename OtherSamplesIterator>
-auto dual_set_closest_edge(const IndicesIterator&      indices_range_first,
-                           const IndicesIterator&      indices_range_last,
-                           const SamplesIterator&      samples_range_first,
-                           const SamplesIterator&      samples_range_last,
-                           std::size_t                 n_features,
-                           const OtherIndicesIterator& other_indices_range_first,
-                           const OtherIndicesIterator& other_indices_range_last,
-                           const OtherSamplesIterator& other_samples_range_first,
-                           const OtherSamplesIterator& other_samples_range_last,
-                           std::size_t                 other_n_features) {
+auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
+                            const IndicesIterator&      indices_range_last,
+                            const SamplesIterator&      samples_range_first,
+                            const SamplesIterator&      samples_range_last,
+                            std::size_t                 n_features,
+                            const OtherIndicesIterator& other_indices_range_first,
+                            const OtherIndicesIterator& other_indices_range_last,
+                            const OtherSamplesIterator& other_samples_range_first,
+                            const OtherSamplesIterator& other_samples_range_last,
+                            std::size_t                 other_n_features) {
     using IndexType    = typename std::iterator_traits<IndicesIterator>::value_type;
     using DistanceType = typename std::iterator_traits<SamplesIterator>::value_type;
 
-    auto shortest_edge = make_edge(IndexType{}, IndexType{}, common::infinity<DistanceType>());
+    auto shortest_edge = make_edge(/**/ common::infinity<IndexType>(),
+                                   /**/ common::infinity<IndexType>(),
+                                   /**/ common::infinity<DistanceType>());
 
-    dual_set_closest_edge(indices_range_first,
-                          indices_range_last,
-                          samples_range_first,
-                          samples_range_last,
-                          n_features,
-                          other_indices_range_first,
-                          other_indices_range_last,
-                          other_samples_range_first,
-                          other_samples_range_last,
-                          other_n_features,
-                          shortest_edge);
-    return shortest_edge;
+    return dual_set_shortest_edge(indices_range_first,
+                                  indices_range_last,
+                                  samples_range_first,
+                                  samples_range_last,
+                                  n_features,
+                                  other_indices_range_first,
+                                  other_indices_range_last,
+                                  other_samples_range_first,
+                                  other_samples_range_last,
+                                  other_n_features,
+                                  shortest_edge);
 }
 
 template <typename NodePtr,
@@ -89,138 +93,138 @@ template <typename NodePtr,
           typename OtherNodePtr,
           typename OtherSamplesIterator,
           typename EdgeType>
-void dual_set_closest_edge(NodePtr                     node,
-                           const SamplesIterator&      samples_range_first,
-                           const SamplesIterator&      samples_range_last,
-                           std::size_t                 n_features,
-                           OtherNodePtr                other_node,
-                           const OtherSamplesIterator& other_samples_range_first,
-                           const OtherSamplesIterator& other_samples_range_last,
-                           std::size_t                 other_n_features,
-                           EdgeType&                   shortest_edge) {
-    auto clostest_edge = dual_set_closest_edge(node->indices_range_.first,
-                                               node->indices_range_.second,
-                                               samples_range_first,
-                                               samples_range_last,
-                                               n_features,
-                                               other_node->indices_range_.first,
-                                               other_node->indices_range_.second,
-                                               other_samples_range_first,
-                                               other_samples_range_last,
-                                               other_n_features,
-                                               shortest_edge);
+void dual_set_shortest_edge(NodePtr                     node,
+                            const SamplesIterator&      samples_range_first,
+                            const SamplesIterator&      samples_range_last,
+                            std::size_t                 n_features,
+                            OtherNodePtr                other_node,
+                            const OtherSamplesIterator& other_samples_range_first,
+                            const OtherSamplesIterator& other_samples_range_last,
+                            std::size_t                 other_n_features,
+                            EdgeType&                   shortest_edge) {
+    auto clostest_edge = dual_set_shortest_edge(node->indices_range_.first,
+                                                node->indices_range_.second,
+                                                samples_range_first,
+                                                samples_range_last,
+                                                n_features,
+                                                other_node->indices_range_.first,
+                                                other_node->indices_range_.second,
+                                                other_samples_range_first,
+                                                other_samples_range_last,
+                                                other_n_features,
+                                                shortest_edge);
 
     const bool is_node_leaf       = node->is_leaf();
     const bool is_other_node_leaf = other_node->is_leaf();
 
     if (is_node_leaf && !is_other_node_leaf) {
-        dual_set_closest_edge(node,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node->right_,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node->right_,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
 
-        dual_set_closest_edge(node,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node->right_,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node->right_,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
 
     } else if (!is_node_leaf && is_other_node_leaf) {
-        dual_set_closest_edge(node->left_,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node->left_,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
 
-        dual_set_closest_edge(node->right_,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node->right_,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
 
     } else if (!is_node_leaf && !is_other_node_leaf) {
-        dual_set_closest_edge(node->left_,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node->left_,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node->left_,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node->left_,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
 
-        dual_set_closest_edge(node->right_,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node->left_,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node->right_,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node->left_,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
 
-        dual_set_closest_edge(node->left_,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node->right_,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node->left_,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node->right_,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
 
-        dual_set_closest_edge(node->right_,
-                              samples_range_first,
-                              samples_range_last,
-                              n_features,
-                              other_node->right_,
-                              other_samples_range_first,
-                              other_samples_range_last,
-                              other_n_features,
-                              shortest_edge);
+        dual_set_shortest_edge(node->right_,
+                               samples_range_first,
+                               samples_range_last,
+                               n_features,
+                               other_node->right_,
+                               other_samples_range_first,
+                               other_samples_range_last,
+                               other_n_features,
+                               shortest_edge);
     }
 }
 
 template <typename NodePtr, typename SamplesIterator, typename OtherNodePtr, typename OtherSamplesIterator>
-auto dual_set_closest_edge(NodePtr                     node,
-                           const SamplesIterator&      samples_range_first,
-                           const SamplesIterator&      samples_range_last,
-                           std::size_t                 n_features,
-                           OtherNodePtr                other_node,
-                           const OtherSamplesIterator& other_samples_range_first,
-                           const OtherSamplesIterator& other_samples_range_last,
-                           std::size_t                 other_n_features) {
+auto dual_set_shortest_edge(NodePtr                     node,
+                            const SamplesIterator&      samples_range_first,
+                            const SamplesIterator&      samples_range_last,
+                            std::size_t                 n_features,
+                            OtherNodePtr                other_node,
+                            const OtherSamplesIterator& other_samples_range_first,
+                            const OtherSamplesIterator& other_samples_range_last,
+                            std::size_t                 other_n_features) {
     using IndexType    = typename NodePtr::value_type;
     using DistanceType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     auto shortest_edge = make_edge(IndexType{}, IndexType{}, common::infinity<DistanceType>());
 
-    dual_set_closest_edge(node,
-                          samples_range_first,
-                          samples_range_last,
-                          n_features,
-                          other_node,
-                          other_samples_range_first,
-                          other_samples_range_last,
-                          other_n_features,
-                          shortest_edge);
+    dual_set_shortest_edge(node,
+                           samples_range_first,
+                           samples_range_last,
+                           n_features,
+                           other_node,
+                           other_samples_range_first,
+                           other_samples_range_last,
+                           other_n_features,
+                           shortest_edge);
     return shortest_edge;
 }
 
