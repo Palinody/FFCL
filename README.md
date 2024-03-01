@@ -1,10 +1,6 @@
 # FFCL
 
-**FFCL**: **F**lexible and (probably not the) **f**ast(est) c++ **c**lustering **l**ibrary. 
-
-This can be used as a header only library by dumping `include/*` in your project.
-`KDTree`s use `rapidjson` to save data and its the only dependency. So I just dumped the `rapidjson` headers in `include/rapidjson`.
-It'll stay that way for now for practicality.
+**FFCL**: **F**lexible and (probably not the) **f**ast(est) c++ **c**lustering **l**ibrary.
 
 - [Current features](#current-features)
 - [Performance](#performance)
@@ -20,15 +16,17 @@ It'll stay that way for now for practicality.
   - Proper unit testing (**update**: all the generic code is now unit tested)
   - **OPTICS**: **might do** if it can be done very quickly. Otherwise I wont do since HDBSCAN* is supposed to be better.
   - **HDBSCAN*** (**ongoing**):
-    - **MST** with **Boruvka's algorithm**: **done**, might just check some additional performance gain by using the UnionFind datastruct instead of copying the entire components into an unordered_set that prevents finding nearest neighbors that are in the same component at each query.
+    - **MST** with **Boruvka's algorithm**: **done**
     - **Single Linkage Cluster Tree**: **done**. **Dendrogram python** plots are also **done**
     - **Condensed cluster tree**: **done**.
     - **HDBSCAN***: assembly of the aforementionned parts **done**.
-    - The performance of HDBSCAN* can be improved by using a **Dual Tree Traversal** instead of the single one currently used to build the MST. The queries will be batched instead of feeding single queries sequentially to the tree uppon which is performed a nearest neighbors search. However some refactorization of KDTree will be welcomed first. The single and dual tree traversal will be organised similarly to the work of [MLPACK](https://ratml.org/pub/pdf/2015faster.pdf) library as described in this paper by providing general "pruning" and "action" functions. The goal is to use any tree datastructure and a wider set of search algorithms without the need to obfuscate the code. This is mostly done by using slightly different `recurse_to_closest_leaf_node` and `get_parent_node_after_sibling_traversal` functions for each search algorithm and still necessitate code duplication that could be avoided with a bit of work.
+    - The performance of HDBSCAN* can be improved by using a **Dual Tree Traversal** instead of the single one currently used to build the MST.
     - A few options to add such as `cluster_selection_epsilon`, `max_cluster_size`, `alpha` to conform with the python hdbscan library's features.
+  - **Dual tree traversal**: **done** for dual set closest edge. Need to replace the single tree method in boruvka by the dual tree one.
 
 - **Last features**
   - HDBSCAN
+  - Dual tree traversal for dual set closest edge (not added to boruvka yet)
 
 ## Current features (not up to date)
 
@@ -55,27 +53,12 @@ It'll stay that way for now for practicality.
 
 - ### Containers
   - `KDTree` is currently used for `DBSCAN`
-    - methods using an index pointing to one of the samples of the input dataset
-      - nearest_neighbor_around_query_index
-      - k_nearest_neighbors_around_query_index
-      - radius_count_around_query_index
-      - radius_search_around_query_index
-      - range_count_around_query_index
-      - range_search_around_query_index
-    - methods using a range pointing to the beginning and end of a new sample query that may not exist in the input dataset
-      - nearest_neighbor_around_query_sample
-      - k_nearest_neighbors_around_query_sample
-      - radius_count_around_query_sample
-      - radius_search_around_query_sample
-      - range_count_around_query_sample
-      - range_search_around_query_sample
     - Options
       - `bucket_size(ssize_t)`: the maximum number of samples that a leaf node can contain
       - `max_depth(ssize_t)`: the maximum recursion depth of the tree. The `max_depth` takes priority over `bucket_size`, meaning that if the maximum recursion depth cannot be satisfied without violating the bucket size condition, the latter may not be fulfilled.
       - `axis_selection_policy`: `HighestVarianceBuild` (default) or `MaximumSpreadBuild`. Custom policies can be implmented and used.
       - `feature_mask({feature_index_0, feature_index_1, ..., feature_index_n})`: dynamic feature mask used the select the features of interest for the axis selection procedure during the build phase. The feature indices can be specified in any order, as long as `0 <= feature_index_j < n_features`. Duplicates feature indices should result in valid results but it would bias the axis selection procedure and thus defeat its purpose.
       - `splitting_rule_policy`: `QuickselectMedianRange` (default): quickselect median selection strategy for partitioning the children leaves around the pivot median value of the binary tree.
-  - `KDTree`: kd-tree without index but with much less features than `KDTree`. It was just implemented for experiments purposes against `KDTree` but it doesnt seem to have anything better other than no index creation overhead.
   - `LowerTriangleMatrixPrecomputedPairwiseDistances` currently used for the pairwise distance values that can be buffered for `KMedoids`.
 
 - ### Distance functions
@@ -83,6 +66,7 @@ It'll stay that way for now for practicality.
   - euclidean
   - manhattan
   - cosine similarity
+  - levenstein
 
 - ### initialization
 
