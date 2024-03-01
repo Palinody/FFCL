@@ -350,7 +350,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
     for (const auto& [component_representative, component] : forest) {
         if (component.size() < current_smallest_component_size) {
             smallest_component_representative = component_representative;
-            smallest_component                = std::move(component);
+            smallest_component                = component;
             current_smallest_component_size   = component.size();
         }
     }
@@ -397,7 +397,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
     for (const auto& [component_representative, component] : forest) {
         if (component.size() < current_smallest_component_size) {
             smallest_component_representative = component_representative;
-            smallest_component                = std::move(component);
+            smallest_component                = component;
             current_smallest_component_size   = component.size();
         }
     }
@@ -445,8 +445,13 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
                                     ? make_core_distances_ptr(searcher, options_.k_nearest_neighbors_)
                                     : CoreDistancesArrayPtr{nullptr};
 
+    // std::size_t counter = 0;
+
     if (core_distances) {
         while (forest.n_components() > 1) {
+            // std::cout << "forest.n_components(): " << forest.n_components() << "\n";
+            // counter += forest.n_components();
+
             if (forest.n_components() == 2) {
                 dual_component_step_sequential(searcher, core_distances, forest);
 
@@ -456,6 +461,9 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
         }
     } else {
         while (forest.n_components() > 1) {
+            // std::cout << "forest.n_components(): " << forest.n_components() << "\n";
+            // counter += forest.n_components();
+
             if (forest.n_components() == 2) {
                 dual_component_step_sequential(searcher, forest);
 
@@ -464,6 +472,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
             }
         }
     }
+    // std::cout << "Counter: " << counter << "\n";
     return std::move(forest).minimum_spanning_tree();
 }
 
