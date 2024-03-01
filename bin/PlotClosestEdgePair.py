@@ -27,14 +27,14 @@ def plot_closest_edge(dataset, labels, axis=None):
 
     axis.scatter(*queries_samples.T, color="blue", alpha=0.4, label="Queries samples")
     axis.scatter(
-        *reference_samples.T, color="red", alpha=0.4, label="Reference samples"
+        *reference_samples.T, color="black", alpha=0.4, label="Reference samples"
     )
     axis.scatter(
-        *closest_pair_query_point.T, color="green", label="Closest pair query element"
+        *closest_pair_query_point.T, color="blue", label="Closest pair query element"
     )
     axis.scatter(
         *closest_pair_reference_point.T,
-        color="yellow",
+        color="black",
         label="Closest pair reference element",
     )
     distance = np.linalg.norm(closest_pair_query_point - closest_pair_reference_point)
@@ -93,7 +93,7 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
     # Find the indices of the closest pair
     # min_dist_indices = np.unravel_index(np.argmin(dist_matrix), dist_matrix.shape)
 
-    kth_closest_dist_indices = nth_closest_pair(dist_matrix, 10)
+    kth_closest_dist_indices = nth_closest_pair(dist_matrix, 1)
 
     # Extract the closest pair of points
     closest_pair_query_point = queries_samples[kth_closest_dist_indices[0]]
@@ -110,21 +110,21 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
     axis.scatter(
         reference_samples[:, 0],
         reference_samples[:, 1],
-        color="red",
+        color="black",
         alpha=0.4,
         label="Reference samples",
     )
     axis.scatter(
         closest_pair_query_point[0],
         closest_pair_query_point[1],
-        color="green",
+        color="blue",
         label="Closest pair query element",
     )
     distance = np.linalg.norm(closest_pair_query_point - closest_pair_reference_point)
     axis.scatter(
         closest_pair_reference_point[0],
         closest_pair_reference_point[1],
-        color="yellow",
+        color="black",
         label=f"Closest pair reference element, distance = {distance}",
     )
 

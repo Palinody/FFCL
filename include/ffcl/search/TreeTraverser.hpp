@@ -72,8 +72,8 @@ class TreeTraverser {
 
         using BufferType = Buffer;
 
-        static_assert(common::is_crtp_of<Buffer, buffer::StaticBase>::value,
-                      "Buffer must inherit from StaticBase<Derived>");
+        static_assert(common::is_crtp_of<BufferType, buffer::StaticBase>::value,
+                      "BufferType must inherit from StaticBase<Derived>");
 
         using IndexToBufferMapType          = std::unordered_map<IndexType, BufferType>;
         using IndexToBufferMapIterator      = typename IndexToBufferMapType::iterator;
@@ -83,27 +83,27 @@ class TreeTraverser {
             return std::move(tightest_edge_);
         }
 
-        constexpr auto begin() {
+        constexpr auto begin() -> IndexToBufferMapIterator {
             return index_to_buffer_map_.begin();
         }
 
-        constexpr auto end() {
+        constexpr auto end() -> IndexToBufferMapIterator {
             return index_to_buffer_map_.end();
         }
 
-        constexpr auto begin() const {
+        constexpr auto begin() const -> IndexToBufferMapConstIterator {
             return index_to_buffer_map_.begin();
         }
 
-        constexpr auto end() const {
+        constexpr auto end() const -> IndexToBufferMapConstIterator {
             return index_to_buffer_map_.end();
         }
 
-        constexpr auto cbegin() const {
+        constexpr auto cbegin() const -> IndexToBufferMapConstIterator {
             return index_to_buffer_map_.cbegin();
         }
 
-        constexpr auto cend() const {
+        constexpr auto cend() const -> IndexToBufferMapConstIterator {
             return index_to_buffer_map_.cend();
         }
 
@@ -115,20 +115,16 @@ class TreeTraverser {
             return index_to_buffer_map_.find(query_index);
         }
 
-        template <typename SamplesIterator>
-        constexpr auto find_or_make_buffer_at(const IndexType&       index,
-                                              const SamplesIterator& samples_range_first,
-                                              const SamplesIterator& samples_range_last,
-                                              std::size_t            n_features) -> IndexToBufferMapIterator {
-            common::ignore_parameters(samples_range_last);
-
+        template <typename FeaturesRangeIterator>
+        constexpr auto find_or_make_buffer_at(const IndexType&             index,
+                                              const FeaturesRangeIterator& features_range_first,
+                                              const FeaturesRangeIterator& features_range_last)
+            -> IndexToBufferMapIterator {
             // Attempt to find the buffer associated with the current index in the buffer map.
             auto index_to_buffer_it = this->find(index);
             // If the current index does not have an associated buffer in the map,
             if (index_to_buffer_it == this->end()) {
-                auto buffer = BufferType(/**/ samples_range_first + index * n_features,
-                                         /**/ samples_range_first + index * n_features + n_features,
-                                         /**/ 1);
+                auto buffer = BufferType(features_range_first, features_range_last, 1);
                 // Attempt to insert the newly created buffer into the map. If an element with the same
                 // index already exists, emplace does nothing. Otherwise, it inserts the new element.
                 // The method returns a pair, where the first element is an iterator to the inserted element
@@ -159,15 +155,18 @@ class TreeTraverser {
                                            const ReferenceSamplesIterator& reference_samples_range_first,
                                            const ReferenceSamplesIterator& reference_samples_range_last,
                                            std::size_t                     reference_n_features) {
+            common::ignore_parameters(query_samples_range_last);
+
             // Iterate through all query indices within the specified range of the query node.
             for (auto query_index_it = query_indices_range_first; query_index_it != query_indices_range_last;
                  ++query_index_it) {
                 // find_or_make_buffer_at returns a query_to_buffer_it and we are only interested in the buffer
-                auto& buffer_at_query_index_reference = this->find_or_make_buffer_at(/**/ *query_index_it,
-                                                                                     /**/ query_samples_range_first,
-                                                                                     /**/ query_samples_range_last,
-                                                                                     /**/ query_n_features)
-                                                            ->second;
+                auto& buffer_at_query_index_reference =
+                    this->find_or_make_buffer_at(
+                            *query_index_it,
+                            query_samples_range_first + *query_index_it * query_n_features,
+                            query_samples_range_first + *query_index_it * query_n_features + query_n_features)
+                        ->second;
 
                 // Regardless of whether the buffer was just inserted or already existed, perform a partial search
                 // operation on the buffer. This operation updates the buffer based on a range of reference samples.
@@ -178,9 +177,9 @@ class TreeTraverser {
                                                                reference_n_features);
 
                 if (buffer_at_query_index_reference.upper_bound() < std::get<2>(tightest_edge_)) {
-                    tightest_edge_ = algorithms::make_edge(/**/ *query_index_it,
-                                                           /**/ buffer_at_query_index_reference.upper_bound_index(),
-                                                           /**/ buffer_at_query_index_reference.upper_bound());
+                    tightest_edge_ = algorithms::make_edge(*query_index_it,
+                                                           buffer_at_query_index_reference.upper_bound_index(),
+                                                           buffer_at_query_index_reference.upper_bound());
                 }
             }
         }

@@ -290,7 +290,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     static constexpr std::uint8_t n_decimals = 9;
     printf("times_array = [");
 
-    for (std::size_t split_index = 1; split_index < n_samples; ++split_index) {
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / 1000);
+
+    for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
 
         timer.reset();
@@ -323,7 +325,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
 
         // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
 
-        if (split_index == n_samples - 1) {
+        if (split_index == n_samples - increment) {
             printf("%.*f] ", n_decimals, (timer.elapsed() * 1e-9f));
 
         } else {
