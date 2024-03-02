@@ -10,9 +10,7 @@
 #include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
 
-#include <iostream>
-#include <stdexcept>  // std::runtime_error
-#include <tuple>
+#include <unordered_set>
 #include <vector>
 
 namespace ffcl::search::buffer {

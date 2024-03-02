@@ -234,16 +234,17 @@ auto BoruvkasAlgorithm<Indexer>::make_core_distances_ptr(const search::Searcher<
                                                          const IndexType&                 k_nearest_neighbors) const {
     // just a temporary array that allocates enough memory for the core distances
     auto core_distances = std::make_unique<ValueType[]>(searcher.n_samples());
-    // that we then wrap in a shared ptr by transfering its ownership
-    auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::move(core_distances));
 
     for (std::size_t sample_index = 0; sample_index < searcher.n_samples(); ++sample_index) {
         auto nn_buffer_query = search::buffer::Unsorted(searcher.features_range_first(sample_index),
                                                         searcher.features_range_last(sample_index),
                                                         k_nearest_neighbors);
 
-        (*core_distances_ptr)[sample_index] = searcher(std::move(nn_buffer_query)).upper_bound();
+        core_distances[sample_index] = searcher(std::move(nn_buffer_query)).upper_bound();
     }
+    // wrap the array in a shared ptr by transfering its ownership
+    auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::move(core_distances));
+
     return core_distances_ptr;
 }
 

@@ -11,9 +11,6 @@
 #include "ffcl/common/math/statistics/Statistics.hpp"
 #include "ffcl/datastruct/UnionFind.hpp"
 
-#include <iostream>
-#include <stdexcept>  // std::runtime_error
-#include <tuple>
 #include <vector>
 
 namespace ffcl::search::buffer {

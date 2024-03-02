@@ -30,15 +30,17 @@ def plot_closest_edge(dataset, labels, axis=None):
         *reference_samples.T, color="black", alpha=0.4, label="Reference samples"
     )
     axis.scatter(
-        *closest_pair_query_point.T, color="blue", label="Closest pair query element"
+        *closest_pair_query_point.T, color="red", label="Closest pair query element"
     )
     axis.scatter(
         *closest_pair_reference_point.T,
-        color="black",
+        color="green",
         label="Closest pair reference element",
     )
     distance = np.linalg.norm(closest_pair_query_point - closest_pair_reference_point)
 
+    print(closest_pair_query_point)
+    print(closest_pair_reference_point)
     axis.plot(
         [closest_pair_query_point[0, 0], closest_pair_reference_point[0, 0]],
         [closest_pair_query_point[0, 1], closest_pair_reference_point[0, 1]],
@@ -117,14 +119,14 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
     axis.scatter(
         closest_pair_query_point[0],
         closest_pair_query_point[1],
-        color="blue",
+        color="red",
         label="Closest pair query element",
     )
     distance = np.linalg.norm(closest_pair_query_point - closest_pair_reference_point)
     axis.scatter(
         closest_pair_reference_point[0],
         closest_pair_reference_point[1],
-        color="black",
+        color="green",
         label=f"Closest pair reference element, distance = {distance}",
     )
 
@@ -148,7 +150,8 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
 
 
 for dataset_name in [
-    "no_structure"
+    "unbalanced_blobs",
+    "no_structure",
 ]:  # MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]:
     print(dataset_name)
     n_features = IO.n_features_in_txt_file(datapath + "inputs/" + dataset_name + ".txt")

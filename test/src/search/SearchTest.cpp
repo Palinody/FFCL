@@ -12,6 +12,7 @@
 #include "ffcl/datastruct/bounds/segment_representation/MinAndLength.hpp"
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
 
+#include "ffcl/datastruct/UnionFind.hpp"
 #include "ffcl/datastruct/bounds/Ball.hpp"
 #include "ffcl/datastruct/bounds/BoundingBox.hpp"
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"
@@ -285,7 +286,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    ValueType dummy_acc = 0;
+    ValueType   dummy_acc           = 0;
+    std::size_t wrong_value_counter = 0;
 
     static constexpr std::uint8_t n_decimals = 9;
     printf("times_array = [");
@@ -319,7 +321,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
 
         auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
 
-        const auto shortest_edge = searcher.dual_tree_closest_edge(std::move(query_indexer));
+        const auto shortest_edge = searcher.dual_tree_closest_edge(std::move(query_indexer), /*max_capacity=*/1);
 
         dummy_acc += std::get<2>(shortest_edge);
 
@@ -331,12 +333,38 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
         } else {
             printf("%.*f, ", n_decimals, (timer.elapsed() * 1e-9f));
         }
+        const auto brute_force_shortest_edge =
+            ffcl::search::algorithms::dual_set_shortest_edge(indices.begin(),
+                                                             indices.begin() + split_index,
+                                                             data.begin(),
+                                                             data.end(),
+                                                             n_features,
+                                                             indices.begin() + split_index,
+                                                             indices.end(),
+                                                             data.begin(),
+                                                             data.end(),
+                                                             n_features);
+
+        std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
+                  << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
+                  << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
+
+        if (!ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge))) {
+            std::cout << wrong_value_counter++ << "/" << n_samples << "---\n";
+        }
+        /*
+        ASSERT_TRUE(std::get<0>(brute_force_shortest_edge) == std::get<0>(shortest_edge) &&
+                    std::get<1>(brute_force_shortest_edge) == std::get<1>(shortest_edge) &&
+                    ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
+        */
+        // ASSERT_EQ(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge));
+        // ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
     }
     std::cout << dummy_acc << "\n";
 }
 
-TEST_F(SearcherErrorsTest, DualTreeTest) {
-    fs::path filename = "no_structure.txt";
+TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
+    fs::path filename = "unbalanced_blobs.txt";
 
     using IndexType = std::size_t;
     using ValueType = dType;
@@ -345,7 +373,7 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
     const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
     const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
-    const IndexType n_queries_samples = std::min(std::size_t{10}, n_samples - 3);
+    const IndexType n_queries_samples = std::max(std::size_t{10}, n_samples / 10);
 
     auto indices = generate_indices(n_samples);
 
@@ -365,8 +393,6 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
                                      data.end(),
                                      n_features,
                                      OptionsType()
-                                         .bucket_size(std::sqrt(n_queries_samples))
-                                         .max_depth(std::log2(n_queries_samples))
                                          .axis_selection_policy(AxisSelectionPolicyType{})
                                          .splitting_rule_policy(SplittingRulePolicyType{}));
 
@@ -377,14 +403,12 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(std::sqrt(n_samples - n_queries_samples))
-                                             .max_depth(std::log2(n_samples - n_queries_samples))
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
 
     auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
 
-    const auto shortest_edge = searcher.dual_tree_closest_edge(std::move(query_indexer));
+    const auto shortest_edge = searcher.dual_tree_closest_edge(std::move(query_indexer), /*max_capacity=*/1);
 
     auto labels = std::vector<IndexType>(n_samples);
 
@@ -396,6 +420,70 @@ TEST_F(SearcherErrorsTest, DualTreeTest) {
     for (auto reference_index_it = indices.begin() + n_queries_samples; reference_index_it != indices.end();
          ++reference_index_it) {
         labels[*reference_index_it] = 1;
+    }
+    labels[std::get<0>(shortest_edge)] = 2;
+    labels[std::get<1>(shortest_edge)] = 3;
+
+    write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
+}
+
+TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithSameTreesTest) {
+    fs::path filename = "no_structure.txt";
+
+    using IndexType = std::size_t;
+    using ValueType = dType;
+
+    auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
+    const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
+    const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+
+    const IndexType n_queries_samples = n_samples / 10;
+
+    auto indices = generate_indices(n_samples);
+
+    using IndicesIterator = decltype(indices)::iterator;
+    using SamplesIterator = decltype(data)::iterator;
+    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType     = IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto reference_indexer = IndexerType(indices.begin(),
+                                         indices.end(),
+                                         data.begin(),
+                                         data.end(),
+                                         n_features,
+                                         OptionsType()
+                                             .axis_selection_policy(AxisSelectionPolicyType{})
+                                             .splitting_rule_policy(SplittingRulePolicyType{}));
+
+    auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+
+    auto queries_indices = std::vector(indices.begin(), indices.begin() + n_queries_samples);
+
+    auto union_find = ffcl::datastruct::UnionFind<IndexType>(n_samples);
+
+    // merge all the indices in the queries_indices into the same component
+    for (const auto& query_index : queries_indices) {
+        union_find.merge(queries_indices[0], query_index);
+    }
+    const auto shortest_edge = searcher.dual_tree_closest_edge(union_find,
+                                                               union_find.find(queries_indices[0]),
+                                                               /*max_capacity=*/1);
+
+    std::cout << std::get<0>(shortest_edge) << ", " << std::get<1>(shortest_edge) << ", " << std::get<2>(shortest_edge)
+              << "\n";
+
+    auto labels = std::vector<IndexType>(n_samples);
+
+    for (const auto& reference_index : indices) {
+        labels[reference_index] = 1;
+    }
+    for (const auto& query_index : queries_indices) {
+        labels[query_index] = 0;
     }
     labels[std::get<0>(shortest_edge)] = 2;
     labels[std::get<1>(shortest_edge)] = 3;
