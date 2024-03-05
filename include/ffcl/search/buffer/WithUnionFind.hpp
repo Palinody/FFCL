@@ -46,8 +46,8 @@ class WithUnionFind : public StaticBase<WithUnionFind<DistancesIterator, Bound>>
       , union_find_const_reference_{union_find_const_reference}
       , query_representative_{query_representative} {}
 
-    WithUnionFind(DistancesIterator           centroid_features_query_first,
-                  DistancesIterator           centroid_features_query_last,
+    WithUnionFind(const DistancesIterator&    centroid_features_query_first,
+                  const DistancesIterator&    centroid_features_query_last,
                   UnionFindConstReferenceType union_find_const_reference,
                   const IndexType&            query_representative,
                   const IndexType&            max_capacity = common::infinity<IndexType>())
@@ -183,7 +183,7 @@ WithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&)
     -> WithUnionFind<typename Bound::IteratorType, Bound>;
 
 template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
-WithUnionFind(DistancesIteratorType, DistancesIteratorType, UnionFindConstReferenceType, const IndexType&)
+WithUnionFind(const DistancesIteratorType&, const DistancesIteratorType&, UnionFindConstReferenceType, const IndexType&)
     -> WithUnionFind<DistancesIteratorType, datastruct::bounds::UnboundedBallView<DistancesIteratorType>>;
 
 // ---
@@ -193,8 +193,8 @@ WithUnionFind(Bound&&, UnionFindConstReferenceType, const IndexType&, const Inde
     -> WithUnionFind<typename Bound::IteratorType, Bound>;
 
 template <typename DistancesIteratorType, typename UnionFindConstReferenceType, typename IndexType>
-WithUnionFind(DistancesIteratorType,
-              DistancesIteratorType,
+WithUnionFind(const DistancesIteratorType&,
+              const DistancesIteratorType&,
               UnionFindConstReferenceType,
               const IndexType&,
               const IndexType&)
