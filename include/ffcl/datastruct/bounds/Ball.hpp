@@ -91,9 +91,9 @@ class BallView : public StaticBound<BallView<FeaturesIterator>> {
 
     using IteratorType = FeaturesIterator;
 
-    BallView(FeaturesIterator center_point_range_first,
-             FeaturesIterator center_point_range_last,
-             const ValueType& radius)
+    BallView(const FeaturesIterator& center_point_range_first,
+             const FeaturesIterator& center_point_range_last,
+             const ValueType&        radius)
       : centroid_features_range_first_{center_point_range_first}
       , centroid_features_range_last_{center_point_range_last}
       , radius_{radius} {}

@@ -105,15 +105,15 @@ class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
 
     using IteratorType = FeaturesIterator;
 
-    explicit BoundingBoxView(FeaturesIterator               center_point_features_range_first,
-                             FeaturesIterator               center_point_features_range_last,
+    explicit BoundingBoxView(const FeaturesIterator&        center_point_features_range_first,
+                             const FeaturesIterator&        center_point_features_range_last,
                              const LengthsFromCentroidType& lengths_from_center)
       : BoundingBoxView(center_point_features_range_first,
                         center_point_features_range_last,
                         LengthsFromCentroidType{lengths_from_center}) {}
 
-    explicit BoundingBoxView(FeaturesIterator          center_point_features_range_first,
-                             FeaturesIterator          center_point_features_range_last,
+    explicit BoundingBoxView(const FeaturesIterator&   center_point_features_range_first,
+                             const FeaturesIterator&   center_point_features_range_last,
                              LengthsFromCentroidType&& lengths_from_center)
       : centroid_features_range_first_{center_point_features_range_first}
       , centroid_features_range_last_{center_point_features_range_last}

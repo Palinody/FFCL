@@ -85,7 +85,8 @@ class UnboundedBallView : public StaticBound<UnboundedBallView<FeaturesIterator>
 
     using IteratorType = FeaturesIterator;
 
-    UnboundedBallView(FeaturesIterator centroid_features_range_first, FeaturesIterator centroid_features_range_last)
+    UnboundedBallView(const FeaturesIterator& centroid_features_range_first,
+                      const FeaturesIterator& centroid_features_range_last)
       : centroid_features_range_first_{centroid_features_range_first}
       , centroid_features_range_last_{centroid_features_range_last} {}
 
