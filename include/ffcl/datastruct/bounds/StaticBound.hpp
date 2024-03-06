@@ -47,12 +47,12 @@ struct StaticBound {
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto upper_bound() const {
+    constexpr auto furthest_distance() const {
         return length_from_centroid();
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto upper_bound(std::size_t feature_index) const {
+    constexpr auto furthest_distance(std::size_t feature_index) const {
         return length_from_centroid(feature_index);
     }
 

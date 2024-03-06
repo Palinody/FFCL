@@ -240,7 +240,7 @@ auto BoruvkasAlgorithm<Indexer>::make_core_distances_ptr(const search::Searcher<
                                                         searcher.features_range_last(sample_index),
                                                         k_nearest_neighbors);
 
-        core_distances[sample_index] = searcher(std::move(nn_buffer_query)).upper_bound();
+        core_distances[sample_index] = searcher(std::move(nn_buffer_query)).furthest_distance();
     }
     // wrap the array in a shared ptr by transfering its ownership
     auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::move(core_distances));
@@ -269,8 +269,8 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
                                                                           /*max_capacity=*/static_cast<IndexType>(1)));
 
             // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-            const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();
-            const auto nearest_neighbor_distance = nn_buffer_query.upper_bound();
+            const auto nearest_neighbor_index    = nn_buffer_query.furthest_index();
+            const auto nearest_neighbor_distance = nn_buffer_query.furthest_distance();
 
             const auto current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);
 
@@ -313,8 +313,8 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
                                                                           /*max_capacity=*/static_cast<IndexType>(1)));
 
             // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-            const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();
-            const auto nearest_neighbor_distance = nn_buffer_query.upper_bound();
+            const auto nearest_neighbor_index    = nn_buffer_query.furthest_index();
+            const auto nearest_neighbor_distance = nn_buffer_query.furthest_distance();
 
             const auto current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);
 
@@ -369,8 +369,8 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
                                                                       /*max_capacity=*/static_cast<IndexType>(1)));
 
         // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-        const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();
-        const auto nearest_neighbor_distance = nn_buffer_query.upper_bound();
+        const auto nearest_neighbor_index    = nn_buffer_query.furthest_index();
+        const auto nearest_neighbor_distance = nn_buffer_query.furthest_distance();
 
         const auto current_closest_edge_distance = std::get<2>(closest_edge);
 
@@ -416,8 +416,8 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
                                                                       /*max_capacity=*/static_cast<IndexType>(1)));
 
         // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-        const auto nearest_neighbor_index    = nn_buffer_query.upper_bound_index();
-        const auto nearest_neighbor_distance = nn_buffer_query.upper_bound();
+        const auto nearest_neighbor_index    = nn_buffer_query.furthest_index();
+        const auto nearest_neighbor_distance = nn_buffer_query.furthest_distance();
 
         const auto current_closest_edge_distance = std::get<2>(closest_edge);
 

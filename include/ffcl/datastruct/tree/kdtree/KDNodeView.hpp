@@ -3,8 +3,7 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/Interval.hpp"
 
-#include "ffcl/search/buffer/StaticBase.hpp"
-#include "ffcl/search/count/StaticBase.hpp"
+#include "ffcl/search/buffer/StaticBuffer.hpp"
 
 #include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
 
@@ -64,7 +63,7 @@ struct KDNodeView {
                              const ReferenceSamplesIterator& reference_samples_range_last,
                              std::size_t                     reference_n_features,
                              const QueryBuffer&              query_buffer) const
-        -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBase>::value, NodePtr>;
+        -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBuffer>::value, NodePtr>;
 
     template <typename ReferenceSamplesIterator, typename QuerySamplesIterator>
     auto select_closest_child(const ReferenceSamplesIterator& reference_samples_range_first,
@@ -199,7 +198,7 @@ auto KDNodeView<IndicesIterator, Data>::select_sibling_node(
     const ReferenceSamplesIterator& reference_samples_range_last,
     std::size_t                     reference_n_features,
     const QueryBuffer&              query_buffer) const
-    -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBase>::value, NodePtr> {
+    -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBuffer>::value, NodePtr> {
     static_assert(common::is_iterator<ReferenceSamplesIterator>::value, "ReferenceSamplesIterator is not an iterator");
 
     assert(has_parent());
@@ -222,11 +221,11 @@ auto KDNodeView<IndicesIterator, Data>::select_sibling_node(
         // put to the right
         const bool visit_sibling = is_left_child_ret
                                        ? common::abs(pivot_split_value - query_split_value) <=
-                                             query_buffer.upper_bound(parent_node->cut_axis_feature_index_)
+                                             query_buffer.furthest_distance(parent_node->cut_axis_feature_index_)
                                        : common::abs(pivot_split_value - query_split_value) <
-                                             query_buffer.upper_bound(parent_node->cut_axis_feature_index_);
+                                             query_buffer.furthest_distance(parent_node->cut_axis_feature_index_);
 
-        return query_buffer.n_free_slots() || visit_sibling
+        return query_buffer.remaining_capacity() || visit_sibling
                    ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
                    : nullptr;
     }

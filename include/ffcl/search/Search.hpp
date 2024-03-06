@@ -2,8 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/search/buffer/StaticBase.hpp"
-#include "ffcl/search/count/StaticBase.hpp"
+#include "ffcl/search/buffer/StaticBuffer.hpp"
 
 #include "ffcl/search/DualTreeTraverser.hpp"
 #include "ffcl/search/TreeTraverser.hpp"
@@ -39,23 +38,23 @@ class Searcher {
 
     template <typename ForwardedBuffer,
               typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer> &&
-                                            common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
+                                            common::is_crtp_of<ForwardedBuffer, buffer::StaticBuffer>::value,
                                         bool> = true>
     ForwardedBuffer operator()(ForwardedBuffer&& forwarded_buffer) const;
 
     template <
         typename ForwardedBufferBatch,
-        typename std::enable_if_t<common::is_iterable_of_static_base<ForwardedBufferBatch, buffer::StaticBase>::value,
+        typename std::enable_if_t<common::is_iterable_of_static_base<ForwardedBufferBatch, buffer::StaticBuffer>::value,
                                   bool> = true>
     ForwardedBufferBatch operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const;
 
     template <typename ForwardedQueryIndexer,
               typename... BufferArgs,
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
-    auto dual_tree_closest_edge(ForwardedQueryIndexer&& forwarded_query_indexer, BufferArgs&&... buffer_args) const;
+    auto dual_tree_shortest_edge(ForwardedQueryIndexer&& forwarded_query_indexer, BufferArgs&&... buffer_args) const;
 
     template <typename... BufferArgs>
-    auto dual_tree_closest_edge(BufferArgs&&... buffer_args) const;
+    auto dual_tree_shortest_edge(BufferArgs&&... buffer_args) const;
 
   private:
     TreeTraverser<ReferenceIndexer> tree_traverser_;
@@ -86,7 +85,7 @@ constexpr auto Searcher<ReferenceIndexer>::features_range_last(std::size_t sampl
 template <typename ReferenceIndexer>
 template <typename ForwardedBuffer,
           typename std::enable_if_t<!common::is_iterable_v<ForwardedBuffer> &&
-                                        common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
+                                        common::is_crtp_of<ForwardedBuffer, buffer::StaticBuffer>::value,
                                     bool>>
 ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
     return tree_traverser_(std::forward<ForwardedBuffer>(forwarded_buffer));
@@ -94,8 +93,8 @@ ForwardedBuffer Searcher<ReferenceIndexer>::operator()(ForwardedBuffer&& forward
 
 template <typename ReferenceIndexer>
 template <typename ForwardedBufferBatch,
-          typename std::enable_if_t<common::is_iterable_of_static_base<ForwardedBufferBatch, buffer::StaticBase>::value,
-                                    bool>>
+          typename std::
+              enable_if_t<common::is_iterable_of_static_base<ForwardedBufferBatch, buffer::StaticBuffer>::value, bool>>
 ForwardedBufferBatch Searcher<ReferenceIndexer>::operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const {
     auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
 
@@ -111,16 +110,16 @@ template <typename ReferenceIndexer>
 template <typename ForwardedQueryIndexer,
           typename... BufferArgs,
           typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool>>
-auto Searcher<ReferenceIndexer>::dual_tree_closest_edge(ForwardedQueryIndexer&& forwarded_query_indexer,
-                                                        BufferArgs&&... buffer_args) const {
-    return tree_traverser_.dual_tree_closest_edge(std::forward<ForwardedQueryIndexer>(forwarded_query_indexer),
-                                                  std::forward<BufferArgs>(buffer_args)...);
+auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryIndexer&& forwarded_query_indexer,
+                                                         BufferArgs&&... buffer_args) const {
+    return tree_traverser_.dual_tree_shortest_edge(std::forward<ForwardedQueryIndexer>(forwarded_query_indexer),
+                                                   std::forward<BufferArgs>(buffer_args)...);
 }
 
 template <typename ReferenceIndexer>
 template <typename... BufferArgs>
-auto Searcher<ReferenceIndexer>::dual_tree_closest_edge(BufferArgs&&... buffer_args) const {
-    return tree_traverser_.dual_tree_closest_edge(std::forward<BufferArgs>(buffer_args)...);
+auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... buffer_args) const {
+    return tree_traverser_.dual_tree_shortest_edge(std::forward<BufferArgs>(buffer_args)...);
 }
 
 }  // namespace ffcl::search

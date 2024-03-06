@@ -2,8 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/search/buffer/StaticBase.hpp"
-#include "ffcl/search/count/StaticBase.hpp"
+#include "ffcl/search/buffer/StaticBuffer.hpp"
 
 namespace ffcl::search {
 
@@ -66,8 +65,8 @@ constexpr auto DualTreeTraverser<ReferenceIndexer>::features_range_last(std::siz
 template <typename ReferenceIndexer>
 template <typename ForwardedBuffer>
 ForwardedBuffer DualTreeTraverser<ReferenceIndexer>::operator()(ForwardedBuffer&& forwarded_buffer) const {
-    static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBase>::value,
-                  "Provided a ForwardedBuffer that does not inherit from StaticBase<Derived>");
+    static_assert(common::is_crtp_of<ForwardedBuffer, buffer::StaticBuffer>::value,
+                  "Provided a ForwardedBuffer that does not inherit from StaticBuffer<Derived>");
 
     auto processed_buffer = std::forward<ForwardedBuffer>(forwarded_buffer);
     // single_tree_traversal(reference_indexer_.root(), processed_buffer);

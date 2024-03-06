@@ -9,14 +9,14 @@ template <typename IndicesIterator,
           typename QueriesToBuffersMap,
           typename Distance,
           typename... BufferArgs>
-auto find_max_upper_bound(const IndicesIterator& indices_range_first,
-                          const IndicesIterator& indices_range_last,
-                          const SamplesIterator& samples_range_first,
-                          const SamplesIterator& samples_range_last,
-                          std::size_t            n_features,
-                          QueriesToBuffersMap&   queries_to_buffers_map,
-                          const Distance&        init_max_upper_bound,
-                          BufferArgs&&... buffer_args) {
+auto find_or_make_max_upper_bound(const IndicesIterator& indices_range_first,
+                                  const IndicesIterator& indices_range_last,
+                                  const SamplesIterator& samples_range_first,
+                                  const SamplesIterator& samples_range_last,
+                                  std::size_t            n_features,
+                                  QueriesToBuffersMap&   queries_to_buffers_map,
+                                  const Distance&        init_max_upper_bound,
+                                  BufferArgs&&... buffer_args) {
     common::ignore_parameters(samples_range_last);
 
     auto max_upper_bound = init_max_upper_bound;
@@ -31,38 +31,28 @@ auto find_max_upper_bound(const IndicesIterator& indices_range_first,
 
         const auto& buffer_at_index = index_to_buffer_it->second;
 
-        if (buffer_at_index.upper_bound() > max_upper_bound) {
-            max_upper_bound = buffer_at_index.upper_bound();
+        if (buffer_at_index.furthest_distance() > max_upper_bound) {
+            max_upper_bound = buffer_at_index.furthest_distance();
         }
     }
     return max_upper_bound;
 }
 
 template <typename IndicesIterator, typename QueriesToBuffersMap, typename Distance>
-auto find_max_upper_bound_old(const IndicesIterator&     indices_range_first,
-                              const IndicesIterator&     indices_range_last,
-                              const QueriesToBuffersMap& queries_to_buffers_map,
-                              const Distance&            init_max_upper_bound) {
+auto find_max_upper_bound(const IndicesIterator&     indices_range_first,
+                          const IndicesIterator&     indices_range_last,
+                          const QueriesToBuffersMap& queries_to_buffers_map,
+                          const Distance&            init_max_upper_bound = Distance{0}) {
     auto max_upper_bound = init_max_upper_bound;
 
     for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
         // Attempt to find the buffer associated with the current index in the buffer map.
-        const auto index_to_buffer_it = queries_to_buffers_map.find_or_make_buffer_at(*index_it);
-        // The max upper bound is infinite if at least one buffer associated with the query is missing.
-        // In this case we can return infinity early.
-        if (index_to_buffer_it == queries_to_buffers_map.end()) {
-            return common::infinity<Distance>();
+        const auto index_to_buffer_it = queries_to_buffers_map.find(*index_it);
 
-        } else {
-            const auto& buffer_at_index = index_to_buffer_it->second;
-            // Similarly to when the buffer corresponding to the current index hasn't been found, we return infinity
-            // early if one of the buffer is empty.
-            if (buffer_at_index.empty()) {
-                return common::infinity<Distance>();
+        const auto& buffer_at_index = index_to_buffer_it->second;
 
-            } else if (buffer_at_index.upper_bound() > max_upper_bound) {
-                max_upper_bound = buffer_at_index.upper_bound();
-            }
+        if (buffer_at_index.furthest_distance() > max_upper_bound) {
+            max_upper_bound = buffer_at_index.furthest_distance();
         }
     }
     return max_upper_bound;

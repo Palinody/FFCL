@@ -40,7 +40,7 @@ set(HEADER_FILES
 
     include/ffcl/hdbscan/HDBSCAN.hpp
 
-    include/ffcl/search/buffer/StaticBase.hpp
+    include/ffcl/search/buffer/StaticBuffer.hpp
     include/ffcl/search/buffer/Unsorted.hpp
     include/ffcl/search/buffer/WithMemory.hpp
     include/ffcl/search/buffer/WithUnionFind.hpp
