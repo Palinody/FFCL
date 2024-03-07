@@ -3,7 +3,6 @@
 #include <array>
 #include <cstddef>  // std::size_t
 #include <initializer_list>
-#include <memory>
 #include <stdexcept>
 #include <vector>
 
@@ -11,80 +10,6 @@ namespace ffcl::datastruct {
 
 template <typename ValueType, std::size_t NFeatures>
 class FeaturesVector;
-
-// std::unique_ptr<T[]> attempt:
-/*
-// Specialization for dynamic arrays
-template <typename ValueType>
-class FeaturesVector<ValueType, 0> {
-  public:
-    using ContainerType = std::unique_ptr<ValueType[]>;
-    using Iterator      = ValueType*;
-    using ConstIterator = const ValueType*;
-
-    FeaturesVector(std::initializer_list<ValueType> init_list)
-      : values_(make_unique_ptr_from_initializer_list(init_list))
-      , size_(init_list.size()) {}
-
-    FeaturesVector(FeaturesVector&& features_vector) noexcept
-      : values_{std::move(features_vector.values_)}
-      , size_{std::move(features_vector.size_)} {}
-
-    ValueType& operator[](std::size_t index) {
-        return values_[index];
-    }
-
-    const ValueType& operator[](std::size_t index) const {
-        return values_[index];
-    }
-
-    FeaturesVector& operator=(FeaturesVector&& features_vector) noexcept {
-        if (this != &features_vector) {
-            values_ = std::move(features_vector.values_);
-            size_   = std::move(features_vector.size_);
-        }
-        return *this;
-    }
-
-    std::size_t size() const {
-        return size_;
-    }
-
-    ValueType* begin() {
-        return values_.get();
-    }
-
-    ValueType* end() {
-        return values_.get() + size_;
-    }
-
-    const ValueType* begin() const {
-        return values_.get();
-    }
-
-    const ValueType* end() const {
-        return values_.get() + size_;
-    }
-
-    const ValueType* cbegin() const {
-        return values_.get();
-    }
-
-    const ValueType* cend() const {
-        return values_.get() + size_;
-    }
-
-  private:
-    ContainerType values_;
-    std::size_t   size_;
-
-    static std::unique_ptr<ValueType[]> make_unique_ptr_from_initializer_list(std::initializer_list<ValueType> list) {
-        auto array = std::make_unique<ValueType[]>(list.size());
-        std::copy(list.begin(), list.end(), array.get());
-        return array;
-    }
-};
-*/
 
 template <typename Value>
 class FeaturesVector<Value, 0> {

@@ -24,7 +24,7 @@
 #include <iterator>
 #include <vector>
 
-#include "ffcl/datastruct/FeatureMaskArray.hpp"
+#include "ffcl/datastruct/FeaturesMask.hpp"
 
 namespace fs = std::filesystem;
 

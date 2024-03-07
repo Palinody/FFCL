@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
+#include "ffcl/datastruct/bounds/segment/MinAndMax.hpp"
 
 #include <cmath>
 #include <cstddef>  // std::size_t
@@ -25,7 +25,7 @@ struct GetTypeFromIteratorOrTrivialType<T, true> {
 };
 
 template <typename T>
-using Interval = bounds::segment_representation::MinAndMax<typename GetTypeFromIteratorOrTrivialType<T>::type>;
+using Interval = bounds::segment::MinAndMax<typename GetTypeFromIteratorOrTrivialType<T>::type>;
 
 template <typename T>
 using HyperInterval = std::vector<Interval<T>>;
@@ -39,7 +39,7 @@ auto make_interval(const SamplesIterator& samples_range_first,
 
     const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    auto interval = Interval<DataType>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest());
+    auto interval = Interval<DataType>{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()};
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // a candidate for being a min, max or min-max compared to the current min and max according to the current
@@ -69,7 +69,7 @@ auto make_interval(const IndicesIterator& indices_range_first,
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    auto interval = Interval<DataType>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest());
+    auto interval = Interval<DataType>{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()};
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         // a candidate for being a min, max or min-max compared to the current min and max according to the current
@@ -97,7 +97,7 @@ auto make_hyper_interval(const SamplesIterator& samples_range_first,
 
     // min max elements per feature vector
     auto hyper_interval = HyperInterval<SamplesIterator>(
-        n_features, Interval<DataType>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()));
+        n_features, Interval<DataType>{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -130,7 +130,7 @@ auto make_hyper_interval(const IndicesIterator& indices_range_first,
 
     // min max elements per feature vector
     auto hyper_interval = HyperInterval<SamplesIterator>(
-        n_features, Interval<DataType>(std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()));
+        n_features, Interval<DataType>{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
