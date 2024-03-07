@@ -91,10 +91,9 @@ class FeaturesMask {
   private:
     template <std::size_t... Int>
     static constexpr FeaturesVectorType generate_static_sequence(std::index_sequence<Int...>) {
-        return {{IndexType(Int)...}};
+        return {{IndexType{Int}...}};
     }
 
-    template <std::size_t... Int>
     FeaturesVectorType generate_dynamic_sequence(std::size_t sequence_length) {
         auto indices = std::vector<IndexType>(sequence_length);
         std::iota(indices.begin(), indices.end(), static_cast<IndexType>(0));
