@@ -27,19 +27,21 @@ class FeaturesMask {
     explicit FeaturesMask(std::initializer_list<IndexType> init_list)
       : indices_{init_list} {}
 
-    explicit FeaturesMask(const ContainerType& values)
+    constexpr explicit FeaturesMask(const ContainerType& values)
       : indices_{values} {}
 
-    explicit FeaturesMask(ContainerType&& values) noexcept
+    constexpr explicit FeaturesMask(ContainerType&& values) noexcept
       : indices_{std::move(values)} {}
 
+    template <std::size_t NFeaturesConstraint                             = NFeatures,
+              typename std::enable_if_t<(NFeaturesConstraint != 0), bool> = true>
     constexpr explicit FeaturesMask()
       : indices_(generate_static_sequence(std::make_index_sequence<NFeatures>{})) {}
 
-    template <typename... Args, std::enable_if_t<sizeof...(Args) == NFeatures, int> = 0>
-    constexpr FeaturesMask(Args&&... args)
-      : indices_{{static_cast<IndexType>(std::forward<Args>(args))...}} {
-        static_assert((std::is_convertible_v<Args, IndexType> && ...),
+    template <typename... Int, std::enable_if_t<sizeof...(Int) == NFeatures, bool> = true>
+    constexpr explicit FeaturesMask(Int&&... args)
+      : indices_{{static_cast<IndexType>(std::forward<Int>(args))...}} {
+        static_assert((std::is_convertible_v<Int, IndexType> && ...),
                       "All arguments must be convertible to IndexType.");
     }
 
@@ -87,8 +89,6 @@ class FeaturesMask {
     }
 
   private:
-    FeaturesVectorType indices_;
-
     template <std::size_t... Int>
     static constexpr FeaturesVectorType generate_static_sequence(std::index_sequence<Int...>) {
         return {{IndexType(Int)...}};
@@ -100,6 +100,8 @@ class FeaturesMask {
         std::iota(indices.begin(), indices.end(), static_cast<IndexType>(0));
         return ContainerType{std::move(indices)};
     }
+
+    FeaturesVectorType indices_;
 };
 
 }  // namespace ffcl::datastruct
