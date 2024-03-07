@@ -24,8 +24,6 @@
 #include <iterator>
 #include <vector>
 
-#include "ffcl/datastruct/vector/FeaturesMask.hpp"
-
 namespace fs = std::filesystem;
 
 class SearcherErrorsTest : public ::testing::Test {
@@ -354,18 +352,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
               << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
               << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
-
-    ffcl::datastruct::FeaturesMask<int, 1> features_mask_1;
-    features_mask_1.print();
-
-    ffcl::datastruct::FeaturesMask<int> features_mask_2;
-    features_mask_2.print();
-
-    ffcl::datastruct::FeaturesMask<int> features_mask_3(std::vector<int>{2, 1, 3, -1});
-    features_mask_3.print();
-
-    ffcl::datastruct::FeaturesMask<int, 1> features_mask_4 = std::move(features_mask_1);
-    features_mask_4.print();
 }
 
 /*
