@@ -90,8 +90,11 @@ class WithMemory : public StaticBuffer<WithMemory<DistancesIterator, Bound>> {
                    max_capacity) {}
 
     void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        // consider an update only if the index hasnt been visited
-        if (visited_indices_const_reference_.find(index_candidate) == visited_indices_const_reference_.end()) {
+        // consider an update only if the candidate hasnt been visited
+        const bool is_candidate_valid =
+            visited_indices_const_reference_.find(index_candidate) == visited_indices_const_reference_.end();
+
+        if (is_candidate_valid) {
             // always populate if the max capacity isnt reached
             if (this->remaining_capacity()) {
                 this->indices_.emplace_back(index_candidate);
