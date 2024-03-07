@@ -3,8 +3,8 @@
 #include <optional>
 #include <vector>
 
-#include "ffcl/datastruct/FeaturesVector.hpp"
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
+#include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 namespace ffcl::datastruct::bounds {
 

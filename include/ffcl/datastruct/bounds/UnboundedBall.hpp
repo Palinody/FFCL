@@ -2,8 +2,8 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/FeaturesVector.hpp"
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
+#include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 #include <vector>
 

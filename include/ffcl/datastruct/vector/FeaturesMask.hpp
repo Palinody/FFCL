@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ffcl/datastruct/FeaturesVector.hpp"
+#include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 #include <memory>
 #include <numeric>
