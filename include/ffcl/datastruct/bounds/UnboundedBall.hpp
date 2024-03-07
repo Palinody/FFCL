@@ -2,8 +2,8 @@
 
 #include "ffcl/common/Utils.hpp"
 
+#include "ffcl/datastruct/FeaturesVector.hpp"
 #include "ffcl/datastruct/bounds/StaticBound.hpp"
-#include "ffcl/datastruct/bounds/Vertex.hpp"
 
 #include <vector>
 
@@ -14,7 +14,7 @@ class UnboundedBall : public StaticBound<UnboundedBall<Value, NFeatures>> {
   public:
     using ValueType = Value;
 
-    using CentroidType = Vertex<ValueType, NFeatures>;
+    using CentroidType = FeaturesVector<ValueType, NFeatures>;
 
     using IteratorType = typename CentroidType::IteratorType;
 
@@ -28,25 +28,25 @@ class UnboundedBall : public StaticBound<UnboundedBall<Value, NFeatures>> {
         return centroid_.size();
     }
 
-    template <typename FeaturesIterator>
-    constexpr bool is_in_bounds_impl(const FeaturesIterator& features_range_first,
-                                     const FeaturesIterator& features_range_last) const {
+    template <typename OtherFeaturesIterator>
+    constexpr bool is_in_bounds_impl(const OtherFeaturesIterator& features_range_first,
+                                     const OtherFeaturesIterator& features_range_last) const {
         common::ignore_parameters(features_range_first, features_range_last);
         return true;
     }
 
-    template <typename FeaturesIterator>
-    constexpr auto distance_impl(const FeaturesIterator& features_range_first,
-                                 const FeaturesIterator& features_range_last) const {
+    template <typename OtherFeaturesIterator>
+    constexpr auto distance_impl(const OtherFeaturesIterator& features_range_first,
+                                 const OtherFeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return common::math::heuristics::auto_distance(
             features_range_first, features_range_last, centroid_.begin(), centroid_.end());
     }
 
-    template <typename FeaturesIterator>
-    constexpr auto compute_distance_if_within_bounds_impl(const FeaturesIterator& features_range_first,
-                                                          const FeaturesIterator& features_range_last) const {
+    template <typename OtherFeaturesIterator>
+    constexpr auto compute_distance_if_within_bounds_impl(const OtherFeaturesIterator& features_range_first,
+                                                          const OtherFeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return std::optional<ValueType>(distance_impl(features_range_first, features_range_last));
