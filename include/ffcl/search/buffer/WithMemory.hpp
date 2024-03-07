@@ -7,7 +7,6 @@
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
 
 #include <unordered_set>
@@ -186,8 +185,8 @@ WithMemory(Bound &&) -> WithMemory<typename Bound::IteratorType, Bound, std::uno
 template <typename Bound, typename VisitedIndices>
 WithMemory(Bound&&, const VisitedIndices&) -> WithMemory<typename Bound::IteratorType, Bound, VisitedIndices>;
 
-template <typename Bound, typename IndicesIterator>
-WithMemory(Bound&&, const IndicesIterator&, const IndicesIterator&)
+template <typename Bound, typename VisitedIndicesIterator>
+WithMemory(Bound&&, const VisitedIndicesIterator&, const VisitedIndicesIterator&)
     -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<std::size_t>>;
 
 template <typename DistancesIterator>
@@ -204,11 +203,13 @@ template <typename DistancesIterator, typename VisitedIndices>
 WithMemory(const DistancesIterator&, const DistancesIterator&, VisitedIndices &&)
     -> WithMemory<DistancesIterator, datastruct::bounds::UnboundedBallView<DistancesIterator>, VisitedIndices>;
 
-template <typename DistancesIterator, typename IndicesIterator>
-WithMemory(const DistancesIterator&, const DistancesIterator&, const IndicesIterator&, const IndicesIterator&)
-    -> WithMemory<DistancesIterator,
-                  datastruct::bounds::UnboundedBallView<DistancesIterator>,
-                  std::unordered_set<std::size_t>>;
+template <typename DistancesIterator, typename VisitedIndicesIterator>
+WithMemory(const DistancesIterator&,
+           const DistancesIterator&,
+           const VisitedIndicesIterator&,
+           const VisitedIndicesIterator&) -> WithMemory<DistancesIterator,
+                                                        datastruct::bounds::UnboundedBallView<DistancesIterator>,
+                                                        std::unordered_set<std::size_t>>;
 
 // ---
 
@@ -219,8 +220,8 @@ template <typename Bound, typename VisitedIndices, typename Index>
 WithMemory(Bound&&, const VisitedIndices&, const Index&)
     -> WithMemory<typename Bound::IteratorType, Bound, VisitedIndices>;
 
-template <typename Bound, typename IndicesIterator, typename Index>
-WithMemory(Bound&&, const IndicesIterator&, const IndicesIterator&, const Index&)
+template <typename Bound, typename VisitedIndicesIterator, typename Index>
+WithMemory(Bound&&, const VisitedIndicesIterator&, const VisitedIndicesIterator&, const Index&)
     -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<Index>>;
 
 template <typename DistancesIterator, typename Index>
@@ -237,11 +238,11 @@ template <typename DistancesIterator, typename VisitedIndices, typename Index>
 WithMemory(const DistancesIterator&, const DistancesIterator&, VisitedIndices&&, const Index&)
     -> WithMemory<DistancesIterator, datastruct::bounds::UnboundedBallView<DistancesIterator>, VisitedIndices>;
 
-template <typename DistancesIterator, typename IndicesIterator, typename Index>
+template <typename DistancesIterator, typename VisitedIndicesIterator, typename Index>
 WithMemory(const DistancesIterator&,
            const DistancesIterator&,
-           const IndicesIterator&,
-           const IndicesIterator&,
+           const VisitedIndicesIterator&,
+           const VisitedIndicesIterator&,
            const Index&) -> WithMemory<DistancesIterator,
                                        datastruct::bounds::UnboundedBallView<DistancesIterator>,
                                        std::unordered_set<Index>>;

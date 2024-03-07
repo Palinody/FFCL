@@ -7,7 +7,6 @@
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
 
 #include <vector>
