@@ -2,7 +2,6 @@
 
 #include <cstddef>  // std::size_t
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/FeatureMaskArray.hpp"
 #include "ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp"
 
 #include <array>
