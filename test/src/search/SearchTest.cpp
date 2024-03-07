@@ -8,15 +8,14 @@
 #include "ffcl/search/Search.hpp"
 #include "ffcl/search/buffer/Unsorted.hpp"
 
-#include "ffcl/datastruct/bounds/segment_representation/MiddleAndLength.hpp"
-#include "ffcl/datastruct/bounds/segment_representation/MinAndLength.hpp"
-#include "ffcl/datastruct/bounds/segment_representation/MinAndMax.hpp"
+#include "ffcl/datastruct/bounds/segment/MiddleAndLength.hpp"
+#include "ffcl/datastruct/bounds/segment/MinAndLength.hpp"
+#include "ffcl/datastruct/bounds/segment/MinAndMax.hpp"
 
 #include "ffcl/datastruct/UnionFind.hpp"
 #include "ffcl/datastruct/bounds/Ball.hpp"
 #include "ffcl/datastruct/bounds/BoundingBox.hpp"
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"
-#include "ffcl/datastruct/bounds/Vertex.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <filesystem>
@@ -24,6 +23,8 @@
 #include <iostream>
 #include <iterator>
 #include <vector>
+
+#include "ffcl/datastruct/FeatureMaskArray.hpp"
 
 namespace fs = std::filesystem;
 
@@ -162,7 +163,7 @@ TEST_F(SearcherErrorsTest, NoStructureTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    // using SegmentType = ffcl::datastruct::bounds::segment_representation::MinAndMax<ValueType>;
+    // using SegmentType = ffcl::datastruct::bounds::segment::MinAndMax<ValueType>;
     // using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
     // using BoundType = ffcl::datastruct::bounds::Ball<ValueType, 2>;
     // using BoundType = ffcl::datastruct::bounds::UnboundedBall<ValueType, 2>;
@@ -355,6 +356,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
               << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
 }
 
+/*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
@@ -382,7 +384,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
     // static constexpr std::uint8_t n_decimals = 9;
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 1000);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
 
     for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
@@ -417,21 +419,19 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
         const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
 
-        /*
-        const auto elapsed_time = timer.elapsed();
+        // const auto elapsed_time = timer.elapsed();
 
-        // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
+        // // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
 
-        if (split_index == 1) {
-            printf("times_array = [");
+        // if (split_index == 1) {
+        //     printf("times_array = [");
 
-        } else if (split_index >= n_samples - increment) {
-            printf("%.*f] ", n_decimals, (elapsed_time * 1e-9f));
+        // } else if (split_index >= n_samples - increment) {
+        //     printf("%.*f] ", n_decimals, (elapsed_time * 1e-9f));
 
-        } else {
-            printf("%.*f, ", n_decimals, (elapsed_time * 1e-9f));
-        }
-        */
+        // } else {
+        //     printf("%.*f, ", n_decimals, (elapsed_time * 1e-9f));
+        // }
 
         {
             const auto brute_force_shortest_edge =
@@ -454,6 +454,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     }
     std::cout << dummy_acc << "\n";
 }
+*/
 
 /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
@@ -686,7 +687,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTest) {
 }
 */
 
-/*
 TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
     fs::path filename = "unbalanced_blobs.txt";
 
@@ -711,17 +711,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto query_indexer = IndexerType(indices.begin(),
-                                     indices.begin() + n_queries_samples,
-                                     data.begin(),
-                                     data.end(),
-                                     n_features,
-                                     OptionsType()
-                                         .bucket_size(1)
-                                         .axis_selection_policy(AxisSelectionPolicyType{})
-                                         .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
     auto reference_indexer = IndexerType(indices.begin() + n_queries_samples,
                                          indices.end(),
                                          data.begin(),
@@ -733,6 +722,17 @@ TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
 
     auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+
+    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+    auto query_indexer = IndexerType(indices.begin(),
+                                     indices.begin() + n_queries_samples,
+                                     data.begin(),
+                                     data.end(),
+                                     n_features,
+                                     OptionsType()
+                                         .bucket_size(1)
+                                         .axis_selection_policy(AxisSelectionPolicyType{})
+                                         .splitting_rule_policy(SplittingRulePolicyType{}));
 
     const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
 
@@ -768,7 +768,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
 
     write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 }
-*/
 
 /*
 TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithSameTreesTest) {
