@@ -157,13 +157,10 @@ void SingleLinkageClusterTree<IndexType, ValueType>::preorder_traversal_single_l
     // else the same cluster label will be used for all the descendant nodes from the current node
     if (single_linkage_cluster_node->level_ >= options_.cut_level_) {
         // set the cluster label as noise if the current node is parent of less than 'min cluster size' nodes
-        if (single_linkage_cluster_node->size() < options_.min_cluster_size_) {
-            cluster_label = 0;
-
-        } else {
-            // set the cluster label as the one at the current level
-            cluster_label = single_linkage_cluster_node->representative_;
-        }
+        // else set the cluster label as the one at the current level
+        cluster_label = single_linkage_cluster_node->size() < options_.min_cluster_size_
+                            ? 0
+                            : single_linkage_cluster_node->representative_;
     }
     // continue to traverse the tree if the current node is not leaf
     // a single linkage cluster node is guaranteed to have a left and a right child if its not leaf
