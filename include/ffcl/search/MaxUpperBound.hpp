@@ -15,11 +15,11 @@ auto find_or_make_max_upper_bound(const IndicesIterator& indices_range_first,
                                   const SamplesIterator& samples_range_last,
                                   std::size_t            n_features,
                                   QueriesToBuffersMap&   queries_to_buffers_map,
-                                  const Distance&        init_max_upper_bound,
+                                  const Distance&        initial_max_upper_bound,
                                   BufferArgs&&... buffer_args) {
     common::ignore_parameters(samples_range_last);
 
-    auto max_upper_bound = init_max_upper_bound;
+    auto max_upper_bound = initial_max_upper_bound;
 
     for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
         // Attempt to find the buffer associated with the current index in the buffer map.
@@ -42,8 +42,8 @@ template <typename IndicesIterator, typename QueriesToBuffersMap, typename Dista
 auto find_max_upper_bound(const IndicesIterator&     indices_range_first,
                           const IndicesIterator&     indices_range_last,
                           const QueriesToBuffersMap& queries_to_buffers_map,
-                          const Distance&            init_max_upper_bound = Distance{0}) {
-    auto max_upper_bound = init_max_upper_bound;
+                          const Distance&            initial_max_upper_bound = Distance{0}) {
+    auto max_upper_bound = initial_max_upper_bound;
 
     for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
         // Attempt to find the buffer associated with the current index in the buffer map.
