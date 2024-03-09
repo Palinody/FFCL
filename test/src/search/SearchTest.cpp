@@ -24,6 +24,9 @@
 #include <iterator>
 #include <vector>
 
+#define TIME_IT false
+#define ASSERT_IT true
+
 namespace fs = std::filesystem;
 
 class SearcherErrorsTest : public ::testing::Test {
@@ -357,10 +360,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
 */
 
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
-#define TIME_IT true
-#define ASSERT_IT false
-
+#if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+#endif
 
     fs::path filename = "no_structure.txt";
 
@@ -410,7 +412,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
         auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
 
+#if defined(TIME_IT) && TIME_IT
         timer.reset();
+#endif
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto query_indexer = IndexerType(indices.begin(),
@@ -435,7 +439,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             printf("times_array = [");
 
         } else if (split_index >= n_samples - increment) {
-            printf("%.*f] ", n_decimals, (elapsed_time * 1e-9f));
+            printf("%.*f]\n", n_decimals, (elapsed_time * 1e-9f));
 
         } else {
             printf("%.*f, ", n_decimals, (elapsed_time * 1e-9f));
@@ -469,14 +473,15 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         dummy_acc += std::get<2>(shortest_edge);
     }
 #if defined(TIME_IT) && TIME_IT
-    printf("Total runtime: %.*f, ", n_decimals, (total_elapsed_time * 1e-9f));
+    printf("Total runtime: %.*f\n", n_decimals, (total_elapsed_time * 1e-9f));
 #endif
     std::cout << dummy_acc << "\n";
 }
 
-/*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
-    // ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+#if defined(TIME_IT) && TIME_IT
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+#endif
 
     fs::path filename = "no_structure.txt";
 
@@ -500,14 +505,20 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 
     ValueType dummy_acc = 0;
 
-    // static constexpr std::uint8_t n_decimals = 9;
+#if defined(TIME_IT) && TIME_IT
+    static constexpr std::uint8_t n_decimals = 9;
+    timer.reset();
+    auto total_elapsed_time = timer.elapsed();
+#endif
 
     const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
 
     for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
 
-        // timer.reset();
+#if defined(TIME_IT) && TIME_IT
+        timer.reset();
+#endif
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto reference_indexer = IndexerType(indices.begin(),
@@ -525,7 +536,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 
         auto union_find = ffcl::datastruct::UnionFind<IndexType>(n_samples);
 
-        const std::size_t queries_representative = indices[0];
+        const IndexType queries_representative = union_find.find(indices[0]);
 
         // merge all the indices in the queries_indices into the same component
         for (auto query_index_it = indices.begin(); query_index_it != indices.begin() + split_index; ++query_index_it) {
@@ -534,39 +545,51 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
         const auto shortest_edge =
             searcher.dual_tree_shortest_edge(union_find, union_find.find(queries_representative), 1);
 
-        const auto brute_force_shortest_edge =
-            ffcl::search::algorithms::dual_set_shortest_edge(indices.begin(),
-                                                             indices.begin() + split_index,
-                                                             data.begin(),
-                                                             data.end(),
-                                                             n_features,
-                                                             indices.begin() + split_index,
-                                                             indices.end(),
-                                                             data.begin(),
-                                                             data.end(),
-                                                             n_features);
-
-        std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
-                  << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
-                  << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
-
+#if defined(TIME_IT) && TIME_IT
+        const auto elapsed_time = timer.elapsed();
+        total_elapsed_time += elapsed_time;
         // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
 
-        // if (split_index == 1) {
-        //     printf("times_array = [");
+        if (split_index == 1) {
+            printf("times_array = [");
 
-        // } else if (split_index >= n_samples - increment) {
-        //     printf("%.*f] ", n_decimals, (timer.elapsed() * 1e-9f));
+        } else if (split_index >= n_samples - increment) {
+            printf("%.*f]\n", n_decimals, (elapsed_time * 1e-9f));
 
-        // } else {
-        //     printf("%.*f, ", n_decimals, (timer.elapsed() * 1e-9f));
-        // }
+        } else {
+            printf("%.*f, ", n_decimals, (elapsed_time * 1e-9f));
+        }
+#endif
 
-        dummy_acc += std::get<2>(shortest_edge);
+#if defined(ASSERT_IT) && ASSERT_IT
+        {
+            const auto brute_force_shortest_edge =
+                ffcl::search::algorithms::dual_set_shortest_edge(indices.begin(),
+                                                                 indices.begin() + split_index,
+                                                                 data.begin(),
+                                                                 data.end(),
+                                                                 n_features,
+                                                                 indices.begin() + split_index,
+                                                                 indices.end(),
+                                                                 data.begin(),
+                                                                 data.end(),
+                                                                 n_features);
+
+            std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
+                      << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
+                      << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
+
+            ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
+        }
+#endif
     }
+#if defined(TIME_IT) && TIME_IT
+    printf("Total runtime: %.*f\n", n_decimals, (total_elapsed_time * 1e-9f));
+#endif
     std::cout << dummy_acc << "\n";
 }
-*/
 
 /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTest) {

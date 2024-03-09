@@ -15,6 +15,11 @@ template <typename Index, typename Distance>
 using EdgesList = std::vector<Edge<Index, Distance>>;
 
 template <typename Index, typename Distance>
+constexpr auto make_edge(const Index& index_1, const Index& index_2, const Distance& distance) {
+    return std::make_tuple(index_1, index_2, distance);
+}
+
+template <typename Index, typename Distance>
 auto sort(EdgesList<Index, Distance>&& mst) {
     auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
         return std::get<2>(edge_1) < std::get<2>(edge_2);
