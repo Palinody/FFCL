@@ -67,17 +67,6 @@ class is_crtp_of {
     static constexpr bool value = sizeof(test(static_cast<Derived*>(nullptr))) == sizeof(yes);
 };
 
-/*
-template <typename, template <typename...> class Class, typename... Args>
-struct is_instantiable_with : std::false_type {};
-
-template <template <typename...> class Class, typename... Args>
-struct is_instantiable_with<std::void_t<decltype(Class(std::declval<Args>()...))>, Class, Args...> : std::true_type {};
-
-template <template <typename...> class Class, typename... Args>
-inline constexpr bool is_instantiable_with_v = is_instantiable_with<Class, Args...>::value;
-// */
-
 // Primary template that defaults to false.
 template <typename, typename Class, typename... Args>
 struct does_constructor_signature_match_impl : std::false_type {};
