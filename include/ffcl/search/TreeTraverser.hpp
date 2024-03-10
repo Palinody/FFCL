@@ -350,7 +350,7 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
     using BufferType = typename common::select_type_from_signature<buffer::Unsorted<BuffersFeaturesIteratorType>,
                                                                    buffer::WithMemory<BuffersFeaturesIteratorType>,
                                                                    buffer::WithUnionFind<BuffersFeaturesIteratorType>>::
-        from_args<BuffersFeaturesIteratorType, BuffersFeaturesIteratorType, BufferArgs...>::type;
+        from_signature<BuffersFeaturesIteratorType, BuffersFeaturesIteratorType, BufferArgs...>::type;
 
     static_assert(!std::is_same_v<BufferType, void>,
                   "Deduced BufferType: void. BufferType couldn't be deduced from 'BufferArgs&&...'.");

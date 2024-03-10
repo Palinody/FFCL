@@ -105,13 +105,13 @@ struct select_type_from_signature;
 template <typename FirstClass, typename... OtherClasses>
 struct select_type_from_signature<FirstClass, OtherClasses...> {
     template <typename... Args>
-    struct from_args {
+    struct from_signature {
         // static constexpr bool is_first_constructible = is_constructible_with_v<FirstClass, Args...>;
 
         using type = typename std::conditional_t<
             is_constructible_with_v<FirstClass, Args...>,
             FirstClass,
-            typename select_type_from_signature<OtherClasses...>::template from_args<Args...>::type>;
+            typename select_type_from_signature<OtherClasses...>::template from_signature<Args...>::type>;
     };
 };
 
@@ -119,7 +119,7 @@ struct select_type_from_signature<FirstClass, OtherClasses...> {
 template <>
 struct select_type_from_signature<> {
     template <typename... Args>
-    struct from_args {
+    struct from_signature {
         using type = void;
     };
 };
