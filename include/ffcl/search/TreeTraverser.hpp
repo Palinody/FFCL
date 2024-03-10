@@ -347,9 +347,9 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
                                                               BufferArgs&&... buffer_args) const {
     using BuffersFeaturesIteratorType = decltype(std::declval<ForwardedQueryIndexer>().features_range_first(0));
 
-    using BufferType = typename common::select_type_from_signature<buffer::Unsorted<BuffersFeaturesIteratorType>,
-                                                                   buffer::WithMemory<BuffersFeaturesIteratorType>,
-                                                                   buffer::WithUnionFind<BuffersFeaturesIteratorType>>::
+    using BufferType = typename common::select_constructible_type<buffer::Unsorted<BuffersFeaturesIteratorType>,
+                                                                  buffer::WithMemory<BuffersFeaturesIteratorType>,
+                                                                  buffer::WithUnionFind<BuffersFeaturesIteratorType>>::
         from_signature<BuffersFeaturesIteratorType, BuffersFeaturesIteratorType, BufferArgs...>::type;
 
     static_assert(!std::is_same_v<BufferType, void>,

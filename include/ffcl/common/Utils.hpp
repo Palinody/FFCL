@@ -100,24 +100,68 @@ inline constexpr bool is_constructible_with_v = does_signature_match_with<Class,
 
 // Attempt to select a constructible type from a list, or void if none match.
 template <typename... Classes>
-struct select_type_from_signature;
+struct select_constructible_type;
 
 template <typename FirstClass, typename... OtherClasses>
-struct select_type_from_signature<FirstClass, OtherClasses...> {
+struct select_constructible_type<FirstClass, OtherClasses...> {
     template <typename... Args>
     struct from_signature {
-        // static constexpr bool is_first_constructible = is_constructible_with_v<FirstClass, Args...>;
-
         using type = typename std::conditional_t<
-            is_constructible_with_v<FirstClass, Args...>,
+            std::is_constructible_v<FirstClass, Args...>,
             FirstClass,
-            typename select_type_from_signature<OtherClasses...>::template from_signature<Args...>::type>;
+            typename select_constructible_type<OtherClasses...>::template from_signature<Args...>::type>;
     };
 };
 
 // Specialization for when there are no classes left to check. Fallback to void.
 template <>
-struct select_type_from_signature<> {
+struct select_constructible_type<> {
+    template <typename... Args>
+    struct from_signature {
+        using type = void;
+    };
+};
+
+template <typename... Classes>
+struct select_trivially_constructible_type;
+
+template <typename FirstClass, typename... OtherClasses>
+struct select_trivially_constructible_type<FirstClass, OtherClasses...> {
+    template <typename... Args>
+    struct from_signature {
+        using type = typename std::conditional_t<
+            std::is_trivially_constructible_v<FirstClass, Args...>,
+            FirstClass,
+            typename select_trivially_constructible_type<OtherClasses...>::template from_signature<Args...>::type>;
+    };
+};
+
+// Specialization for when there are no classes left to check. Fallback to void.
+template <>
+struct select_trivially_constructible_type<> {
+    template <typename... Args>
+    struct from_signature {
+        using type = void;
+    };
+};
+
+template <typename... Classes>
+struct select_nothrow_constructible_type;
+
+template <typename FirstClass, typename... OtherClasses>
+struct select_nothrow_constructible_type<FirstClass, OtherClasses...> {
+    template <typename... Args>
+    struct from_signature {
+        using type = typename std::conditional_t<
+            std::is_nothrow_constructible_v<FirstClass, Args...>,
+            FirstClass,
+            typename select_nothrow_constructible_type<OtherClasses...>::template from_signature<Args...>::type>;
+    };
+};
+
+// Specialization for when there are no classes left to check. Fallback to void.
+template <>
+struct select_nothrow_constructible_type<> {
     template <typename... Args>
     struct from_signature {
         using type = void;
