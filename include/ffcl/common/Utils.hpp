@@ -67,6 +67,74 @@ class is_crtp_of {
     static constexpr bool value = sizeof(test(static_cast<Derived*>(nullptr))) == sizeof(yes);
 };
 
+/*
+template <typename, template <typename...> class Class, typename... Args>
+struct is_instantiable_with : std::false_type {};
+
+template <template <typename...> class Class, typename... Args>
+struct is_instantiable_with<std::void_t<decltype(Class(std::declval<Args>()...))>, Class, Args...> : std::true_type {};
+
+template <template <typename...> class Class, typename... Args>
+inline constexpr bool is_instantiable_with_v = is_instantiable_with<Class, Args...>::value;
+// */
+
+// Primary template that defaults to false.
+template <typename, typename Class, typename... Args>
+struct does_constructor_signature_match_impl : std::false_type {};
+
+// Helper function to try instantiation.
+template <typename Class, typename... Args, typename = decltype(Class(std::declval<Args>()...))>
+constexpr bool try_instantiate(int) {
+    return true;
+}
+
+// Fallback if try_instantiate fails.
+template <typename, typename...>
+constexpr bool try_instantiate(...) {
+    return false;
+}
+
+// Specialization that utilizes the helper function
+template <typename Class, typename... Args>
+struct does_constructor_signature_match_impl<std::void_t<decltype(try_instantiate<Class, Args...>(0))>, Class, Args...>
+  : std::integral_constant<bool, try_instantiate<Class, Args...>(0)> {};
+
+// User template that uses does_constructor_signature_match_impl, which enables template specialization.
+template <typename Class, typename... Args>
+using does_signature_match_with = does_constructor_signature_match_impl<void, Class, Args...>;
+
+// Helper variable template for ease of use
+template <typename Class, typename... Args>
+inline constexpr bool is_constructible_with_v = does_signature_match_with<Class, Args...>::value;
+
+// ---
+
+// Attempt to select a constructible type from a list, or void if none match.
+template <typename... Classes>
+struct select_type_from_signature;
+
+template <typename FirstClass, typename... OtherClasses>
+struct select_type_from_signature<FirstClass, OtherClasses...> {
+    template <typename... Args>
+    struct from_args {
+        // static constexpr bool is_first_constructible = is_constructible_with_v<FirstClass, Args...>;
+
+        using type = typename std::conditional_t<
+            is_constructible_with_v<FirstClass, Args...>,
+            FirstClass,
+            typename select_type_from_signature<OtherClasses...>::template from_args<Args...>::type>;
+    };
+};
+
+// Specialization for when there are no classes left to check. Fallback to void.
+template <>
+struct select_type_from_signature<> {
+    template <typename... Args>
+    struct from_args {
+        using type = void;
+    };
+};
+
 // BEGIN: is_raw_or_smart_ptr
 // Helper template to check if a type is a smart pointer (std::unique_ptr, std::shared_ptr, std::weak_ptr)
 template <typename T>

@@ -24,7 +24,7 @@
 #include <iterator>
 #include <vector>
 
-#define TIME_IT false
+#define TIME_IT true
 #define ASSERT_IT true
 
 namespace fs = std::filesystem;
@@ -516,10 +516,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
     for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
 
-#if defined(TIME_IT) && TIME_IT
-        timer.reset();
-#endif
-
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto reference_indexer = IndexerType(indices.begin(),
                                              indices.end(),
@@ -542,8 +538,25 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
         for (auto query_index_it = indices.begin(); query_index_it != indices.begin() + split_index; ++query_index_it) {
             union_find.merge(queries_representative, *query_index_it);
         }
-        const auto shortest_edge =
-            searcher.dual_tree_shortest_edge(union_find, union_find.find(queries_representative), 1);
+#if defined(TIME_IT) && TIME_IT
+        timer.reset();
+#endif
+
+        // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+        auto query_indexer = IndexerType(indices.begin(),
+                                         indices.begin() + split_index,
+                                         data.begin(),
+                                         data.end(),
+                                         n_features,
+                                         OptionsType()
+                                             .bucket_size(40)
+                                             .axis_selection_policy(AxisSelectionPolicyType{})
+                                             .splitting_rule_policy(SplittingRulePolicyType{}));
+
+        const auto shortest_edge = searcher.dual_tree_shortest_edge(/**/ std::move(query_indexer),
+                                                                    /**/ union_find,
+                                                                    /**/ queries_representative,
+                                                                    /**/ 1);
 
 #if defined(TIME_IT) && TIME_IT
         const auto elapsed_time = timer.elapsed();

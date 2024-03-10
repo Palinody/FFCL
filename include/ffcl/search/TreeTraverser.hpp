@@ -345,9 +345,19 @@ template <typename ForwardedQueryIndexer,
           typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool>>
 auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryIndexer&& forwarded_query_indexer,
                                                               BufferArgs&&... buffer_args) const {
+    using BuffersFeaturesIteratorType = decltype(std::declval<ForwardedQueryIndexer>().features_range_first(0));
+
+    using BufferType = typename common::select_type_from_signature<buffer::Unsorted<BuffersFeaturesIteratorType>,
+                                                                   buffer::WithMemory<BuffersFeaturesIteratorType>,
+                                                                   buffer::WithUnionFind<BuffersFeaturesIteratorType>>::
+        from_args<BuffersFeaturesIteratorType, BuffersFeaturesIteratorType, BufferArgs...>::type;
+
+    static_assert(!std::is_same_v<BufferType, void>,
+                  "Deduced BufferType: void. BufferType couldn't be deduced from 'BufferArgs&&...'.");
+
     const auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
-    auto queries_to_buffers_map = IndicesToBuffersMap<buffer::Unsorted<SamplesIteratorType>>{};
+    auto queries_to_buffers_map = IndicesToBuffersMap<BufferType>{};
 
     auto shortest_edge_distance = common::infinity<DataType>();
 
