@@ -259,11 +259,11 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
         components_closest_edge[component_representative] =
             EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
 
-        for (const auto& sample_index : component) {
-            // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
+        for (const auto& query_index : component) {
+            // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
             // the same component using the UnionFind data structure
-            auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
-                                                                          searcher.features_range_last(sample_index),
+            auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
+                                                                          searcher.features_range_last(query_index),
                                                                           forest.get_union_find_const_reference(),
                                                                           component_representative,
                                                                           /*max_capacity=*/static_cast<IndexType>(1)));
@@ -278,7 +278,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
             // shortest edge distance
             if (nearest_neighbor_distance < current_closest_edge_distance) {
                 components_closest_edge[component_representative] =
-                    EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
+                    EdgeType{query_index, nearest_neighbor_index, nearest_neighbor_distance};
             }
         }
     }
@@ -303,11 +303,11 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
         components_closest_edge[component_representative] =
             EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
 
-        for (const auto& sample_index : component) {
-            // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
+        for (const auto& query_index : component) {
+            // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
             // the same component using the UnionFind data structure
-            auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
-                                                                          searcher.features_range_last(sample_index),
+            auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
+                                                                          searcher.features_range_last(query_index),
                                                                           forest.get_union_find_const_reference(),
                                                                           component_representative,
                                                                           /*max_capacity=*/static_cast<IndexType>(1)));
@@ -318,15 +318,14 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 
             const auto current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);
 
-            const auto k_mutual_reachability_distance = std::max({(*core_distances)[sample_index],
-                                                                  (*core_distances)[nearest_neighbor_index],
-                                                                  nearest_neighbor_distance});
+            const auto k_mutual_reachability_distance = std::max(
+                {(*core_distances)[query_index], (*core_distances)[nearest_neighbor_index], nearest_neighbor_distance});
 
             // update the current shortest edge if the k_mutual_reachability_distance is indeed shortest than the
             // current shortest edge distance
             if (k_mutual_reachability_distance < current_closest_edge_distance) {
                 components_closest_edge[component_representative] =
-                    EdgeType{sample_index, nearest_neighbor_index, k_mutual_reachability_distance};
+                    EdgeType{query_index, nearest_neighbor_index, k_mutual_reachability_distance};
             }
         }
     }
@@ -341,29 +340,29 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
                                                                 Forest&                          forest) const {
-    using RepresentativeType = typename Forest::RepresentativeType;
-    using ComponentType      = typename Forest::ComponentType;
+    // Lambda to find the smallest component by size
+    auto find_smallest_component = [](const auto& key_value_iterable) {
+        auto best_it = key_value_iterable.begin();
 
-    auto smallest_component_representative = common::infinity<RepresentativeType>();
-    auto smallest_component                = ComponentType{};
-    auto current_smallest_component_size   = common::infinity<IndexType>();
-
-    for (const auto& [component_representative, component] : forest) {
-        if (component.size() < current_smallest_component_size) {
-            smallest_component_representative = component_representative;
-            smallest_component                = component;
-            current_smallest_component_size   = component.size();
+        for (auto it = key_value_iterable.begin(); it != key_value_iterable.end(); ++it) {
+            if (it->second.size() < best_it->second.size()) {
+                best_it = it;
+            }
         }
-    }
+        // Returns a key-value pair that contains the smallest value.
+        return *best_it;
+    };
+    const auto& [smallest_component_representative, smallest_component] = find_smallest_component(forest);
+
     // initialize the closest edge from the current component to infinity
     auto closest_edge =
         EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
 
-    for (const auto& sample_index : smallest_component) {
-        // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
+    for (const auto& query_index : smallest_component) {
+        // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
         // the same component using the UnionFind data structure
-        auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
-                                                                      searcher.features_range_last(sample_index),
+        auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
+                                                                      searcher.features_range_last(query_index),
                                                                       forest.get_union_find_const_reference(),
                                                                       smallest_component_representative,
                                                                       /*max_capacity=*/static_cast<IndexType>(1)));
@@ -377,7 +376,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
         // update the current shortest edge if the nearest_neighbor_distance is indeed shortest than the current
         // shortest edge distance
         if (nearest_neighbor_distance < current_closest_edge_distance) {
-            closest_edge = EdgeType{sample_index, nearest_neighbor_index, nearest_neighbor_distance};
+            closest_edge = EdgeType{query_index, nearest_neighbor_index, nearest_neighbor_distance};
         }
     }
     // merge components based on the best edge found
@@ -388,29 +387,29 @@ template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
                                                                 const CoreDistancesArrayPtr&     core_distances,
                                                                 Forest&                          forest) const {
-    using RepresentativeType = typename Forest::RepresentativeType;
-    using ComponentType      = typename Forest::ComponentType;
+    // Lambda to find the smallest component by size
+    auto find_smallest_component = [](const auto& key_value_iterable) {
+        auto best_it = key_value_iterable.begin();
 
-    auto smallest_component_representative = common::infinity<RepresentativeType>();
-    auto smallest_component                = ComponentType{};
-    auto current_smallest_component_size   = common::infinity<IndexType>();
-
-    for (const auto& [component_representative, component] : forest) {
-        if (component.size() < current_smallest_component_size) {
-            smallest_component_representative = component_representative;
-            smallest_component                = component;
-            current_smallest_component_size   = component.size();
+        for (auto it = key_value_iterable.begin(); it != key_value_iterable.end(); ++it) {
+            if (it->second.size() < best_it->second.size()) {
+                best_it = it;
+            }
         }
-    }
+        // Returns a key-value pair that contains the smallest value.
+        return *best_it;
+    };
+    const auto& [smallest_component_representative, smallest_component] = find_smallest_component(forest);
+
     // initialize the closest edge from the current component to infinity
     auto closest_edge =
         EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
 
-    for (const auto& sample_index : smallest_component) {
-        // initialize a nearest neighbor buffer to compare the sample_index with sample indices that don't belong to
+    for (const auto& query_index : smallest_component) {
+        // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
         // the same component using the UnionFind data structure
-        auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(sample_index),
-                                                                      searcher.features_range_last(sample_index),
+        auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
+                                                                      searcher.features_range_last(query_index),
                                                                       forest.get_union_find_const_reference(),
                                                                       smallest_component_representative,
                                                                       /*max_capacity=*/static_cast<IndexType>(1)));
@@ -422,12 +421,12 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
         const auto current_closest_edge_distance = std::get<2>(closest_edge);
 
         const auto k_mutual_reachability_distance = std::max(
-            {(*core_distances)[sample_index], (*core_distances)[nearest_neighbor_index], nearest_neighbor_distance});
+            {(*core_distances)[query_index], (*core_distances)[nearest_neighbor_index], nearest_neighbor_distance});
 
         // update the current shortest edge if the k_mutual_reachability_distance is indeed shortest than the current
         // shortest edge distance
         if (k_mutual_reachability_distance < current_closest_edge_distance) {
-            closest_edge = EdgeType{sample_index, nearest_neighbor_index, k_mutual_reachability_distance};
+            closest_edge = EdgeType{query_index, nearest_neighbor_index, k_mutual_reachability_distance};
         }
     }
     // merge components based on the best edge found
