@@ -340,19 +340,19 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
                                                                 Forest&                          forest) const {
-    // Lambda to find the smallest component by size
-    auto find_smallest_component = [](const auto& key_value_iterable) {
-        auto best_it = key_value_iterable.begin();
+    // Lambda to find the component_representative and smallest_component pair at the smallest component size
+    auto find_pair_at_smallest_component = [](const auto& key_value_iterable) {
+        auto found_it = key_value_iterable.begin();
 
         for (auto it = key_value_iterable.begin(); it != key_value_iterable.end(); ++it) {
-            if (it->second.size() < best_it->second.size()) {
-                best_it = it;
+            if (it->second.size() < found_it->second.size()) {
+                found_it = it;
             }
         }
         // Returns a key-value pair that contains the smallest value.
-        return *best_it;
+        return *found_it;
     };
-    const auto& [smallest_component_representative, smallest_component] = find_smallest_component(forest);
+    const auto& [smallest_component_representative, smallest_component] = find_pair_at_smallest_component(forest);
 
     // initialize the closest edge from the current component to infinity
     auto closest_edge =
@@ -387,19 +387,19 @@ template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
                                                                 const CoreDistancesArrayPtr&     core_distances,
                                                                 Forest&                          forest) const {
-    // Lambda to find the smallest component by size
-    auto find_smallest_component = [](const auto& key_value_iterable) {
-        auto best_it = key_value_iterable.begin();
+    // Lambda to find the component_representative and smallest_component pair at the smallest component size
+    auto find_pair_at_smallest_component = [](const auto& key_value_iterable) {
+        auto found_it = key_value_iterable.begin();
 
         for (auto it = key_value_iterable.begin(); it != key_value_iterable.end(); ++it) {
-            if (it->second.size() < best_it->second.size()) {
-                best_it = it;
+            if (it->second.size() < found_it->second.size()) {
+                found_it = it;
             }
         }
         // Returns a key-value pair that contains the smallest value.
-        return *best_it;
+        return *found_it;
     };
-    const auto& [smallest_component_representative, smallest_component] = find_smallest_component(forest);
+    const auto& [smallest_component_representative, smallest_component] = find_pair_at_smallest_component(forest);
 
     // initialize the closest edge from the current component to infinity
     auto closest_edge =
