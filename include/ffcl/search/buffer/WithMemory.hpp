@@ -33,21 +33,21 @@ class WithMemory : public StaticBuffer<WithMemory<DistancesIterator, Bound>> {
     using VisitedIndicesIteratorType = typename VisitedIndices::iterator;
 
     explicit WithMemory(BoundType&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
-      : StaticBuffer<WithMemory<DistancesIterator, Bound>>(std::forward<BoundType>(bound), max_capacity)
+      : StaticBuffer<WithMemory<DistancesIteratorType, BoundType>>(std::forward<BoundType>(bound), max_capacity)
       , visited_indices_{}
       , visited_indices_const_reference_{visited_indices_} {}
 
     WithMemory(BoundType&&           bound,
                const VisitedIndices& visited_indices_reference,
                const IndexType&      max_capacity = common::infinity<IndexType>())
-      : StaticBuffer<WithMemory<DistancesIterator, Bound>>(std::forward<BoundType>(bound), max_capacity)
+      : StaticBuffer<WithMemory<DistancesIteratorType, BoundType>>(std::forward<BoundType>(bound), max_capacity)
       , visited_indices_{}
       , visited_indices_const_reference_{visited_indices_reference} {}
 
     WithMemory(BoundType&&      bound,
                VisitedIndices&& visited_indices,
                const IndexType& max_capacity = common::infinity<IndexType>())
-      : StaticBuffer<WithMemory<DistancesIterator, Bound>>(std::forward<BoundType>(bound), max_capacity)
+      : StaticBuffer<WithMemory<DistancesIteratorType, BoundType>>(std::forward<BoundType>(bound), max_capacity)
       , visited_indices_{std::move(visited_indices)}
       , visited_indices_const_reference_{visited_indices_} {}
 

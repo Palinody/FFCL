@@ -34,7 +34,7 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                   UnionFindConstReference union_find_const_reference,
                   const IndexType&        query_representative,
                   const IndexType&        max_capacity = common::infinity<IndexType>())
-      : StaticBuffer<WithUnionFind<DistancesIterator, Bound>>(std::forward<BoundType>(bound), max_capacity)
+      : StaticBuffer<WithUnionFind<DistancesIterator, BoundType>>(std::forward<BoundType>(bound), max_capacity)
       , union_find_const_reference_{union_find_const_reference}
       , query_representative_{query_representative} {}
 

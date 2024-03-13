@@ -28,7 +28,7 @@ class Unsorted : public StaticBuffer<Unsorted<DistancesIterator, Bound>> {
     using DistancesIteratorType = DistancesIterator;
 
     explicit Unsorted(BoundType&& bound, const IndexType& max_capacity = common::infinity<IndexType>())
-      : StaticBuffer<Unsorted<DistancesIterator, Bound>>(std::forward<BoundType>(bound), max_capacity) {}
+      : StaticBuffer<Unsorted<DistancesIteratorType, BoundType>>(std::forward<BoundType>(bound), max_capacity) {}
 
     explicit Unsorted(const DistancesIteratorType& centroid_features_query_first,
                       const DistancesIteratorType& centroid_features_query_last,
