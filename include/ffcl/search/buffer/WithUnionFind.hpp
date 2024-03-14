@@ -7,7 +7,7 @@
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
 
 #include "ffcl/common/Utils.hpp"
-#include "ffcl/common/math/statistics/Statistics.hpp"
+
 #include "ffcl/datastruct/UnionFind.hpp"
 
 #include <vector>
@@ -54,26 +54,7 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                                         union_find_const_reference_.find(index_candidate);
 
         if (is_candidate_valid) {
-            // always populate if the max capacity isnt reached
-            if (this->remaining_capacity()) {
-                this->indices_.emplace_back(index_candidate);
-                this->distances_.emplace_back(distance_candidate);
-                if (distance_candidate > this->furthest_distance()) {
-                    // update the new index position of the furthest in the buffer
-                    this->buffer_index_of_furthest_index_ = this->indices_.size() - 1;
-                    this->furthest_distance_              = distance_candidate;
-                }
-            }
-            // populate if the max capacity is reached and the candidate has a closer distance
-            else if (distance_candidate < this->furthest_distance()) {
-                // replace the previous greatest distance now that the vectors overflow the max capacity
-                this->indices_[this->buffer_index_of_furthest_index_]   = index_candidate;
-                this->distances_[this->buffer_index_of_furthest_index_] = distance_candidate;
-                // find the new furthest neighbor and update the cache accordingly
-                std::tie(this->buffer_index_of_furthest_index_, this->furthest_distance_) =
-                    common::math::statistics::get_max_index_value_pair(this->distances_.begin(),
-                                                                       this->distances_.end());
-            }
+            this->update_static_buffers(index_candidate, distance_candidate);
         }
     }
 

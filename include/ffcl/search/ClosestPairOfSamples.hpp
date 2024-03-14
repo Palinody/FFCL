@@ -1,44 +1,39 @@
 #pragma once
 
+#include "ffcl/common/Utils.hpp"
+
 #include "ffcl/common/math/heuristics/Distances.hpp"
 
-#include "ffcl/common/Utils.hpp"
+#include "ffcl/search/buffer/IndicesToBuffersMap.hpp"
 
 #include <iterator>
 #include <tuple>
+#include <unordered_map>
 
 namespace ffcl::search::algorithms {
-
-template <typename Index, typename Distance>
-using Edge = std::tuple<Index, Index, Distance>;
-
-template <typename Index, typename Distance>
-constexpr auto make_edge(const Index& index_1, const Index& index_2, const Distance& distance) {
-    return std::make_tuple(index_1, index_2, distance);
-}
 
 template <typename IndicesIterator,
           typename SamplesIterator,
           typename OtherIndicesIterator,
           typename OtherSamplesIterator>
-auto dual_set_shortest_edge(
-    const IndicesIterator&                                                  indices_range_first,
-    const IndicesIterator&                                                  indices_range_last,
-    const SamplesIterator&                                                  samples_range_first,
-    const SamplesIterator&                                                  samples_range_last,
-    std::size_t                                                             n_features,
-    const OtherIndicesIterator&                                             other_indices_range_first,
-    const OtherIndicesIterator&                                             other_indices_range_last,
-    const OtherSamplesIterator&                                             other_samples_range_first,
-    const OtherSamplesIterator&                                             other_samples_range_last,
-    std::size_t                                                             other_n_features,
-    const Edge<typename std::iterator_traits<IndicesIterator>::value_type,
-               typename std::iterator_traits<SamplesIterator>::value_type>& initial_shortest_edge =
-        make_edge(common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
-                  common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
-                  common::infinity<typename std::iterator_traits<SamplesIterator>::value_type>()))
-    -> Edge<typename std::iterator_traits<IndicesIterator>::value_type,
-            typename std::iterator_traits<SamplesIterator>::value_type> {
+auto simple_dual_set_shortest_edge(
+    const IndicesIterator&                                                          indices_range_first,
+    const IndicesIterator&                                                          indices_range_last,
+    const SamplesIterator&                                                          samples_range_first,
+    const SamplesIterator&                                                          samples_range_last,
+    std::size_t                                                                     n_features,
+    const OtherIndicesIterator&                                                     other_indices_range_first,
+    const OtherIndicesIterator&                                                     other_indices_range_last,
+    const OtherSamplesIterator&                                                     other_samples_range_first,
+    const OtherSamplesIterator&                                                     other_samples_range_last,
+    std::size_t                                                                     other_n_features,
+    const buffer::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
+                       typename std::iterator_traits<SamplesIterator>::value_type>& initial_shortest_edge =
+        buffer::make_edge(common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
+                          common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
+                          common::infinity<typename std::iterator_traits<SamplesIterator>::value_type>()))
+    -> buffer::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
+                    typename std::iterator_traits<SamplesIterator>::value_type> {
     common::ignore_parameters(samples_range_last, other_samples_range_last);
 
     auto shortest_edge = initial_shortest_edge;
@@ -53,8 +48,71 @@ auto dual_set_shortest_edge(
                 other_samples_range_first + (*other_index_it) * other_n_features + other_n_features);
 
             if (samples_distance > 0 && samples_distance < std::get<2>(shortest_edge)) {
-                shortest_edge = make_edge(*index_it, *other_index_it, samples_distance);
+                shortest_edge = buffer::make_edge(*index_it, *other_index_it, samples_distance);
             }
+        }
+    }
+    return shortest_edge;
+}
+
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename OtherIndicesIterator,
+          typename OtherSamplesIterator,
+          typename... BufferArgs>
+auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
+                            const IndicesIterator&      indices_range_last,
+                            const SamplesIterator&      samples_range_first,
+                            const SamplesIterator&      samples_range_last,
+                            std::size_t                 n_features,
+                            const OtherIndicesIterator& other_indices_range_first,
+                            const OtherIndicesIterator& other_indices_range_last,
+                            const OtherSamplesIterator& other_samples_range_first,
+                            const OtherSamplesIterator& other_samples_range_last,
+                            std::size_t                 other_n_features,
+                            BufferArgs&&... buffer_args)
+    -> buffer::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
+                    typename std::iterator_traits<SamplesIterator>::value_type> {
+    common::ignore_parameters(samples_range_last);
+
+    using DeducedBufferType = typename common::select_constructible_type<
+        buffer::Unsorted<SamplesIterator>,
+        buffer::WithMemory<SamplesIterator>,
+        buffer::WithUnionFind<SamplesIterator>>::from_signature</**/ SamplesIterator,
+                                                                /**/ SamplesIterator,
+                                                                /**/ BufferArgs...>::type;
+
+    using IndexType = typename DeducedBufferType::IndexType;
+    using ValueType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
+
+    auto shortest_edge =
+        buffer::make_edge(common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>());
+
+    for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
+        // find_or_make_buffer_at returns a query_to_buffer_it and we are only interested in the buffer
+        auto& buffer_at_query_index_reference =
+            queries_to_buffers_map
+                .find_or_make_buffer_at(*index_it,
+                                        samples_range_first + (*index_it) * n_features,
+                                        samples_range_first + (*index_it) * n_features + n_features,
+                                        std::forward<BufferArgs>(buffer_args)...)
+                ->second;
+
+        // Regardless of whether the buffer was just inserted or already existed, perform a partial search
+        // operation on the buffer. This operation updates the buffer based on a range of reference samples.
+        buffer_at_query_index_reference.partial_search(other_indices_range_first,
+                                                       other_indices_range_last,
+                                                       other_samples_range_first,
+                                                       other_samples_range_last,
+                                                       other_n_features);
+
+        if (buffer_at_query_index_reference.furthest_distance() > 0 &&
+            buffer_at_query_index_reference.furthest_distance() < std::get<2>(shortest_edge)) {
+            shortest_edge = buffer::make_edge(*index_it,
+                                              buffer_at_query_index_reference.furthest_index(),
+                                              buffer_at_query_index_reference.furthest_distance());
         }
     }
     return shortest_edge;
