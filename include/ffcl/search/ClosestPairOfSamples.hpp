@@ -82,13 +82,50 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
                                                                 /**/ SamplesIterator,
                                                                 /**/ BufferArgs...>::type;
 
-    using IndexType = typename DeducedBufferType::IndexType;
-    using ValueType = typename std::iterator_traits<SamplesIterator>::value_type;
-
     auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
 
-    auto shortest_edge =
-        buffer::make_edge(common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>());
+    queries_to_buffers_map.partial_search_for_each_query(indices_range_first,
+                                                         indices_range_last,
+                                                         samples_range_first,
+                                                         samples_range_last,
+                                                         n_features,
+                                                         other_indices_range_first,
+                                                         other_indices_range_last,
+                                                         other_samples_range_first,
+                                                         other_samples_range_last,
+                                                         other_n_features,
+                                                         std::forward<BufferArgs>(buffer_args)...);
+
+    return std::move(queries_to_buffers_map).tightest_edge();
+}
+
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename OtherIndicesIterator,
+          typename OtherSamplesIterator,
+          typename... BufferArgs>
+auto dual_set_shortest_distance(const IndicesIterator&      indices_range_first,
+                                const IndicesIterator&      indices_range_last,
+                                const SamplesIterator&      samples_range_first,
+                                const SamplesIterator&      samples_range_last,
+                                std::size_t                 n_features,
+                                const OtherIndicesIterator& other_indices_range_first,
+                                const OtherIndicesIterator& other_indices_range_last,
+                                const OtherSamplesIterator& other_samples_range_first,
+                                const OtherSamplesIterator& other_samples_range_last,
+                                std::size_t                 other_n_features,
+                                BufferArgs&&... buffer_args) ->
+    typename std::iterator_traits<SamplesIterator>::value_type {
+    common::ignore_parameters(samples_range_last);
+
+    using DeducedBufferType = typename common::select_constructible_type<
+        buffer::Unsorted<SamplesIterator>,
+        buffer::WithMemory<SamplesIterator>,
+        buffer::WithUnionFind<SamplesIterator>>::from_signature</**/ SamplesIterator,
+                                                                /**/ SamplesIterator,
+                                                                /**/ BufferArgs...>::type;
+
+    auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
 
     for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
         // find_or_make_buffer_at returns a query_to_buffer_it and we are only interested in the buffer
@@ -107,15 +144,8 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
                                                        other_samples_range_first,
                                                        other_samples_range_last,
                                                        other_n_features);
-
-        if (buffer_at_query_index_reference.furthest_distance() > 0 &&
-            buffer_at_query_index_reference.furthest_distance() < std::get<2>(shortest_edge)) {
-            shortest_edge = buffer::make_edge(*index_it,
-                                              buffer_at_query_index_reference.furthest_index(),
-                                              buffer_at_query_index_reference.furthest_distance());
-        }
     }
-    return shortest_edge;
+    return std::get<2>(std::move(queries_to_buffers_map).tightest_edge());
 }
 
 }  // namespace ffcl::search::algorithms

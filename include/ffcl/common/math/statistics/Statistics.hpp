@@ -65,9 +65,9 @@ auto get_min_index_value_pair(const Iterator& first, const Iterator& last)
     -> std::pair<std::size_t, typename std::iterator_traits<Iterator>::value_type> {
     using DataType = typename std::iterator_traits<Iterator>::value_type;
 
-    const auto     min_element = std::min_element(first, last);
-    std::size_t    min_index   = std::distance(first, min_element);
-    const DataType min_value   = *min_element;
+    const auto        min_element = std::min_element(first, last);
+    const std::size_t min_index   = std::distance(first, min_element);
+    const DataType    min_value   = *min_element;
 
     return {min_index, min_value};
 }
@@ -77,9 +77,9 @@ auto get_max_index_value_pair(const Iterator& first, const Iterator& last)
     -> std::pair<std::size_t, typename std::iterator_traits<Iterator>::value_type> {
     using DataType = typename std::iterator_traits<Iterator>::value_type;
 
-    const auto     max_element = std::max_element(first, last);
-    std::size_t    max_index   = std::distance(first, max_element);
-    const DataType max_value   = *max_element;
+    const auto        max_element = std::max_element(first, last);
+    const std::size_t max_index   = std::distance(first, max_element);
+    const DataType    max_value   = *max_element;
 
     return {max_index, max_value};
 }

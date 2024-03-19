@@ -10,7 +10,12 @@
 
 #include "ffcl/search/buffer/IndicesToBuffersMap.hpp"
 
+#include "ffcl/search/ClosestPairOfSamples.hpp"
+
+#include <deque>
 #include <iterator>
+#include <queue>
+#include <vector>
 
 namespace ffcl::search {
 
@@ -62,6 +67,19 @@ class TreeTraverser {
     auto dual_tree_shortest_edge(BufferArgs&&... buffer_args) const;
 
   private:
+    template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
+    using DualNodePriorityQueueElementType = std::tuple<QueryNodePtr, ReferenceNodePtr, Cost>;
+
+    static constexpr auto dual_node_less_comparator_ = [](const auto& left_tuple, const auto& right_tuple) {
+        return std::get<2>(left_tuple) > std::get<2>(right_tuple);
+    };
+
+    template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
+    using DualNodePriorityQueueType =
+        std::priority_queue<DualNodePriorityQueueElementType<QueryNodePtr, ReferenceNodePtr, Cost>,
+                            std::vector<DualNodePriorityQueueElementType<QueryNodePtr, ReferenceNodePtr, Cost>>,
+                            decltype(dual_node_less_comparator_)>;
+
     template <typename Buffer>
     void single_tree_traversal(ReferenceNodePtr node, Buffer& buffer) const;
 
@@ -76,14 +94,13 @@ class TreeTraverser {
               typename QuerySamplesIterator,
               typename QueriesToBuffersMap,
               typename... BufferArgs>
-    auto dual_tree_traversal(const QueryNodePtr&                   query_node,
-                             const QuerySamplesIterator&           query_samples_range_first,
-                             const QuerySamplesIterator&           query_samples_range_last,
-                             std::size_t                           query_n_features,
-                             const ReferenceNodePtr&               reference_node,
-                             QueriesToBuffersMap&                  queries_to_buffers_map,
-                             const std::tuple<DataType, DataType>& cache,
-                             BufferArgs&&... buffer_args) const -> std::tuple<DataType, DataType>;
+    void dual_tree_traversal(const QueryNodePtr&         query_node,
+                             const QuerySamplesIterator& query_samples_range_first,
+                             const QuerySamplesIterator& query_samples_range_last,
+                             std::size_t                 query_n_features,
+                             const ReferenceNodePtr&     reference_node,
+                             QueriesToBuffersMap&        queries_to_buffers_map,
+                             BufferArgs&&... buffer_args) const;
 
     ReferenceIndexer reference_indexer_;
 };
@@ -208,19 +225,12 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
 
     auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
 
-    auto shortest_edge_distance = common::infinity<DataType>();
-
-    auto queries_max_upper_bound = DataType{0};
-
-    auto cache = std::make_tuple(std::move(shortest_edge_distance), std::move(queries_max_upper_bound));
-
     dual_tree_traversal(query_indexer.root(),
                         query_indexer.begin(),
                         query_indexer.end(),
                         query_indexer.n_features(),
                         reference_indexer_.root(),
                         queries_to_buffers_map,
-                        cache,
                         std::forward<BufferArgs>(buffer_args)...);
 
     return std::move(queries_to_buffers_map).tightest_edge();
@@ -231,12 +241,6 @@ template <typename... BufferArgs>
 auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... buffer_args) const {
     auto queries_to_buffers_map = buffer::IndicesToBuffersMap<buffer::WithUnionFind<SamplesIteratorType>>{};
 
-    auto shortest_edge_distance = common::infinity<DataType>();
-
-    auto queries_max_upper_bound = DataType{0};
-
-    auto cache = std::make_tuple(std::move(shortest_edge_distance), std::move(queries_max_upper_bound));
-
     throw;
 
     dual_tree_traversal(reference_indexer_.root(),
@@ -245,7 +249,6 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... bu
                         reference_indexer_.n_features(),
                         reference_indexer_.root(),
                         queries_to_buffers_map,
-                        cache,
                         std::forward<BufferArgs>(buffer_args)...);
 
     return std::move(queries_to_buffers_map).tightest_edge();
@@ -253,75 +256,75 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... bu
 
 template <typename ReferenceIndexer>
 template <typename QueryNodePtr, typename QuerySamplesIterator, typename QueriesToBuffersMap, typename... BufferArgs>
-auto TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&         query_node,
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&         query_node,
                                                           const QuerySamplesIterator& query_samples_range_first,
                                                           const QuerySamplesIterator& query_samples_range_last,
                                                           std::size_t                 query_n_features,
                                                           const ReferenceNodePtr&     reference_node,
                                                           QueriesToBuffersMap&        queries_to_buffers_map,
-                                                          const std::tuple<DataType, DataType>& cache,
-                                                          BufferArgs&&... buffer_args) const
-    -> std::tuple<DataType, DataType> {
+                                                          BufferArgs&&... buffer_args) const {
+    auto partial_search_for_each_query_nodes_combination = [&](const QueryNodePtr&     q_node,
+                                                               const ReferenceNodePtr& r_node) {
+        queries_to_buffers_map.partial_search_for_each_query(q_node->indices_range_.first,
+                                                             q_node->indices_range_.second,
+                                                             query_samples_range_first,
+                                                             query_samples_range_last,
+                                                             query_n_features,
+                                                             r_node->indices_range_.first,
+                                                             r_node->indices_range_.second,
+                                                             reference_indexer_.begin(),
+                                                             reference_indexer_.end(),
+                                                             reference_indexer_.n_features(),
+                                                             std::forward<BufferArgs>(buffer_args)...);
+    };
+
     // updates the query buffers with the reference set while keeping track of the global shortest edge
-    auto updated_cache = queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
-                                                                              query_node->indices_range_.second,
-                                                                              query_samples_range_first,
-                                                                              query_samples_range_last,
-                                                                              query_n_features,
-                                                                              reference_node->indices_range_.first,
-                                                                              reference_node->indices_range_.second,
-                                                                              reference_indexer_.begin(),
-                                                                              reference_indexer_.end(),
-                                                                              reference_indexer_.n_features(),
-                                                                              cache,
-                                                                              std::forward<BufferArgs>(buffer_args)...);
+    partial_search_for_each_query_nodes_combination(query_node, reference_node);
 
-    const auto& [shortest_edge_distance, queries_max_upper_bound] = updated_cache;
+    auto dual_node_priority_queue =
+        DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
 
-    if (shortest_edge_distance <= queries_max_upper_bound) {
-        // If at least one of the nodes is not a leaf, continue traversal
-        if (!query_node->is_leaf()) {
-            // Traverse left and right children of the query node
-            updated_cache = dual_tree_traversal(query_node->left_,
-                                                query_samples_range_first,
-                                                query_samples_range_last,
-                                                query_n_features,
-                                                reference_node,
-                                                queries_to_buffers_map,
-                                                updated_cache,
-                                                std::forward<BufferArgs>(buffer_args)...);
-
-            updated_cache = dual_tree_traversal(query_node->right_,
-                                                query_samples_range_first,
-                                                query_samples_range_last,
-                                                query_n_features,
-                                                reference_node,
-                                                queries_to_buffers_map,
-                                                updated_cache,
-                                                std::forward<BufferArgs>(buffer_args)...);
+    auto enqueue_nodes_combination_from_cost = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
+        const auto optional_cost = queries_to_buffers_map.cost(q_node,
+                                                               query_samples_range_first,
+                                                               query_samples_range_last,
+                                                               query_n_features,
+                                                               r_node,
+                                                               reference_indexer_.begin(),
+                                                               reference_indexer_.end(),
+                                                               reference_indexer_.n_features());
+        if (optional_cost) {
+            dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
         }
+    };
+    if (!query_node->is_leaf()) {
         if (!reference_node->is_leaf()) {
-            // Traverse left and right children of the reference node
-            updated_cache = dual_tree_traversal(query_node,
-                                                query_samples_range_first,
-                                                query_samples_range_last,
-                                                query_n_features,
-                                                reference_node->left_,
-                                                queries_to_buffers_map,
-                                                updated_cache,
-                                                std::forward<BufferArgs>(buffer_args)...);
-
-            updated_cache = dual_tree_traversal(query_node,
-                                                query_samples_range_first,
-                                                query_samples_range_last,
-                                                query_n_features,
-                                                reference_node->right_,
-                                                queries_to_buffers_map,
-                                                updated_cache,
-                                                std::forward<BufferArgs>(buffer_args)...);
+            enqueue_nodes_combination_from_cost(query_node->left_, reference_node->left_);
+            enqueue_nodes_combination_from_cost(query_node->left_, reference_node->right_);
+            enqueue_nodes_combination_from_cost(query_node->right_, reference_node->left_);
+            enqueue_nodes_combination_from_cost(query_node->right_, reference_node->right_);
+        } else {
+            enqueue_nodes_combination_from_cost(query_node->left_, reference_node);
+            enqueue_nodes_combination_from_cost(query_node->right_, reference_node);
         }
+    } else if (!reference_node->is_leaf()) {
+        enqueue_nodes_combination_from_cost(query_node, reference_node->left_);
+        enqueue_nodes_combination_from_cost(query_node, reference_node->right_);
     }
-    return updated_cache;
+
+    for (; !dual_node_priority_queue.empty(); dual_node_priority_queue.pop()) {
+        const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
+
+        common::ignore_parameters(cost);
+
+        dual_tree_traversal(pq_query_node,
+                            query_samples_range_first,
+                            query_samples_range_last,
+                            query_n_features,
+                            pq_reference_node,
+                            queries_to_buffers_map,
+                            std::forward<BufferArgs>(buffer_args)...);
+    }
 }
 
 }  // namespace ffcl::search

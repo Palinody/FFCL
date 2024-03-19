@@ -18,6 +18,23 @@
 
 namespace ffcl::common {
 
+/*
+// Custom assertion with printing
+#define ASSERT_WITH_MSG(condition, msg, ...)          \
+    do {                                              \
+        if (!(condition)) {                           \
+            std::fprintf(stderr, (msg), __VA_ARGS__); \
+            std::abort();                             \
+        }                                             \
+    } while (0)
+
+ASSERT_WITH_MSG(inequality(min_distance, infinity<DistanceType>()),
+                "Assertion failed: %s, query_node size: %ld, reference_node size: %ld\n",
+                "min_distance != infinity",
+                static_cast<long>(query_node->n_samples()),
+                static_cast<long>(reference_node->n_samples()));
+*/
+
 // Primary template for general types (non-pointers)
 template <typename T, typename = void>
 struct remove_pointer {
