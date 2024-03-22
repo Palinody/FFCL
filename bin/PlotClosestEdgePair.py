@@ -1,5 +1,6 @@
 import numpy as np
 
+import os
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 import matplotlib.gridspec as gridspec
@@ -7,6 +8,8 @@ from matplotlib.colors import Normalize
 
 import MakeClusteringDatasets
 from py_helpers import IO
+
+from PlotKDTree import KDTree, plot_bbox, plot_2dtree
 
 
 datapath = r"./clustering/"
@@ -27,7 +30,7 @@ def plot_closest_edge(dataset, labels, axis=None):
 
     axis.scatter(*queries_samples.T, color="blue", alpha=0.4, label="Queries samples")
     axis.scatter(
-        *reference_samples.T, color="black", alpha=0.4, label="Reference samples"
+        *reference_samples.T, color="black", alpha=1, label="Reference samples"
     )
     axis.scatter(
         *closest_pair_query_point.T, color="red", label="Closest pair query element"
@@ -113,7 +116,7 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
         reference_samples[:, 0],
         reference_samples[:, 1],
         color="black",
-        alpha=0.4,
+        alpha=1,
         label="Reference samples",
     )
     axis.scatter(
@@ -149,8 +152,10 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
         plt.show()
 
 
+kdtree_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "kdtree/")
+
+
 for dataset_name in [
-    "unbalanced_blobs",
     "no_structure",
 ]:  # MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]:
     print(dataset_name)
@@ -168,13 +173,25 @@ for dataset_name in [
         n_features=1,
     )
 
-    fig = plt.figure(num=2, figsize=(24, 12))
-    gs = gridspec.GridSpec(1, 2)
+    fig = plt.figure(num=4, figsize=(24, 12))
+    gs = gridspec.GridSpec(2, 2)
     ax1 = plt.subplot(gs[0, 0])
     ax2 = plt.subplot(gs[0, 1])
     # plot from the c++ generated data
     plot_closest_edge(dataset=data, labels=labels, axis=ax1)
     scipy_plot_closest_edges(dataset=data, labels=labels, axis=ax2)
+
+    # ---
+    ax3 = plt.subplot(gs[1, 0])
+    kdtree = KDTree(os.path.join(kdtree_folder, dataset_name + "_query.json"))
+    plot_bbox(kdtree.root.kd_bounding_box, ax3, color="blue")
+    plot_2dtree(kdtree.root, ax=ax3)
+
+    # ---
+    ax4 = plt.subplot(gs[1, 1])
+    kdtree = KDTree(os.path.join(kdtree_folder, dataset_name + "_reference.json"))
+    plot_bbox(kdtree.root.kd_bounding_box, ax4, color="black")
+    plot_2dtree(kdtree.root, ax=ax4)
 
     plt.tight_layout()
     plt.show()

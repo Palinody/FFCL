@@ -38,7 +38,9 @@ class TreeTraverser {
 
     static_assert(common::is_raw_or_smart_ptr<ReferenceNodePtr>, "ReferenceNodePtr is not a raw or smart pointer");
 
-    explicit TreeTraverser(ReferenceIndexer&& reference_indexer);
+    explicit TreeTraverser(const ReferenceIndexer& reference_indexer);
+
+    explicit TreeTraverser(ReferenceIndexer&& reference_indexer) noexcept;
 
     std::size_t n_samples() const;
 
@@ -106,7 +108,14 @@ class TreeTraverser {
 };
 
 template <typename ReferenceIndexer>
-TreeTraverser<ReferenceIndexer>::TreeTraverser(ReferenceIndexer&& reference_indexer)
+TreeTraverser(ReferenceIndexer) -> TreeTraverser<ReferenceIndexer>;
+
+template <typename ReferenceIndexer>
+TreeTraverser<ReferenceIndexer>::TreeTraverser(const ReferenceIndexer& reference_indexer)
+  : reference_indexer_{reference_indexer} {}
+
+template <typename ReferenceIndexer>
+TreeTraverser<ReferenceIndexer>::TreeTraverser(ReferenceIndexer&& reference_indexer) noexcept
   : reference_indexer_{std::forward<ReferenceIndexer>(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
@@ -281,20 +290,37 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
     // updates the query buffers with the reference set while keeping track of the global shortest edge
     partial_search_for_each_query_nodes_combination(query_node, reference_node);
 
+    /*
+    std::cout << "--- start\n";
+    if (query_node->is_leaf()) {
+        std::cout << "q leaf: " << query_node->indices_range_.first[0] << "\n";
+    } else {
+        std::cout << "q not leaf: " << query_node->indices_range_.first[0] << "\n";
+    }
+    if (reference_node->is_leaf()) {
+        std::cout << "r leaf: " << reference_node->indices_range_.first[0] << "\n";
+    } else {
+        std::cout << "r not leaf: " << reference_node->indices_range_.first[0] << "\n";
+    }
+    std::cout << "--- end\n";
+    */
+
     auto dual_node_priority_queue =
         DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
 
     auto enqueue_nodes_combination_from_cost = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
-        const auto optional_cost = queries_to_buffers_map.cost(q_node,
-                                                               query_samples_range_first,
-                                                               query_samples_range_last,
-                                                               query_n_features,
-                                                               r_node,
-                                                               reference_indexer_.begin(),
-                                                               reference_indexer_.end(),
-                                                               reference_indexer_.n_features());
-        if (optional_cost) {
-            dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
+        if (!q_node->is_empty() && !r_node->is_empty()) {
+            const auto optional_cost = queries_to_buffers_map.cost(q_node,
+                                                                   query_samples_range_first,
+                                                                   query_samples_range_last,
+                                                                   query_n_features,
+                                                                   r_node,
+                                                                   reference_indexer_.begin(),
+                                                                   reference_indexer_.end(),
+                                                                   reference_indexer_.n_features());
+            if (optional_cost) {
+                dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
+            }
         }
     };
     if (!query_node->is_leaf()) {
@@ -311,7 +337,6 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
         enqueue_nodes_combination_from_cost(query_node, reference_node->left_);
         enqueue_nodes_combination_from_cost(query_node, reference_node->right_);
     }
-
     for (; !dual_node_priority_queue.empty(); dual_node_priority_queue.pop()) {
         const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
 

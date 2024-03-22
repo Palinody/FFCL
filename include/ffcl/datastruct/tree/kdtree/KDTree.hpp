@@ -168,6 +168,8 @@ class KDTree {
     SamplesIterator samples_range_first_;
     // Iterator pointing to the last element of the dataset.
     SamplesIterator samples_range_last_;
+    // The number of samples deduced from the indices range span.
+    std::ptrdiff_t n_samples_;
     // The number of features in the dataset, used to represent data as a vectorized 2D array.
     std::size_t n_features_;
     // A hyperrectangle (bounding box) specifying the value bounds of the subset of data represented by the index array
@@ -196,6 +198,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
   : options_{options}
   , samples_range_first_{samples_range_first}
   , samples_range_last_{samples_range_last}
+  , n_samples_{std::distance(indices_range_first, indices_range_last)}
   , n_features_{n_features}
   , hyper_interval_{make_hyper_interval(indices_range_first,
                                         indices_range_last,
@@ -219,6 +222,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
   : options_{other.options_}
   , samples_range_first_{other.samples_range_first_}
   , samples_range_last_{other.samples_range_last_}
+  , n_samples_{other.n_samples_}
   , n_features_{other.n_features_}
   , hyper_interval_{other.hyper_interval_}
   , root_{other.root_} {}
@@ -404,7 +408,7 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepat
     writer.StartObject();
     {
         writer.String("n_samples");
-        writer.Int64(common::get_n_samples(samples_range_first_, samples_range_last_, n_features_));
+        writer.Int64(n_samples_);
 
         writer.String("n_features");
         writer.Int64(n_features_);
@@ -417,12 +421,12 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepat
             writer.StartArray();
 
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(hyper_interval_[feature_index].first);
-                writer.Int64(hyper_interval_[feature_index].second);
+                writer.Int64(hyper_interval_[feature_index].first());
+                writer.Int64(hyper_interval_[feature_index].second());
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(hyper_interval_[feature_index].first);
-                writer.Double(hyper_interval_[feature_index].second);
+                writer.Double(hyper_interval_[feature_index].first());
+                writer.Double(hyper_interval_[feature_index].second());
             }
             writer.EndArray();
         }

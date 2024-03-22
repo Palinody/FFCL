@@ -281,24 +281,19 @@ void KDNodeView<IndicesIterator, Data>::serialize(rapidjson::Writer<rapidjson::S
                                                   std::size_t                     reference_n_features) const {
     static_assert(common::is_iterator<ReferenceSamplesIterator>::value, "ReferenceSamplesIterator is not an iterator");
 
-    writer.StartArray();
     const auto [indices_range_first, indices_range_last] = indices_range_;
 
     common::ignore_parameters(reference_samples_range_last);
 
-    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        // sample (feature vector) array
+    writer.StartArray();
+    for (auto subrange_index_it = indices_range_first; subrange_index_it != indices_range_last; ++subrange_index_it) {
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < reference_n_features; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(reference_samples_range_first[indices_range_first[sample_index] * reference_n_features +
-                                                           feature_index]);
+                writer.Int64(reference_samples_range_first[*subrange_index_it * reference_n_features + feature_index]);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(reference_samples_range_first[indices_range_first[sample_index] * reference_n_features +
-                                                            feature_index]);
+                writer.Double(reference_samples_range_first[*subrange_index_it * reference_n_features + feature_index]);
             }
         }
         writer.EndArray();

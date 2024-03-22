@@ -28,7 +28,9 @@ class Searcher {
 
     static_assert(common::is_raw_or_smart_ptr<NodePtr>, "NodePtr is not a raw or smart pointer");
 
-    explicit Searcher(ReferenceIndexer&& reference_indexer);
+    explicit Searcher(const ReferenceIndexer& reference_indexer);
+
+    explicit Searcher(ReferenceIndexer&& reference_indexer) noexcept;
 
     std::size_t n_samples() const;
 
@@ -64,8 +66,12 @@ template <typename ReferenceIndexer>
 Searcher(ReferenceIndexer) -> Searcher<ReferenceIndexer>;
 
 template <typename ReferenceIndexer>
-Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer)
-  : tree_traverser_{std::forward<ReferenceIndexer>(reference_indexer)} {}
+Searcher<ReferenceIndexer>::Searcher(const ReferenceIndexer& reference_indexer)
+  : tree_traverser_{reference_indexer} {}
+
+template <typename ReferenceIndexer>
+Searcher<ReferenceIndexer>::Searcher(ReferenceIndexer&& reference_indexer) noexcept
+  : tree_traverser_{std::move(reference_indexer)} {}
 
 template <typename ReferenceIndexer>
 std::size_t Searcher<ReferenceIndexer>::n_samples() const {

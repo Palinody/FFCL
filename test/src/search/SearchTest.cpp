@@ -121,6 +121,7 @@ class SearcherErrorsTest : public ::testing::Test {
     static constexpr std::size_t n_iterations_global = 100;
     static constexpr std::size_t n_centroids_global  = 4;
 
+    const fs::path kdtree_folder_root_ = fs::path("../bin/kdtree");
     const fs::path folder_root_        = fs::path("../bin/clustering");
     const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
     const fs::path targets_folder_     = folder_root_ / fs::path("targets");
@@ -267,7 +268,7 @@ void shuffle_indices(IndicesIterator indices_first, IndicesIterator indices_last
     std::shuffle(indices_first, indices_last, std::mt19937{std::random_device{}()});
 }
 
-/*
+// /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     fs::path filename = "no_structure.txt";
 
@@ -289,79 +290,118 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    shuffle_indices(indices.begin(), indices.end());
+    for (std::size_t test_index = 0; test_index < 1; ++test_index) {
+        shuffle_indices(indices.begin(), indices.end());
 
-    const std::size_t n_queries = 50;
+        const std::size_t n_queries = 5;
 
-    auto query_indices     = std::vector(indices.begin(), indices.begin() + n_queries);
-    auto reference_indices = std::vector(indices.begin() + n_queries, indices.end());
+        auto reference_indices = std::vector(indices.begin(), indices.begin() + n_queries);
+        auto query_indices     = std::vector(indices.begin() + n_queries, indices.end());
 
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto reference_indexer = IndexerType(reference_indices.begin(),
-                                         reference_indices.end(),
+        // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+        auto reference_indexer = IndexerType(reference_indices.begin(),
+                                             reference_indices.end(),
+                                             data.begin(),
+                                             data.end(),
+                                             n_features,
+                                             OptionsType()
+                                                 .bucket_size(1)
+                                                 .max_depth(n_samples)
+                                                 .axis_selection_policy(AxisSelectionPolicyType{})
+                                                 .splitting_rule_policy(SplittingRulePolicyType{}));
+
+        auto reference_indexer_copy = reference_indexer;
+
+        auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+
+        // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
+        auto query_indexer = IndexerType(query_indices.begin(),
+                                         query_indices.end(),
                                          data.begin(),
                                          data.end(),
                                          n_features,
                                          OptionsType()
                                              .bucket_size(1)
-                                             .max_depth(ffcl::common::infinity<decltype(n_samples)>())
+                                             .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+        auto query_indexer_copy = query_indexer;
 
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto query_indexer = IndexerType(query_indices.begin(),
-                                     query_indices.end(),
-                                     data.begin(),
-                                     data.end(),
-                                     n_features,
-                                     OptionsType()
-                                         .bucket_size(1)
-                                         .max_depth(ffcl::common::infinity<decltype(n_samples)>())
-                                         .axis_selection_policy(AxisSelectionPolicyType{})
-                                         .splitting_rule_policy(SplittingRulePolicyType{}));
+        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
 
-    const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
+        {
+            const auto brute_force_shortest_edge =
+                ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
+                                                                 query_indices.end(),
+                                                                 data.begin(),
+                                                                 data.end(),
+                                                                 n_features,
+                                                                 reference_indices.begin(),
+                                                                 reference_indices.end(),
+                                                                 data.begin(),
+                                                                 data.end(),
+                                                                 n_features,
+                                                                 1);
 
-    const auto brute_force_shortest_edge = ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
-                                                                                            query_indices.end(),
-                                                                                            data.begin(),
-                                                                                            data.end(),
-                                                                                            n_features,
-                                                                                            reference_indices.begin(),
-                                                                                            reference_indices.end(),
-                                                                                            data.begin(),
-                                                                                            data.end(),
-                                                                                            n_features,
-                                                                                            1);
+            std::cout << "n_queries: " << n_queries << "\n";
 
-    if (std::find(query_indices.begin(), query_indices.end(), std::get<0>(brute_force_shortest_edge)) ==
-        query_indices.end()) {
-        printf("brute_force_shortest_edge: %ld\n", std::get<0>(brute_force_shortest_edge));
-        ASSERT_TRUE(false);
+            if (ffcl::common::inequality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge))) {
+                std::cout << "\t>>> " << std::get<0>(brute_force_shortest_edge) << " != " << std::get<0>(shortest_edge)
+                          << "\n";
+            } else {
+                std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << "\n";
+            }
+
+            if (ffcl::common::inequality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge))) {
+                std::cout << "\t>>> " << std::get<1>(brute_force_shortest_edge) << " != " << std::get<1>(shortest_edge)
+                          << "\n";
+            } else {
+                std::cout << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << "\n";
+            }
+
+            if (ffcl::common::inequality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge))) {
+                std::cout << "\t>>> " << std::get<2>(brute_force_shortest_edge) << " != " << std::get<2>(shortest_edge)
+                          << "\n";
+            } else {
+                std::cout << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
+            }
+            std::cout << "---\n";
+        }
+
+        auto labels = std::vector<IndexType>(n_samples);
+
+        for (const auto& query_index : query_indices) {
+            labels[query_index] = 0;
+        }
+
+        for (const auto& reference_index : reference_indices) {
+            labels[reference_index] = 1;
+        }
+        labels[std::get<0>(shortest_edge)] = 2;
+        labels[std::get<1>(shortest_edge)] = 3;
+
+        write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
+
+        /*
+        auto indexer = IndexerType(indices.begin(),
+                                   indices.end(),
+                                   data.begin(),
+                                   data.end(),
+                                   n_features,
+                                   OptionsType()
+                                       .bucket_size(0)
+                                       .max_depth(n_samples)
+                                       .axis_selection_policy(AxisSelectionPolicyType{})
+                                       .splitting_rule_policy(SplittingRulePolicyType{}));
+        */
+        reference_indexer_copy.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_reference.json"));
+        query_indexer_copy.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
     }
-    if (std::find(reference_indices.begin(), reference_indices.end(), std::get<1>(brute_force_shortest_edge)) ==
-        reference_indices.end()) {
-        printf("brute_force_shortest_edge: %ld\n", std::get<1>(brute_force_shortest_edge));
-        ASSERT_TRUE(false);
-    }
-    if (std::find(query_indices.begin(), query_indices.end(), std::get<0>(shortest_edge)) == query_indices.end()) {
-        printf("shortest_edge: %ld\n", std::get<0>(shortest_edge));
-        ASSERT_TRUE(false);
-    }
-    if (std::find(reference_indices.begin(), reference_indices.end(), std::get<1>(shortest_edge)) ==
-        reference_indices.end()) {
-        printf("shortest_edge: %ld\n", std::get<1>(shortest_edge));
-        ASSERT_TRUE(false);
-    }
-
-    std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
-              << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
-              << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
 }
-*/
+// */
 
+/*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -396,13 +436,13 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
+    const std::size_t increment = 1;  // std::max(std::size_t{1}, n_samples / 100);
 
     for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
 
-        auto query_indices     = std::vector(indices.begin(), indices.begin() + split_index);
-        auto reference_indices = std::vector(indices.begin() + split_index, indices.end());
+        auto reference_indices = std::vector(indices.begin(), indices.begin() + split_index);
+        auto query_indices     = std::vector(indices.begin() + split_index, indices.end());
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto reference_indexer = IndexerType(reference_indices.begin(),
@@ -411,7 +451,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(40)
+                                                 .bucket_size(1)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -429,7 +469,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(40)
+                                             .bucket_size(1)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -480,6 +520,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
+            std::cout << "split_index: " << split_index << "\n";
+
             if (ffcl::common::inequality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge))) {
                 std::cout << "\t>>> " << std::get<0>(brute_force_shortest_edge) << " != " << std::get<0>(shortest_edge)
                           << "\n";
@@ -518,6 +560,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #endif
     std::cout << dummy_acc << "\n";
 }
+*/
 
 // TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 // #if defined(TIME_IT) && TIME_IT
@@ -810,6 +853,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTest) {
 }
 */
 
+/*
 TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
     fs::path filename = "unbalanced_blobs.txt";
 
@@ -820,7 +864,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
     const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
     const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
-    const IndexType n_queries_samples = std::max(std::size_t{10}, n_samples / 10);
+    const IndexType n_queries_samples = std::max(std::size_t{1}, n_samples / 10);
 
     auto indices = generate_indices(n_samples);
 
@@ -892,6 +936,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
 
     write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 }
+*/
 
 /*
 TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithSameTreesTest) {

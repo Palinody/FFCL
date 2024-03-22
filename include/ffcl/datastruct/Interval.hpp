@@ -126,18 +126,15 @@ auto make_hyper_interval(const IndicesIterator& indices_range_first,
 
     common::ignore_parameters(samples_range_last);
 
-    const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
-
     // min max elements per feature vector
     auto hyper_interval = HyperInterval<SamplesIterator>(
         n_features, Interval<DataType>{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
 
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+    for (auto subrange_index_it = indices_range_first; subrange_index_it != indices_range_last; ++subrange_index_it) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             // a candidate for being a min, max or min-max compared to the current min and max according to the current
             // feature_index
-            const auto min_max_feature_candidate =
-                samples_range_first[indices_range_first[sample_index] * n_features + feature_index];
+            const auto min_max_feature_candidate = samples_range_first[*subrange_index_it * n_features + feature_index];
 
             if (min_max_feature_candidate < hyper_interval[feature_index].first()) {
                 hyper_interval[feature_index].first() = min_max_feature_candidate;
