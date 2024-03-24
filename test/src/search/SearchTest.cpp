@@ -3,6 +3,9 @@
 
 #include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
+
+#include "ffcl/common/math/random/Distributions.hpp"
+
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
 #include "ffcl/search/Search.hpp"
@@ -26,7 +29,7 @@
 #include <iterator>
 #include <vector>
 
-// #define TIME_IT true
+#define TIME_IT true
 #define ASSERT_IT true
 
 namespace fs = std::filesystem;
@@ -290,10 +293,15 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    for (std::size_t test_index = 0; test_index < 1; ++test_index) {
+    auto uniform_random_number_generator =
+        ffcl::common::math::random::uniform_distribution<std::size_t>(1, n_samples - 1);
+
+    for (std::size_t test_index = 0; test_index < 10; ++test_index) {
         shuffle_indices(indices.begin(), indices.end());
 
-        const std::size_t n_queries = 5;
+        const std::size_t n_queries = uniform_random_number_generator();
+
+        std::cout << "n_queries = " << n_queries << "\n";
 
         auto reference_indices = std::vector(indices.begin(), indices.begin() + n_queries);
         auto query_indices     = std::vector(indices.begin() + n_queries, indices.end());
@@ -305,7 +313,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(1)
+                                                 .bucket_size(0)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -321,7 +329,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(1)
+                                             .bucket_size(0)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -383,18 +391,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
 
         write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 
-        /*
-        auto indexer = IndexerType(indices.begin(),
-                                   indices.end(),
-                                   data.begin(),
-                                   data.end(),
-                                   n_features,
-                                   OptionsType()
-                                       .bucket_size(0)
-                                       .max_depth(n_samples)
-                                       .axis_selection_policy(AxisSelectionPolicyType{})
-                                       .splitting_rule_policy(SplittingRulePolicyType{}));
-        */
         reference_indexer_copy.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_reference.json"));
         query_indexer_copy.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
     }

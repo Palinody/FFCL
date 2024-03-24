@@ -1,21 +1,20 @@
 import numpy as np
-
 import os
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 import matplotlib.gridspec as gridspec
 from matplotlib.colors import Normalize
-
 import MakeClusteringDatasets
 from py_helpers import IO
-
 from PlotKDTree import KDTree, plot_bbox, plot_2dtree
-
+from typing import List
 
 datapath = r"./clustering/"
 
 
-def plot_closest_edge(dataset, labels, axis=None):
+def plot_closest_edge(
+    dataset, labels, axis=None, x_lim: List[float] = None, y_lim: List[float] = None
+):
     standalone_plot = axis is None
 
     if standalone_plot:
@@ -42,8 +41,6 @@ def plot_closest_edge(dataset, labels, axis=None):
     )
     distance = np.linalg.norm(closest_pair_query_point - closest_pair_reference_point)
 
-    print(closest_pair_query_point)
-    print(closest_pair_reference_point)
     axis.plot(
         [closest_pair_query_point[0, 0], closest_pair_reference_point[0, 0]],
         [closest_pair_query_point[0, 1], closest_pair_reference_point[0, 1]],
@@ -51,6 +48,13 @@ def plot_closest_edge(dataset, labels, axis=None):
         label=f"Closest pair of points, distance = {distance}",
     )
 
+    if x_lim:
+        axis.set_xlim(x_lim)
+
+    if y_lim:
+        axis.set_xlim(y_lim)
+
+    axis.grid(True)
     axis.set_xlabel("X-axis")
     axis.set_ylabel("Y-axis")
     axis.set_title("FFCL dual tree closest pair of points")
@@ -72,7 +76,9 @@ def nth_closest_pair(dist_matrix, n):
     return n_th_min_indices
 
 
-def scipy_plot_closest_edges(dataset, labels, axis=None):
+def scipy_plot_closest_edges(
+    dataset, labels, axis=None, x_lim: List[float] = None, y_lim: List[float] = None
+):
     import numpy as np
     import matplotlib.pyplot as plt
     from scipy.spatial import distance_matrix
@@ -141,6 +147,13 @@ def scipy_plot_closest_edges(dataset, labels, axis=None):
         label="Closest pair of points",
     )
 
+    if x_lim:
+        axis.set_xlim(x_lim)
+
+    if y_lim:
+        axis.set_xlim(y_lim)
+
+    axis.grid(True)
     # Set plot details
     axis.set_xlabel("X-axis")
     axis.set_ylabel("Y-axis")
@@ -173,25 +186,30 @@ for dataset_name in [
         n_features=1,
     )
 
+    x_lim: List[float] = data.min(axis=1).min(), data.max(axis=1).max()
+    y_lim: List[float] = data.min(axis=0).min(), data.max(axis=0).max()
+
     fig = plt.figure(num=4, figsize=(24, 12))
     gs = gridspec.GridSpec(2, 2)
     ax1 = plt.subplot(gs[0, 0])
     ax2 = plt.subplot(gs[0, 1])
     # plot from the c++ generated data
-    plot_closest_edge(dataset=data, labels=labels, axis=ax1)
-    scipy_plot_closest_edges(dataset=data, labels=labels, axis=ax2)
+    plot_closest_edge(dataset=data, labels=labels, axis=ax1, x_lim=x_lim, y_lim=y_lim)
+    scipy_plot_closest_edges(
+        dataset=data, labels=labels, axis=ax2, x_lim=x_lim, y_lim=y_lim
+    )
 
     # ---
     ax3 = plt.subplot(gs[1, 0])
     kdtree = KDTree(os.path.join(kdtree_folder, dataset_name + "_query.json"))
     plot_bbox(kdtree.root.kd_bounding_box, ax3, color="blue")
-    plot_2dtree(kdtree.root, ax=ax3)
+    plot_2dtree(kdtree.root, ax=ax3, x_lim=x_lim, y_lim=y_lim)
 
     # ---
     ax4 = plt.subplot(gs[1, 1])
     kdtree = KDTree(os.path.join(kdtree_folder, dataset_name + "_reference.json"))
     plot_bbox(kdtree.root.kd_bounding_box, ax4, color="black")
-    plot_2dtree(kdtree.root, ax=ax4)
+    plot_2dtree(kdtree.root, ax=ax4, x_lim=x_lim, y_lim=y_lim)
 
     plt.tight_layout()
     plt.show()

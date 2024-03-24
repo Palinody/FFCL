@@ -230,6 +230,9 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
     static_assert(!std::is_same_v<DeducedBufferType, void>,
                   "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
 
+    static_assert(std::is_same_v<DeducedBufferType, buffer::Unsorted<BuffersFeaturesIteratorType>>,
+                  "Deduced DeducedBufferType should be buffer::Unsorted<BuffersFeaturesIteratorType>");
+
     const auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
     auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
@@ -272,6 +275,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                           const ReferenceNodePtr&     reference_node,
                                                           QueriesToBuffersMap&        queries_to_buffers_map,
                                                           BufferArgs&&... buffer_args) const {
+    // updates the query buffers with the reference set while keeping track of the global shortest edge
     auto partial_search_for_each_query_nodes_combination = [&](const QueryNodePtr&     q_node,
                                                                const ReferenceNodePtr& r_node) {
         queries_to_buffers_map.partial_search_for_each_query(q_node->indices_range_.first,
@@ -287,53 +291,32 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                              std::forward<BufferArgs>(buffer_args)...);
     };
 
-    // updates the query buffers with the reference set while keeping track of the global shortest edge
-    partial_search_for_each_query_nodes_combination(query_node, reference_node);
-
-    /*
-    std::cout << "--- start\n";
-    if (query_node->is_leaf()) {
-        std::cout << "q leaf: " << query_node->indices_range_.first[0] << "\n";
-    } else {
-        std::cout << "q not leaf: " << query_node->indices_range_.first[0] << "\n";
-    }
-    if (reference_node->is_leaf()) {
-        std::cout << "r leaf: " << reference_node->indices_range_.first[0] << "\n";
-    } else {
-        std::cout << "r not leaf: " << reference_node->indices_range_.first[0] << "\n";
-    }
-    std::cout << "--- end\n";
-    */
-
     auto dual_node_priority_queue =
         DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
 
     auto enqueue_nodes_combination_from_cost = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
-        if (!q_node->is_empty() && !r_node->is_empty()) {
-            const auto optional_cost = queries_to_buffers_map.cost(q_node,
-                                                                   query_samples_range_first,
-                                                                   query_samples_range_last,
-                                                                   query_n_features,
-                                                                   r_node,
-                                                                   reference_indexer_.begin(),
-                                                                   reference_indexer_.end(),
-                                                                   reference_indexer_.n_features());
-            if (optional_cost) {
-                dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
-            }
+        const auto optional_cost = queries_to_buffers_map.cost(q_node,
+                                                               query_samples_range_first,
+                                                               query_samples_range_last,
+                                                               query_n_features,
+                                                               r_node,
+                                                               reference_indexer_.begin(),
+                                                               reference_indexer_.end(),
+                                                               reference_indexer_.n_features());
+        if (optional_cost) {
+            dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
         }
+        /*
+        else {
+            partial_search_for_each_query_nodes_combination(q_node, r_node);
+        }
+        */
     };
     if (!query_node->is_leaf()) {
-        if (!reference_node->is_leaf()) {
-            enqueue_nodes_combination_from_cost(query_node->left_, reference_node->left_);
-            enqueue_nodes_combination_from_cost(query_node->left_, reference_node->right_);
-            enqueue_nodes_combination_from_cost(query_node->right_, reference_node->left_);
-            enqueue_nodes_combination_from_cost(query_node->right_, reference_node->right_);
-        } else {
-            enqueue_nodes_combination_from_cost(query_node->left_, reference_node);
-            enqueue_nodes_combination_from_cost(query_node->right_, reference_node);
-        }
-    } else if (!reference_node->is_leaf()) {
+        enqueue_nodes_combination_from_cost(query_node->left_, reference_node);
+        enqueue_nodes_combination_from_cost(query_node->right_, reference_node);
+    }
+    if (!reference_node->is_leaf()) {
         enqueue_nodes_combination_from_cost(query_node, reference_node->left_);
         enqueue_nodes_combination_from_cost(query_node, reference_node->right_);
     }
@@ -350,6 +333,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                             queries_to_buffers_map,
                             std::forward<BufferArgs>(buffer_args)...);
     }
+    partial_search_for_each_query_nodes_combination(query_node, reference_node);
 }
 
 }  // namespace ffcl::search

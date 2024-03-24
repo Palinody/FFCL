@@ -93,7 +93,9 @@ class KDTree:
         return self.points_sequence
 
 
-def plot_2dtree(kdnode: KDNode, ax: Axes) -> None:
+def plot_2dtree(
+    kdnode: KDNode, ax: Axes, x_lim: List[float] = None, y_lim: List[float] = None
+) -> None:
     if kdnode is None:
         return
 
@@ -105,6 +107,14 @@ def plot_2dtree(kdnode: KDNode, ax: Axes) -> None:
     # put the pivot points in the foreground so that they can be seen
     zorder = -1 if is_leaf else 0
     ax.scatter(x, y, color=points_color, zorder=zorder)
+
+    if x_lim:
+        ax.set_xlim(x_lim)
+
+    if y_lim:
+        ax.set_xlim(y_lim)
+
+    ax.grid(True)
 
     if not is_leaf:
         draw_orthogonal_line(

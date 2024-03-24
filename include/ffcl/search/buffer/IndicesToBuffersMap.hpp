@@ -31,6 +31,9 @@ class IndicesToBuffersMap {
     static_assert(common::is_crtp_of<BufferType, buffer::StaticBuffer>::value,
                   "BufferType must inherit from StaticBuffer<Derived>");
 
+    static_assert(!std::is_same_v<BufferType, void>,
+                  "Deduced BufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
+
     using IndexToBufferMapType          = std::unordered_map<IndexType, BufferType>;
     using IndexToBufferMapIterator      = typename IndexToBufferMapType::iterator;
     using IndexToBufferMapConstIterator = typename IndexToBufferMapType::const_iterator;
@@ -174,38 +177,6 @@ class IndicesToBuffersMap {
         return std::make_optional(min_distance);
     }
 
-    template <typename QueryNodePtr,
-              typename QuerySamplesIterator,
-              typename ReferenceNodePtr,
-              typename ReferenceSamplesIterator,
-              typename... BufferArgs>
-    auto cost_2(const QueryNodePtr&             query_node,
-                const QuerySamplesIterator&     query_samples_range_first,
-                const QuerySamplesIterator&     query_samples_range_last,
-                std::size_t                     query_n_features,
-                const ReferenceNodePtr&         reference_node,
-                const ReferenceSamplesIterator& reference_samples_range_first,
-                const ReferenceSamplesIterator& reference_samples_range_last,
-                std::size_t                     reference_n_features,
-                BufferArgs&&... buffer_args) const -> std::optional<DistanceType> {
-        common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
-
-        const auto min_distance = find_min_distance_2(query_node,
-                                                      query_samples_range_first,
-                                                      query_samples_range_last,
-                                                      query_n_features,
-                                                      reference_node,
-                                                      reference_samples_range_first,
-                                                      reference_samples_range_last,
-                                                      reference_n_features,
-                                                      std::forward<BufferArgs>(buffer_args)...);
-
-        if (min_distance > find_query_node_furthest_distance(query_node)) {
-            return std::nullopt;
-        }
-        return std::make_optional(min_distance);
-    }
-
   private:
     template <typename QueryNodePtr>
     auto find_query_node_furthest_distance(const QueryNodePtr& query_node) const -> DistanceType {
@@ -219,6 +190,12 @@ class IndicesToBuffersMap {
             // If the buffer at the current index wasn't initialized, then its furthest distance is infinity by default
             // We also don't need to recurse further since the lower-level nodes will never be greater than infinity.
             if (index_to_buffer_it == this->cend()) {
+                return common::infinity<DistanceType>();
+
+            }
+            // If there's remaining space in the buffers, then candidates might potentially be further than the buffer's
+            // current furthest distance.
+            else if (index_to_buffer_it->second.remaining_capacity()) {
                 return common::infinity<DistanceType>();
 
             } else {
@@ -269,47 +246,6 @@ class IndicesToBuffersMap {
             }
         }
         return min_distance;
-    }
-
-    template <typename QueryNodePtr,
-              typename QuerySamplesIterator,
-              typename ReferenceNodePtr,
-              typename ReferenceSamplesIterator,
-              typename... BufferArgs>
-    static auto find_min_distance_2(const QueryNodePtr&             query_node,
-                                    const QuerySamplesIterator&     query_samples_range_first,
-                                    const QuerySamplesIterator&     query_samples_range_last,
-                                    std::size_t                     query_n_features,
-                                    const ReferenceNodePtr&         reference_node,
-                                    const ReferenceSamplesIterator& reference_samples_range_first,
-                                    const ReferenceSamplesIterator& reference_samples_range_last,
-                                    std::size_t                     reference_n_features,
-                                    BufferArgs&&... buffer_args) -> DistanceType {
-        using DeducedBufferType = typename common::select_constructible_type<
-            buffer::Unsorted<QuerySamplesIterator>,
-            buffer::WithMemory<QuerySamplesIterator>,
-            buffer::WithUnionFind<QuerySamplesIterator>>::from_signature</**/ QuerySamplesIterator,
-                                                                         /**/ QuerySamplesIterator,
-                                                                         /**/ BufferArgs...>::type;
-
-        static_assert(!std::is_same_v<DeducedBufferType, void>,
-                      "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
-
-        auto local_queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
-
-        local_queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
-                                                                   query_node->indices_range_.second,
-                                                                   query_samples_range_first,
-                                                                   query_samples_range_last,
-                                                                   query_n_features,
-                                                                   reference_node->indices_range_.first,
-                                                                   reference_node->indices_range_.second,
-                                                                   reference_samples_range_first,
-                                                                   reference_samples_range_last,
-                                                                   reference_n_features,
-                                                                   std::forward<BufferArgs>(buffer_args)...);
-
-        return std::get<2>(std::move(local_queries_to_buffers_map).tightest_edge());
     }
 
     IndexToBufferMapType index_to_buffer_map_;

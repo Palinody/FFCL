@@ -85,6 +85,9 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
     static_assert(!std::is_same_v<DeducedBufferType, void>,
                   "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
 
+    static_assert(std::is_same_v<DeducedBufferType, buffer::Unsorted<SamplesIterator>>,
+                  "Deduced DeducedBufferType should be buffer::Unsorted<SamplesIterator>");
+
     auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
 
     queries_to_buffers_map.partial_search_for_each_query(indices_range_first,
