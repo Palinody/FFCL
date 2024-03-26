@@ -276,8 +276,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                           QueriesToBuffersMap&        queries_to_buffers_map,
                                                           BufferArgs&&... buffer_args) const {
     // updates the query buffers with the reference set while keeping track of the global shortest edge
-    auto partial_search_for_each_query_nodes_combination = [&](const QueryNodePtr&     q_node,
-                                                               const ReferenceNodePtr& r_node) {
+    auto partial_search_for_combination = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
         queries_to_buffers_map.partial_search_for_each_query(q_node->indices_range_.first,
                                                              q_node->indices_range_.second,
                                                              query_samples_range_first,
@@ -294,7 +293,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
     auto dual_node_priority_queue =
         DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
 
-    auto enqueue_nodes_combination_from_cost = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
+    auto enqueue_combinations_from_cost = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
         const auto optional_cost = queries_to_buffers_map.cost(q_node,
                                                                query_samples_range_first,
                                                                query_samples_range_last,
@@ -306,19 +305,14 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
         if (optional_cost) {
             dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
         }
-        /*
-        else {
-            partial_search_for_each_query_nodes_combination(q_node, r_node);
-        }
-        */
     };
     if (!query_node->is_leaf()) {
-        enqueue_nodes_combination_from_cost(query_node->left_, reference_node);
-        enqueue_nodes_combination_from_cost(query_node->right_, reference_node);
+        enqueue_combinations_from_cost(query_node->left_, reference_node);
+        enqueue_combinations_from_cost(query_node->right_, reference_node);
     }
     if (!reference_node->is_leaf()) {
-        enqueue_nodes_combination_from_cost(query_node, reference_node->left_);
-        enqueue_nodes_combination_from_cost(query_node, reference_node->right_);
+        enqueue_combinations_from_cost(query_node, reference_node->left_);
+        enqueue_combinations_from_cost(query_node, reference_node->right_);
     }
     for (; !dual_node_priority_queue.empty(); dual_node_priority_queue.pop()) {
         const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
@@ -333,7 +327,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                             queries_to_buffers_map,
                             std::forward<BufferArgs>(buffer_args)...);
     }
-    partial_search_for_each_query_nodes_combination(query_node, reference_node);
+    partial_search_for_combination(query_node, reference_node);
 }
 
 }  // namespace ffcl::search

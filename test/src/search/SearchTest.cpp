@@ -271,7 +271,7 @@ void shuffle_indices(IndicesIterator indices_first, IndicesIterator indices_last
     std::shuffle(indices_first, indices_last, std::mt19937{std::random_device{}()});
 }
 
-// /*
+/*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     fs::path filename = "no_structure.txt";
 
@@ -313,7 +313,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(0)
+                                                 .bucket_size(1)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -329,7 +329,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(0)
+                                             .bucket_size(1)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -395,9 +395,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
         query_indexer_copy.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
     }
 }
-// */
+*/
 
-/*
+// /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -447,7 +447,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(1)
+                                                 .bucket_size(40)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -465,7 +465,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(1)
+                                             .bucket_size(40)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -556,7 +556,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #endif
     std::cout << dummy_acc << "\n";
 }
-*/
+// */
 
 // TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 // #if defined(TIME_IT) && TIME_IT

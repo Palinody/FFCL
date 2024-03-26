@@ -171,9 +171,10 @@ class IndicesToBuffersMap {
                                                     reference_samples_range_last,
                                                     reference_n_features);
 
-        if (min_distance > find_query_node_furthest_distance(query_node)) {
+        if (min_distance > find_query_node_furthest_distance(query_node) && reference_node->is_leaf()) {
             return std::nullopt;
         }
+        // if (min_distance <= find_query_node_furthest_distance(query_node))
         return std::make_optional(min_distance);
     }
 
