@@ -306,6 +306,24 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
             dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
         }
     };
+
+    /*
+    if (!query_node->is_leaf() && !reference_node->is_leaf()) {
+        enqueue_combinations_from_cost(query_node->left_, reference_node->left_);
+        enqueue_combinations_from_cost(query_node->left_, reference_node->right_);
+        enqueue_combinations_from_cost(query_node->right_, reference_node->left_);
+        enqueue_combinations_from_cost(query_node->right_, reference_node->right_);
+
+    } else if (!query_node->is_leaf()) {
+        enqueue_combinations_from_cost(query_node->left_, reference_node);
+        enqueue_combinations_from_cost(query_node->right_, reference_node);
+
+    } else if (!reference_node->is_leaf()) {
+        enqueue_combinations_from_cost(query_node, reference_node->left_);
+        enqueue_combinations_from_cost(query_node, reference_node->right_);
+    }
+    */
+    // /*
     if (!query_node->is_leaf()) {
         enqueue_combinations_from_cost(query_node->left_, reference_node);
         enqueue_combinations_from_cost(query_node->right_, reference_node);
@@ -314,6 +332,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
         enqueue_combinations_from_cost(query_node, reference_node->left_);
         enqueue_combinations_from_cost(query_node, reference_node->right_);
     }
+    // */
     for (; !dual_node_priority_queue.empty(); dual_node_priority_queue.pop()) {
         const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
 

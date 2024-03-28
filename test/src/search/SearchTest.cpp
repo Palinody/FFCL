@@ -296,7 +296,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     auto uniform_random_number_generator =
         ffcl::common::math::random::uniform_distribution<std::size_t>(1, n_samples - 1);
 
-    for (std::size_t test_index = 0; test_index < 10; ++test_index) {
+    for (std::size_t test_index = 0; test_index < 100; ++test_index) {
         shuffle_indices(indices.begin(), indices.end());
 
         const std::size_t n_queries = uniform_random_number_generator();
@@ -447,7 +447,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(40)
+                                                 .bucket_size(1)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -465,7 +465,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(40)
+                                             .bucket_size(1)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
