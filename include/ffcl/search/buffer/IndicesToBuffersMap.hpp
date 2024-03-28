@@ -171,9 +171,9 @@ class IndicesToBuffersMap {
                                                     reference_samples_range_last,
                                                     reference_n_features);
 
-        if (reference_node->is_leaf() &&
-            min_distance > /*queries_nodes_to_furthest_distance_cache_.get_cached_furthest_distance(query_node)*/
-                search_query_node_furthest_distance(query_node)) {
+        // if (reference_node->is_leaf() &&
+        // min_distance > queries_nodes_to_furthest_distance_cache_.get_cached_furthest_distance(query_node)) {
+        if (reference_node->is_leaf() && min_distance > search_query_node_furthest_distance(query_node)) {
             return std::nullopt;
         }
         // if (min_distance <= search_query_node_furthest_distance(query_node))
@@ -256,7 +256,6 @@ class IndicesToBuffersMap {
         QueriesNodesToFurthestDistanceCache(const IndicesToBuffersMap<BufferType>& parent_map)
           : parent_map_(parent_map) {}
 
-        // Method to retrieve or calculate the furthest distance for a given node.
         template <typename QueryNodePtr>
         DistanceType get_cached_furthest_distance(const QueryNodePtr& query_node) {
             const auto* raw_query_node = extract_raw_ptr(query_node);
@@ -264,13 +263,23 @@ class IndicesToBuffersMap {
             auto it = cache_.find(raw_query_node);
 
             if (it == cache_.end()) {
-                return search_and_try_cache_max_furthest_distance(query_node);
+                const auto query_node_max_furthest_distance = search_max_furthest_distance(query_node);
+
+                if (query_node->is_leaf()) {
+                    cache_.emplace(raw_query_node, query_node_max_furthest_distance);
+                }
+                return query_node_max_furthest_distance;
 
             } else {
                 if (!query_node->is_leaf()) {
-                    return std::max({it->second,
-                                     get_cached_furthest_distance(query_node->left_),
-                                     get_cached_furthest_distance(query_node->right_)});
+                    const auto query_node_max_furthest_distance =
+                        std::max({it->second,
+                                  cache_.find(extract_raw_ptr(query_node->left_))->second,
+                                  cache_.find(extract_raw_ptr(query_node->right_))->second});
+
+                    cache_.emplace(raw_query_node, query_node_max_furthest_distance);
+
+                    return query_node_max_furthest_distance;
 
                 } else {
                     return it->second;
@@ -291,7 +300,7 @@ class IndicesToBuffersMap {
         }
 
         template <typename QueryNodePtr>
-        DistanceType search_and_try_cache_max_furthest_distance(const QueryNodePtr& query_node) {
+        DistanceType search_max_furthest_distance(const QueryNodePtr& query_node) const {
             auto queries_max_upper_bound = DistanceType{0};
 
             for (auto query_index_it = query_node->indices_range_.first;
@@ -317,7 +326,6 @@ class IndicesToBuffersMap {
                     queries_max_upper_bound = std::max(queries_max_upper_bound, query_buffer_furthest_distance);
                 }
             }
-            cache_.emplace(query_node.get(), queries_max_upper_bound);
             return queries_max_upper_bound;
         }
 

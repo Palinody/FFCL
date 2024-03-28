@@ -313,7 +313,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(1)
+                                                 .bucket_size(40)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -329,7 +329,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(1)
+                                             .bucket_size(40)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -447,7 +447,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(1)
+                                                 .bucket_size(0)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -465,12 +465,26 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(1)
+                                             .bucket_size(0)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
+        auto union_find = ffcl::datastruct::UnionFind<IndexType>(n_samples);
+
+        IndexType queries_representative = union_find.find(query_indices[0]);
+
+        // merge all the indices in the query_indices into the same component
+        for (const auto& query_index : query_indices) {
+            queries_representative = union_find.merge(queries_representative, query_index);
+        }
+
+        // const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
+
+        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer),
+                                                                    /**/ union_find,
+                                                                    /**/ queries_representative,
+                                                                    /**/ 1);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -496,6 +510,19 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             timer.reset();
 #endif
 
+            // const auto brute_force_shortest_edge =
+            //     ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
+            //                                                      query_indices.end(),
+            //                                                      data.begin(),
+            //                                                      data.end(),
+            //                                                      n_features,
+            //                                                      reference_indices.begin(),
+            //                                                      reference_indices.end(),
+            //                                                      data.begin(),
+            //                                                      data.end(),
+            //                                                      n_features,
+            //                                                      1);
+
             const auto brute_force_shortest_edge =
                 ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
                                                                  query_indices.end(),
@@ -507,6 +534,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                                                  data.begin(),
                                                                  data.end(),
                                                                  n_features,
+                                                                 union_find,
+                                                                 queries_representative,
                                                                  1);
 
 #if defined(TIME_IT) && TIME_IT

@@ -230,9 +230,6 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
     static_assert(!std::is_same_v<DeducedBufferType, void>,
                   "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
 
-    static_assert(std::is_same_v<DeducedBufferType, buffer::Unsorted<BuffersFeaturesIteratorType>>,
-                  "Deduced DeducedBufferType should be buffer::Unsorted<BuffersFeaturesIteratorType>");
-
     const auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
     auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};

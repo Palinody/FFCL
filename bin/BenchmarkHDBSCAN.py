@@ -33,8 +33,6 @@ def TestHDBSCAN(points: np.ndarray, min_samples, min_cluster_size):
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
         cluster_selection_epsilon=0,
-        gen_min_span_tree=True,
-        approx_min_span_tree=False,
         core_dist_n_jobs=1,
         allow_single_cluster=True,
     )
@@ -67,13 +65,13 @@ def run_all():
     ]
 
     datasets_parameters = [
-        (10, 15),
-        (10, 15),
-        (10, 15),
-        (10, 15),
-        (10, 15),
-        (10, 15),
-        (10, 15),
+        (20, 10),
+        (20, 10),
+        (20, 10),
+        (20, 10),
+        (20, 10),
+        (20, 10),
+        (20, 10),
     ]
 
     for filename, dataset_parameters in zip(file_names, datasets_parameters):
