@@ -7,6 +7,8 @@
 #include <optional>
 #include <unordered_map>
 
+namespace ffcl::search::buffer {
+
 struct NodesCombinationKey {
     bool operator==(const NodesCombinationKey& other) const {
         return address_1 == other.address_1 && address_2 == other.address_2;
@@ -16,9 +18,11 @@ struct NodesCombinationKey {
     void* address_2;
 };
 
+}  // namespace ffcl::search::buffer
+
 template <>
-struct std::hash<NodesCombinationKey> {
-    std::size_t operator()(const NodesCombinationKey& key) const noexcept {
+struct std::hash<ffcl::search::buffer::NodesCombinationKey> {
+    std::size_t operator()(const ffcl::search::buffer::NodesCombinationKey& key) const noexcept {
         std::size_t hash_1 = std::hash<void*>{}(key.address_1);
         std::size_t hash_2 = std::hash<void*>{}(key.address_2);
 
