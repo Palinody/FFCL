@@ -7,6 +7,30 @@
 #include <optional>
 #include <unordered_map>
 
+struct NodesCombinationKey {
+    bool operator==(const NodesCombinationKey& other) const {
+        return address_1 == other.address_1 && address_2 == other.address_2;
+    }
+
+    void* address_1;
+    void* address_2;
+};
+
+template <>
+struct std::hash<NodesCombinationKey> {
+    std::size_t operator()(const NodesCombinationKey& key) const noexcept {
+        std::size_t hash_1 = std::hash<void*>{}(key.address_1);
+        std::size_t hash_2 = std::hash<void*>{}(key.address_2);
+
+        if constexpr (sizeof(std::size_t) >= 8) {
+            hash_1 ^= hash_2 + 0x517cc1b727220a95 + (hash_1 << 6) + (hash_1 >> 2);
+        } else {
+            hash_1 ^= hash_2 + 0x9e3779b9 + (hash_1 << 6) + (hash_1 >> 2);
+        }
+        return hash_1;
+    }
+};
+
 namespace ffcl::search::buffer {
 
 template <typename Index, typename Distance>
@@ -42,47 +66,15 @@ class IndicesToBuffersMap {
         return std::move(tightest_edge_);
     }
 
-    constexpr auto begin() -> IndexToBufferMapIterator {
-        return index_to_buffer_map_.begin();
-    }
-
-    constexpr auto end() -> IndexToBufferMapIterator {
-        return index_to_buffer_map_.end();
-    }
-
-    constexpr auto begin() const -> IndexToBufferMapConstIterator {
-        return index_to_buffer_map_.begin();
-    }
-
-    constexpr auto end() const -> IndexToBufferMapConstIterator {
-        return index_to_buffer_map_.end();
-    }
-
-    constexpr auto cbegin() const -> IndexToBufferMapConstIterator {
-        return index_to_buffer_map_.cbegin();
-    }
-
-    constexpr auto cend() const -> IndexToBufferMapConstIterator {
-        return index_to_buffer_map_.cend();
-    }
-
-    constexpr auto find(const IndexType& query_index) -> IndexToBufferMapIterator {
-        return index_to_buffer_map_.find(query_index);
-    }
-
-    constexpr auto find(const IndexType& query_index) const -> IndexToBufferMapConstIterator {
-        return index_to_buffer_map_.find(query_index);
-    }
-
     template <typename FeaturesRangeIterator, typename... BufferArgs>
-    constexpr auto find_or_make_buffer_at(const IndexType&             index,
+    constexpr auto find_or_emplace_buffer(const IndexType&             index,
                                           const FeaturesRangeIterator& features_range_first,
                                           const FeaturesRangeIterator& features_range_last,
                                           BufferArgs&&... buffer_args) -> IndexToBufferMapIterator {
         // Attempt to find the buffer associated with the current index in the buffer map.
-        auto index_to_buffer_it = this->find(index);
+        auto index_to_buffer_it = index_to_buffer_map_.find(index);
         // If the current index does not have an associated buffer in the map,
-        if (index_to_buffer_it == this->end()) {
+        if (index_to_buffer_it == index_to_buffer_map_.end()) {
             auto buffer = BufferType(/**/ features_range_first,
                                      /**/ features_range_last,
                                      /**/ std::forward<BufferArgs>(buffer_args)...);
@@ -92,7 +84,7 @@ class IndicesToBuffersMap {
             // (or to the element that prevented the insertion) and the second element is a boolean
             // indicating whether the insertion took place.
             // We are only interested in the first element of the pair.
-            index_to_buffer_it = this->emplace(index, std::move(buffer)).first;
+            index_to_buffer_it = index_to_buffer_map_.emplace(index, std::move(buffer)).first;
         }
         return index_to_buffer_it;
     }
@@ -122,9 +114,9 @@ class IndicesToBuffersMap {
         // Iterate through all query indices within the specified range of the query node.
         for (auto query_index_it = query_indices_range_first; query_index_it != query_indices_range_last;
              ++query_index_it) {
-            // find_or_make_buffer_at returns a query_to_buffer_it and we are only interested in the buffer
+            // find_or_emplace_buffer returns a query_to_buffer_it and we are only interested in the buffer
             auto& buffer_at_query_index_reference =
-                this->find_or_make_buffer_at(
+                this->find_or_emplace_buffer(
                         *query_index_it,
                         query_samples_range_first + (*query_index_it) * query_n_features,
                         query_samples_range_first + (*query_index_it) * query_n_features + query_n_features,
@@ -172,7 +164,7 @@ class IndicesToBuffersMap {
                                                     reference_n_features);
 
         // if (reference_node->is_leaf() &&
-        // min_distance > queries_nodes_to_furthest_distance_cache_.get_cached_furthest_distance(query_node)) {
+        // min_distance > cache_.get_cached_furthest_distance(query_node)) {
         if (reference_node->is_leaf() && min_distance > search_query_node_furthest_distance(query_node)) {
             return std::nullopt;
         }
@@ -188,13 +180,12 @@ class IndicesToBuffersMap {
         for (auto query_index_it = query_node->indices_range_.first;
              query_index_it != query_node->indices_range_.second;
              ++query_index_it) {
-            const auto index_to_buffer_it = this->find(*query_index_it);
+            const auto index_to_buffer_it = index_to_buffer_map_.find(*query_index_it);
 
             // If the buffer at the current index wasn't initialized, then its furthest distance is infinity by default
             // We also don't need to recurse further since the lower-level nodes will never be greater than infinity.
-            if (index_to_buffer_it == this->cend()) {
+            if (index_to_buffer_it == index_to_buffer_map_.cend()) {
                 return common::infinity<DistanceType>();
-
             }
             // If there's remaining space in the buffers, then candidates might potentially be further than the buffer's
             // current furthest distance.
@@ -251,33 +242,30 @@ class IndicesToBuffersMap {
         return min_distance;
     }
 
-    class QueriesNodesToFurthestDistanceCache {
+    class Cache {
       public:
-        QueriesNodesToFurthestDistanceCache(const IndicesToBuffersMap<BufferType>& parent_map)
-          : parent_map_(parent_map) {}
-
         template <typename QueryNodePtr>
         DistanceType get_cached_furthest_distance(const QueryNodePtr& query_node) {
             const auto* raw_query_node = extract_raw_ptr(query_node);
 
-            auto it = cache_.find(raw_query_node);
+            const auto it = query_node_to_furthest_distance_map_.find(raw_query_node);
 
-            if (it == cache_.end()) {
+            if (it == query_node_to_furthest_distance_map_.end()) {
                 const auto query_node_max_furthest_distance = search_max_furthest_distance(query_node);
 
                 if (query_node->is_leaf()) {
-                    cache_.emplace(raw_query_node, query_node_max_furthest_distance);
+                    query_node_to_furthest_distance_map_.emplace(raw_query_node, query_node_max_furthest_distance);
                 }
                 return query_node_max_furthest_distance;
 
             } else {
                 if (!query_node->is_leaf()) {
-                    const auto query_node_max_furthest_distance =
-                        std::max({it->second,
-                                  cache_.find(extract_raw_ptr(query_node->left_))->second,
-                                  cache_.find(extract_raw_ptr(query_node->right_))->second});
+                    const auto query_node_max_furthest_distance = std::max(
+                        {it->second,
+                         query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->left_))->second,
+                         query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->right_))->second});
 
-                    cache_.emplace(raw_query_node, query_node_max_furthest_distance);
+                    query_node_to_furthest_distance_map_.emplace(raw_query_node, query_node_max_furthest_distance);
 
                     return query_node_max_furthest_distance;
 
@@ -289,7 +277,7 @@ class IndicesToBuffersMap {
 
       private:
         template <typename QueryNodePtr>
-        static const auto* extract_raw_ptr(const QueryNodePtr& query_node) {
+        static constexpr auto* extract_raw_ptr(const QueryNodePtr& query_node) {
             if constexpr (std::is_pointer_v<QueryNodePtr>) {
                 // For raw pointers.
                 return query_node;
@@ -306,14 +294,13 @@ class IndicesToBuffersMap {
             for (auto query_index_it = query_node->indices_range_.first;
                  query_index_it != query_node->indices_range_.second;
                  ++query_index_it) {
-                const auto index_to_buffer_it = parent_map_.find(*query_index_it);
+                const auto index_to_buffer_it = query_node_to_furthest_distance_map_.find(*query_index_it);
 
                 // If the buffer at the current index wasn't initialized, then its furthest distance is infinity by
                 // default We also don't need to recurse further since the lower-level nodes will never be greater than
                 // infinity.
-                if (index_to_buffer_it == parent_map_.cend()) {
+                if (index_to_buffer_it == query_node_to_furthest_distance_map_.cend()) {
                     return common::infinity<DistanceType>();
-
                 }
                 // If there's remaining space in the buffers, then candidates might potentially be further than the
                 // buffer's current furthest distance.
@@ -329,12 +316,10 @@ class IndicesToBuffersMap {
             return queries_max_upper_bound;
         }
 
-        const IndicesToBuffersMap<BufferType>& parent_map_;
-
-        std::unordered_map<const void*, DistanceType> cache_;
+        std::unordered_map<const void*, DistanceType> query_node_to_furthest_distance_map_;
     };
 
-    QueriesNodesToFurthestDistanceCache queries_nodes_to_furthest_distance_cache_{*this};
+    Cache cache_;
 
     IndexToBufferMapType index_to_buffer_map_;
 
