@@ -252,30 +252,43 @@ class IndicesToBuffersMap {
         DistanceType get_cached_furthest_distance(const QueryNodePtr& query_node) {
             const auto* raw_query_node = extract_raw_ptr(query_node);
 
-            const auto it = query_node_to_furthest_distance_map_.find(raw_query_node);
+            auto query_node_furthest_distance_it = query_node_to_furthest_distance_map_.find(raw_query_node);
 
-            if (it == query_node_to_furthest_distance_map_.end()) {
+            // If the current query_node is not cached.
+            if (query_node_furthest_distance_it == query_node_to_furthest_distance_map_.end()) {
                 const auto query_node_max_furthest_distance = search_max_furthest_distance(query_node);
 
-                if (query_node->is_leaf()) {
-                    query_node_to_furthest_distance_map_.emplace(raw_query_node, query_node_max_furthest_distance);
-                }
+                query_node_to_furthest_distance_map_.emplace(raw_query_node, query_node_max_furthest_distance);
+
                 return query_node_max_furthest_distance;
 
             } else {
+                // Cache the query_node cache furthest distance with the tightest bound.
+                query_node_furthest_distance_it->second =
+                    std::min(query_node_furthest_distance_it->second, search_max_furthest_distance(query_node));
+
                 if (!query_node->is_leaf()) {
-                    const auto query_node_max_furthest_distance = std::max(
-                        {it->second,
-                         query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->left_))->second,
-                         query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->right_))->second});
+                    auto left_query_node_furthest_distance_it =
+                        query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->left_));
 
-                    query_node_to_furthest_distance_map_.emplace(raw_query_node, query_node_max_furthest_distance);
+                    auto right_query_node_furthest_distance_it =
+                        query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->right_));
 
-                    return query_node_max_furthest_distance;
+                    const auto left_query_node_furthest_distance =
+                        left_query_node_furthest_distance_it == query_node_to_furthest_distance_map_.end()
+                            ? search_max_furthest_distance(query_node->left_)
+                            : left_query_node_furthest_distance_it->second;
 
-                } else {
-                    return it->second;
+                    const auto right_query_node_furthest_distance =
+                        right_query_node_furthest_distance_it == query_node_to_furthest_distance_map_.end()
+                            ? search_max_furthest_distance(query_node->right_)
+                            : right_query_node_furthest_distance_it->second;
+
+                    query_node_furthest_distance_it->second = std::max({query_node_furthest_distance_it->second,
+                                                                        left_query_node_furthest_distance,
+                                                                        right_query_node_furthest_distance});
                 }
+                return query_node_furthest_distance_it->second;
             }
         }
 
@@ -320,7 +333,8 @@ class IndicesToBuffersMap {
             return queries_max_upper_bound;
         }
 
-        std::unordered_map<const void*, DistanceType> query_node_to_furthest_distance_map_;
+        std::unordered_map<const void*, DistanceType>         query_node_to_furthest_distance_map_;
+        std::unordered_map<NodesCombinationKey, DistanceType> nodes_combination_to_distance_map_;
     };
 
     Cache cache_;
