@@ -167,9 +167,8 @@ class IndicesToBuffersMap {
                                                     reference_samples_range_last,
                                                     reference_n_features);
 
-        // if (reference_node->is_leaf() &&
-        // min_distance > cache_.get_cached_furthest_distance(query_node)) {
-        if (reference_node->is_leaf() && min_distance > search_query_node_furthest_distance(query_node)) {
+        if (min_distance > cache_.queries_furthest_distance(query_node)) {
+            // if (reference_node->is_leaf() && min_distance > search_query_node_furthest_distance(query_node)) {
             return std::nullopt;
         }
         // if (min_distance <= search_query_node_furthest_distance(query_node))
@@ -248,48 +247,69 @@ class IndicesToBuffersMap {
 
     class Cache {
       public:
+        constexpr Cache(const IndicesToBuffersMap<BufferType>& parent)
+          : parent_{parent} {}
+
         template <typename QueryNodePtr>
-        DistanceType get_cached_furthest_distance(const QueryNodePtr& query_node) {
-            const auto* raw_query_node = extract_raw_ptr(query_node);
-
-            auto query_node_furthest_distance_it = query_node_to_furthest_distance_map_.find(raw_query_node);
-
-            // If the current query_node is not cached.
-            if (query_node_furthest_distance_it == query_node_to_furthest_distance_map_.end()) {
-                const auto query_node_max_furthest_distance = search_max_furthest_distance(query_node);
-
-                query_node_to_furthest_distance_map_.emplace(raw_query_node, query_node_max_furthest_distance);
-
-                return query_node_max_furthest_distance;
-
-            } else {
-                // Cache the query_node cache furthest distance with the tightest bound.
-                query_node_furthest_distance_it->second =
-                    std::min(query_node_furthest_distance_it->second, search_max_furthest_distance(query_node));
-
-                if (!query_node->is_leaf()) {
-                    auto left_query_node_furthest_distance_it =
-                        query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->left_));
-
-                    auto right_query_node_furthest_distance_it =
-                        query_node_to_furthest_distance_map_.find(extract_raw_ptr(query_node->right_));
-
-                    const auto left_query_node_furthest_distance =
-                        left_query_node_furthest_distance_it == query_node_to_furthest_distance_map_.end()
-                            ? search_max_furthest_distance(query_node->left_)
-                            : left_query_node_furthest_distance_it->second;
-
-                    const auto right_query_node_furthest_distance =
-                        right_query_node_furthest_distance_it == query_node_to_furthest_distance_map_.end()
-                            ? search_max_furthest_distance(query_node->right_)
-                            : right_query_node_furthest_distance_it->second;
-
-                    query_node_furthest_distance_it->second = std::max({query_node_furthest_distance_it->second,
-                                                                        left_query_node_furthest_distance,
-                                                                        right_query_node_furthest_distance});
-                }
-                return query_node_furthest_distance_it->second;
+        auto queries_furthest_distance(const QueryNodePtr& query_node) -> DistanceType {
+            const auto query_node_furthest_distance = find_max_furthest_distance(query_node);
+            // Base case.
+            if (query_node->is_leaf()) {
+                return query_node_furthest_distance;
             }
+            const auto* raw_query_node                  = extract_raw_ptr(query_node);
+            auto        query_node_furthest_distance_it = query_node_to_furthest_distance_map_.find(raw_query_node);
+            // If the current query_node is already cached.
+            if (query_node_furthest_distance_it != query_node_to_furthest_distance_map_.end()) {
+                return query_node_to_furthest_distance_map_[raw_query_node];
+            }
+            query_node_to_furthest_distance_map_.emplace(raw_query_node,
+                                                         std::max({query_node_furthest_distance,
+                                                                   queries_furthest_distance(query_node->left_),
+                                                                   queries_furthest_distance(query_node->right_)}));
+            return query_node_to_furthest_distance_map_[raw_query_node];
+        }
+
+        template <typename QueryNodePtr,
+                  typename QuerySamplesIterator,
+                  typename ReferenceNodePtr,
+                  typename ReferenceSamplesIterator>
+        auto cache_recursive_dual_nodes_min_distance(const QueryNodePtr&             query_node,
+                                                     const QuerySamplesIterator&     query_samples_range_first,
+                                                     const QuerySamplesIterator&     query_samples_range_last,
+                                                     std::size_t                     query_n_features,
+                                                     const ReferenceNodePtr&         reference_node,
+                                                     const ReferenceSamplesIterator& reference_samples_range_first,
+                                                     const ReferenceSamplesIterator& reference_samples_range_last,
+                                                     std::size_t reference_n_features) -> DistanceType {
+            common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
+
+            // Base case.
+            if (query_node->is_leaf() && reference_node->is_leaf()) {
+                //
+            }
+            const auto* raw_query_node        = extract_raw_ptr(query_node);
+            const auto* raw_reference_node    = extract_raw_ptr(reference_node);
+            auto        nodes_combination_key = NodesCombinationKey{raw_query_node, raw_reference_node};
+
+            auto nodes_combination_to_min_distance_it =
+                nodes_combination_to_min_distance_map_.find(nodes_combination_key);
+
+            if (nodes_combination_to_min_distance_it != nodes_combination_to_min_distance_map_.end()) {
+                return nodes_combination_to_min_distance_map_[nodes_combination_key];
+            }
+            const auto nodes_combination_min_distance = find_min_distance(query_node,
+                                                                          query_samples_range_first,
+                                                                          query_samples_range_last,
+                                                                          query_n_features,
+                                                                          reference_node,
+                                                                          reference_samples_range_first,
+                                                                          reference_samples_range_last,
+                                                                          reference_n_features);
+
+            nodes_combination_to_min_distance_map_.emplace(nodes_combination_key, nodes_combination_min_distance);
+
+            return nodes_combination_to_min_distance_it->second;
         }
 
       private:
@@ -305,18 +325,18 @@ class IndicesToBuffersMap {
         }
 
         template <typename QueryNodePtr>
-        DistanceType search_max_furthest_distance(const QueryNodePtr& query_node) const {
+        DistanceType find_max_furthest_distance(const QueryNodePtr& query_node) const {
             auto queries_max_upper_bound = DistanceType{0};
 
             for (auto query_index_it = query_node->indices_range_.first;
                  query_index_it != query_node->indices_range_.second;
                  ++query_index_it) {
-                const auto index_to_buffer_it = query_node_to_furthest_distance_map_.find(*query_index_it);
+                const auto index_to_buffer_it = parent_.index_to_buffer_map_.find(*query_index_it);
 
                 // If the buffer at the current index wasn't initialized, then its furthest distance is infinity by
                 // default We also don't need to recurse further since the lower-level nodes will never be greater than
                 // infinity.
-                if (index_to_buffer_it == query_node_to_furthest_distance_map_.cend()) {
+                if (index_to_buffer_it == parent_.index_to_buffer_map_.cend()) {
                     return common::infinity<DistanceType>();
                 }
                 // If there's remaining space in the buffers, then candidates might potentially be further than the
@@ -333,11 +353,48 @@ class IndicesToBuffersMap {
             return queries_max_upper_bound;
         }
 
+        template <typename QueryNodePtr,
+                  typename QuerySamplesIterator,
+                  typename ReferenceNodePtr,
+                  typename ReferenceSamplesIterator>
+        static auto find_min_distance(const QueryNodePtr&             query_node,
+                                      const QuerySamplesIterator&     query_samples_range_first,
+                                      const QuerySamplesIterator&     query_samples_range_last,
+                                      std::size_t                     query_n_features,
+                                      const ReferenceNodePtr&         reference_node,
+                                      const ReferenceSamplesIterator& reference_samples_range_first,
+                                      const ReferenceSamplesIterator& reference_samples_range_last,
+                                      std::size_t                     reference_n_features) -> DistanceType {
+            common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
+
+            auto min_distance = common::infinity<DistanceType>();
+
+            for (auto query_index_it = query_node->indices_range_.first;
+                 query_index_it != query_node->indices_range_.second;
+                 ++query_index_it) {
+                for (auto reference_index_it = reference_node->indices_range_.first;
+                     reference_index_it != reference_node->indices_range_.second;
+                     ++reference_index_it) {
+                    const auto query_to_reference_distance = common::math::heuristics::auto_distance(
+                        query_samples_range_first + (*query_index_it) * query_n_features,
+                        query_samples_range_first + (*query_index_it) * query_n_features + query_n_features,
+                        reference_samples_range_first + (*reference_index_it) * reference_n_features,
+                        reference_samples_range_first + (*reference_index_it) * reference_n_features +
+                            reference_n_features);
+
+                    min_distance = std::min(min_distance, query_to_reference_distance);
+                }
+            }
+            return min_distance;
+        }
+
+        const IndicesToBuffersMap<BufferType>& parent_;
+
         std::unordered_map<const void*, DistanceType>         query_node_to_furthest_distance_map_;
-        std::unordered_map<NodesCombinationKey, DistanceType> nodes_combination_to_distance_map_;
+        std::unordered_map<NodesCombinationKey, DistanceType> nodes_combination_to_min_distance_map_;
     };
 
-    Cache cache_;
+    Cache cache_{*this};
 
     IndexToBufferMapType index_to_buffer_map_;
 

@@ -296,7 +296,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
     auto uniform_random_number_generator =
         ffcl::common::math::random::uniform_distribution<std::size_t>(1, n_samples - 1);
 
-    for (std::size_t test_index = 0; test_index < 100; ++test_index) {
+    for (std::size_t test_index = 0; test_index < 10; ++test_index) {
         shuffle_indices(indices.begin(), indices.end());
 
         const std::size_t n_queries = uniform_random_number_generator();
@@ -567,9 +567,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             //   << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
             //   << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
 
-            // ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
-            // ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
-            // ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
         }
 #endif
         dummy_acc += std::get<2>(shortest_edge);

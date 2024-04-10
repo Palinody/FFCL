@@ -287,6 +287,8 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                              std::forward<BufferArgs>(buffer_args)...);
     };
 
+    partial_search_for_combination(query_node, reference_node);
+
     auto dual_node_priority_queue =
         DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
 
@@ -343,7 +345,6 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                             queries_to_buffers_map,
                             std::forward<BufferArgs>(buffer_args)...);
     }
-    partial_search_for_combination(query_node, reference_node);
 }
 
 }  // namespace ffcl::search
