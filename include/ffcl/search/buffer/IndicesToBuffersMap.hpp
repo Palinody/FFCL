@@ -14,8 +14,8 @@ struct NodesCombinationKey {
         return address_1 == other.address_1 && address_2 == other.address_2;
     }
 
-    void* address_1;
-    void* address_2;
+    const void* address_1;
+    const void* address_2;
 };
 
 }  // namespace ffcl::search::buffer
@@ -23,8 +23,8 @@ struct NodesCombinationKey {
 template <>
 struct std::hash<ffcl::search::buffer::NodesCombinationKey> {
     std::size_t operator()(const ffcl::search::buffer::NodesCombinationKey& key) const noexcept {
-        std::size_t hash_1 = std::hash<void*>{}(key.address_1);
-        std::size_t hash_2 = std::hash<void*>{}(key.address_2);
+        std::size_t hash_1 = std::hash<const void*>{}(key.address_1);
+        std::size_t hash_2 = std::hash<const void*>{}(key.address_2);
 
         if constexpr (sizeof(std::size_t) >= 8) {
             hash_1 ^= hash_2 + 0x517cc1b727220a95 + (hash_1 << 6) + (hash_1 >> 2);
@@ -158,20 +158,17 @@ class IndicesToBuffersMap {
               std::size_t                     reference_n_features) -> std::optional<DistanceType> {
         common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
 
-        const auto min_distance = find_min_distance(query_node,
-                                                    query_samples_range_first,
-                                                    query_samples_range_last,
-                                                    query_n_features,
-                                                    reference_node,
-                                                    reference_samples_range_first,
-                                                    reference_samples_range_last,
-                                                    reference_n_features);
-
+        const auto min_distance = cache_.nodes_combination_min_distance(query_node,
+                                                                        query_samples_range_first,
+                                                                        query_samples_range_last,
+                                                                        query_n_features,
+                                                                        reference_node,
+                                                                        reference_samples_range_first,
+                                                                        reference_samples_range_last,
+                                                                        reference_n_features);
         if (min_distance > cache_.queries_furthest_distance(query_node)) {
-            // if (reference_node->is_leaf() && min_distance > search_query_node_furthest_distance(query_node)) {
             return std::nullopt;
         }
-        // if (min_distance <= search_query_node_furthest_distance(query_node))
         return std::make_optional(min_distance);
     }
 
@@ -274,23 +271,42 @@ class IndicesToBuffersMap {
                   typename QuerySamplesIterator,
                   typename ReferenceNodePtr,
                   typename ReferenceSamplesIterator>
-        auto cache_recursive_dual_nodes_min_distance(const QueryNodePtr&             query_node,
-                                                     const QuerySamplesIterator&     query_samples_range_first,
-                                                     const QuerySamplesIterator&     query_samples_range_last,
-                                                     std::size_t                     query_n_features,
-                                                     const ReferenceNodePtr&         reference_node,
-                                                     const ReferenceSamplesIterator& reference_samples_range_first,
-                                                     const ReferenceSamplesIterator& reference_samples_range_last,
-                                                     std::size_t reference_n_features) -> DistanceType {
+        auto nodes_combination_min_distance(const QueryNodePtr&             query_node,
+                                            const QuerySamplesIterator&     query_samples_range_first,
+                                            const QuerySamplesIterator&     query_samples_range_last,
+                                            std::size_t                     query_n_features,
+                                            const ReferenceNodePtr&         reference_node,
+                                            const ReferenceSamplesIterator& reference_samples_range_first,
+                                            const ReferenceSamplesIterator& reference_samples_range_last,
+                                            std::size_t                     reference_n_features) -> DistanceType {
             common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
 
+            auto dual_nodes_min_distance_lambda = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
+                return nodes_combination_min_distance(q_node,
+                                                      query_samples_range_first,
+                                                      query_samples_range_last,
+                                                      query_n_features,
+                                                      r_node,
+                                                      reference_samples_range_first,
+                                                      reference_samples_range_last,
+                                                      reference_n_features);
+            };
+
+            auto nodes_combination_min_distance = find_min_distance(query_node,
+                                                                    query_samples_range_first,
+                                                                    query_samples_range_last,
+                                                                    query_n_features,
+                                                                    reference_node,
+                                                                    reference_samples_range_first,
+                                                                    reference_samples_range_last,
+                                                                    reference_n_features);
             // Base case.
             if (query_node->is_leaf() && reference_node->is_leaf()) {
-                //
+                return nodes_combination_min_distance;
             }
             const auto* raw_query_node        = extract_raw_ptr(query_node);
             const auto* raw_reference_node    = extract_raw_ptr(reference_node);
-            auto        nodes_combination_key = NodesCombinationKey{raw_query_node, raw_reference_node};
+            const auto  nodes_combination_key = NodesCombinationKey{raw_query_node, raw_reference_node};
 
             auto nodes_combination_to_min_distance_it =
                 nodes_combination_to_min_distance_map_.find(nodes_combination_key);
@@ -298,18 +314,30 @@ class IndicesToBuffersMap {
             if (nodes_combination_to_min_distance_it != nodes_combination_to_min_distance_map_.end()) {
                 return nodes_combination_to_min_distance_map_[nodes_combination_key];
             }
-            const auto nodes_combination_min_distance = find_min_distance(query_node,
-                                                                          query_samples_range_first,
-                                                                          query_samples_range_last,
-                                                                          query_n_features,
-                                                                          reference_node,
-                                                                          reference_samples_range_first,
-                                                                          reference_samples_range_last,
-                                                                          reference_n_features);
+            if (!query_node->is_leaf() && reference_node->is_leaf()) {
+                nodes_combination_to_min_distance_map_.emplace(
+                    nodes_combination_key,
+                    std::min({nodes_combination_min_distance,
+                              dual_nodes_min_distance_lambda(query_node->left_, reference_node),
+                              dual_nodes_min_distance_lambda(query_node->right_, reference_node)}));
 
-            nodes_combination_to_min_distance_map_.emplace(nodes_combination_key, nodes_combination_min_distance);
+            } else if (query_node->is_leaf() && !reference_node->is_leaf()) {
+                nodes_combination_to_min_distance_map_.emplace(
+                    nodes_combination_key,
+                    std::min({nodes_combination_min_distance,
+                              dual_nodes_min_distance_lambda(query_node, reference_node->left_),
+                              dual_nodes_min_distance_lambda(query_node, reference_node->right_)}));
 
-            return nodes_combination_to_min_distance_it->second;
+            } else if (!query_node->is_leaf() && !reference_node->is_leaf()) {
+                nodes_combination_to_min_distance_map_.emplace(
+                    nodes_combination_key,
+                    std::min({nodes_combination_min_distance,
+                              dual_nodes_min_distance_lambda(query_node->left_, reference_node),
+                              dual_nodes_min_distance_lambda(query_node->right_, reference_node),
+                              dual_nodes_min_distance_lambda(query_node, reference_node->left_),
+                              dual_nodes_min_distance_lambda(query_node, reference_node->right_)}));
+            }
+            return nodes_combination_to_min_distance_map_[nodes_combination_key];
         }
 
       private:

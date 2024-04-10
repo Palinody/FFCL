@@ -273,7 +273,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                           QueriesToBuffersMap&        queries_to_buffers_map,
                                                           BufferArgs&&... buffer_args) const {
     // updates the query buffers with the reference set while keeping track of the global shortest edge
-    auto partial_search_for_combination = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
+    auto nodes_combination_partial_search = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
         queries_to_buffers_map.partial_search_for_each_query(q_node->indices_range_.first,
                                                              q_node->indices_range_.second,
                                                              query_samples_range_first,
@@ -287,7 +287,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                              std::forward<BufferArgs>(buffer_args)...);
     };
 
-    partial_search_for_combination(query_node, reference_node);
+    nodes_combination_partial_search(query_node, reference_node);
 
     auto dual_node_priority_queue =
         DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
@@ -305,24 +305,6 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
             dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
         }
     };
-
-    /*
-    if (!query_node->is_leaf() && !reference_node->is_leaf()) {
-        enqueue_combinations_from_cost(query_node->left_, reference_node->left_);
-        enqueue_combinations_from_cost(query_node->left_, reference_node->right_);
-        enqueue_combinations_from_cost(query_node->right_, reference_node->left_);
-        enqueue_combinations_from_cost(query_node->right_, reference_node->right_);
-
-    } else if (!query_node->is_leaf()) {
-        enqueue_combinations_from_cost(query_node->left_, reference_node);
-        enqueue_combinations_from_cost(query_node->right_, reference_node);
-
-    } else if (!reference_node->is_leaf()) {
-        enqueue_combinations_from_cost(query_node, reference_node->left_);
-        enqueue_combinations_from_cost(query_node, reference_node->right_);
-    }
-    */
-    // /*
     if (!query_node->is_leaf()) {
         enqueue_combinations_from_cost(query_node->left_, reference_node);
         enqueue_combinations_from_cost(query_node->right_, reference_node);
@@ -331,7 +313,6 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
         enqueue_combinations_from_cost(query_node, reference_node->left_);
         enqueue_combinations_from_cost(query_node, reference_node->right_);
     }
-    // */
     for (; !dual_node_priority_queue.empty(); dual_node_priority_queue.pop()) {
         const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
 
