@@ -48,13 +48,9 @@ struct KDNodeView {
 
     KDNodeView(const KDNodeView&) = delete;
 
-    constexpr auto begin() const {
-        return indices_range_.first;
-    }
+    constexpr auto begin() const;
 
-    constexpr auto end() const {
-        return indices_range_.second;
-    }
+    constexpr auto end() const;
 
     bool is_empty() const;
 
@@ -159,6 +155,16 @@ KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType&& indices_r
   : indices_range_{std::move(indices_range)}
   , cut_axis_feature_index_{cut_axis_feature_index}
   , axis_interval_{axis_interval} {}
+
+template <typename IndicesIterator, typename Data>
+constexpr auto KDNodeView<IndicesIterator, Data>::begin() const {
+    return indices_range_.first;
+}
+
+template <typename IndicesIterator, typename Data>
+constexpr auto KDNodeView<IndicesIterator, Data>::end() const {
+    return indices_range_.second;
+}
 
 template <typename IndicesIterator, typename Data>
 bool KDNodeView<IndicesIterator, Data>::is_empty() const {

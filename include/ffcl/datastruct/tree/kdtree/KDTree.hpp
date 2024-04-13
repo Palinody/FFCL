@@ -169,7 +169,7 @@ class KDTree {
     // Iterator pointing to the last element of the dataset.
     SamplesIterator samples_range_last_;
     // The number of samples deduced from the indices range span.
-    std::ptrdiff_t n_samples_;
+    std::size_t n_samples_;
     // The number of features in the dataset, used to represent data as a vectorized 2D array.
     std::size_t n_features_;
     // A hyperrectangle (bounding box) specifying the value bounds of the subset of data represented by the index array
@@ -198,7 +198,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
   : options_{options}
   , samples_range_first_{samples_range_first}
   , samples_range_last_{samples_range_last}
-  , n_samples_{std::distance(indices_range_first, indices_range_last)}
+  , n_samples_{static_cast<std::size_t>(std::distance(indices_range_first, indices_range_last))}
   , n_features_{n_features}
   , hyper_interval_{make_hyper_interval(indices_range_first,
                                         indices_range_last,
