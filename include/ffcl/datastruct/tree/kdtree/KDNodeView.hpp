@@ -48,6 +48,14 @@ struct KDNodeView {
 
     KDNodeView(const KDNodeView&) = delete;
 
+    constexpr auto begin() const {
+        return indices_range_.first;
+    }
+
+    constexpr auto end() const {
+        return indices_range_.second;
+    }
+
     bool is_empty() const;
 
     std::size_t n_samples() const;
