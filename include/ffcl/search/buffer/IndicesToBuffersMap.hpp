@@ -180,24 +180,25 @@ class IndicesToBuffersMap {
 
         template <typename QueryNodePtr>
         auto queries_furthest_distance(const QueryNodePtr& query_node) -> DistanceType {
+            // Base case: will only perform this calculation the node is leaf.
             auto furthest_distance = find_max_furthest_distance(query_node);
-            // Base case.
-            if (query_node->is_leaf()) {
-                return furthest_distance;
-            }
-            const auto* raw_query_node                  = extract_raw_ptr(query_node);
-            auto        query_node_furthest_distance_it = query_node_to_furthest_distance_map_.find(raw_query_node);
+
+            const auto* raw_query_node = extract_raw_ptr(query_node);
+
+            auto query_node_furthest_distance_it = query_node_to_furthest_distance_map_.find(raw_query_node);
+
             // If the current query_node is already cached.
             if (query_node_furthest_distance_it != query_node_to_furthest_distance_map_.end()) {
-                return query_node_to_furthest_distance_map_[raw_query_node];
+                query_node_furthest_distance_it->second = furthest_distance;
+                return query_node_furthest_distance_it->second;
             }
-            furthest_distance = std::max({furthest_distance,
-                                          queries_furthest_distance(query_node->left_),
-                                          queries_furthest_distance(query_node->right_)});
+            if (!query_node->is_leaf()) {
+                furthest_distance = std::max({furthest_distance,
+                                              queries_furthest_distance(query_node->left_),
+                                              queries_furthest_distance(query_node->right_)});
+            }
+            query_node_to_furthest_distance_map_.emplace(raw_query_node, furthest_distance);
 
-            if (common::inequality(furthest_distance, common::infinity<DistanceType>())) {
-                query_node_to_furthest_distance_map_.emplace(raw_query_node, furthest_distance);
-            }
             return furthest_distance;
         }
 
@@ -215,6 +216,18 @@ class IndicesToBuffersMap {
                                             std::size_t                     reference_n_features) -> DistanceType {
             common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
 
+            const auto* raw_query_node        = extract_raw_ptr(query_node);
+            const auto* raw_reference_node    = extract_raw_ptr(reference_node);
+            const auto  nodes_combination_key = NodesCombinationKey{raw_query_node, raw_reference_node};
+
+            auto nodes_combination_to_min_distance_it =
+                nodes_combination_to_min_distance_map_.find(nodes_combination_key);
+
+            // Checks if the result is cached and returns early if so.
+            if (nodes_combination_to_min_distance_it != nodes_combination_to_min_distance_map_.end()) {
+                return nodes_combination_to_min_distance_it->second;
+            }
+            // Base case: will only perform this calculation if both nodes are leaf.
             auto min_distance = find_min_distance(query_node,
                                                   query_samples_range_first,
                                                   query_samples_range_last,
@@ -223,56 +236,49 @@ class IndicesToBuffersMap {
                                                   reference_samples_range_first,
                                                   reference_samples_range_last,
                                                   reference_n_features);
-            // Base case.
-            if (query_node->is_leaf() && reference_node->is_leaf()) {
-                return min_distance;
+            // Recurse for non-leaf nodes.
+            if (!query_node->is_leaf()) {
+                min_distance = std::min(min_distance,
+                                        std::min(nodes_combination_min_distance(query_node->left_,
+                                                                                query_samples_range_first,
+                                                                                query_samples_range_last,
+                                                                                query_n_features,
+                                                                                reference_node,
+                                                                                reference_samples_range_first,
+                                                                                reference_samples_range_last,
+                                                                                reference_n_features),
+                                                 nodes_combination_min_distance(query_node->right_,
+                                                                                query_samples_range_first,
+                                                                                query_samples_range_last,
+                                                                                query_n_features,
+                                                                                reference_node,
+                                                                                reference_samples_range_first,
+                                                                                reference_samples_range_last,
+                                                                                reference_n_features)));
             }
-            const auto* raw_query_node        = extract_raw_ptr(query_node);
-            const auto* raw_reference_node    = extract_raw_ptr(reference_node);
-            const auto  nodes_combination_key = NodesCombinationKey{raw_query_node, raw_reference_node};
-
-            auto nodes_combination_to_min_distance_it =
-                nodes_combination_to_min_distance_map_.find(nodes_combination_key);
-
-            if (nodes_combination_to_min_distance_it != nodes_combination_to_min_distance_map_.end()) {
-                return nodes_combination_to_min_distance_map_[nodes_combination_key];
+            if (!reference_node->is_leaf()) {
+                min_distance = std::min(min_distance,
+                                        std::min(nodes_combination_min_distance(query_node,
+                                                                                query_samples_range_first,
+                                                                                query_samples_range_last,
+                                                                                query_n_features,
+                                                                                reference_node->left_,
+                                                                                reference_samples_range_first,
+                                                                                reference_samples_range_last,
+                                                                                reference_n_features),
+                                                 nodes_combination_min_distance(query_node,
+                                                                                query_samples_range_first,
+                                                                                query_samples_range_last,
+                                                                                query_n_features,
+                                                                                reference_node->right_,
+                                                                                reference_samples_range_first,
+                                                                                reference_samples_range_last,
+                                                                                reference_n_features)));
             }
-            auto nodes_combination_min_distance_lambda = [&](const QueryNodePtr&     q_node,
-                                                             const ReferenceNodePtr& r_node) {
-                return nodes_combination_min_distance(q_node,
-                                                      query_samples_range_first,
-                                                      query_samples_range_last,
-                                                      query_n_features,
-                                                      r_node,
-                                                      reference_samples_range_first,
-                                                      reference_samples_range_last,
-                                                      reference_n_features);
-            };
+            // Cache the results.
+            nodes_combination_to_min_distance_map_.emplace(nodes_combination_key, min_distance);
 
-            if (!query_node->is_leaf() && reference_node->is_leaf()) {
-                nodes_combination_to_min_distance_map_.emplace(
-                    nodes_combination_key,
-                    std::min({min_distance,
-                              nodes_combination_min_distance_lambda(query_node->left_, reference_node),
-                              nodes_combination_min_distance_lambda(query_node->right_, reference_node)}));
-
-            } else if (query_node->is_leaf() && !reference_node->is_leaf()) {
-                nodes_combination_to_min_distance_map_.emplace(
-                    nodes_combination_key,
-                    std::min({min_distance,
-                              nodes_combination_min_distance_lambda(query_node, reference_node->left_),
-                              nodes_combination_min_distance_lambda(query_node, reference_node->right_)}));
-
-            } else if (!query_node->is_leaf() && !reference_node->is_leaf()) {
-                nodes_combination_to_min_distance_map_.emplace(
-                    nodes_combination_key,
-                    std::min({min_distance,
-                              nodes_combination_min_distance_lambda(query_node->left_, reference_node),
-                              nodes_combination_min_distance_lambda(query_node->right_, reference_node),
-                              nodes_combination_min_distance_lambda(query_node, reference_node->left_),
-                              nodes_combination_min_distance_lambda(query_node, reference_node->right_)}));
-            }
-            return nodes_combination_to_min_distance_map_[nodes_combination_key];
+            return min_distance;
         }
 
       private:
