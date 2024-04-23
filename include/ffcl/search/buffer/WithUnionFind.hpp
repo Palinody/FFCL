@@ -2,10 +2,6 @@
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
-#include "ffcl/datastruct/bounds/StaticBound.hpp"
-
-#include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
-
 #include "ffcl/common/Utils.hpp"
 
 #include "ffcl/datastruct/UnionFind.hpp"

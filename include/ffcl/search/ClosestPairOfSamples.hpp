@@ -99,7 +99,7 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
                                                          other_n_features,
                                                          std::forward<BufferArgs>(buffer_args)...);
 
-    return std::move(queries_to_buffers_map).tightest_edge();
+    return queries_to_buffers_map.tightest_edge();
 }
 
 template <typename IndicesIterator,
@@ -119,36 +119,19 @@ auto dual_set_shortest_distance(const IndicesIterator&      indices_range_first,
                                 std::size_t                 other_n_features,
                                 BufferArgs&&... buffer_args) ->
     typename std::iterator_traits<SamplesIterator>::value_type {
-    common::ignore_parameters(samples_range_last);
+    const auto brute_force_shortest_edge = dual_set_shortest_edge(indices_range_first,
+                                                                  indices_range_last,
+                                                                  samples_range_first,
+                                                                  samples_range_last,
+                                                                  n_features,
+                                                                  other_indices_range_first,
+                                                                  other_indices_range_last,
+                                                                  other_samples_range_first,
+                                                                  other_samples_range_last,
+                                                                  other_n_features,
+                                                                  std::forward<BufferArgs>(buffer_args)...);
 
-    using DeducedBufferType = typename common::select_constructible_type<
-        buffer::Unsorted<SamplesIterator>,
-        buffer::WithMemory<SamplesIterator>,
-        buffer::WithUnionFind<SamplesIterator>>::from_signature</**/ SamplesIterator,
-                                                                /**/ SamplesIterator,
-                                                                /**/ BufferArgs...>::type;
-
-    auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
-
-    for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
-        // find_or_make_buffer_at returns a query_to_buffer_it and we are only interested in the buffer
-        auto& buffer_at_query_index_reference =
-            queries_to_buffers_map
-                .find_or_make_buffer_at(*index_it,
-                                        samples_range_first + (*index_it) * n_features,
-                                        samples_range_first + (*index_it) * n_features + n_features,
-                                        std::forward<BufferArgs>(buffer_args)...)
-                ->second;
-
-        // Regardless of whether the buffer was just inserted or already existed, perform a partial search
-        // operation on the buffer. This operation updates the buffer based on a range of reference samples.
-        buffer_at_query_index_reference.partial_search(other_indices_range_first,
-                                                       other_indices_range_last,
-                                                       other_samples_range_first,
-                                                       other_samples_range_last,
-                                                       other_n_features);
-    }
-    return std::get<2>(std::move(queries_to_buffers_map).tightest_edge());
+    return std::get<2>(brute_force_shortest_edge);
 }
 
 }  // namespace ffcl::search::algorithms
