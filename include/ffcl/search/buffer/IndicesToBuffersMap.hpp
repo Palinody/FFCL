@@ -71,18 +71,7 @@ class IndicesToBuffersMap {
     using IndexToBufferMapIterator      = typename IndexToBufferMapType::iterator;
     using IndexToBufferMapConstIterator = typename IndexToBufferMapType::const_iterator;
 
-    auto tightest_edge() {
-        const auto buffer_remaining_capacity = tightest_query_to_buffer_it_->second.remaining_capacity();
-        // A buffer which max capacity is not reached will return an infinity bound so
-        // we make sure to manually tighten the bound to the current furthest distance
-        if (buffer_remaining_capacity) {
-            tightest_query_to_buffer_it_->second.update_furthest_bound();
-
-            if (!tightest_query_to_buffer_it_->second.size()) {
-                return make_default_edge<IndexType, DistanceType>();
-            }
-        }
-        // before we make the shortest edge.
+    auto tightest_edge() const {
         return make_edge(tightest_query_to_buffer_it_->first,
                          tightest_query_to_buffer_it_->second.furthest_index(),
                          tightest_query_to_buffer_it_->second.furthest_distance());
@@ -150,12 +139,13 @@ class IndicesToBuffersMap {
                                                       reference_samples_range_last,
                                                       reference_n_features);
 
-            query_to_buffer_it->second.update_furthest_bound();
-
-            // Update if the current buffer has a closer edge
+            // Update if no tightest buffer has been initialised yet.
+            // Or, update if the buffer's max capacity has been reached and its furthest distance is less than the one
+            // of the current tightest buffer.
             if (tightest_query_to_buffer_it_ == query_to_buffer_map_.end() ||
-                query_to_buffer_it->second.furthest_distance() <
-                    tightest_query_to_buffer_it_->second.furthest_distance()) {
+                (!query_to_buffer_it->second.remaining_capacity() &&
+                 query_to_buffer_it->second.furthest_distance() <
+                     tightest_query_to_buffer_it_->second.furthest_distance())) {
                 tightest_query_to_buffer_it_ = query_to_buffer_it;
             }
         }

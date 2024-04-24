@@ -233,13 +233,15 @@ auto KDNodeView<IndicesIterator, Data>::select_sibling_node(
         // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
         // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
         // put to the right
-        const bool visit_sibling = is_left_child_ret
-                                       ? common::abs(pivot_split_value - query_split_value) <=
-                                             query_buffer.furthest_distance(parent_node->cut_axis_feature_index_)
-                                       : common::abs(pivot_split_value - query_split_value) <
-                                             query_buffer.furthest_distance(parent_node->cut_axis_feature_index_);
-
-        return visit_sibling ? (is_left_child_ret ? parent_node->right_ : parent_node->left_) : nullptr;
+        auto visit_sibling = [&]() {
+            return is_left_child_ret ? common::abs(pivot_split_value - query_split_value) <=
+                                           query_buffer.furthest_distance(parent_node->cut_axis_feature_index_)
+                                     : common::abs(pivot_split_value - query_split_value) <
+                                           query_buffer.furthest_distance(parent_node->cut_axis_feature_index_);
+        };
+        return query_buffer.remaining_capacity() || visit_sibling()
+                   ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
+                   : nullptr;
     }
     return nullptr;
 }

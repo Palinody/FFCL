@@ -105,13 +105,6 @@ class StaticBuffer {
         return furthest_distance();
     }
 
-    void update_furthest_bound() {
-        if (size()) {
-            std::tie(buffer_index_of_furthest_index_, furthest_distance_) =
-                common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
-        }
-    }
-
     void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         static_base_traits<DerivedBuffer>::call_update(static_cast<DerivedBuffer*>(this),
                                                        /**/ index_candidate,
@@ -134,8 +127,21 @@ class StaticBuffer {
 
   protected:
     void update_static_buffers(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        // update by default if it's being updated for the first time
+        if (!size()) {
+            // buffer_index_of_furthest_index_ stays 0 (default initialized)
+            furthest_distance_ = distance_candidate;
+
+            indices_.emplace_back(index_candidate);
+            distances_.emplace_back(distance_candidate);
+        }
         // always populate if the max capacity isnt reached
-        if (remaining_capacity()) {
+        else if (remaining_capacity()) {
+            // if the candidate's distance is greater than the current bound distance, we loosen the bound
+            if (distance_candidate > furthest_distance()) {
+                buffer_index_of_furthest_index_ = indices_.size();
+                furthest_distance_              = distance_candidate;
+            }
             indices_.emplace_back(index_candidate);
             distances_.emplace_back(distance_candidate);
         }
@@ -144,8 +150,9 @@ class StaticBuffer {
             // replace the previous greatest distance now that the vectors overflow the max capacity
             indices_[buffer_index_of_furthest_index_]   = index_candidate;
             distances_[buffer_index_of_furthest_index_] = distance_candidate;
-            // find the new furthest bound (index and distance)
-            update_furthest_bound();
+            // find the new furthest neighbor and update the cache accordingly
+            std::tie(buffer_index_of_furthest_index_, furthest_distance_) =
+                common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
         }
     }
 
