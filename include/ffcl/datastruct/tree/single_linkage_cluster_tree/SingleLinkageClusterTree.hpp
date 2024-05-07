@@ -27,8 +27,8 @@ class SingleLinkageClusterTree {
     static_assert(std::is_fundamental<IndexType>::value, "IndexType must be a fundamental type.");
     static_assert(std::is_fundamental<ValueType>::value, "ValueType must be a fundamental type.");
 
-    using MinimumSpanningTreeType = datastruct::mst::EdgesList<IndexType, ValueType>;
-    using UnionFindType           = datastruct::UnionFind<IndexType>;
+    using MinimumSpanningTreeType = mst::EdgesList<IndexType, ValueType>;
+    using UnionFindType           = UnionFind<IndexType>;
 
     using SingleLinkageClusterNodeType = SingleLinkageClusterNode<IndexType, ValueType>;
     using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterNodeType::NodePtr;
@@ -81,7 +81,7 @@ class SingleLinkageClusterTree {
     void serialize(const fs::path& filepath) const;
 
   private:
-    auto build();
+    auto build() -> SingleLinkageClusterNodePtr;
 
     void preorder_traversal_single_linkage_clustering(ClusterIndexType                   cluster_label,
                                                       const SingleLinkageClusterNodePtr& kdnode,
@@ -100,25 +100,25 @@ class SingleLinkageClusterTree {
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst)
-  : sorted_mst_{datastruct::mst::sort_copy(mst)}
+  : sorted_mst_{mst::sort_copy(mst)}
   , root_{build()} {}
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(const MinimumSpanningTreeType& mst,
                                                                          const Options&                 options)
-  : sorted_mst_{datastruct::mst::sort_copy(mst)}
+  : sorted_mst_{mst::sort_copy(mst)}
   , root_{build()}
   , options_{options} {}
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst)
-  : sorted_mst_{datastruct::mst::sort(std::move(mst))}
+  : sorted_mst_{mst::sort(std::move(mst))}
   , root_{build()} {}
 
 template <typename IndexType, typename ValueType>
 SingleLinkageClusterTree<IndexType, ValueType>::SingleLinkageClusterTree(MinimumSpanningTreeType&& mst,
                                                                          const Options&            options)
-  : sorted_mst_{datastruct::mst::sort(std::move(mst))}
+  : sorted_mst_{mst::sort(std::move(mst))}
   , root_{build()}
   , options_{options} {}
 
@@ -175,7 +175,7 @@ void SingleLinkageClusterTree<IndexType, ValueType>::preorder_traversal_single_l
 }
 
 template <typename IndexType, typename ValueType>
-auto SingleLinkageClusterTree<IndexType, ValueType>::build() {
+auto SingleLinkageClusterTree<IndexType, ValueType>::build() -> SingleLinkageClusterNodePtr {
     const std::size_t n_samples = sorted_mst_.size() + 1;
 
     // union find data structure to keep track of the cluster id

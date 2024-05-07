@@ -8,7 +8,6 @@
 #include "ffcl/datastruct/bounds/segment/MinAndMax.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cstddef>  // std::ptrdiff_t
 #include <memory>
 
@@ -104,8 +103,6 @@ struct KDNodeView {
     bool is_left_child() const;
 
     bool is_right_child() const;
-
-    auto get_sibling_node() const -> NodePtr;
 };
 
 template <typename IteratorPairType, typename DataType>
@@ -242,21 +239,6 @@ auto KDNodeView<IndicesIterator, Data>::select_sibling_node(
         return query_buffer.remaining_capacity() || visit_sibling()
                    ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
                    : nullptr;
-    }
-    return nullptr;
-}
-
-template <typename IndicesIterator, typename Data>
-auto KDNodeView<IndicesIterator, Data>::get_sibling_node() const -> NodePtr {
-    assert(has_parent());
-
-    auto parent_shared_ptr = parent_.lock();
-
-    if (this == parent_shared_ptr->left_.get()) {
-        return parent_shared_ptr->right_;
-
-    } else if (this == parent_shared_ptr->right_.get()) {
-        return parent_shared_ptr->left_;
     }
     return nullptr;
 }
