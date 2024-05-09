@@ -50,7 +50,7 @@ constexpr auto make_default_edge() {
     return make_edge(common::infinity<Index>(), common::infinity<Index>(), common::infinity<Distance>());
 }
 
-template <typename Buffer>
+template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
 class IndicesToBuffersMap {
   public:
     using IndexType    = typename Buffer::IndexType;
@@ -70,6 +70,19 @@ class IndicesToBuffersMap {
     using IndexToBufferMapType          = std::unordered_map<IndexType, BufferType>;
     using IndexToBufferMapIterator      = typename IndexToBufferMapType::iterator;
     using IndexToBufferMapConstIterator = typename IndexToBufferMapType::const_iterator;
+
+    IndicesToBuffersMap(const QuerySamplesIterator&     query_samples_range_first,
+                        const QuerySamplesIterator&     query_samples_range_last,
+                        std::size_t                     query_n_features,
+                        const ReferenceSamplesIterator& reference_samples_range_first,
+                        const ReferenceSamplesIterator& reference_samples_range_last,
+                        std::size_t                     reference_n_features)
+      : query_samples_range_first_{query_samples_range_first}
+      , query_samples_range_last_{query_samples_range_last}
+      , query_n_features_{query_n_features}
+      , reference_samples_range_first_{reference_samples_range_first}
+      , reference_samples_range_last_{reference_samples_range_last}
+      , reference_n_features_{reference_n_features} {}
 
     auto tightest_edge() const {
         return make_edge(tightest_query_to_buffer_it_->first,
@@ -104,40 +117,28 @@ class IndicesToBuffersMap {
         return query_to_buffer_map_.emplace(index, std::move(buffer));
     }
 
-    template <typename QueryIndicesIterator,
-              typename QuerySamplesIterator,
-              typename ReferenceIndicesIterator,
-              typename ReferenceSamplesIterator,
-              typename... BufferArgs>
+    template <typename QueryIndicesIterator, typename ReferenceIndicesIterator, typename... BufferArgs>
     void partial_search_for_each_query(const QueryIndicesIterator&     query_indices_range_first,
                                        const QueryIndicesIterator&     query_indices_range_last,
-                                       const QuerySamplesIterator&     query_samples_range_first,
-                                       const QuerySamplesIterator&     query_samples_range_last,
-                                       std::size_t                     query_n_features,
                                        const ReferenceIndicesIterator& reference_indices_range_first,
                                        const ReferenceIndicesIterator& reference_indices_range_last,
-                                       const ReferenceSamplesIterator& reference_samples_range_first,
-                                       const ReferenceSamplesIterator& reference_samples_range_last,
-                                       std::size_t                     reference_n_features,
                                        BufferArgs&&... buffer_args) {
-        common::ignore_parameters(query_samples_range_last);
-
         // Iterate through all query indices within the specified range of the query node.
         for (auto query_index_it = query_indices_range_first; query_index_it != query_indices_range_last;
              ++query_index_it) {
             auto query_to_buffer_it = this->find_or_emplace_buffer(
                 *query_index_it,
-                query_samples_range_first + (*query_index_it) * query_n_features,
-                query_samples_range_first + (*query_index_it) * query_n_features + query_n_features,
+                query_samples_range_first_ + (*query_index_it) * query_n_features_,
+                query_samples_range_first_ + (*query_index_it) * query_n_features_ + query_n_features_,
                 std::forward<BufferArgs>(buffer_args)...);
 
             // Regardless of whether the buffer was just inserted or already existed, perform a partial search
             // operation on the buffer. This operation updates the buffer based on a range of reference samples.
             query_to_buffer_it->second.partial_search(reference_indices_range_first,
                                                       reference_indices_range_last,
-                                                      reference_samples_range_first,
-                                                      reference_samples_range_last,
-                                                      reference_n_features);
+                                                      reference_samples_range_first_,
+                                                      reference_samples_range_last_,
+                                                      reference_n_features_);
 
             // Update if no tightest buffer has been initialised yet.
             // Or, update if the buffer's max capacity has been reached and its furthest distance is less than the one
@@ -151,36 +152,27 @@ class IndicesToBuffersMap {
         }
     }
 
-    template <typename QueryNodePtr,
-              typename QuerySamplesIterator,
-              typename ReferenceNodePtr,
-              typename ReferenceSamplesIterator>
-    auto cost(const QueryNodePtr&             query_node,
-              const QuerySamplesIterator&     query_samples_range_first,
-              const QuerySamplesIterator&     query_samples_range_last,
-              std::size_t                     query_n_features,
-              const ReferenceNodePtr&         reference_node,
-              const ReferenceSamplesIterator& reference_samples_range_first,
-              const ReferenceSamplesIterator& reference_samples_range_last,
-              std::size_t                     reference_n_features) -> std::optional<DistanceType> {
-        const auto min_distance = cache_.nodes_combination_min_distance(query_node,
-                                                                        query_samples_range_first,
-                                                                        query_samples_range_last,
-                                                                        query_n_features,
-                                                                        reference_node,
-                                                                        reference_samples_range_first,
-                                                                        reference_samples_range_last,
-                                                                        reference_n_features);
+    template <typename QueryNodePtr, typename ReferenceNodePtr>
+    auto cost(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) -> std::optional<DistanceType> {
+        const auto min_distance = cache_.nodes_combination_min_distance(query_node, reference_node);
 
-        return (min_distance > cache_.queries_furthest_distance(query_node)) ? std::nullopt
+        return (cache_.queries_furthest_distance(query_node) < min_distance) ? std::nullopt
                                                                              : std::make_optional(min_distance);
     }
 
   private:
     class Cache {
+        using IndicesToBuffersMapType = IndicesToBuffersMap<BufferType, QuerySamplesIterator, ReferenceSamplesIterator>;
+
+        // A distance that can have 2 states: updated or not updated.
+        struct QueryDistanceState {
+            DistanceType distance;
+            bool         updated;
+        };
+
       public:
-        constexpr Cache(const IndicesToBuffersMap<BufferType>& wrapper_class_const_reference)
-          : this_const_ref_{wrapper_class_const_reference} {}
+        constexpr Cache(const IndicesToBuffersMapType& wrapper_class)
+          : this_{wrapper_class} {}
 
         template <typename QueryNodePtr>
         auto queries_furthest_distance(const QueryNodePtr& query_node) -> DistanceType {
@@ -194,35 +186,26 @@ class IndicesToBuffersMap {
                     const auto* raw_left_query_node  = extract_raw_ptr(query_node->left_);
                     const auto* raw_right_query_node = extract_raw_ptr(query_node->right_);
 
-                    query_node_furthest_distance_it->second =
-                        std::max(query_node_furthest_distance_it->second,
-                                 std::max(query_node_to_furthest_distance_map_[raw_left_query_node],
-                                          query_node_to_furthest_distance_map_[raw_right_query_node]));
+                    query_node_furthest_distance_it->second.distance =
+                        std::max(query_node_furthest_distance_it->second.distance,
+                                 std::max(query_node_to_furthest_distance_map_[raw_left_query_node].distance,
+                                          query_node_to_furthest_distance_map_[raw_right_query_node].distance));
+                    // Mark the cache as updated.
+                    query_node_furthest_distance_it->second.updated = true;
                 }
-                return query_node_furthest_distance_it->second;
+                return query_node_furthest_distance_it->second.distance;
             }
             // Base case: will only perform this calculation the node is leaf.
             auto furthest_distance = find_max_furthest_distance(query_node);
 
-            query_node_to_furthest_distance_map_.emplace(raw_query_node, furthest_distance);
+            query_node_to_furthest_distance_map_.emplace(raw_query_node, QueryDistanceState{furthest_distance, true});
 
             return furthest_distance;
         }
 
-        template <typename QueryNodePtr,
-                  typename QuerySamplesIterator,
-                  typename ReferenceNodePtr,
-                  typename ReferenceSamplesIterator>
-        auto nodes_combination_min_distance(const QueryNodePtr&             query_node,
-                                            const QuerySamplesIterator&     query_samples_range_first,
-                                            const QuerySamplesIterator&     query_samples_range_last,
-                                            std::size_t                     query_n_features,
-                                            const ReferenceNodePtr&         reference_node,
-                                            const ReferenceSamplesIterator& reference_samples_range_first,
-                                            const ReferenceSamplesIterator& reference_samples_range_last,
-                                            std::size_t                     reference_n_features) -> DistanceType {
-            common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
-
+        template <typename QueryNodePtr, typename ReferenceNodePtr>
+        auto nodes_combination_min_distance(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node)
+            -> DistanceType {
             const auto* raw_query_node        = extract_raw_ptr(query_node);
             const auto* raw_reference_node    = extract_raw_ptr(reference_node);
             const auto  nodes_combination_key = NodesCombinationKey{raw_query_node, raw_reference_node};
@@ -263,14 +246,7 @@ class IndicesToBuffersMap {
                 return nodes_combination_to_min_distance_it->second;
             }
             // Base case: will only perform this calculation if the current node combination is not cached.
-            const auto min_distance = find_min_distance(query_node,
-                                                        query_samples_range_first,
-                                                        query_samples_range_last,
-                                                        query_n_features,
-                                                        reference_node,
-                                                        reference_samples_range_first,
-                                                        reference_samples_range_last,
-                                                        reference_n_features);
+            const auto min_distance = find_min_distance(query_node, reference_node);
             // Cache the results.
             nodes_combination_to_min_distance_map_.emplace(nodes_combination_key, min_distance);
 
@@ -290,27 +266,27 @@ class IndicesToBuffersMap {
         }
 
         template <typename QueryNodePtr>
-        DistanceType find_max_furthest_distance(const QueryNodePtr& query_node) const {
-            auto queries_max_upper_bound = DistanceType{0};
+        DistanceType find_max_furthest_distance(const QueryNodePtr& query_node,
+                                                const DistanceType& init_queries_max_upper_bound = 0) const {
+            auto queries_max_upper_bound = init_queries_max_upper_bound;
 
             for (const auto& query_index : *query_node) {
-                const auto index_to_buffer_it = this_const_ref_.query_to_buffer_map_.find(query_index);
+                const auto index_to_buffer_it = this_.query_to_buffer_map_.find(query_index);
 
                 // If the buffer at the current index wasn't initialized, then its furthest distance is infinity by
                 // default We also don't need to recurse further since the lower-level nodes will never be greater than
                 // infinity.
-                if (index_to_buffer_it == this_const_ref_.query_to_buffer_map_.cend()) {
+                if (index_to_buffer_it == this_.query_to_buffer_map_.cend()) {
                     return common::infinity<DistanceType>();
-
+                }
+                // If there's remaining space in the buffers, then candidates might potentially be further than the
+                // buffer's current furthest distance.
+                else if (index_to_buffer_it->second.remaining_capacity()) {
+                    return common::infinity<DistanceType>();
                 } else {
                     const auto query_buffer_furthest_distance = index_to_buffer_it->second.furthest_distance();
 
-                    // Return early since infinity is already the max possible value.
-                    // Checking is pertinent since there may be a lot of incomplete buffers (with infinite bound).
-                    if (common::equality(query_buffer_furthest_distance, common::infinity<DistanceType>())) {
-                        return query_buffer_furthest_distance;
-
-                    } else if (query_buffer_furthest_distance > queries_max_upper_bound) {
+                    if (query_buffer_furthest_distance > queries_max_upper_bound) {
                         queries_max_upper_bound = query_buffer_furthest_distance;
                     }
                 }
@@ -318,50 +294,79 @@ class IndicesToBuffersMap {
             return queries_max_upper_bound;
         }
 
-        template <typename QueryNodePtr,
-                  typename QuerySamplesIterator,
-                  typename ReferenceNodePtr,
-                  typename ReferenceSamplesIterator>
-        static DistanceType find_min_distance(const QueryNodePtr&             query_node,
-                                              const QuerySamplesIterator&     query_samples_range_first,
-                                              const QuerySamplesIterator&     query_samples_range_last,
-                                              std::size_t                     query_n_features,
-                                              const ReferenceNodePtr&         reference_node,
-                                              const ReferenceSamplesIterator& reference_samples_range_first,
-                                              const ReferenceSamplesIterator& reference_samples_range_last,
-                                              std::size_t                     reference_n_features) {
-            common::ignore_parameters(query_samples_range_last, reference_samples_range_last);
-
+        template <typename QueryNodePtr, typename ReferenceNodePtr>
+        DistanceType find_min_distance(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) const {
             auto min_distance = common::infinity<DistanceType>();
 
             for (const auto& query_index : *query_node) {
-                for (const auto& reference_index : *reference_node) {
-                    const auto query_to_reference_distance = common::math::heuristics::auto_distance(
-                        query_samples_range_first + query_index * query_n_features,
-                        query_samples_range_first + query_index * query_n_features + query_n_features,
-                        reference_samples_range_first + reference_index * reference_n_features,
-                        reference_samples_range_first + reference_index * reference_n_features + reference_n_features);
+                const auto query_to_reference_min_distance = find_min_distance(query_index, reference_node);
 
-                    if (query_to_reference_distance < min_distance) {
-                        min_distance = query_to_reference_distance;
-                    }
+                if (query_to_reference_min_distance < min_distance) {
+                    min_distance = query_to_reference_min_distance;
                 }
             }
             return min_distance;
         }
 
-        const IndicesToBuffersMap<BufferType>& this_const_ref_;
+        template <typename ReferenceNodePtr>
+        DistanceType find_min_distance(std::size_t query_index, const ReferenceNodePtr& reference_node) const {
+            auto min_distance = common::infinity<DistanceType>();
 
-        std::unordered_map<const void*, DistanceType> query_node_to_furthest_distance_map_;
+            const auto query_features_range_first =
+                this_.query_samples_range_first_ + query_index * this_.query_n_features_;
+
+            const auto query_features_range_last =
+                this_.query_samples_range_first_ + query_index * this_.query_n_features_ + this_.query_n_features_;
+
+            for (const auto& reference_index : *reference_node) {
+                const auto reference_features_range_first =
+                    this_.reference_samples_range_first_ + reference_index * this_.reference_n_features_;
+
+                const auto reference_features_range_last = this_.reference_samples_range_first_ +
+                                                           reference_index * this_.reference_n_features_ +
+                                                           this_.reference_n_features_;
+
+                const auto query_to_reference_distance =
+                    common::math::heuristics::auto_distance(query_features_range_first,
+                                                            query_features_range_last,
+                                                            reference_features_range_first,
+                                                            reference_features_range_last);
+
+                if (query_to_reference_distance < min_distance) {
+                    min_distance = query_to_reference_distance;
+                }
+            }
+            return min_distance;
+        }
+
+        const IndicesToBuffersMapType& this_;
+
+        std::unordered_map<const void*, QueryDistanceState> query_node_to_furthest_distance_map_;
 
         std::unordered_map<NodesCombinationKey, DistanceType> nodes_combination_to_min_distance_map_;
     };
 
-    Cache cache_{*this};
+    const QuerySamplesIterator& query_samples_range_first_;
+    const QuerySamplesIterator& query_samples_range_last_;
+    std::size_t                 query_n_features_;
+
+    const ReferenceSamplesIterator& reference_samples_range_first_;
+    const ReferenceSamplesIterator& reference_samples_range_last_;
+    std::size_t                     reference_n_features_;
 
     IndexToBufferMapType query_to_buffer_map_ = IndexToBufferMapType{};
 
     IndexToBufferMapIterator tightest_query_to_buffer_it_ = query_to_buffer_map_.end();
+
+    Cache cache_{*this};
 };
+
+template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
+IndicesToBuffersMap(const QuerySamplesIterator&,
+                    const QuerySamplesIterator&,
+                    std::size_t,
+                    const ReferenceSamplesIterator&,
+                    const ReferenceSamplesIterator&,
+                    std::size_t) -> IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>;
 
 }  // namespace ffcl::search::buffer

@@ -85,18 +85,18 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
     static_assert(!std::is_same_v<DeducedBufferType, void>,
                   "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
 
-    auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
+    auto queries_to_buffers_map =
+        buffer::IndicesToBuffersMap<DeducedBufferType, SamplesIterator, OtherSamplesIterator>{samples_range_first,
+                                                                                              samples_range_last,
+                                                                                              n_features,
+                                                                                              other_samples_range_first,
+                                                                                              other_samples_range_last,
+                                                                                              other_n_features};
 
     queries_to_buffers_map.partial_search_for_each_query(indices_range_first,
                                                          indices_range_last,
-                                                         samples_range_first,
-                                                         samples_range_last,
-                                                         n_features,
                                                          other_indices_range_first,
                                                          other_indices_range_last,
-                                                         other_samples_range_first,
-                                                         other_samples_range_last,
-                                                         other_n_features,
                                                          std::forward<BufferArgs>(buffer_args)...);
 
     return queries_to_buffers_map.tightest_edge();

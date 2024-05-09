@@ -65,8 +65,8 @@ class TreeTraverser {
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
     auto dual_tree_shortest_edge(ForwardedQueryIndexer&& forwarded_query_indexer, BufferArgs&&... buffer_args) const;
 
-    template <typename... BufferArgs>
-    auto dual_tree_shortest_edge(BufferArgs&&... buffer_args) const;
+    // template <typename... BufferArgs>
+    // auto dual_tree_shortest_edge(BufferArgs&&... buffer_args) const;
 
   private:
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
@@ -92,16 +92,10 @@ class TreeTraverser {
     auto get_parent_node_after_sibling_traversal(const ReferenceNodePtr& node, Buffer& buffer) const
         -> ReferenceNodePtr;
 
-    template <typename QueryNodePtr,
-              typename QuerySamplesIterator,
-              typename QueriesToBuffersMap,
-              typename... BufferArgs>
-    void dual_tree_traversal(const QueryNodePtr&         query_node,
-                             const QuerySamplesIterator& query_samples_range_first,
-                             const QuerySamplesIterator& query_samples_range_last,
-                             std::size_t                 query_n_features,
-                             const ReferenceNodePtr&     reference_node,
-                             QueriesToBuffersMap&        queries_to_buffers_map,
+    template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+    void dual_tree_traversal(const QueryNodePtr&     query_node,
+                             const ReferenceNodePtr& reference_node,
+                             QueriesToBuffersMap&    queries_to_buffers_map,
                              BufferArgs&&... buffer_args) const;
 
     ReferenceIndexer reference_indexer_;
@@ -232,12 +226,20 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
 
     const auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
-    auto queries_to_buffers_map = buffer::IndicesToBuffersMap<DeducedBufferType>{};
+    auto queries_to_buffers_map =
+        buffer::IndicesToBuffersMap<DeducedBufferType,
+                                    typename ForwardedQueryIndexer::SamplesIteratorType,
+                                    typename ReferenceIndexer::SamplesIteratorType>{query_indexer.begin(),
+                                                                                    query_indexer.end(),
+                                                                                    query_indexer.n_features(),
+                                                                                    reference_indexer_.begin(),
+                                                                                    reference_indexer_.end(),
+                                                                                    reference_indexer_.n_features()};
+
+    // Update the caches associated with the root nodes.
+    queries_to_buffers_map.cost(query_indexer.root(), reference_indexer_.root());
 
     dual_tree_traversal(query_indexer.root(),
-                        query_indexer.begin(),
-                        query_indexer.end(),
-                        query_indexer.n_features(),
                         reference_indexer_.root(),
                         queries_to_buffers_map,
                         std::forward<BufferArgs>(buffer_args)...);
@@ -245,6 +247,7 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
     return queries_to_buffers_map.tightest_edge();
 }
 
+/*
 template <typename ReferenceIndexer>
 template <typename... BufferArgs>
 auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... buffer_args) const {
@@ -253,50 +256,32 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... bu
     throw;
 
     dual_tree_traversal(reference_indexer_.root(),
-                        reference_indexer_.begin(),
-                        reference_indexer_.end(),
-                        reference_indexer_.n_features(),
                         reference_indexer_.root(),
                         queries_to_buffers_map,
                         std::forward<BufferArgs>(buffer_args)...);
 
     return queries_to_buffers_map.tightest_edge();
 }
+*/
 
 template <typename ReferenceIndexer>
-template <typename QueryNodePtr, typename QuerySamplesIterator, typename QueriesToBuffersMap, typename... BufferArgs>
-void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&         query_node,
-                                                          const QuerySamplesIterator& query_samples_range_first,
-                                                          const QuerySamplesIterator& query_samples_range_last,
-                                                          std::size_t                 query_n_features,
-                                                          const ReferenceNodePtr&     reference_node,
-                                                          QueriesToBuffersMap&        queries_to_buffers_map,
+template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&     query_node,
+                                                          const ReferenceNodePtr& reference_node,
+                                                          QueriesToBuffersMap&    queries_to_buffers_map,
                                                           BufferArgs&&... buffer_args) const {
     // updates the query buffers with the reference set while keeping track of the global shortest edge
     queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
                                                          query_node->indices_range_.second,
-                                                         query_samples_range_first,
-                                                         query_samples_range_last,
-                                                         query_n_features,
                                                          reference_node->indices_range_.first,
                                                          reference_node->indices_range_.second,
-                                                         reference_indexer_.begin(),
-                                                         reference_indexer_.end(),
-                                                         reference_indexer_.n_features(),
                                                          std::forward<BufferArgs>(buffer_args)...);
 
     auto dual_node_priority_queue =
         DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
 
     auto try_enqueue_combinations_from_cost = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
-        const auto optional_cost = queries_to_buffers_map.cost(q_node,
-                                                               query_samples_range_first,
-                                                               query_samples_range_last,
-                                                               query_n_features,
-                                                               r_node,
-                                                               reference_indexer_.begin(),
-                                                               reference_indexer_.end(),
-                                                               reference_indexer_.n_features());
+        const auto optional_cost = queries_to_buffers_map.cost(q_node, r_node);
         if (optional_cost) {
             dual_node_priority_queue.emplace(std::make_tuple(q_node, r_node, *optional_cost));
         }
@@ -312,15 +297,13 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
     for (; !dual_node_priority_queue.empty(); dual_node_priority_queue.pop()) {
         const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
 
+        // Tries to update the cost based on the current state of the traversal.
+        // update_cost(...);
+
         common::ignore_parameters(cost);
 
-        dual_tree_traversal(pq_query_node,
-                            query_samples_range_first,
-                            query_samples_range_last,
-                            query_n_features,
-                            pq_reference_node,
-                            queries_to_buffers_map,
-                            std::forward<BufferArgs>(buffer_args)...);
+        dual_tree_traversal(
+            pq_query_node, pq_reference_node, queries_to_buffers_map, std::forward<BufferArgs>(buffer_args)...);
     }
 }
 
