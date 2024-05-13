@@ -5,18 +5,18 @@
 namespace ffcl::datastruct::bounds::segment {
 
 template <typename Value>
-class MinAndLength : public StaticSegment<MinAndLength<Value>> {
+class CenterAndLengthFromCenter : public StaticSegment<CenterAndLengthFromCenter<Value>> {
   public:
     using ValueType   = Value;
     using SegmentType = std::pair<ValueType, ValueType>;
 
-    MinAndLength(const ValueType& position, const ValueType& length)
-      : MinAndLength(std::make_pair(position, length)) {}
+    CenterAndLengthFromCenter(const ValueType& middle, const ValueType& length_from_center)
+      : CenterAndLengthFromCenter(std::make_pair(middle, length_from_center)) {}
 
-    MinAndLength(const SegmentType& segment)
+    CenterAndLengthFromCenter(const SegmentType& segment)
       : segment_representation_{segment} {}
 
-    MinAndLength(SegmentType&& segment) noexcept
+    CenterAndLengthFromCenter(SegmentType&& segment) noexcept
       : segment_representation_{std::move(segment)} {}
 
     constexpr auto read_only_first_impl() const {
@@ -35,18 +35,17 @@ class MinAndLength : public StaticSegment<MinAndLength<Value>> {
         return segment_representation_.second;
     }
 
-    constexpr auto length_from_centroid_impl() const {
-        return common::compute_size_from_middle_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second - 1);
+    constexpr auto centroid_impl() const {
+        return segment_representation_.first;
     }
 
-    constexpr auto centroid_impl() const {
-        return common::compute_middle_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second - 1);
+    constexpr auto length_from_centroid_impl() const {
+        return segment_representation_.second;
     }
 
   private:
-    // segment represented as a reference position and a length relative to that position
+    // segment represented as a length and a middle point that cuts it in half
+    // this class actually stores half of the length
     SegmentType segment_representation_;
 };
 

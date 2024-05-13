@@ -5,7 +5,7 @@
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
-#include "ffcl/datastruct/bounds/segment/MinAndMax.hpp"
+#include "ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp"
 
 #include <algorithm>
 #include <cstddef>  // std::ptrdiff_t
@@ -106,24 +106,24 @@ struct KDNodeView {
 };
 
 template <typename IteratorPairType, typename DataType>
-KDNodeView(const IteratorPairType&, const bounds::segment::MinAndMax<DataType>&)
+KDNodeView(const IteratorPairType&, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
     -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::MinAndMax<DataType>::ValueType>;
+                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
 
 template <typename IteratorPairType, typename DataType>
-KDNodeView(const IteratorPairType&, std::ptrdiff_t, const bounds::segment::MinAndMax<DataType>&)
+KDNodeView(const IteratorPairType&, std::ptrdiff_t, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
     -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::MinAndMax<DataType>::ValueType>;
+                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
 
 template <typename IteratorPairType, typename DataType>
-KDNodeView(IteratorPairType&&, const bounds::segment::MinAndMax<DataType>&)
+KDNodeView(IteratorPairType&&, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
     -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::MinAndMax<DataType>::ValueType>;
+                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
 
 template <typename IteratorPairType, typename DataType>
-KDNodeView(IteratorPairType&&, std::ptrdiff_t, const bounds::segment::MinAndMax<DataType>&)
+KDNodeView(IteratorPairType&&, std::ptrdiff_t, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
     -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::MinAndMax<DataType>::ValueType>;
+                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
 
 template <typename IndicesIterator, typename Data>
 KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType& indices_range, const IntervalType& axis_interval)

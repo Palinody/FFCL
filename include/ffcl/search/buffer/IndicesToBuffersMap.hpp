@@ -164,12 +164,6 @@ class IndicesToBuffersMap {
     class Cache {
         using IndicesToBuffersMapType = IndicesToBuffersMap<BufferType, QuerySamplesIterator, ReferenceSamplesIterator>;
 
-        // A distance that can have 2 states: updated or not updated.
-        struct QueryDistanceState {
-            DistanceType distance;
-            bool         updated;
-        };
-
       public:
         constexpr Cache(const IndicesToBuffersMapType& wrapper_class)
           : this_{wrapper_class} {}
@@ -183,22 +177,22 @@ class IndicesToBuffersMap {
             // If the current query_node is already cached.
             if (query_node_furthest_distance_it != query_node_to_furthest_distance_map_.end()) {
                 if (!query_node->is_leaf()) {
-                    const auto* raw_left_query_node  = extract_raw_ptr(query_node->left_);
-                    const auto* raw_right_query_node = extract_raw_ptr(query_node->right_);
-
-                    query_node_furthest_distance_it->second.distance =
-                        std::max(query_node_furthest_distance_it->second.distance,
-                                 std::max(query_node_to_furthest_distance_map_[raw_left_query_node].distance,
-                                          query_node_to_furthest_distance_map_[raw_right_query_node].distance));
-                    // Mark the cache as updated.
-                    query_node_furthest_distance_it->second.updated = true;
+                    query_node_furthest_distance_it->second =
+                        std::max(query_node_furthest_distance_it->second,
+                                 std::max(queries_furthest_distance(query_node->left_),
+                                          queries_furthest_distance(query_node->right_)));
                 }
-                return query_node_furthest_distance_it->second.distance;
+                return query_node_furthest_distance_it->second;
             }
             // Base case: will only perform this calculation the node is leaf.
             auto furthest_distance = find_max_furthest_distance(query_node);
 
-            query_node_to_furthest_distance_map_.emplace(raw_query_node, QueryDistanceState{furthest_distance, true});
+            if (!query_node->is_leaf()) {
+                furthest_distance = std::max(furthest_distance,
+                                             std::max(queries_furthest_distance(query_node->left_),
+                                                      queries_furthest_distance(query_node->right_)));
+            }
+            query_node_to_furthest_distance_map_.emplace(raw_query_node, furthest_distance);
 
             return furthest_distance;
         }
@@ -215,38 +209,10 @@ class IndicesToBuffersMap {
 
             // Checks if the result is cached and returns early if so.
             if (nodes_combination_to_min_distance_it != nodes_combination_to_min_distance_map_.end()) {
-                if (!query_node->is_leaf()) {
-                    const auto* raw_left_query_node = extract_raw_ptr(query_node->left_);
-                    const auto  nodes_left_combination_key =
-                        NodesCombinationKey{raw_left_query_node, raw_reference_node};
-
-                    const auto* raw_right_query_node = extract_raw_ptr(query_node->right_);
-                    const auto  nodes_right_combination_key =
-                        NodesCombinationKey{raw_right_query_node, raw_reference_node};
-
-                    nodes_combination_to_min_distance_it->second =
-                        std::min(nodes_combination_to_min_distance_it->second,
-                                 std::min(nodes_combination_to_min_distance_map_[nodes_left_combination_key],
-                                          nodes_combination_to_min_distance_map_[nodes_right_combination_key]));
-                }
-                if (!reference_node->is_leaf()) {
-                    const auto* raw_left_reference_node = extract_raw_ptr(reference_node->left_);
-                    const auto  nodes_left_combination_key =
-                        NodesCombinationKey{raw_query_node, raw_left_reference_node};
-
-                    const auto* raw_right_reference_node = extract_raw_ptr(reference_node->right_);
-                    const auto  nodes_right_combination_key =
-                        NodesCombinationKey{raw_query_node, raw_right_reference_node};
-
-                    nodes_combination_to_min_distance_it->second =
-                        std::min(nodes_combination_to_min_distance_it->second,
-                                 std::min(nodes_combination_to_min_distance_map_[nodes_left_combination_key],
-                                          nodes_combination_to_min_distance_map_[nodes_right_combination_key]));
-                }
                 return nodes_combination_to_min_distance_it->second;
             }
             // Base case: will only perform this calculation if the current node combination is not cached.
-            const auto min_distance = find_min_distance(query_node, reference_node);
+            auto min_distance = find_min_distance(query_node, reference_node);
             // Cache the results.
             nodes_combination_to_min_distance_map_.emplace(nodes_combination_key, min_distance);
 
@@ -341,7 +307,7 @@ class IndicesToBuffersMap {
 
         const IndicesToBuffersMapType& this_;
 
-        std::unordered_map<const void*, QueryDistanceState> query_node_to_furthest_distance_map_;
+        std::unordered_map<const void*, DistanceType> query_node_to_furthest_distance_map_;
 
         std::unordered_map<NodesCombinationKey, DistanceType> nodes_combination_to_min_distance_map_;
     };

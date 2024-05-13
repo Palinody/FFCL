@@ -7,18 +7,18 @@
 namespace ffcl::datastruct::bounds::segment {
 
 template <typename Value>
-class MinAndMax : public StaticSegment<MinAndMax<Value>> {
+class LowerBoundAndUpperBound : public StaticSegment<LowerBoundAndUpperBound<Value>> {
   public:
     using ValueType   = Value;
     using SegmentType = std::pair<ValueType, ValueType>;
 
-    MinAndMax(const ValueType& min, const ValueType& max)
-      : MinAndMax(std::make_pair(min, max)) {}
+    LowerBoundAndUpperBound(const ValueType& lower_bound, const ValueType& upper_bound)
+      : LowerBoundAndUpperBound(std::make_pair(lower_bound, upper_bound)) {}
 
-    MinAndMax(const SegmentType& segment)
+    LowerBoundAndUpperBound(const SegmentType& segment)
       : segment_representation_{segment} {}
 
-    MinAndMax(SegmentType&& segment) noexcept
+    LowerBoundAndUpperBound(SegmentType&& segment) noexcept
       : segment_representation_{std::move(segment)} {}
 
     constexpr auto read_only_first_impl() const {
@@ -37,13 +37,13 @@ class MinAndMax : public StaticSegment<MinAndMax<Value>> {
         return segment_representation_.second;
     }
 
-    constexpr auto length_from_centroid_impl() const {
-        return common::compute_size_from_middle_with_left_rounding(segment_representation_.first,
-                                                                   segment_representation_.second);
+    constexpr auto centroid_impl() const {
+        return common::compute_center_with_left_rounding(segment_representation_.first, segment_representation_.second);
     }
 
-    constexpr auto centroid_impl() const {
-        return common::compute_middle_with_left_rounding(segment_representation_.first, segment_representation_.second);
+    constexpr auto length_from_centroid_impl() const {
+        return common::compute_size_from_center_with_left_rounding(segment_representation_.first,
+                                                                   segment_representation_.second);
     }
 
   private:

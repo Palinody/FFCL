@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/bounds/StaticBound.hpp"
+#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
 #include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 #include "ffcl/common/math/heuristics/Distances.hpp"
@@ -10,7 +10,7 @@
 namespace ffcl::datastruct::bounds {
 
 template <typename Value, std::size_t NFeatures = 0>
-class Ball : public StaticBound<Ball<Value, NFeatures>> {
+class Ball : public StaticCentroidBasedBound<Ball<Value, NFeatures>> {
   public:
     using ValueType = Value;
 
@@ -35,12 +35,12 @@ class Ball : public StaticBound<Ball<Value, NFeatures>> {
                                      const OtherFeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        return distance_impl(features_range_first, features_range_last) < radius_;
+        return distance_to_centroid_impl(features_range_first, features_range_last) < radius_;
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto distance_impl(const OtherFeaturesIterator& features_range_first,
-                                 const OtherFeaturesIterator& features_range_last) const {
+    constexpr auto distance_to_centroid_impl(const OtherFeaturesIterator& features_range_first,
+                                             const OtherFeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return common::math::heuristics::auto_distance(
@@ -48,11 +48,12 @@ class Ball : public StaticBound<Ball<Value, NFeatures>> {
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto compute_distance_if_within_bounds_impl(const OtherFeaturesIterator& features_range_first,
-                                                          const OtherFeaturesIterator& features_range_last) const {
+    constexpr auto compute_distance_to_centroid_if_within_bounds_impl(
+        const OtherFeaturesIterator& features_range_first,
+        const OtherFeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-        const auto feature_distance = distance_impl(features_range_first, features_range_last);
+        const auto feature_distance = distance_to_centroid_impl(features_range_first, features_range_last);
 
         return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
     }
@@ -81,7 +82,7 @@ class Ball : public StaticBound<Ball<Value, NFeatures>> {
 };
 
 template <typename FeaturesIterator>
-class BallView : public StaticBound<BallView<FeaturesIterator>> {
+class BallView : public StaticCentroidBasedBound<BallView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -108,12 +109,12 @@ class BallView : public StaticBound<BallView<FeaturesIterator>> {
         assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
                                         std::distance(other_features_range_first, other_features_range_last)));
 
-        return distance_impl(other_features_range_first, other_features_range_last) < radius_;
+        return distance_to_centroid_impl(other_features_range_first, other_features_range_last) < radius_;
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto distance_impl(const OtherFeaturesIterator& other_features_range_first,
-                                 const OtherFeaturesIterator& other_features_range_last) const {
+    constexpr auto distance_to_centroid_impl(const OtherFeaturesIterator& other_features_range_first,
+                                             const OtherFeaturesIterator& other_features_range_last) const {
         assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
                                         std::distance(other_features_range_first, other_features_range_last)));
 
@@ -124,13 +125,13 @@ class BallView : public StaticBound<BallView<FeaturesIterator>> {
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto compute_distance_if_within_bounds_impl(
+    constexpr auto compute_distance_to_centroid_if_within_bounds_impl(
         const OtherFeaturesIterator& other_features_range_first,
         const OtherFeaturesIterator& other_features_range_last) const {
         assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
                                         std::distance(other_features_range_first, other_features_range_last)));
 
-        const auto feature_distance = distance_impl(other_features_range_first, other_features_range_last);
+        const auto feature_distance = distance_to_centroid_impl(other_features_range_first, other_features_range_last);
 
         return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
     }

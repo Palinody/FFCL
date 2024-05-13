@@ -308,3 +308,9 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
 }
 
 }  // namespace ffcl::search
+
+// StaticCentroidBasedBound;
+
+// StaticRangeBasedBound;
+
+// StaticCoordinatesBasedBound;

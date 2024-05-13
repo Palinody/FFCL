@@ -25,13 +25,13 @@ struct StaticSegment {
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto length_from_centroid() const {
-        return static_cast<const DerivedType*>(this)->length_from_centroid_impl();
+    constexpr auto centroid() const {
+        return static_cast<const DerivedType*>(this)->centroid_impl();
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto centroid() const {
-        return static_cast<const DerivedType*>(this)->centroid_impl();
+    constexpr auto length_from_centroid() const {
+        return static_cast<const DerivedType*>(this)->length_from_centroid_impl();
     }
 };
 

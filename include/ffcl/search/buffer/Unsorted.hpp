@@ -2,7 +2,7 @@
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
-#include "ffcl/datastruct/bounds/StaticBound.hpp"
+#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
 
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
 
@@ -50,7 +50,7 @@ class Unsorted : public StaticBuffer<Unsorted<DistancesIterator, Bound>> {
         // indices_range_last range
         for (auto reference_index_it = indices_range_first; reference_index_it != indices_range_last;
              ++reference_index_it) {
-            const auto optional_candidate_distance = this->bound_.compute_distance_if_within_bounds(
+            const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
                 samples_range_first + *reference_index_it * n_features,
                 samples_range_first + *reference_index_it * n_features + n_features);
 

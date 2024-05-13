@@ -11,7 +11,7 @@ template <typename T>
 struct always_false : std::false_type {};
 
 template <class DerivedClass>
-struct StaticBound {
+struct StaticCentroidBasedBound {
     template <typename DerivedType = DerivedClass>
     auto n_features() const {
         return static_cast<const DerivedType*>(this)->n_features_impl();
@@ -24,16 +24,17 @@ struct StaticBound {
     }
 
     template <typename FeaturesIterator, typename DerivedType = DerivedClass>
-    constexpr auto distance(const FeaturesIterator& features_range_first,
-                            const FeaturesIterator& features_range_last) const {
-        return static_cast<const DerivedType*>(this)->distance_impl(features_range_first, features_range_last);
+    constexpr auto distance_to_centroid(const FeaturesIterator& features_range_first,
+                                        const FeaturesIterator& features_range_last) const {
+        return static_cast<const DerivedType*>(this)->distance_to_centroid_impl(features_range_first,
+                                                                                features_range_last);
     }
 
     template <typename FeaturesIterator, typename DerivedType = DerivedClass>
-    constexpr auto compute_distance_if_within_bounds(const FeaturesIterator& features_range_first,
-                                                     const FeaturesIterator& features_range_last) const {
-        return static_cast<const DerivedType*>(this)->compute_distance_if_within_bounds_impl(features_range_first,
-                                                                                             features_range_last);
+    constexpr auto compute_distance_to_centroid_if_within_bounds(const FeaturesIterator& features_range_first,
+                                                                 const FeaturesIterator& features_range_last) const {
+        return static_cast<const DerivedType*>(this)->compute_distance_to_centroid_if_within_bounds_impl(
+            features_range_first, features_range_last);
     }
 
     template <typename DerivedType = DerivedClass>

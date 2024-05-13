@@ -3,13 +3,13 @@
 #include <optional>
 #include <vector>
 
-#include "ffcl/datastruct/bounds/StaticBound.hpp"
+#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
 #include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 namespace ffcl::datastruct::bounds {
 
 template <typename Segment>
-class BoundingBox : public StaticBound<BoundingBox<Segment>> {
+class BoundingBox : public StaticCentroidBasedBound<BoundingBox<Segment>> {
   public:
     using ValueType    = typename Segment::ValueType;
     using SegmentsType = std::vector<Segment>;
@@ -50,8 +50,8 @@ class BoundingBox : public StaticBound<BoundingBox<Segment>> {
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto distance_impl(const OtherFeaturesIterator& features_range_first,
-                                 const OtherFeaturesIterator& features_range_last) const {
+    constexpr auto distance_to_centroid_impl(const OtherFeaturesIterator& features_range_first,
+                                             const OtherFeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return common::math::heuristics::auto_distance(
@@ -59,12 +59,13 @@ class BoundingBox : public StaticBound<BoundingBox<Segment>> {
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto compute_distance_if_within_bounds_impl(const OtherFeaturesIterator& features_range_first,
-                                                          const OtherFeaturesIterator& features_range_last) const {
+    constexpr auto compute_distance_to_centroid_if_within_bounds_impl(
+        const OtherFeaturesIterator& features_range_first,
+        const OtherFeaturesIterator& features_range_last) const {
         assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
         return is_in_bounds_impl(features_range_first, features_range_last)
-                   ? std::optional<ValueType>(distance_impl(features_range_first, features_range_last))
+                   ? std::optional<ValueType>(distance_to_centroid_impl(features_range_first, features_range_last))
                    : std::nullopt;
     }
 
@@ -93,7 +94,7 @@ class BoundingBox : public StaticBound<BoundingBox<Segment>> {
 };
 
 template <typename FeaturesIterator>
-class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
+class BoundingBoxView : public StaticCentroidBasedBound<BoundingBoxView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -144,8 +145,8 @@ class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto distance_impl(const OtherFeaturesIterator& other_features_range_first,
-                                 const OtherFeaturesIterator& other_features_range_last) const {
+    constexpr auto distance_to_centroid_impl(const OtherFeaturesIterator& other_features_range_first,
+                                             const OtherFeaturesIterator& other_features_range_last) const {
         assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
                                         std::distance(other_features_range_first, other_features_range_last)));
 
@@ -156,14 +157,15 @@ class BoundingBoxView : public StaticBound<BoundingBoxView<FeaturesIterator>> {
     }
 
     template <typename OtherFeaturesIterator>
-    constexpr auto compute_distance_if_within_bounds_impl(
+    constexpr auto compute_distance_to_centroid_if_within_bounds_impl(
         const OtherFeaturesIterator& other_features_range_first,
         const OtherFeaturesIterator& other_features_range_last) const {
         assert(n_features_impl() == static_cast<decltype(n_features_impl())>(
                                         std::distance(other_features_range_first, other_features_range_last)));
 
         return is_in_bounds_impl(other_features_range_first, other_features_range_last)
-                   ? std::optional<ValueType>(distance_impl(other_features_range_first, other_features_range_last))
+                   ? std::optional<ValueType>(
+                         distance_to_centroid_impl(other_features_range_first, other_features_range_last))
                    : std::nullopt;
     }
 

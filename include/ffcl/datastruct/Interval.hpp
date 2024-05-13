@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/bounds/segment/MinAndMax.hpp"
+#include "ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp"
 
 #include <cmath>
 #include <cstddef>  // std::size_t
@@ -25,7 +25,7 @@ struct GetTypeFromIteratorOrTrivialType<T, true> {
 };
 
 template <typename T>
-using Interval = bounds::segment::MinAndMax<typename GetTypeFromIteratorOrTrivialType<T>::type>;
+using Interval = bounds::segment::LowerBoundAndUpperBound<typename GetTypeFromIteratorOrTrivialType<T>::type>;
 
 template <typename T>
 using HyperInterval = std::vector<Interval<T>>;
