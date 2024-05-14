@@ -3,13 +3,13 @@
 #include <optional>
 #include <vector>
 
-#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
+#include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
 #include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 namespace ffcl::datastruct::bounds {
 
 template <typename Segment>
-class BoundingBox : public StaticCentroidBasedBound<BoundingBox<Segment>> {
+class BoundingBox : public StaticBoundWithCentroid<BoundingBox<Segment>> {
   public:
     using ValueType    = typename Segment::ValueType;
     using SegmentsType = std::vector<Segment>;
@@ -24,7 +24,7 @@ class BoundingBox : public StaticCentroidBasedBound<BoundingBox<Segment>> {
       , lengths_from_center_point_{std::vector<ValueType>(segments.size())} {
         for (std::size_t feature_index = 0; feature_index < segments.size(); ++feature_index) {
             centroid_[feature_index]                  = segments[feature_index].centroid();
-            lengths_from_center_point_[feature_index] = segments[feature_index].length_from_centroid();
+            lengths_from_center_point_[feature_index] = segments[feature_index].centroid_to_bound_length();
         }
     }
 
@@ -69,12 +69,12 @@ class BoundingBox : public StaticCentroidBasedBound<BoundingBox<Segment>> {
                    : std::nullopt;
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         throw std::runtime_error("No half length to return if no feature dimension is specified for this bound.");
         return ValueType{};
     }
 
-    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         return lengths_from_center_point_[feature_index];
     }
 
@@ -94,7 +94,7 @@ class BoundingBox : public StaticCentroidBasedBound<BoundingBox<Segment>> {
 };
 
 template <typename FeaturesIterator>
-class BoundingBoxView : public StaticCentroidBasedBound<BoundingBoxView<FeaturesIterator>> {
+class BoundingBoxView : public StaticBoundWithCentroid<BoundingBoxView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -169,18 +169,18 @@ class BoundingBoxView : public StaticCentroidBasedBound<BoundingBoxView<Features
                    : std::nullopt;
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         // always_false<Derived>::value is dependent on the template parameter FeaturesIterator. This means that
-        // static_assert will only be evaluated when length_from_centroid_impl is instantiated with a specific type,
+        // static_assert will only be evaluated when centroid_to_bound_length_impl is instantiated with a specific type,
         // allowing the base template to compile successfully until an attempt is made to instantiate this method.
         static_assert(always_false<FeaturesIterator>::value,
-                      "length_from_centroid_impl cannot be implemented without specifying which feature index.");
+                      "centroid_to_bound_length_impl cannot be implemented without specifying which feature index.");
         // The following return statement is unreachable but required to avoid
         // compile errors in some compilers. Use a dummy return or throw an exception.
         throw std::logic_error("Unimplemented method");
     }
 
-    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         return lengths_from_center_point_[feature_index];
     }
 

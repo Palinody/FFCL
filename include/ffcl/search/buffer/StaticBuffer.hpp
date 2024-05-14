@@ -3,7 +3,7 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/statistics/Statistics.hpp"
 
-#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
+#include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
 
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
 
@@ -22,8 +22,8 @@ class StaticBuffer {
   public:
     using BoundType = typename static_base_traits<DerivedBuffer>::BoundType;
 
-    static_assert(common::is_crtp_of<BoundType, datastruct::bounds::StaticCentroidBasedBound>::value,
-                  "BoundType does not inherit from datastruct::bounds::StaticCentroidBasedBound<Derived>");
+    static_assert(common::is_crtp_of<BoundType, datastruct::bounds::StaticBoundWithCentroid>::value,
+                  "BoundType does not inherit from datastruct::bounds::StaticBoundWithCentroid<Derived>");
 
     using IndexType    = typename static_base_traits<DerivedBuffer>::IndexType;
     using DistanceType = typename static_base_traits<DerivedBuffer>::DistanceType;

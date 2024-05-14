@@ -2,7 +2,7 @@
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
-#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
+#include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
 
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
 

@@ -11,7 +11,7 @@ template <typename T>
 struct always_false : std::false_type {};
 
 template <class DerivedClass>
-struct StaticCentroidBasedBound {
+struct StaticBound {
     template <typename DerivedType = DerivedClass>
     auto n_features() const {
         return static_cast<const DerivedType*>(this)->n_features_impl();
@@ -38,33 +38,23 @@ struct StaticCentroidBasedBound {
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto length_from_centroid() const {
-        return static_cast<const DerivedType*>(this)->length_from_centroid_impl();
+    constexpr auto centroid_to_bound_length() const {
+        return static_cast<const DerivedType*>(this)->centroid_to_bound_length_impl();
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto length_from_centroid(std::size_t feature_index) const {
-        return static_cast<const DerivedType*>(this)->length_from_centroid_impl(feature_index);
+    constexpr auto centroid_to_bound_length(std::size_t feature_index) const {
+        return static_cast<const DerivedType*>(this)->centroid_to_bound_length_impl(feature_index);
     }
 
     template <typename DerivedType = DerivedClass>
     constexpr auto furthest_distance() const {
-        return length_from_centroid();
+        return centroid_to_bound_length();
     }
 
     template <typename DerivedType = DerivedClass>
     constexpr auto furthest_distance(std::size_t feature_index) const {
-        return length_from_centroid(feature_index);
-    }
-
-    template <typename DerivedType = DerivedClass>
-    constexpr auto centroid_begin() const {
-        return static_cast<const DerivedType*>(this)->centroid_begin_impl();
-    }
-
-    template <typename DerivedType = DerivedClass>
-    constexpr auto centroid_end() const {
-        return static_cast<const DerivedType*>(this)->centroid_end_impl();
+        return centroid_to_bound_length(feature_index);
     }
 };
 

@@ -11,9 +11,11 @@
 #include "ffcl/search/Search.hpp"
 #include "ffcl/search/buffer/Unsorted.hpp"
 
-#include "ffcl/datastruct/bounds/segment/CenterAndLength.hpp"
 #include "ffcl/datastruct/bounds/segment/LowerBoundAndLength.hpp"
 #include "ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp"
+
+#include "ffcl/datastruct/bounds/AABB.hpp"
+#include "ffcl/datastruct/bounds/AABBWithCentroid.hpp"
 
 #include "ffcl/datastruct/UnionFind.hpp"
 #include "ffcl/datastruct/bounds/Ball.hpp"

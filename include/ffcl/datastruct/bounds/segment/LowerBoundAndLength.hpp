@@ -45,13 +45,24 @@ class LowerBoundAndLength : public StaticSegment<LowerBoundAndLength<Value>> {
         }
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         if constexpr (std::is_integral_v<ValueType>) {
             return common::compute_size_from_center_with_left_rounding(
                 segment_representation_.first, segment_representation_.first + segment_representation_.second - 1);
         } else {
             return common::compute_size_from_center_with_left_rounding(
                 segment_representation_.first, segment_representation_.first + segment_representation_.second);
+        }
+    }
+
+    constexpr bool contains_value_impl(const ValueType& value) const {
+        if constexpr (std::is_integral_v<ValueType>) {
+            return !(value < segment_representation_.first ||
+                     segment_representation_.first + segment_representation_.second - 1 < value);
+
+        } else {
+            return !(value < segment_representation_.first ||
+                     segment_representation_.first + segment_representation_.second < value);
         }
     }
 

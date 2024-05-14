@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
+#include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
 #include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 #include "ffcl/common/math/heuristics/Distances.hpp"
@@ -10,7 +10,7 @@
 namespace ffcl::datastruct::bounds {
 
 template <typename Value, std::size_t NFeatures = 0>
-class Ball : public StaticCentroidBasedBound<Ball<Value, NFeatures>> {
+class Ball : public StaticBoundWithCentroid<Ball<Value, NFeatures>> {
   public:
     using ValueType = Value;
 
@@ -58,11 +58,11 @@ class Ball : public StaticCentroidBasedBound<Ball<Value, NFeatures>> {
         return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         return radius_;
     }
 
-    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return radius_;
     }
@@ -82,7 +82,7 @@ class Ball : public StaticCentroidBasedBound<Ball<Value, NFeatures>> {
 };
 
 template <typename FeaturesIterator>
-class BallView : public StaticCentroidBasedBound<BallView<FeaturesIterator>> {
+class BallView : public StaticBoundWithCentroid<BallView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -136,11 +136,11 @@ class BallView : public StaticCentroidBasedBound<BallView<FeaturesIterator>> {
         return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         return radius_;
     }
 
-    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return radius_;
     }

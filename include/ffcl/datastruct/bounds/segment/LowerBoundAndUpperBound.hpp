@@ -41,9 +41,13 @@ class LowerBoundAndUpperBound : public StaticSegment<LowerBoundAndUpperBound<Val
         return common::compute_center_with_left_rounding(segment_representation_.first, segment_representation_.second);
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         return common::compute_size_from_center_with_left_rounding(segment_representation_.first,
                                                                    segment_representation_.second);
+    }
+
+    constexpr bool contains_value_impl(const ValueType& value) const {
+        return !(value < segment_representation_.first || segment_representation_.second < value);
     }
 
   private:

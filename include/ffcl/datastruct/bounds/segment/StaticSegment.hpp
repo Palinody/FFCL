@@ -30,8 +30,13 @@ struct StaticSegment {
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto length_from_centroid() const {
-        return static_cast<const DerivedType*>(this)->length_from_centroid_impl();
+    constexpr auto centroid_to_bound_length() const {
+        return static_cast<const DerivedType*>(this)->centroid_to_bound_length_impl();
+    }
+
+    template <typename DerivedType = DerivedClass>
+    constexpr bool contains_value(const typename DerivedType::ValueType& value) const {
+        return static_cast<const DerivedType*>(this)->contains_value_impl();
     }
 };
 

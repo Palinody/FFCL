@@ -2,7 +2,7 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/bounds/StaticCentroidBasedBound.hpp"
+#include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
 #include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 #include <vector>
@@ -10,7 +10,7 @@
 namespace ffcl::datastruct::bounds {
 
 template <typename Value, std::size_t NFeatures = 0>
-class UnboundedBall : public StaticCentroidBasedBound<UnboundedBall<Value, NFeatures>> {
+class UnboundedBall : public StaticBoundWithCentroid<UnboundedBall<Value, NFeatures>> {
   public:
     using ValueType = Value;
 
@@ -53,11 +53,11 @@ class UnboundedBall : public StaticCentroidBasedBound<UnboundedBall<Value, NFeat
         return std::optional<ValueType>(distance_to_centroid_impl(features_range_first, features_range_last));
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         return common::infinity<ValueType>();
     }
 
-    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return common::infinity<ValueType>();
     }
@@ -76,7 +76,7 @@ class UnboundedBall : public StaticCentroidBasedBound<UnboundedBall<Value, NFeat
 };
 
 template <typename FeaturesIterator>
-class UnboundedBallView : public StaticCentroidBasedBound<UnboundedBallView<FeaturesIterator>> {
+class UnboundedBallView : public StaticBoundWithCentroid<UnboundedBallView<FeaturesIterator>> {
   public:
     static_assert(common::is_iterator<FeaturesIterator>::value, "FeaturesIterator is not an iterator");
 
@@ -125,11 +125,11 @@ class UnboundedBallView : public StaticCentroidBasedBound<UnboundedBallView<Feat
             distance_to_centroid_impl(other_features_range_first, other_features_range_last));
     }
 
-    constexpr auto length_from_centroid_impl() const {
+    constexpr auto centroid_to_bound_length_impl() const {
         return common::infinity<ValueType>();
     }
 
-    constexpr auto length_from_centroid_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return common::infinity<ValueType>();
     }
