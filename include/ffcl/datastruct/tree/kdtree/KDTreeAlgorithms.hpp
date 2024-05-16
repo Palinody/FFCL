@@ -14,19 +14,19 @@
 
 namespace ffcl::datastruct::kdtree::algorithms {
 
-template <typename SamplesIterator>
-std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval<SamplesIterator>& hyper_interval) {
+template <typename Bound>
+std::size_t select_axis_with_largest_bounding_box_difference(const Bound& bound) {
     const auto comparison = [](const auto& lhs, const auto& rhs) {
         return common::abs(lhs.lower_bound() - lhs.upper_bound()) < common::abs(rhs.lower_bound() - rhs.upper_bound());
     };
-    const auto it = std::max_element(hyper_interval.begin(), hyper_interval.end(), comparison);
-    return std::distance(hyper_interval.begin(), it);
+    const auto it = std::max_element(bound.segments_begin(), bound.segments_end(), comparison);
+    return std::distance(bound.segments_begin(), it);
 }
 
-template <typename SamplesIterator>
-std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval<SamplesIterator>& hyper_interval,
-                                                             const std::vector<std::size_t>&       feature_mask) {
-    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+template <typename Bound>
+std::size_t select_axis_with_largest_bounding_box_difference(const Bound&                    bound,
+                                                             const std::vector<std::size_t>& feature_mask) {
+    using DataType = typename Bound::ValueType;
 
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
@@ -37,7 +37,7 @@ std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval
     // "feature_index"s are only the ones specified in the feature_mask
     for (std::size_t feature_index : feature_mask) {
         const auto max_range_candidate =
-            common::abs(hyper_interval[feature_index].upper_bound() - hyper_interval[feature_index].lower_bound());
+            common::abs(bound.segment_at(feature_index).upper_bound() - bound.segment_at(feature_index).lower_bound());
 
         if (max_range_candidate > current_max_range) {
             current_max_range_feature_index = feature_index;
@@ -47,7 +47,7 @@ std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval
     return current_max_range_feature_index;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
+template <typename IndicesIterator, typename SamplesIterator, typename Bound>
 std::size_t select_axis_with_largest_variance(const IndicesIterator& indices_range_first,
                                               const IndicesIterator& indices_range_last,
                                               const SamplesIterator& samples_range_first,
@@ -89,14 +89,15 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator& indices_ran
     // select the axis according to the dimension with the most spread between 2 points
     if (n_samples == 2) {
         // otherwise apply the bounding box method
-        const auto hyper_interval = make_hyper_interval(samples_range_first, samples_range_last, n_features);
-        return select_axis_with_largest_bounding_box_difference<SamplesIterator>(hyper_interval);
+        auto bound = make_tight_bound<SamplesIterator, Bound>(samples_range_first, samples_range_last, n_features);
+
+        return select_axis_with_largest_bounding_box_difference<Bound>(bound);
     }
     // return a random axis if theres only one sample left
     return common::math::random::uniform_distribution<std::size_t>(0, n_features - 1)();
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
+template <typename IndicesIterator, typename SamplesIterator, typename Bound>
 std::size_t select_axis_with_largest_variance(const IndicesIterator&          indices_range_first,
                                               const IndicesIterator&          indices_range_last,
                                               const SamplesIterator&          samples_range_first,
@@ -147,8 +148,9 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator&          in
     // select the axis according to the dimension with the most spread between 2 points
     if (n_samples == 2) {
         // otherwise apply the bounding box method
-        const auto hyper_interval = make_hyper_interval(samples_range_first, samples_range_last, n_features);
-        return select_axis_with_largest_bounding_box_difference<SamplesIterator>(hyper_interval, feature_mask);
+        auto bound = make_tight_bound<SamplesIterator, Bound>(samples_range_first, samples_range_last, n_features);
+
+        return select_axis_with_largest_bounding_box_difference<Bound>(bound, feature_mask);
     }
     // return a random axis if theres only one sample left
     return common::math::random::uniform_distribution<std::size_t>(0, n_features - 1)();

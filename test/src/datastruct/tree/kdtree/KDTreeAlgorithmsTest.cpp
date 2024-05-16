@@ -64,7 +64,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
                     const auto interval =
-                        ffcl::datastruct::make_interval(data.begin(), data.end(), features, feature_index);
+                        ffcl::datastruct::make_tight_segment(data.begin(), data.end(), features, feature_index);
 
                     const auto [min, max] = std::make_pair(interval.lower_bound(), interval.upper_bound());
 
@@ -93,7 +93,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxIndexedTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto interval = ffcl::datastruct::make_interval(
+                    const auto interval = ffcl::datastruct::make_tight_segment(
                         data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
                     const auto [min, max] = std::make_pair(interval.lower_bound(), interval.upper_bound());
@@ -119,12 +119,12 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxTest) {
                 const auto data =
                     this->generate_random_uniform_vector(samples, features, this->lower_bound_, this->upper_bound_);
 
-                const auto hyper_interval = ffcl::datastruct::make_hyper_interval(data.begin(), data.end(), features);
+                const auto bound = ffcl::datastruct::make_tight_bound(data.begin(), data.end(), features);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [min, max] = std::make_pair(hyper_interval[feature_index].lower_bound(),
-                                                           hyper_interval[feature_index].upper_bound());
+                    const auto [min, max] = std::make_pair(bound.segment_at(feature_index).lower_bound(),
+                                                           bound.segment_at(feature_index).upper_bound());
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
@@ -149,13 +149,13 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxIndexedTest) {
 
                 auto data_indices = this->generate_indices(samples);
 
-                const auto hyper_interval = ffcl::datastruct::make_hyper_interval(
+                const auto bound = ffcl::datastruct::make_tight_bound(
                     data_indices.begin(), data_indices.end(), data.begin(), data.end(), features);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [min, max] = std::make_pair(hyper_interval[feature_index].lower_bound(),
-                                                           hyper_interval[feature_index].upper_bound());
+                    const auto [min, max] = std::make_pair(bound.segment_at(feature_index).lower_bound(),
+                                                           bound.segment_at(feature_index).upper_bound());
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());

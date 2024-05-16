@@ -374,6 +374,19 @@ static_assert(!is_leaf_homogeneous_v<std::vector<std::map<int, float>>>,
               "std::vector<std::map<int, float>> should not be homogeneous");
 */
 
+// Primary template for non-iterator types.
+template <typename T, bool IsIterator = common::is_iterator<T>::value>
+struct GetTypeFromIteratorOrTrivialType {
+    static_assert(std::is_trivial_v<T>, "Non-iterator type must be trivial");
+    using type = T;
+};
+
+// Specialization for iterator types.
+template <typename T>
+struct GetTypeFromIteratorOrTrivialType<T, true> {
+    using type = typename std::iterator_traits<T>::value_type;
+};
+
 template <typename... Args>
 constexpr void ignore_parameters(Args&&...) noexcept {}
 

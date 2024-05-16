@@ -1,14 +1,19 @@
 #pragma once
 
-#include <cstddef>  // std::size_t
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp"
 
-#include <array>
+#include "ffcl/datastruct/bounds/AABBWithCentroid.hpp"
+#include "ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp"
+
+#include <cstddef>  // std::size_t
 
 namespace ffcl::datastruct::kdtree::policy {
 
-template <typename IndicesIterator, typename SamplesIterator>
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename Bound = bounds::AABBWithCentroid<
+              bounds::segment::LowerBoundAndUpperBound<typename std::iterator_traits<SamplesIterator>::value_type>>>
 class AxisSelectionPolicy {
   private:
     static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
@@ -25,17 +30,20 @@ class AxisSelectionPolicy {
 
     virtual ~AxisSelectionPolicy() = default;
 
-    virtual std::size_t operator()(IndicesIterator                 indices_range_first,
-                                   IndicesIterator                 indices_range_last,
-                                   SamplesIterator                 samples_range_first,
-                                   SamplesIterator                 samples_range_last,
-                                   std::size_t                     n_features,
-                                   std::size_t                     depth,
-                                   HyperInterval<SamplesIterator>& hyper_interval) const = 0;
+    virtual std::size_t operator()(const IndicesIterator& indices_range_first,
+                                   const IndicesIterator& indices_range_last,
+                                   const SamplesIterator& samples_range_first,
+                                   const SamplesIterator& samples_range_last,
+                                   std::size_t            n_features,
+                                   std::size_t            depth,
+                                   const Bound&           bound) const = 0;
 };
 
-template <typename IndicesIterator, typename SamplesIterator>
-class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename Bound = bounds::AABBWithCentroid<
+              bounds::segment::LowerBoundAndUpperBound<typename std::iterator_traits<SamplesIterator>::value_type>>>
+class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator, Bound> {
   public:
     CycleThroughAxesBuild() = default;
 
@@ -49,21 +57,24 @@ class CycleThroughAxesBuild : public AxisSelectionPolicy<IndicesIterator, Sample
         return *this;
     }
 
-    std::size_t operator()(IndicesIterator                 indices_range_first,
-                           IndicesIterator                 indices_range_last,
-                           SamplesIterator                 samples_range_first,
-                           SamplesIterator                 samples_range_last,
-                           std::size_t                     n_features,
-                           std::size_t                     depth,
-                           HyperInterval<SamplesIterator>& hyper_interval) const;
+    std::size_t operator()(const IndicesIterator& indices_range_first,
+                           const IndicesIterator& indices_range_last,
+                           const SamplesIterator& samples_range_first,
+                           const SamplesIterator& samples_range_last,
+                           std::size_t            n_features,
+                           std::size_t            depth,
+                           const Bound&           bound) const;
 
   private:
     // contains the sequence of feature indices of interest
     std::vector<std::size_t> feature_mask_;
 };
 
-template <typename IndicesIterator, typename SamplesIterator>
-class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename Bound = bounds::AABBWithCentroid<
+              bounds::segment::LowerBoundAndUpperBound<typename std::iterator_traits<SamplesIterator>::value_type>>>
+class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator, Bound> {
   public:
     HighestVarianceBuild() = default;
 
@@ -82,13 +93,13 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
         return *this;
     }
 
-    std::size_t operator()(IndicesIterator                 indices_range_first,
-                           IndicesIterator                 indices_range_last,
-                           SamplesIterator                 samples_range_first,
-                           SamplesIterator                 samples_range_last,
-                           std::size_t                     n_features,
-                           std::size_t                     depth,
-                           HyperInterval<SamplesIterator>& hyper_interval) const;
+    std::size_t operator()(const IndicesIterator& indices_range_first,
+                           const IndicesIterator& indices_range_last,
+                           const SamplesIterator& samples_range_first,
+                           const SamplesIterator& samples_range_last,
+                           std::size_t            n_features,
+                           std::size_t            depth,
+                           const Bound&           bound) const;
 
   private:
     // contains the sequence of feature indices of interest
@@ -97,8 +108,11 @@ class HighestVarianceBuild : public AxisSelectionPolicy<IndicesIterator, Samples
     double sampling_rate_ = 0.1;
 };
 
-template <typename IndicesIterator, typename SamplesIterator>
-class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator> {
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename Bound = bounds::AABBWithCentroid<
+              bounds::segment::LowerBoundAndUpperBound<typename std::iterator_traits<SamplesIterator>::value_type>>>
+class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIterator, Bound> {
   public:
     MaximumSpreadBuild() = default;
 
@@ -112,30 +126,30 @@ class MaximumSpreadBuild : public AxisSelectionPolicy<IndicesIterator, SamplesIt
         return *this;
     }
 
-    std::size_t operator()(IndicesIterator                 indices_range_first,
-                           IndicesIterator                 indices_range_last,
-                           SamplesIterator                 samples_range_first,
-                           SamplesIterator                 samples_range_last,
-                           std::size_t                     n_features,
-                           std::size_t                     depth,
-                           HyperInterval<SamplesIterator>& hyper_interval) const;
+    std::size_t operator()(const IndicesIterator& indices_range_first,
+                           const IndicesIterator& indices_range_last,
+                           const SamplesIterator& samples_range_first,
+                           const SamplesIterator& samples_range_last,
+                           std::size_t            n_features,
+                           std::size_t            depth,
+                           const Bound&           bound) const;
 
   private:
     // contains the sequence of feature indices of interest
     std::vector<std::size_t> feature_mask_;
 };
 
-template <typename IndicesIterator, typename SamplesIterator>
-std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
-    IndicesIterator                 indices_range_first,
-    IndicesIterator                 indices_range_last,
-    SamplesIterator                 samples_range_first,
-    SamplesIterator                 samples_range_last,
-    std::size_t                     n_features,
-    std::size_t                     depth,
-    HyperInterval<SamplesIterator>& hyper_interval) const {
+template <typename IndicesIterator, typename SamplesIterator, typename Bound>
+std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator, Bound>::operator()(
+    const IndicesIterator& indices_range_first,
+    const IndicesIterator& indices_range_last,
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
+    std::size_t            n_features,
+    std::size_t            depth,
+    const Bound&           bound) const {
     ffcl::common::ignore_parameters(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, hyper_interval);
+        indices_range_first, indices_range_last, samples_range_first, samples_range_last, bound);
     if (feature_mask_.empty()) {
         // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
         // select the cut_feature_index according to the one with the most variance
@@ -145,20 +159,20 @@ std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator>::operator()(
     return feature_mask_[depth % feature_mask_.size()];
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
-    IndicesIterator                 indices_range_first,
-    IndicesIterator                 indices_range_last,
-    SamplesIterator                 samples_range_first,
-    SamplesIterator                 samples_range_last,
-    std::size_t                     n_features,
-    std::size_t                     depth,
-    HyperInterval<SamplesIterator>& hyper_interval) const {
-    ffcl::common::ignore_parameters(depth, hyper_interval);
+template <typename IndicesIterator, typename SamplesIterator, typename Bound>
+std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator, Bound>::operator()(
+    const IndicesIterator& indices_range_first,
+    const IndicesIterator& indices_range_last,
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
+    std::size_t            n_features,
+    std::size_t            depth,
+    const Bound&           bound) const {
+    ffcl::common::ignore_parameters(depth, bound);
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most variance
-        return kdtree::algorithms::select_axis_with_largest_variance(
+        return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator, Bound>(
             /**/ indices_range_first,
             /**/ indices_range_last,
             /**/ samples_range_first,
@@ -166,7 +180,7 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
             /**/ n_features,
             /**/ sampling_rate_);
     }
-    return kdtree::algorithms::select_axis_with_largest_variance(
+    return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator, Bound>(
         /**/ indices_range_first,
         /**/ indices_range_last,
         /**/ samples_range_first,
@@ -176,24 +190,23 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator>::operator()(
         /**/ feature_mask_);
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator>::operator()(
-    IndicesIterator                 indices_range_first,
-    IndicesIterator                 indices_range_last,
-    SamplesIterator                 samples_range_first,
-    SamplesIterator                 samples_range_last,
-    std::size_t                     n_features,
-    std::size_t                     depth,
-    HyperInterval<SamplesIterator>& hyper_interval) const {
+template <typename IndicesIterator, typename SamplesIterator, typename Bound>
+std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator, Bound>::operator()(
+    const IndicesIterator& indices_range_first,
+    const IndicesIterator& indices_range_last,
+    const SamplesIterator& samples_range_first,
+    const SamplesIterator& samples_range_last,
+    std::size_t            n_features,
+    std::size_t            depth,
+    const Bound&           bound) const {
     ffcl::common::ignore_parameters(
         indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, depth);
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
-        return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<SamplesIterator>(hyper_interval);
+        return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<Bound>(bound);
     }
-    return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<SamplesIterator>(hyper_interval,
-                                                                                                 feature_mask_);
+    return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<Bound>(bound, feature_mask_);
 }
 
 }  // namespace ffcl::datastruct::kdtree::policy

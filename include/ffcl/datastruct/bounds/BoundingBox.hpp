@@ -11,6 +11,7 @@ namespace ffcl::datastruct::bounds {
 template <typename Segment>
 class BoundingBox : public StaticBoundWithCentroid<BoundingBox<Segment>> {
   public:
+    using SegmentType  = Segment;
     using ValueType    = typename Segment::ValueType;
     using SegmentsType = std::vector<Segment>;
 

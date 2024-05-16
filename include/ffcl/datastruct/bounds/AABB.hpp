@@ -9,11 +9,12 @@
 
 namespace ffcl::datastruct::bounds {
 
-template <typename Segment>
+template <typename Segment, std::size_t NFeatures = 0>
 class AABB : public StaticBound<AABB<Segment>> {
   public:
+    using SegmentType  = Segment;
     using ValueType    = typename Segment::ValueType;
-    using SegmentsType = FeaturesVector<Segment, 0>;
+    using SegmentsType = FeaturesVector<Segment, NFeatures>;
     using IteratorType = typename SegmentsType::Iterator;
 
     constexpr AABB(const SegmentsType& segments)
@@ -70,6 +71,22 @@ class AABB : public StaticBound<AABB<Segment>> {
 
     constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         return segments_[feature_index].centroid_to_bound_length();
+    }
+
+    constexpr auto segments_begin() const {
+        return segments_.begin();
+    }
+
+    constexpr auto segments_end() const {
+        return segments_.end();
+    }
+
+    auto& segment_at(std::size_t feature_index) {
+        return segments_[feature_index];
+    }
+
+    const auto& segment_at(std::size_t feature_index) const {
+        return segments_[feature_index];
     }
 
   private:

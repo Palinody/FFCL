@@ -2,8 +2,6 @@
 
 #include "ffcl/common/Utils.hpp"
 
-#include "ffcl/datastruct/Interval.hpp"
-
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
 #include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
@@ -32,24 +30,23 @@ struct KDNodeView {
     using NodePtr  = std::shared_ptr<NodeType>;
 
     using IteratorPairType = std::pair<IndicesIterator, IndicesIterator>;
-    using IntervalType     = Interval<DataType>;
 
     using BoundWithCentroidType = BoundWithCentroid;
 
     static_assert(common::is_crtp_of<BoundWithCentroidType, bounds::StaticBoundWithCentroid>::value,
                   "Provided a BoundWithCentroidType that does not inherit from StaticBoundWithCentroid<Derived>");
 
-    KDNodeView(const IteratorPairType& indices_range, const IntervalType& axis_interval);
+    KDNodeView(const IteratorPairType& indices_range, const BoundWithCentroidType& bound);
 
-    KDNodeView(const IteratorPairType& indices_range,
-               std::ptrdiff_t          cut_axis_feature_index,
-               const IntervalType&     axis_interval);
+    KDNodeView(const IteratorPairType&      indices_range,
+               std::ptrdiff_t               cut_axis_feature_index,
+               const BoundWithCentroidType& bound);
 
-    KDNodeView(const IteratorPairType&& indices_range, const IntervalType& axis_interval);
+    KDNodeView(const IteratorPairType&& indices_range, const BoundWithCentroidType& bound);
 
-    KDNodeView(const IteratorPairType&& indices_range,
-               std::ptrdiff_t           cut_axis_feature_index,
-               const IntervalType&      axis_interval);
+    KDNodeView(const IteratorPairType&&     indices_range,
+               std::ptrdiff_t               cut_axis_feature_index,
+               const BoundWithCentroidType& bound);
 
     KDNodeView(const KDNodeView&) = delete;
 
@@ -95,7 +92,7 @@ struct KDNodeView {
     // A 1D bounding box window that stores the actual dataset values referred to by the indices_range_.
     // The first value in this range represents the minimum value, while the second value represents the maximum value
     // within the dataset along the cut dimension for this node.
-    IntervalType axis_interval_;
+    BoundWithCentroidType bound_;
     // A child node representing the left partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
     NodePtr left_;
@@ -111,55 +108,51 @@ struct KDNodeView {
     bool is_right_child() const;
 };
 
-template <typename IteratorPairType, typename DataType>
-KDNodeView(const IteratorPairType&, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
-    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
+template <typename IteratorPairType, typename BoundWithCentroid>
+KDNodeView(const IteratorPairType&, const BoundWithCentroid&)
+    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type, BoundWithCentroid>;
 
-template <typename IteratorPairType, typename DataType>
-KDNodeView(const IteratorPairType&, std::ptrdiff_t, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
-    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
+template <typename IteratorPairType, typename BoundWithCentroid>
+KDNodeView(const IteratorPairType&, std::ptrdiff_t, const BoundWithCentroid&)
+    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type, BoundWithCentroid>;
 
-template <typename IteratorPairType, typename DataType>
-KDNodeView(IteratorPairType&&, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
-    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
+template <typename IteratorPairType, typename BoundWithCentroid>
+KDNodeView(IteratorPairType&&, const BoundWithCentroid&)
+    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type, BoundWithCentroid>;
 
-template <typename IteratorPairType, typename DataType>
-KDNodeView(IteratorPairType&&, std::ptrdiff_t, const bounds::segment::LowerBoundAndUpperBound<DataType>&)
-    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
-                  typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
+template <typename IteratorPairType, typename BoundWithCentroid>
+KDNodeView(IteratorPairType&&, std::ptrdiff_t, const BoundWithCentroid&)
+    -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type, BoundWithCentroid>;
 
 template <typename IndicesIterator, typename BoundWithCentroid>
-KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType& indices_range,
-                                                           const IntervalType&     axis_interval)
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&      indices_range,
+                                                           const BoundWithCentroidType& bound)
   : indices_range_{indices_range}
   , cut_axis_feature_index_{-1}
-  , axis_interval_{axis_interval} {}
+  , bound_{bound} {}
 
 template <typename IndicesIterator, typename BoundWithCentroid>
-KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType& indices_range,
-                                                           std::ptrdiff_t          cut_axis_feature_index,
-                                                           const IntervalType&     axis_interval)
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&      indices_range,
+                                                           std::ptrdiff_t               cut_axis_feature_index,
+                                                           const BoundWithCentroidType& bound)
   : indices_range_{indices_range}
   , cut_axis_feature_index_{cut_axis_feature_index}
-  , axis_interval_{axis_interval} {}
+  , bound_{bound} {}
 
 template <typename IndicesIterator, typename BoundWithCentroid>
-KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&& indices_range,
-                                                           const IntervalType&      axis_interval)
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&&     indices_range,
+                                                           const BoundWithCentroidType& bound)
   : indices_range_{std::move(indices_range)}
   , cut_axis_feature_index_{-1}
-  , axis_interval_{axis_interval} {}
+  , bound_{bound} {}
 
 template <typename IndicesIterator, typename BoundWithCentroid>
-KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&& indices_range,
-                                                           std::ptrdiff_t           cut_axis_feature_index,
-                                                           const IntervalType&      axis_interval)
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&&     indices_range,
+                                                           std::ptrdiff_t               cut_axis_feature_index,
+                                                           const BoundWithCentroidType& bound)
   : indices_range_{std::move(indices_range)}
   , cut_axis_feature_index_{cut_axis_feature_index}
-  , axis_interval_{axis_interval} {}
+  , bound_{bound} {}
 
 template <typename IndicesIterator, typename BoundWithCentroid>
 constexpr auto KDNodeView<IndicesIterator, BoundWithCentroid>::begin() const {

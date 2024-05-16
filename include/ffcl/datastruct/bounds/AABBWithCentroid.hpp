@@ -12,14 +12,23 @@ namespace ffcl::datastruct::bounds {
 template <typename Segment, std::size_t NFeatures = 0>
 class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment>> {
   public:
+    using SegmentType  = Segment;
     using ValueType    = typename Segment::ValueType;
-    using SegmentsType = FeaturesVector<Segment, 0>;
+    using SegmentsType = FeaturesVector<Segment, NFeatures>;
     using CentroidType = FeaturesVector<ValueType, NFeatures>;
     using IteratorType = typename CentroidType::Iterator;
 
     constexpr AABBWithCentroid(const SegmentsType& segments)
       : centroid_{std::vector<ValueType>(segments.size())}
       , segments_{segments} {
+        for (std::size_t feature_index = 0; feature_index < segments_.size(); ++feature_index) {
+            centroid_[feature_index] = segments_[feature_index].centroid();
+        }
+    }
+
+    constexpr AABBWithCentroid(const SegmentsType&& segments)
+      : centroid_{std::vector<ValueType>(segments.size())}
+      , segments_{std::move(segments)} {
         for (std::size_t feature_index = 0; feature_index < segments_.size(); ++feature_index) {
             centroid_[feature_index] = segments_[feature_index].centroid();
         }
@@ -84,6 +93,30 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
 
     constexpr auto centroid_end_impl() const {
         return centroid_.end();
+    }
+
+    constexpr auto segments_begin() const {
+        return segments_.begin();
+    }
+
+    constexpr auto segments_end() const {
+        return segments_.end();
+    }
+
+    auto& centroid_at(std::size_t feature_index) {
+        return centroid_[feature_index];
+    }
+
+    const auto& centroid_at(std::size_t feature_index) const {
+        return centroid_[feature_index];
+    }
+
+    auto& segment_at(std::size_t feature_index) {
+        return segments_[feature_index];
+    }
+
+    const auto& segment_at(std::size_t feature_index) const {
+        return segments_[feature_index];
     }
 
   private:
