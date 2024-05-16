@@ -1,11 +1,12 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+
 #include "ffcl/datastruct/Interval.hpp"
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
-#include "ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp"
+#include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
 
 #include <algorithm>
 #include <cstddef>  // std::ptrdiff_t
@@ -15,23 +16,28 @@
 
 namespace ffcl::datastruct {
 
-template <typename IndicesIterator, typename Data>
+template <typename IndicesIterator, typename BoundWithCentroid>
 struct KDNodeView {
     using IndicesIteratorType = IndicesIterator;
 
     static_assert(common::is_iterator<IndicesIteratorType>::value, "IndicesIteratorType is not an iterator");
 
     using IndexType = typename std::iterator_traits<IndicesIterator>::value_type;
-    using DataType  = Data;
+    using DataType  = typename BoundWithCentroid::ValueType;
 
     static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
-    using NodeType = KDNodeView<IndicesIterator, DataType>;
+    using NodeType = KDNodeView<IndicesIterator, BoundWithCentroid>;
     using NodePtr  = std::shared_ptr<NodeType>;
 
     using IteratorPairType = std::pair<IndicesIterator, IndicesIterator>;
     using IntervalType     = Interval<DataType>;
+
+    using BoundWithCentroidType = BoundWithCentroid;
+
+    static_assert(common::is_crtp_of<BoundWithCentroidType, bounds::StaticBoundWithCentroid>::value,
+                  "Provided a BoundWithCentroidType that does not inherit from StaticBoundWithCentroid<Derived>");
 
     KDNodeView(const IteratorPairType& indices_range, const IntervalType& axis_interval);
 
@@ -125,86 +131,88 @@ KDNodeView(IteratorPairType&&, std::ptrdiff_t, const bounds::segment::LowerBound
     -> KDNodeView<typename std::iterator_traits<typename IteratorPairType::first_type>::value_type,
                   typename bounds::segment::LowerBoundAndUpperBound<DataType>::ValueType>;
 
-template <typename IndicesIterator, typename Data>
-KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType& indices_range, const IntervalType& axis_interval)
+template <typename IndicesIterator, typename BoundWithCentroid>
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType& indices_range,
+                                                           const IntervalType&     axis_interval)
   : indices_range_{indices_range}
   , cut_axis_feature_index_{-1}
   , axis_interval_{axis_interval} {}
 
-template <typename IndicesIterator, typename Data>
-KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType& indices_range,
-                                              std::ptrdiff_t          cut_axis_feature_index,
-                                              const IntervalType&     axis_interval)
+template <typename IndicesIterator, typename BoundWithCentroid>
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType& indices_range,
+                                                           std::ptrdiff_t          cut_axis_feature_index,
+                                                           const IntervalType&     axis_interval)
   : indices_range_{indices_range}
   , cut_axis_feature_index_{cut_axis_feature_index}
   , axis_interval_{axis_interval} {}
 
-template <typename IndicesIterator, typename Data>
-KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType&& indices_range, const IntervalType& axis_interval)
+template <typename IndicesIterator, typename BoundWithCentroid>
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&& indices_range,
+                                                           const IntervalType&      axis_interval)
   : indices_range_{std::move(indices_range)}
   , cut_axis_feature_index_{-1}
   , axis_interval_{axis_interval} {}
 
-template <typename IndicesIterator, typename Data>
-KDNodeView<IndicesIterator, Data>::KDNodeView(const IteratorPairType&& indices_range,
-                                              std::ptrdiff_t           cut_axis_feature_index,
-                                              const IntervalType&      axis_interval)
+template <typename IndicesIterator, typename BoundWithCentroid>
+KDNodeView<IndicesIterator, BoundWithCentroid>::KDNodeView(const IteratorPairType&& indices_range,
+                                                           std::ptrdiff_t           cut_axis_feature_index,
+                                                           const IntervalType&      axis_interval)
   : indices_range_{std::move(indices_range)}
   , cut_axis_feature_index_{cut_axis_feature_index}
   , axis_interval_{axis_interval} {}
 
-template <typename IndicesIterator, typename Data>
-constexpr auto KDNodeView<IndicesIterator, Data>::begin() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+constexpr auto KDNodeView<IndicesIterator, BoundWithCentroid>::begin() const {
     return indices_range_.first;
 }
 
-template <typename IndicesIterator, typename Data>
-constexpr auto KDNodeView<IndicesIterator, Data>::end() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+constexpr auto KDNodeView<IndicesIterator, BoundWithCentroid>::end() const {
     return indices_range_.second;
 }
 
-template <typename IndicesIterator, typename Data>
-bool KDNodeView<IndicesIterator, Data>::is_empty() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+bool KDNodeView<IndicesIterator, BoundWithCentroid>::is_empty() const {
     return n_samples() == static_cast<std::size_t>(0);
 }
 
-template <typename IndicesIterator, typename Data>
-std::size_t KDNodeView<IndicesIterator, Data>::n_samples() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+std::size_t KDNodeView<IndicesIterator, BoundWithCentroid>::n_samples() const {
     return std::distance(indices_range_.first, indices_range_.second);
 }
 
-template <typename IndicesIterator, typename Data>
-bool KDNodeView<IndicesIterator, Data>::is_leaf() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+bool KDNodeView<IndicesIterator, BoundWithCentroid>::is_leaf() const {
     return !left_ && !right_;
 }
 
-template <typename IndicesIterator, typename Data>
-bool KDNodeView<IndicesIterator, Data>::is_left_child() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+bool KDNodeView<IndicesIterator, BoundWithCentroid>::is_left_child() const {
     assert(has_parent());
 
     return this == parent_.lock()->left_.get();
 }
 
-template <typename IndicesIterator, typename Data>
-bool KDNodeView<IndicesIterator, Data>::is_right_child() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+bool KDNodeView<IndicesIterator, BoundWithCentroid>::is_right_child() const {
     assert(has_parent());
 
     return this == parent_.lock()->right_.get();
 }
 
-template <typename IndicesIterator, typename Data>
-bool KDNodeView<IndicesIterator, Data>::has_parent() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+bool KDNodeView<IndicesIterator, BoundWithCentroid>::has_parent() const {
     return parent_.lock() != nullptr;
 }
 
-template <typename IndicesIterator, typename Data>
-bool KDNodeView<IndicesIterator, Data>::has_children() const {
+template <typename IndicesIterator, typename BoundWithCentroid>
+bool KDNodeView<IndicesIterator, BoundWithCentroid>::has_children() const {
     return left_ && right_;
 }
 
-template <typename IndicesIterator, typename Data>
+template <typename IndicesIterator, typename BoundWithCentroid>
 template <typename ReferenceSamplesIterator, typename QueryBuffer>
-auto KDNodeView<IndicesIterator, Data>::select_sibling_node(
+auto KDNodeView<IndicesIterator, BoundWithCentroid>::select_sibling_node(
     const ReferenceSamplesIterator& reference_samples_range_first,
     const ReferenceSamplesIterator& reference_samples_range_last,
     std::size_t                     reference_n_features,
@@ -243,9 +251,9 @@ auto KDNodeView<IndicesIterator, Data>::select_sibling_node(
     return nullptr;
 }
 
-template <typename IndicesIterator, typename Data>
+template <typename IndicesIterator, typename BoundWithCentroid>
 template <typename ReferenceSamplesIterator, typename QuerySamplesIterator>
-auto KDNodeView<IndicesIterator, Data>::select_closest_child(
+auto KDNodeView<IndicesIterator, BoundWithCentroid>::select_closest_child(
     const ReferenceSamplesIterator& reference_samples_range_first,
     const ReferenceSamplesIterator& reference_samples_range_last,
     std::size_t                     reference_n_features,
@@ -269,12 +277,13 @@ auto KDNodeView<IndicesIterator, Data>::select_closest_child(
     return query_split_value < pivot_split_value ? left_ : right_;
 }
 
-template <typename IndicesIterator, typename Data>
+template <typename IndicesIterator, typename BoundWithCentroid>
 template <typename ReferenceSamplesIterator>
-void KDNodeView<IndicesIterator, Data>::serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer,
-                                                  const ReferenceSamplesIterator& reference_samples_range_first,
-                                                  const ReferenceSamplesIterator& reference_samples_range_last,
-                                                  std::size_t                     reference_n_features) const {
+void KDNodeView<IndicesIterator, BoundWithCentroid>::serialize(
+    rapidjson::Writer<rapidjson::StringBuffer>& writer,
+    const ReferenceSamplesIterator&             reference_samples_range_first,
+    const ReferenceSamplesIterator&             reference_samples_range_last,
+    std::size_t                                 reference_n_features) const {
     static_assert(common::is_iterator<ReferenceSamplesIterator>::value, "ReferenceSamplesIterator is not an iterator");
 
     const auto [indices_range_first, indices_range_last] = indices_range_;

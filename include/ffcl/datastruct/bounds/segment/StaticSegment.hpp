@@ -5,23 +5,23 @@ namespace ffcl::datastruct::bounds::segment {
 template <class DerivedClass>
 struct StaticSegment {
     template <typename DerivedType = DerivedClass>
-    constexpr auto first() const {
-        return static_cast<const DerivedType*>(this)->read_only_first_impl();
+    constexpr auto lower_bound() const {
+        return static_cast<const DerivedType*>(this)->lower_bound_impl();
     }
 
     template <typename DerivedType = DerivedClass>
-    auto& first() {
-        return static_cast<DerivedType*>(this)->read_write_first_impl();
+    void update_lower_bound(const typename DerivedType::ValueType& new_lower_bound) {
+        static_cast<DerivedType*>(this)->update_lower_bound_impl(new_lower_bound);
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto second() const {
-        return static_cast<const DerivedType*>(this)->read_only_second_impl();
+    constexpr auto upper_bound() const {
+        return static_cast<const DerivedType*>(this)->upper_bound_impl();
     }
 
     template <typename DerivedType = DerivedClass>
-    auto& second() {
-        return static_cast<DerivedType*>(this)->read_write_second_impl();
+    void update_upper_bound(const typename DerivedType::ValueType& new_upper_bound) {
+        static_cast<DerivedType*>(this)->update_upper_bound_impl(new_upper_bound);
     }
 
     template <typename DerivedType = DerivedClass>

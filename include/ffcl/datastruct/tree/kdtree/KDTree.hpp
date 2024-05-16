@@ -1,11 +1,20 @@
 #pragma once
 
 #include "ffcl/common/Utils.hpp"
+
 #include "ffcl/datastruct/tree/kdtree/KDNodeView.hpp"
+
+#include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
+
+#include "ffcl/datastruct/bounds/AABBWithCentroid.hpp"
+#include "ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp"
+
 #include "ffcl/datastruct/tree/kdtree/policy/AxisSelectionPolicy.hpp"
 #include "ffcl/datastruct/tree/kdtree/policy/SplittingRulePolicy.hpp"
 
 #include "ffcl/common/math/random/Distributions.hpp"
+
+#include "ffcl/datastruct/bounds/AABBWithCentroid.hpp"
 
 #include <algorithm>
 #include <array>
@@ -27,7 +36,10 @@ namespace ffcl::datastruct {
 
 namespace fs = std::filesystem;
 
-template <typename IndicesIterator, typename SamplesIterator>
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename BoundWithCentroid = bounds::AABBWithCentroid<
+              bounds::segment::LowerBoundAndUpperBound<typename std::iterator_traits<SamplesIterator>::value_type>>>
 class KDTree {
   public:
     using IndicesIteratorType = IndicesIterator;
@@ -42,10 +54,14 @@ class KDTree {
     static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
-    using NodeType = typename KDNodeView<IndicesIterator, DataType>::NodeType;
-    using NodePtr  = typename KDNodeView<IndicesIterator, DataType>::NodePtr;
+    using NodeType = typename KDNodeView<IndicesIterator, BoundWithCentroid>::NodeType;
+    using NodePtr  = typename KDNodeView<IndicesIterator, BoundWithCentroid>::NodePtr;
 
-    using HyperIntervalType = HyperInterval<DataType>;
+    using HyperIntervalType     = HyperInterval<DataType>;
+    using BoundWithCentroidType = BoundWithCentroid;
+
+    static_assert(common::is_crtp_of<BoundWithCentroidType, bounds::StaticBoundWithCentroid>::value,
+                  "Provided a BoundWithCentroidType that does not inherit from StaticBoundWithCentroid<Derived>");
 
     struct Options {
         Options()
@@ -180,21 +196,22 @@ class KDTree {
 };
 
 //  Class Template Argument Deduction (CTAD) guide
-template <typename IndicesIterator, typename SamplesIterator>
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
 KDTree(IndicesIterator,
        IndicesIterator,
        SamplesIterator,
        SamplesIterator,
        std::size_t,
-       const typename KDTree<IndicesIterator, SamplesIterator>::Options&) -> KDTree<IndicesIterator, SamplesIterator>;
+       const typename KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::Options&)
+    -> KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>;
 
-template <typename IndicesIterator, typename SamplesIterator>
-KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_first,
-                                                 IndicesIterator indices_range_last,
-                                                 SamplesIterator samples_range_first,
-                                                 SamplesIterator samples_range_last,
-                                                 std::size_t     n_features,
-                                                 const Options&  options)
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::KDTree(IndicesIterator indices_range_first,
+                                                                    IndicesIterator indices_range_last,
+                                                                    SamplesIterator samples_range_first,
+                                                                    SamplesIterator samples_range_last,
+                                                                    std::size_t     n_features,
+                                                                    const Options&  options)
   : options_{options}
   , samples_range_first_{samples_range_first}
   , samples_range_last_{samples_range_last}
@@ -217,8 +234,8 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
                 0,
                 hyper_interval_)} {}
 
-template <typename IndicesIterator, typename SamplesIterator>
-KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::KDTree(const KDTree& other)
   : options_{other.options_}
   , samples_range_first_{other.samples_range_first_}
   , samples_range_last_{other.samples_range_last_}
@@ -227,8 +244,8 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
   , hyper_interval_{other.hyper_interval_}
   , root_{other.root_} {}
 
-template <typename IndicesIterator, typename SamplesIterator>
-KDTree<IndicesIterator, SamplesIterator>::KDTree(KDTree&& other) noexcept
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::KDTree(KDTree&& other) noexcept
   : options_{std::move(other.options_)}
   , samples_range_first_{std::move(other.samples_range_first_)}
   , samples_range_last_{std::move(other.samples_range_last_)}
@@ -236,63 +253,65 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(KDTree&& other) noexcept
   , hyper_interval_{std::move(other.hyper_interval_)}
   , root_{std::move(other.root_)} {}
 
-template <typename IndicesIterator, typename SamplesIterator>
-std::size_t KDTree<IndicesIterator, SamplesIterator>::n_samples() const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+std::size_t KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::n_samples() const {
     return common::get_n_samples(samples_range_first_, samples_range_last_, n_features_);
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-std::size_t KDTree<IndicesIterator, SamplesIterator>::n_features() const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+std::size_t KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::n_features() const {
     return n_features_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::begin() const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::begin() const {
     return samples_range_first_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::end() const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::end() const {
     return samples_range_last_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::cbegin() const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::cbegin() const {
     return samples_range_first_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::cend() const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::cend() const {
     return samples_range_last_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::root() const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::root() const {
     return root_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::operator[](std::size_t sample_index) const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::operator[](std::size_t sample_index) const {
     return features_range_first(sample_index);
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::features_range_first(std::size_t sample_index) const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::features_range_first(
+    std::size_t sample_index) const {
     return samples_range_first_ + sample_index * n_features_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-constexpr auto KDTree<IndicesIterator, SamplesIterator>::features_range_last(std::size_t sample_index) const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+constexpr auto KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::features_range_last(
+    std::size_t sample_index) const {
     return samples_range_first_ + sample_index * n_features_ + n_features_;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterator, SamplesIterator>::build(
-    const IndicesIterator& indices_range_first,
-    const IndicesIterator& indices_range_last,
-    std::size_t            feature_cut_index,
-    std::size_t            depth,
-    HyperIntervalType&     hyper_interval) {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+typename KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::NodePtr
+KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::build(const IndicesIterator& indices_range_first,
+                                                                   const IndicesIterator& indices_range_last,
+                                                                   std::size_t            feature_cut_index,
+                                                                   std::size_t            depth,
+                                                                   HyperIntervalType&     hyper_interval) {
     NodePtr kdnode;
     // number of samples in the current node
     const std::size_t n_node_samples = std::distance(indices_range_first, indices_range_last);
@@ -332,7 +351,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
         // make the left node
         {
             // set the right bound of the left child to the cut value
-            hyper_interval[feature_cut_index].second() = feature_cut_value;
+            hyper_interval[feature_cut_index].update_upper_bound(feature_cut_value);
 
             kdnode->left_ = build(/**/ left_indices_range.first,
                                   /**/ left_indices_range.second,
@@ -343,12 +362,12 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
             kdnode->left_->parent_ = kdnode;
 
             // reset the right bound of the bounding box to the current kdnode right bound
-            hyper_interval[feature_cut_index].second() = kdnode->axis_interval_.second();
+            hyper_interval[feature_cut_index].update_upper_bound(kdnode->axis_interval_.upper_bound());
         }
         // make the right node
         {
             // set the left bound of the right child to the cut value
-            hyper_interval[feature_cut_index].first() = feature_cut_value;
+            hyper_interval[feature_cut_index].update_lower_bound(feature_cut_value);
 
             kdnode->right_ = build(/**/ right_indices_range.first,
                                    /**/ right_indices_range.second,
@@ -359,7 +378,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
             kdnode->right_->parent_ = kdnode;
 
             // reset the left bound of the bounding box to the current kdnode left bound
-            hyper_interval[feature_cut_index].first() = kdnode->axis_interval_.first();
+            hyper_interval[feature_cut_index].update_lower_bound(kdnode->axis_interval_.lower_bound());
         }
     } else {
         kdnode = std::make_shared<NodeType>(std::make_pair(indices_range_first, indices_range_last),
@@ -368,9 +387,10 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
     return kdnode;
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-void KDTree<IndicesIterator, SamplesIterator>::serialize(const NodePtr&                              kdnode,
-                                                         rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+void KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::serialize(
+    const NodePtr&                              kdnode,
+    rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
     writer.StartObject();
     {
         writer.String("axis");
@@ -394,8 +414,8 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const NodePtr&         
     writer.EndObject();
 }
 
-template <typename IndicesIterator, typename SamplesIterator>
-void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepath) const {
+template <typename IndicesIterator, typename SamplesIterator, typename BoundWithCentroid>
+void KDTree<IndicesIterator, SamplesIterator, BoundWithCentroid>::serialize(const fs::path& filepath) const {
     static_assert(std::is_floating_point_v<DataType> || std::is_integral_v<DataType>,
                   "Unsupported type during kdtree serialization");
 
@@ -421,12 +441,12 @@ void KDTree<IndicesIterator, SamplesIterator>::serialize(const fs::path& filepat
             writer.StartArray();
 
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(hyper_interval_[feature_index].first());
-                writer.Int64(hyper_interval_[feature_index].second());
+                writer.Int64(hyper_interval_[feature_index].lower_bound());
+                writer.Int64(hyper_interval_[feature_index].upper_bound());
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(hyper_interval_[feature_index].first());
-                writer.Double(hyper_interval_[feature_index].second());
+                writer.Double(hyper_interval_[feature_index].lower_bound());
+                writer.Double(hyper_interval_[feature_index].upper_bound());
             }
             writer.EndArray();
         }

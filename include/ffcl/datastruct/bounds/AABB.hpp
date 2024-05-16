@@ -14,6 +14,7 @@ class AABB : public StaticBound<AABB<Segment>> {
   public:
     using ValueType    = typename Segment::ValueType;
     using SegmentsType = FeaturesVector<Segment, 0>;
+    using IteratorType = typename SegmentsType::Iterator;
 
     constexpr AABB(const SegmentsType& segments)
       : segments_{segments} {}

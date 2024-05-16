@@ -16,7 +16,7 @@ class UnboundedBall : public StaticBoundWithCentroid<UnboundedBall<Value, NFeatu
 
     using CentroidType = FeaturesVector<ValueType, NFeatures>;
 
-    using IteratorType = typename CentroidType::IteratorType;
+    using IteratorType = typename CentroidType::Iterator;
 
     UnboundedBall(const CentroidType& centroid)
       : centroid_{centroid} {}

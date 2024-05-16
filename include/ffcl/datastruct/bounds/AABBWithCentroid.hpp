@@ -15,7 +15,15 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
     using ValueType    = typename Segment::ValueType;
     using SegmentsType = FeaturesVector<Segment, 0>;
     using CentroidType = FeaturesVector<ValueType, NFeatures>;
-    using IteratorType = typename CentroidType::IteratorType;
+    using IteratorType = typename CentroidType::Iterator;
+
+    constexpr AABBWithCentroid(const SegmentsType& segments)
+      : centroid_{std::vector<ValueType>(segments.size())}
+      , segments_{segments} {
+        for (std::size_t feature_index = 0; feature_index < segments_.size(); ++feature_index) {
+            centroid_[feature_index] = segments_[feature_index].centroid();
+        }
+    }
 
     constexpr AABBWithCentroid(const CentroidType& centroid, const SegmentsType& segments)
       : centroid_{centroid}

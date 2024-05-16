@@ -17,7 +17,7 @@ namespace ffcl::datastruct::kdtree::algorithms {
 template <typename SamplesIterator>
 std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval<SamplesIterator>& hyper_interval) {
     const auto comparison = [](const auto& lhs, const auto& rhs) {
-        return common::abs(lhs.first() - lhs.second()) < common::abs(rhs.first() - rhs.second());
+        return common::abs(lhs.lower_bound() - lhs.upper_bound()) < common::abs(rhs.lower_bound() - rhs.upper_bound());
     };
     const auto it = std::max_element(hyper_interval.begin(), hyper_interval.end(), comparison);
     return std::distance(hyper_interval.begin(), it);
@@ -37,7 +37,7 @@ std::size_t select_axis_with_largest_bounding_box_difference(const HyperInterval
     // "feature_index"s are only the ones specified in the feature_mask
     for (std::size_t feature_index : feature_mask) {
         const auto max_range_candidate =
-            common::abs(hyper_interval[feature_index].second() - hyper_interval[feature_index].first());
+            common::abs(hyper_interval[feature_index].upper_bound() - hyper_interval[feature_index].lower_bound());
 
         if (max_range_candidate > current_max_range) {
             current_max_range_feature_index = feature_index;

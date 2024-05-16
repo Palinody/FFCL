@@ -21,20 +21,20 @@ class LowerBoundAndUpperBound : public StaticSegment<LowerBoundAndUpperBound<Val
     LowerBoundAndUpperBound(SegmentType&& segment) noexcept
       : segment_representation_{std::move(segment)} {}
 
-    constexpr auto read_only_first_impl() const {
+    constexpr auto lower_bound_impl() const {
         return segment_representation_.first;
     }
 
-    auto& read_write_first_impl() {
-        return segment_representation_.first;
+    void update_lower_bound_impl(const ValueType& new_lower_bound) {
+        segment_representation_.first = new_lower_bound;
     }
 
-    constexpr auto read_only_second_impl() const {
+    constexpr auto upper_bound_impl() const {
         return segment_representation_.second;
     }
 
-    auto& read_write_second_impl() {
-        return segment_representation_.second;
+    void update_upper_bound_impl(const ValueType& new_upper_bound) {
+        segment_representation_.second = new_upper_bound;
     }
 
     constexpr auto centroid_impl() const {

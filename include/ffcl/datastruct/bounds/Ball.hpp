@@ -16,7 +16,7 @@ class Ball : public StaticBoundWithCentroid<Ball<Value, NFeatures>> {
 
     using CentroidType = FeaturesVector<ValueType, NFeatures>;
 
-    using IteratorType = typename CentroidType::IteratorType;
+    using IteratorType = typename CentroidType::Iterator;
 
     Ball(const CentroidType& centroid, const ValueType& radius)
       : centroid_{centroid}

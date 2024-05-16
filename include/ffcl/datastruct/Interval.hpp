@@ -46,11 +46,11 @@ auto make_interval(const SamplesIterator& samples_range_first,
         // feature_index
         const auto min_max_feature_candidate = samples_range_first[sample_index * n_features + feature_index];
 
-        if (min_max_feature_candidate < interval.first()) {
-            interval.first() = min_max_feature_candidate;
+        if (min_max_feature_candidate < interval.lower_bound()) {
+            interval.update_lower_bound(min_max_feature_candidate);
         }
-        if (min_max_feature_candidate > interval.second()) {
-            interval.second() = min_max_feature_candidate;
+        if (min_max_feature_candidate > interval.upper_bound()) {
+            interval.update_upper_bound(min_max_feature_candidate);
         }
     }
     return interval;
@@ -77,11 +77,11 @@ auto make_interval(const IndicesIterator& indices_range_first,
         const auto min_max_feature_candidate =
             samples_range_first[indices_range_first[sample_index] * n_features + feature_index];
 
-        if (min_max_feature_candidate < interval.first()) {
-            interval.first() = min_max_feature_candidate;
+        if (min_max_feature_candidate < interval.lower_bound()) {
+            interval.update_lower_bound(min_max_feature_candidate);
         }
-        if (min_max_feature_candidate > interval.second()) {
-            interval.second() = min_max_feature_candidate;
+        if (min_max_feature_candidate > interval.upper_bound()) {
+            interval.update_upper_bound(min_max_feature_candidate);
         }
     }
     return interval;
@@ -105,11 +105,11 @@ auto make_hyper_interval(const SamplesIterator& samples_range_first,
             // feature_index
             const auto min_max_feature_candidate = samples_range_first[sample_index * n_features + feature_index];
 
-            if (min_max_feature_candidate < hyper_interval[feature_index].first()) {
-                hyper_interval[feature_index].first() = min_max_feature_candidate;
+            if (min_max_feature_candidate < hyper_interval[feature_index].lower_bound()) {
+                hyper_interval[feature_index].update_lower_bound(min_max_feature_candidate);
             }
-            if (min_max_feature_candidate > hyper_interval[feature_index].second()) {
-                hyper_interval[feature_index].second() = min_max_feature_candidate;
+            if (min_max_feature_candidate > hyper_interval[feature_index].upper_bound()) {
+                hyper_interval[feature_index].update_upper_bound(min_max_feature_candidate);
             }
         }
     }
@@ -136,11 +136,11 @@ auto make_hyper_interval(const IndicesIterator& indices_range_first,
             // feature_index
             const auto min_max_feature_candidate = samples_range_first[*subrange_index_it * n_features + feature_index];
 
-            if (min_max_feature_candidate < hyper_interval[feature_index].first()) {
-                hyper_interval[feature_index].first() = min_max_feature_candidate;
+            if (min_max_feature_candidate < hyper_interval[feature_index].lower_bound()) {
+                hyper_interval[feature_index].update_lower_bound(min_max_feature_candidate);
             }
-            if (min_max_feature_candidate > hyper_interval[feature_index].second()) {
-                hyper_interval[feature_index].second() = min_max_feature_candidate;
+            if (min_max_feature_candidate > hyper_interval[feature_index].upper_bound()) {
+                hyper_interval[feature_index].update_upper_bound(min_max_feature_candidate);
             }
         }
     }
@@ -155,8 +155,8 @@ bool is_sample_in_hyper_interval(const FeaturesIterator&                features
 
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
         // A sample is inside the bounding box if p is in [lo, hi]
-        if (features_range_first[feature_index] < hyper_interval[feature_index].first() ||
-            features_range_first[feature_index] > hyper_interval[feature_index].second()) {
+        if (features_range_first[feature_index] < hyper_interval[feature_index].lower_bound() ||
+            features_range_first[feature_index] > hyper_interval[feature_index].upper_bound()) {
             return false;
         }
     }

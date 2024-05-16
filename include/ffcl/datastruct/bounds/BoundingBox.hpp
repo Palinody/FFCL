@@ -17,7 +17,7 @@ class BoundingBox : public StaticBoundWithCentroid<BoundingBox<Segment>> {
     using CentroidType            = FeaturesVector<ValueType, 0>;
     using LengthsFromCentroidType = CentroidType;
 
-    using IteratorType = typename CentroidType::IteratorType;
+    using IteratorType = typename CentroidType::Iterator;
 
     BoundingBox(const SegmentsType& segments)
       : centroid_{std::vector<ValueType>(segments.size())}

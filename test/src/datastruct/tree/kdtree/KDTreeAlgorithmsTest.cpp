@@ -66,7 +66,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxTest) {
                     const auto interval =
                         ffcl::datastruct::make_interval(data.begin(), data.end(), features, feature_index);
 
-                    const auto [min, max] = std::make_pair(interval.first(), interval.second());
+                    const auto [min, max] = std::make_pair(interval.lower_bound(), interval.upper_bound());
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
@@ -96,7 +96,7 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxIndexedTest) {
                     const auto interval = ffcl::datastruct::make_interval(
                         data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
 
-                    const auto [min, max] = std::make_pair(interval.first(), interval.second());
+                    const auto [min, max] = std::make_pair(interval.lower_bound(), interval.upper_bound());
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
@@ -123,8 +123,8 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [min, max] =
-                        std::make_pair(hyper_interval[feature_index].first(), hyper_interval[feature_index].second());
+                    const auto [min, max] = std::make_pair(hyper_interval[feature_index].lower_bound(),
+                                                           hyper_interval[feature_index].upper_bound());
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
@@ -154,8 +154,8 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxIndexedTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto [min, max] =
-                        std::make_pair(hyper_interval[feature_index].first(), hyper_interval[feature_index].second());
+                    const auto [min, max] = std::make_pair(hyper_interval[feature_index].lower_bound(),
+                                                           hyper_interval[feature_index].upper_bound());
 
                     const auto target_column = this->get_column(data.begin(), data.end(), features, feature_index);
                     const auto target_min    = *std::min_element(target_column.begin(), target_column.end());
