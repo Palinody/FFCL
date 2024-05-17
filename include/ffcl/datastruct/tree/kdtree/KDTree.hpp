@@ -175,7 +175,7 @@ class KDTree {
                   const IndicesIterator& indices_range_last,
                   std::size_t            feature_cut_index,
                   std::size_t            depth,
-                  BoundType&             hyper_interval);
+                  BoundType&             bound);
 
     // Options used to configure the indexing structure.
     Options options_;

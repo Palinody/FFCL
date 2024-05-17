@@ -15,7 +15,7 @@
 namespace ffcl::datastruct::kdtree::algorithms {
 
 template <typename Bound>
-std::size_t select_axis_with_largest_bounding_box_difference(const Bound& bound) {
+std::size_t select_longest_axis(const Bound& bound) {
     const auto comparison = [](const auto& lhs, const auto& rhs) {
         return common::abs(lhs.lower_bound() - lhs.upper_bound()) < common::abs(rhs.lower_bound() - rhs.upper_bound());
     };
@@ -24,8 +24,7 @@ std::size_t select_axis_with_largest_bounding_box_difference(const Bound& bound)
 }
 
 template <typename Bound>
-std::size_t select_axis_with_largest_bounding_box_difference(const Bound&                    bound,
-                                                             const std::vector<std::size_t>& feature_mask) {
+std::size_t select_longest_axis(const Bound& bound, const std::vector<std::size_t>& feature_mask) {
     using DataType = typename Bound::ValueType;
 
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
@@ -48,12 +47,12 @@ std::size_t select_axis_with_largest_bounding_box_difference(const Bound&       
 }
 
 template <typename IndicesIterator, typename SamplesIterator, typename Bound>
-std::size_t select_axis_with_largest_variance(const IndicesIterator& indices_range_first,
-                                              const IndicesIterator& indices_range_last,
-                                              const SamplesIterator& samples_range_first,
-                                              const SamplesIterator& samples_range_last,
-                                              std::size_t            n_features,
-                                              double                 n_samples_rate) {
+std::size_t select_largest_variance_axis(const IndicesIterator& indices_range_first,
+                                         const IndicesIterator& indices_range_last,
+                                         const SamplesIterator& samples_range_first,
+                                         const SamplesIterator& samples_range_last,
+                                         std::size_t            n_features,
+                                         double                 n_samples_rate) {
     assert(n_samples_rate >= 0 && n_samples_rate <= 1);
 
     static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
@@ -91,20 +90,20 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator& indices_ran
         // otherwise apply the bounding box method
         auto bound = make_tight_bound<SamplesIterator, Bound>(samples_range_first, samples_range_last, n_features);
 
-        return select_axis_with_largest_bounding_box_difference<Bound>(bound);
+        return select_longest_axis(bound);
     }
     // return a random axis if theres only one sample left
     return common::math::random::uniform_distribution<std::size_t>(0, n_features - 1)();
 }
 
 template <typename IndicesIterator, typename SamplesIterator, typename Bound>
-std::size_t select_axis_with_largest_variance(const IndicesIterator&          indices_range_first,
-                                              const IndicesIterator&          indices_range_last,
-                                              const SamplesIterator&          samples_range_first,
-                                              const SamplesIterator&          samples_range_last,
-                                              std::size_t                     n_features,
-                                              double                          n_samples_rate,
-                                              const std::vector<std::size_t>& feature_mask) {
+std::size_t select_largest_variance_axis(const IndicesIterator&          indices_range_first,
+                                         const IndicesIterator&          indices_range_last,
+                                         const SamplesIterator&          samples_range_first,
+                                         const SamplesIterator&          samples_range_last,
+                                         std::size_t                     n_features,
+                                         double                          n_samples_rate,
+                                         const std::vector<std::size_t>& feature_mask) {
     assert(0 <= n_samples_rate && n_samples_rate <= 1);
 
     static_assert(common::is_iterator<IndicesIterator>::value, "IndicesIterator is not an iterator");
@@ -150,7 +149,7 @@ std::size_t select_axis_with_largest_variance(const IndicesIterator&          in
         // otherwise apply the bounding box method
         auto bound = make_tight_bound<SamplesIterator, Bound>(samples_range_first, samples_range_last, n_features);
 
-        return select_axis_with_largest_bounding_box_difference<Bound>(bound, feature_mask);
+        return select_longest_axis(bound, feature_mask);
     }
     // return a random axis if theres only one sample left
     return common::math::random::uniform_distribution<std::size_t>(0, n_features - 1)();

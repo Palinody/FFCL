@@ -172,7 +172,7 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator, Bound>::opera
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most variance
-        return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator, Bound>(
+        return kdtree::algorithms::select_largest_variance_axis<IndicesIterator, SamplesIterator, Bound>(
             /**/ indices_range_first,
             /**/ indices_range_last,
             /**/ samples_range_first,
@@ -180,7 +180,7 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator, Bound>::opera
             /**/ n_features,
             /**/ sampling_rate_);
     }
-    return kdtree::algorithms::select_axis_with_largest_variance<IndicesIterator, SamplesIterator, Bound>(
+    return kdtree::algorithms::select_largest_variance_axis<IndicesIterator, SamplesIterator, Bound>(
         /**/ indices_range_first,
         /**/ indices_range_last,
         /**/ samples_range_first,
@@ -204,9 +204,9 @@ std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator, Bound>::operato
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most spread (min-max values)
-        return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<Bound>(bound);
+        return kdtree::algorithms::select_longest_axis(bound);
     }
-    return kdtree::algorithms::select_axis_with_largest_bounding_box_difference<Bound>(bound, feature_mask_);
+    return kdtree::algorithms::select_longest_axis(bound, feature_mask_);
 }
 
 }  // namespace ffcl::datastruct::kdtree::policy
