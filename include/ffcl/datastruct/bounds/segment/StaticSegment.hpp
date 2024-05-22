@@ -36,7 +36,7 @@ struct StaticSegment {
 
     template <typename DerivedType = DerivedClass>
     constexpr bool contains_value(const typename DerivedType::ValueType& value) const {
-        return static_cast<const DerivedType*>(this)->contains_value_impl();
+        return static_cast<const DerivedType*>(this)->contains_value_impl(value);
     }
 };
 

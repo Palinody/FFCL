@@ -19,7 +19,6 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 #include "ffcl/datastruct/bounds/Ball.hpp"
-#include "ffcl/datastruct/bounds/BoundingBox.hpp"
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"
 
 #include "ffcl/search/ClosestPairOfSamples.hpp"
@@ -172,8 +171,7 @@ TEST_F(SearcherErrorsTest, NoStructureTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    // using SegmentType = ffcl::datastruct::bounds::segment::LowerBoundAndUpperBound<ValueType>;
-    // using BoundType   = ffcl::datastruct::bounds::BoundingBox<SegmentType>;
+    using SegmentType = ffcl::datastruct::bounds::segment::LowerBoundAndUpperBound<ValueType>;
     // using BoundType = ffcl::datastruct::bounds::Ball<ValueType, 2>;
     // using BoundType = ffcl::datastruct::bounds::UnboundedBall<ValueType, 2>;
     // using BoundType = ffcl::datastruct::bounds::UnboundedBallView<SamplesIterator>;
@@ -186,21 +184,14 @@ TEST_F(SearcherErrorsTest, NoStructureTest) {
     // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-10, -10}, 10});
     // auto bound_ptr = std::make_shared<BoundType>(BoundType{{-10, -10}});
 
-    auto center_point_query = std::vector<ValueType>{-10, -10};
     // const ValueType radius_query = 5;
-    auto lengths_from_center_point_query = std::vector<ValueType>{2, 6};
+    auto aabb_segments = std::vector<SegmentType>{{-12, 8}, {-16, 16}};
 
-    // auto bound_query = BoundType(center_point_query.begin(), center_point_query.end(), radius_query);
-    auto bound_query = ffcl::datastruct::bounds::BoundingBoxView(
-        /**/ center_point_query.begin(),
-        /**/ center_point_query.end(),
-        /**/ lengths_from_center_point_query);
+    auto bound_query = ffcl::datastruct::bounds::AABBWithCentroid<SegmentType>(aabb_segments);
 
     const IndexType max_capacity = ffcl::common::infinity<IndexType>();
 
     auto bounded_buffer_query = ffcl::search::buffer::Unsorted(std::move(bound_query), /*max_capacity=*/max_capacity);
-    // auto bounded_buffer_query =
-    // BufferType(center_point_query.begin(), center_point_query.end(), /*max_capacity=*/max_capacity);
 
     auto searcher = ffcl::search::Searcher(std::move(indexer));
 
