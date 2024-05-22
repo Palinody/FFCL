@@ -55,6 +55,11 @@ struct StaticBoundWithCentroid {
     }
 
     template <typename DerivedType = DerivedClass>
+    auto centroid() const {
+        return static_cast<const DerivedType*>(this)->centroid_impl();
+    }
+
+    template <typename DerivedType = DerivedClass>
     constexpr auto centroid_begin() const {
         return static_cast<const DerivedType*>(this)->centroid_begin_impl();
     }

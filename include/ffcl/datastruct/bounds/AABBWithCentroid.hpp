@@ -87,6 +87,10 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
         return segments_[feature_index].centroid_to_bound_length();
     }
 
+    const auto& centroid_impl() const {
+        return centroid_;
+    }
+
     constexpr auto centroid_begin_impl() const {
         return centroid_.begin();
     }

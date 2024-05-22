@@ -79,6 +79,10 @@ class BoundingBox : public StaticBoundWithCentroid<BoundingBox<Segment>> {
         return lengths_from_center_point_[feature_index];
     }
 
+    const auto& centroid_impl() const {
+        return centroid_;
+    }
+
     constexpr auto centroid_begin_impl() const {
         return centroid_.begin();
     }
@@ -183,6 +187,10 @@ class BoundingBoxView : public StaticBoundWithCentroid<BoundingBoxView<FeaturesI
 
     constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
         return lengths_from_center_point_[feature_index];
+    }
+
+    auto centroid_impl() const {
+        return std::vector(centroid_features_range_first_, centroid_features_range_last_);
     }
 
     constexpr auto centroid_begin_impl() const {
