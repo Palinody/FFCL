@@ -28,6 +28,9 @@ class FeaturesVector<Value, 0> {
     FeaturesVector(ContainerType&& values) noexcept
       : values_{std::move(values)} {}
 
+    FeaturesVector(const Iterator& first, const Iterator& last)
+      : values_{ContainerType(first, last)} {}
+
     ValueType& operator[](std::size_t index) {
         return values_[index];
     }
@@ -67,6 +70,18 @@ class FeaturesVector<Value, 0> {
   private:
     ContainerType values_;
 };
+
+template <typename Value>
+FeaturesVector(std::initializer_list<Value>) -> FeaturesVector<Value, 0>;
+
+template <typename Value>
+FeaturesVector(const std::vector<Value>&) -> FeaturesVector<Value, 0>;
+
+template <typename Value>
+FeaturesVector(std::vector<Value> &&) -> FeaturesVector<Value, 0>;
+
+template <typename Iterator>
+FeaturesVector(const Iterator&, const Iterator&) -> FeaturesVector<typename Iterator::value_type, 0>;
 
 template <typename Value, std::size_t NFeatures>
 class FeaturesVector {
@@ -128,5 +143,14 @@ class FeaturesVector {
   private:
     ContainerType values_;
 };
+
+template <typename Value, typename... Args>
+FeaturesVector(Args&&...) -> FeaturesVector<Value, sizeof...(Args)>;
+
+template <typename Value, std::size_t NFeatures>
+FeaturesVector(const std::array<Value, NFeatures>&) -> FeaturesVector<Value, NFeatures>;
+
+template <typename Value, std::size_t NFeatures>
+FeaturesVector(std::array<Value, NFeatures> &&) -> FeaturesVector<Value, NFeatures>;
 
 }  // namespace ffcl::datastruct

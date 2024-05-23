@@ -58,11 +58,11 @@ class Ball : public StaticBoundWithCentroid<Ball<Value, NFeatures>> {
         return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
     }
 
-    constexpr auto centroid_to_bound_length_impl() const {
+    constexpr auto centroid_to_furthest_bound_distance_impl() const {
         return radius_;
     }
 
-    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return radius_;
     }
@@ -140,11 +140,11 @@ class BallView : public StaticBoundWithCentroid<BallView<FeaturesIterator>> {
         return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
     }
 
-    constexpr auto centroid_to_bound_length_impl() const {
+    constexpr auto centroid_to_furthest_bound_distance_impl() const {
         return radius_;
     }
 
-    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return radius_;
     }

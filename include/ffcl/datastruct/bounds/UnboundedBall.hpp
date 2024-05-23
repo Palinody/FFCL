@@ -53,11 +53,11 @@ class UnboundedBall : public StaticBoundWithCentroid<UnboundedBall<Value, NFeatu
         return std::optional<ValueType>(distance_to_centroid_impl(features_range_first, features_range_last));
     }
 
-    constexpr auto centroid_to_bound_length_impl() const {
+    constexpr auto centroid_to_furthest_bound_distance_impl() const {
         return common::infinity<ValueType>();
     }
 
-    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return common::infinity<ValueType>();
     }
@@ -129,16 +129,16 @@ class UnboundedBallView : public StaticBoundWithCentroid<UnboundedBallView<Featu
             distance_to_centroid_impl(other_features_range_first, other_features_range_last));
     }
 
-    constexpr auto centroid_to_bound_length_impl() const {
+    constexpr auto centroid_to_furthest_bound_distance_impl() const {
         return common::infinity<ValueType>();
     }
 
-    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
+    constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const {
         common::ignore_parameters(feature_index);
         return common::infinity<ValueType>();
     }
 
-    const auto& centroid_impl() const {
+    auto centroid_impl() const {
         return std::vector(centroid_features_range_first_, centroid_features_range_last_);
     }
 

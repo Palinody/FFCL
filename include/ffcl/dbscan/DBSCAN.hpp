@@ -8,6 +8,8 @@
 
 #include "ffcl/search/Search.hpp"
 
+#include "ffcl/datastruct/vector/FeaturesVector.hpp"
+
 #include <cstddef>
 #include <functional>
 #include <memory>

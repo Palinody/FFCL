@@ -41,44 +41,8 @@ class AABB : public StaticBound<AABB<Segment>> {
         return true;
     }
 
-    template <typename OtherFeaturesIterator>
-    constexpr auto distance_to_centroid_impl(const OtherFeaturesIterator& features_range_first,
-                                             const OtherFeaturesIterator& features_range_last) const {
-        const std::size_t n_features = std::distance(features_range_first, features_range_last);
-
-        auto centroid = std::make_unique<ValueType[]>(n_features);
-
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            centroid[feature_index] = segments_[feature_index].centroid();
-        }
-        return common::math::heuristics::auto_distance(
-            features_range_first, features_range_last, centroid.get(), centroid.get() + n_features);
-    }
-
-    template <typename OtherFeaturesIterator>
-    constexpr auto compute_distance_to_centroid_if_within_bounds_impl(
-        const OtherFeaturesIterator& features_range_first,
-        const OtherFeaturesIterator& features_range_last) const {
-        return is_in_bounds_impl(features_range_first, features_range_last)
-                   ? std::optional<ValueType>(distance_to_centroid_impl(features_range_first, features_range_last))
-                   : std::nullopt;
-    }
-
-    constexpr auto centroid_to_bound_length_impl() const {
-        throw std::runtime_error("No half length to return if no feature dimension is specified for this bound.");
-        return ValueType{};
-    }
-
-    constexpr auto centroid_to_bound_length_impl(std::size_t feature_index) const {
-        return segments_[feature_index].centroid_to_bound_length();
-    }
-
-    constexpr auto segments_begin() const {
-        return segments_.begin();
-    }
-
-    constexpr auto segments_end() const {
-        return segments_.end();
+    auto centroid_at(std::size_t feature_index) {
+        return segments_[feature_index].centroid();
     }
 
     auto& segment_at(std::size_t feature_index) {

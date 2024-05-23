@@ -35,23 +35,13 @@ struct StaticBoundWithCentroid {
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto centroid_to_bound_length() const {
-        return static_cast<const DerivedType*>(this)->centroid_to_bound_length_impl();
+    constexpr auto centroid_to_furthest_bound_distance() const {
+        return static_cast<const DerivedType*>(this)->centroid_to_furthest_bound_distance_impl();
     }
 
     template <typename DerivedType = DerivedClass>
-    constexpr auto centroid_to_bound_length(std::size_t feature_index) const {
-        return static_cast<const DerivedType*>(this)->centroid_to_bound_length_impl(feature_index);
-    }
-
-    template <typename DerivedType = DerivedClass>
-    constexpr auto furthest_distance() const {
-        return centroid_to_bound_length();
-    }
-
-    template <typename DerivedType = DerivedClass>
-    constexpr auto furthest_distance(std::size_t feature_index) const {
-        return centroid_to_bound_length(feature_index);
+    constexpr auto centroid_to_bound_distance(std::size_t feature_index) const {
+        return static_cast<const DerivedType*>(this)->centroid_to_bound_distance_impl(feature_index);
     }
 
     template <typename DerivedType = DerivedClass>
