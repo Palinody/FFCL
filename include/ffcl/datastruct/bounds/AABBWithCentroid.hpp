@@ -38,6 +38,11 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
         const OtherFeaturesIterator& features_range_first,
         const OtherFeaturesIterator& features_range_last) const;
 
+    template <typename OtherSegment>
+    constexpr auto min_distance(const AABBWithCentroid<OtherSegment, NFeatures>& other_aabb_with_centroids) const;
+
+    // ---
+
     constexpr auto centroid_to_furthest_bound_distance_impl() const;
     constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const;
 
@@ -128,6 +133,23 @@ constexpr auto AABBWithCentroid<Segment, NFeatures>::compute_distance_to_centroi
     return is_in_bounds_impl(features_range_first, features_range_last)
                ? std::optional<ValueType>(distance_to_centroid_impl(features_range_first, features_range_last))
                : std::nullopt;
+}
+
+template <typename Segment, std::size_t NFeatures>
+template <typename OtherSegment>
+constexpr auto AABBWithCentroid<Segment, NFeatures>::min_distance(
+    const AABBWithCentroid<OtherSegment, NFeatures>& other_aabb_with_centroids) const {
+    ValueType inner_lengths_sum = 0;
+
+    // Compute inner lengths using the min_distance method of each segment.
+    for (std::size_t feature_index = 0; feature_index < other_aabb_with_centroids.n_features(); ++feature_index) {
+        const auto& this_segment                       = this->segment_at(feature_index);
+        const auto& other_segment                      = other_aabb_with_centroids.segment_at(feature_index);
+        const auto  this_to_other_segment_min_distance = this_segment.min_distance(other_segment);
+
+        inner_lengths_sum += this_to_other_segment_min_distance * this_to_other_segment_min_distance;
+    }
+    return std::sqrt(inner_lengths_sum);
 }
 
 template <typename Segment, std::size_t NFeatures>

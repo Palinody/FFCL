@@ -17,8 +17,8 @@ template <typename SamplesIterator,
               bounds::segment::LowerBoundAndUpperBound<typename std::iterator_traits<SamplesIterator>::value_type>>
 auto make_tight_segment(const SamplesIterator& samples_range_first,
                         const SamplesIterator& samples_range_last,
-                        std::size_t            n_features,
-                        std::size_t            feature_index) {
+                        std::size_t            n_features    = 1,
+                        std::size_t            feature_index = 0) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     const std::size_t n_samples = common::get_n_samples(samples_range_first, samples_range_last, n_features);
@@ -48,8 +48,8 @@ auto make_tight_segment(const IndicesIterator& indices_range_first,
                         const IndicesIterator& indices_range_last,
                         const SamplesIterator& samples_range_first,
                         const SamplesIterator& samples_range_last,
-                        std::size_t            n_features,
-                        std::size_t            feature_index) {
+                        std::size_t            n_features    = 1,
+                        std::size_t            feature_index = 0) {
     using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
 
     common::ignore_parameters(samples_range_last);

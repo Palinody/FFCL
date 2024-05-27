@@ -433,6 +433,28 @@ elseif(MODE STREQUAL "gtest")
         DBSCANTest
     )
 
+    # ---
+    add_executable(
+        AABBWithCentroidTest
+
+        # ---
+        test/src/datastruct/bounds/AABBWithCentroidTest.cpp
+    )
+    target_link_libraries(
+        AABBWithCentroidTest
+
+        # PUBLIC
+        # TBB::tbb
+        GTest::gtest_main
+        GTest::gmock_main
+        OpenMP::OpenMP_CXX
+    )
+    add_test(
+        AABBWithCentroidTest
+        AABBWithCentroidTest
+    )
+
+    # ---
     add_executable(
         CondensedClusterTreeTest
 
