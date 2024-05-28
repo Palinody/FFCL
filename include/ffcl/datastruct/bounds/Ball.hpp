@@ -34,6 +34,9 @@ class Ball : public StaticBoundWithCentroid<Ball<Value, NFeatures>> {
         const OtherFeaturesIterator& features_range_first,
         const OtherFeaturesIterator& features_range_last) const;
 
+    template <typename OtherValueType>
+    constexpr auto min_distance(const Ball<OtherValueType, NFeatures>& other_ball) const;
+
     constexpr auto centroid_to_furthest_bound_distance_impl() const;
     constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const;
 
@@ -87,6 +90,17 @@ constexpr auto Ball<Value, NFeatures>::compute_distance_to_centroid_if_within_bo
     assert(centroid_.size() == std::distance(features_range_first, features_range_last));
     const auto feature_distance = distance_to_centroid_impl(features_range_first, features_range_last);
     return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
+}
+
+template <typename Value, std::size_t NFeatures>
+template <typename OtherValueType>
+constexpr auto Ball<Value, NFeatures>::min_distance(const Ball<OtherValueType, NFeatures>& other_ball) const {
+    const auto this_to_other_ball_centroids_distance = common::math::heuristics::auto_distance(
+        this->centroid_begin(), this->centroid_end(), other_ball.centroid_begin(), other_ball.centroid_begin());
+
+    return std::max(static_cast<ValueType>(0),
+                    this_to_other_ball_centroids_distance - (this->centroid_to_furthest_bound_distance() +
+                                                             other_ball.centroid_to_furthest_bound_distance()));
 }
 
 template <typename Value, std::size_t NFeatures>
@@ -145,6 +159,9 @@ class BallView : public StaticBoundWithCentroid<BallView<FeaturesIterator>> {
         const OtherFeaturesIterator& other_features_range_first,
         const OtherFeaturesIterator& other_features_range_last) const;
 
+    template <typename OtherFeaturesIterator>
+    constexpr auto min_distance(const BallView<OtherFeaturesIterator>& other_ball_view) const;
+
     constexpr auto centroid_to_furthest_bound_distance_impl() const;
     constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const;
 
@@ -199,6 +216,20 @@ constexpr auto BallView<FeaturesIterator>::compute_distance_to_centroid_if_withi
     assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
     const auto feature_distance = distance_to_centroid_impl(other_features_range_first, other_features_range_last);
     return feature_distance < radius_ ? std::optional<ValueType>(feature_distance) : std::nullopt;
+}
+
+template <typename FeaturesIterator>
+template <typename OtherFeaturesIterator>
+constexpr auto BallView<FeaturesIterator>::min_distance(const BallView<OtherFeaturesIterator>& other_ball_view) const {
+    const auto this_to_other_ball_centroids_distance =
+        common::math::heuristics::auto_distance(this->centroid_begin(),
+                                                this->centroid_end(),
+                                                other_ball_view.centroid_begin(),
+                                                other_ball_view.centroid_begin());
+
+    return std::max(static_cast<ValueType>(0),
+                    this_to_other_ball_centroids_distance - (this->centroid_to_furthest_bound_distance() +
+                                                             other_ball_view.centroid_to_furthest_bound_distance()));
 }
 
 template <typename FeaturesIterator>

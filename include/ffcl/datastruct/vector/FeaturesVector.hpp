@@ -14,6 +14,8 @@ class FeaturesVector;
 template <typename Value>
 class FeaturesVector<Value, 0> {
   public:
+    using NFeaturesSize = std::integral_constant<std::size_t, 0>;
+
     using ValueType     = Value;
     using ContainerType = std::vector<ValueType>;
     using Iterator      = typename ContainerType::iterator;
@@ -86,6 +88,8 @@ FeaturesVector(const Iterator&, const Iterator&) -> FeaturesVector<typename Iter
 template <typename Value, std::size_t NFeatures>
 class FeaturesVector {
   public:
+    using NFeaturesSize = std::integral_constant<std::size_t, NFeatures>;
+
     using ValueType     = Value;
     using ContainerType = std::array<ValueType, NFeatures>;
     using Iterator      = typename ContainerType::iterator;

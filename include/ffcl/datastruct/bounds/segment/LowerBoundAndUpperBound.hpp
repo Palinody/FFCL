@@ -70,11 +70,11 @@ constexpr auto LowerBoundAndUpperBound<Value>::min_distance(const OtherSegment& 
     static_assert(common::is_crtp_of<OtherSegment, StaticSegment>::value,
                   "Provided a OtherSegment that does not inherit from StaticSegment<Derived>");
 
-    if (this->upper_bound_impl() < other_segment.lower_bound()) {
-        return other_segment.lower_bound() - this->upper_bound_impl();
+    if (this->upper_bound() < other_segment.lower_bound()) {
+        return other_segment.lower_bound() - this->upper_bound();
 
-    } else if (other_segment.upper_bound() < this->lower_bound_impl()) {
-        return this->lower_bound_impl() - other_segment.upper_bound();
+    } else if (other_segment.upper_bound() < this->lower_bound()) {
+        return this->lower_bound() - other_segment.upper_bound();
 
     } else {
         return static_cast<ValueType>(0);

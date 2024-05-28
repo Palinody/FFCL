@@ -19,9 +19,9 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
     using IteratorType = typename CentroidType::Iterator;
 
     constexpr AABBWithCentroid(const SegmentsType& segments);
-    constexpr AABBWithCentroid(const SegmentsType&& segments);
+    constexpr AABBWithCentroid(SegmentsType&& segments);
     constexpr AABBWithCentroid(const CentroidType& centroid, const SegmentsType& segments);
-    constexpr AABBWithCentroid(CentroidType&& centroid, const SegmentsType&& segments) noexcept;
+    constexpr AABBWithCentroid(CentroidType&& centroid, SegmentsType&& segments) noexcept;
 
     constexpr std::size_t n_features_impl() const;
 
@@ -40,8 +40,6 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
 
     template <typename OtherSegment>
     constexpr auto min_distance(const AABBWithCentroid<OtherSegment, NFeatures>& other_aabb_with_centroids) const;
-
-    // ---
 
     constexpr auto centroid_to_furthest_bound_distance_impl() const;
     constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const;
@@ -66,7 +64,13 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
 
 template <typename Segment, std::size_t NFeatures>
 constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(const SegmentsType& segments)
-  : centroid_{std::vector<ValueType>(segments.size())}
+  : centroid_{[&segments]() {
+      if constexpr (SegmentsType::NFeaturesSize::value == 0) {
+          return std::vector<ValueType>(segments.size());
+      } else {
+          return std::array<ValueType, SegmentsType::NFeaturesSize::value>{};
+      }
+  }()}
   , segments_{segments} {
     for (std::size_t feature_index = 0; feature_index < segments_.size(); ++feature_index) {
         centroid_[feature_index] = segments_[feature_index].centroid();
@@ -74,8 +78,14 @@ constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(const SegmentsT
 }
 
 template <typename Segment, std::size_t NFeatures>
-constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(const SegmentsType&& segments)
-  : centroid_{std::vector<ValueType>(segments.size())}
+constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(SegmentsType&& segments)
+  : centroid_{[&segments]() {
+      if constexpr (SegmentsType::NFeaturesSize::value == 0) {
+          return std::vector<ValueType>(segments.size());
+      } else {
+          return std::array<ValueType, SegmentsType::NFeaturesSize::value>{};
+      }
+  }()}
   , segments_{std::move(segments)} {
     for (std::size_t feature_index = 0; feature_index < segments_.size(); ++feature_index) {
         centroid_[feature_index] = segments_[feature_index].centroid();
@@ -89,8 +99,8 @@ constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(const CentroidT
   , segments_{segments} {}
 
 template <typename Segment, std::size_t NFeatures>
-constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(CentroidType&&       centroid,
-                                                                 const SegmentsType&& segments) noexcept
+constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(CentroidType&& centroid,
+                                                                 SegmentsType&& segments) noexcept
   : centroid_{std::move(centroid)}
   , segments_{std::move(segments)} {}
 

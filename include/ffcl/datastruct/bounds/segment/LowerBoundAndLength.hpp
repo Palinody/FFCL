@@ -70,13 +70,13 @@ constexpr auto LowerBoundAndLength<Value>::min_distance(const OtherSegment& othe
                   "Provided a OtherSegment that does not inherit from StaticSegment<Derived>");
 
     // Precompute the upper bound to avoid recomputing the addition.
-    const auto this_upper_bound = this->upper_bound_impl();
+    const auto this_upper_bound = this->upper_bound();
 
     if (this_upper_bound < other_segment.lower_bound()) {
         return other_segment.lower_bound() - this_upper_bound;
 
-    } else if (other_segment.upper_bound() < this->lower_bound_impl()) {
-        return this->lower_bound_impl() - other_segment.upper_bound();
+    } else if (other_segment.upper_bound() < this->lower_bound()) {
+        return this->lower_bound() - other_segment.upper_bound();
 
     } else {
         return static_cast<ValueType>(0);
