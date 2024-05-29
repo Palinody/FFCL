@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp"
+#include "ffcl/datastruct/bounds/segment/StaticSegment.hpp"
 #include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
 #include <memory>
@@ -11,6 +12,9 @@ namespace ffcl::datastruct::bounds {
 
 template <typename Segment, std::size_t NFeatures = 0>
 class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment>> {
+    static_assert(common::is_crtp_of<Segment, segment::StaticSegment>::value,
+                  "Provided a Segment that does not inherit from segment::StaticSegment<Derived>");
+
   public:
     using SegmentType  = Segment;
     using ValueType    = typename Segment::ValueType;
