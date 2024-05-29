@@ -21,9 +21,6 @@ class LowerBoundAndUpperBound : public StaticSegment<LowerBoundAndUpperBound<Val
     constexpr auto upper_bound_impl() const;
     void           update_upper_bound_impl(const ValueType& new_upper_bound);
 
-    template <typename OtherSegment>
-    constexpr auto min_distance(const OtherSegment& other_segment) const;
-
     constexpr auto centroid_impl() const;
     constexpr auto centroid_to_bound_distance_impl() const;
     constexpr bool contains_value_impl(const ValueType& value) const;
@@ -62,23 +59,6 @@ constexpr auto LowerBoundAndUpperBound<Value>::upper_bound_impl() const {
 template <typename Value>
 void LowerBoundAndUpperBound<Value>::update_upper_bound_impl(const ValueType& new_upper_bound) {
     segment_representation_.second = new_upper_bound;
-}
-
-template <typename Value>
-template <typename OtherSegment>
-constexpr auto LowerBoundAndUpperBound<Value>::min_distance(const OtherSegment& other_segment) const {
-    static_assert(common::is_crtp_of<OtherSegment, StaticSegment>::value,
-                  "Provided a OtherSegment that does not inherit from StaticSegment<Derived>");
-
-    if (this->upper_bound() < other_segment.lower_bound()) {
-        return other_segment.lower_bound() - this->upper_bound();
-
-    } else if (other_segment.upper_bound() < this->lower_bound()) {
-        return this->lower_bound() - other_segment.upper_bound();
-
-    } else {
-        return static_cast<ValueType>(0);
-    }
 }
 
 template <typename Value>

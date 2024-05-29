@@ -435,13 +435,13 @@ elseif(MODE STREQUAL "gtest")
 
     # ---
     add_executable(
-        AABBWithCentroidTest
+        BoundsDistanceTest
 
         # ---
-        test/src/datastruct/bounds/AABBWithCentroidTest.cpp
+        test/src/datastruct/bounds/distance/BoundsDistanceTest.cpp
     )
     target_link_libraries(
-        AABBWithCentroidTest
+        BoundsDistanceTest
 
         # PUBLIC
         # TBB::tbb
@@ -450,8 +450,8 @@ elseif(MODE STREQUAL "gtest")
         OpenMP::OpenMP_CXX
     )
     add_test(
-        AABBWithCentroidTest
-        AABBWithCentroidTest
+        BoundsDistanceTest
+        BoundsDistanceTest
     )
 
     # ---

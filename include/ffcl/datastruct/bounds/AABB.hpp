@@ -26,9 +26,6 @@ class AABB : public StaticBound<AABB<Segment, NFeatures>> {
     constexpr bool is_in_bounds_impl(const OtherFeaturesIterator& features_range_first,
                                      const OtherFeaturesIterator& features_range_last) const;
 
-    template <typename OtherSegment>
-    constexpr auto min_distance(const AABB<OtherSegment, NFeatures>& other_aabb) const;
-
     auto        centroid_at(std::size_t feature_index);
     auto&       segment_at(std::size_t feature_index);
     const auto& segment_at(std::size_t feature_index) const;
@@ -62,22 +59,6 @@ constexpr bool AABB<Segment, NFeatures>::is_in_bounds_impl(const OtherFeaturesIt
         }
     }
     return true;
-}
-
-template <typename Segment, std::size_t NFeatures>
-template <typename OtherSegment>
-constexpr auto AABB<Segment, NFeatures>::min_distance(const AABB<OtherSegment, NFeatures>& other_aabb) const {
-    ValueType inner_lengths_sum = 0;
-
-    // Compute inner lengths using the min_distance method of each segment.
-    for (std::size_t feature_index = 0; feature_index < other_aabb.n_features(); ++feature_index) {
-        const auto& this_segment                       = this->segment_at(feature_index);
-        const auto& other_segment                      = other_aabb.segment_at(feature_index);
-        const auto  this_to_other_segment_min_distance = this_segment.min_distance(other_segment);
-
-        inner_lengths_sum += this_to_other_segment_min_distance * this_to_other_segment_min_distance;
-    }
-    return std::sqrt(inner_lengths_sum);
 }
 
 template <typename Segment, std::size_t NFeatures>

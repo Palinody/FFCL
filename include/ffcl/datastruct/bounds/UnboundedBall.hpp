@@ -32,9 +32,6 @@ class UnboundedBall : public StaticBoundWithCentroid<UnboundedBall<Value, NFeatu
         const OtherFeaturesIterator& features_range_first,
         const OtherFeaturesIterator& features_range_last) const;
 
-    template <typename OtherValueType>
-    constexpr auto min_distance(const UnboundedBall<OtherValueType, NFeatures>& other_unbounded_ball) const;
-
     constexpr auto centroid_to_furthest_bound_distance_impl() const;
     constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const;
 
@@ -85,14 +82,6 @@ constexpr auto UnboundedBall<Value, NFeatures>::compute_distance_to_centroid_if_
     const OtherFeaturesIterator& features_range_last) const {
     assert(centroid_.size() == std::distance(features_range_first, features_range_last));
     return std::optional<ValueType>(distance_to_centroid_impl(features_range_first, features_range_last));
-}
-
-template <typename Value, std::size_t NFeatures>
-template <typename OtherValueType>
-constexpr auto UnboundedBall<Value, NFeatures>::min_distance(
-    const UnboundedBall<OtherValueType, NFeatures>& other_unbounded_ball) const {
-    common::ignore_parameters(other_unbounded_ball);
-    return static_cast<ValueType>(0);
 }
 
 template <typename Value, std::size_t NFeatures>
@@ -148,9 +137,6 @@ class UnboundedBallView : public StaticBoundWithCentroid<UnboundedBallView<Featu
         const OtherFeaturesIterator& other_features_range_first,
         const OtherFeaturesIterator& other_features_range_last) const;
 
-    template <typename OtherFeaturesIterator>
-    constexpr auto min_distance(const UnboundedBallView<OtherFeaturesIterator>& other_unbounded_ball_view) const;
-
     constexpr auto centroid_to_furthest_bound_distance_impl() const;
     constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const;
 
@@ -201,14 +187,6 @@ constexpr auto UnboundedBallView<FeaturesIterator>::compute_distance_to_centroid
     const OtherFeaturesIterator& other_features_range_last) const {
     assert(n_features_impl() == std::distance(other_features_range_first, other_features_range_last));
     return std::optional<ValueType>(distance_to_centroid_impl(other_features_range_first, other_features_range_last));
-}
-
-template <typename FeaturesIterator>
-template <typename OtherFeaturesIterator>
-constexpr auto UnboundedBallView<FeaturesIterator>::min_distance(
-    const UnboundedBallView<OtherFeaturesIterator>& other_unbounded_ball_view) const {
-    common::ignore_parameters(other_unbounded_ball_view);
-    return static_cast<ValueType>(0);
 }
 
 template <typename FeaturesIterator>

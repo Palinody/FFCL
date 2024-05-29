@@ -6,6 +6,8 @@
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"
 #include "ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp"
 
+#include "ffcl/datastruct/bounds/distances/MinDistance.hpp"
+
 #include <array>
 #include <limits>
 
@@ -23,10 +25,10 @@ TEST(AABBWithCentroidTest, MinDistanceTest) {
     const auto segments_vector_1 = std::vector<SegmentType>{segment1, segment2};
     const auto segments_vector_2 = std::vector<SegmentType>{segment3, segment4};
 
-    const auto aabb1 = ffcl::datastruct::bounds::AABBWithCentroid<SegmentType>{segments_vector_1};
-    const auto aabb2 = ffcl::datastruct::bounds::AABBWithCentroid<SegmentType>{segments_vector_2};
+    const auto aabb1 = ffcl::datastruct::bounds::AABB<SegmentType>{segments_vector_1};
+    const auto aabb2 = ffcl::datastruct::bounds::AABB<SegmentType>{segments_vector_2};
 
-    const ValueType min_dist = aabb1.min_distance(aabb2);
+    const ValueType min_dist = ffcl::datastruct::bounds::min_distance(aabb1, aabb2);
 
     // std::cout << min_dist << "\n";
 
@@ -39,7 +41,7 @@ TEST(AABBWithCentroidTest, MinDistanceBallTest) {
     const auto ball_1 = ffcl::datastruct::bounds::Ball<ValueType>{{-10, 0}, 1};
     const auto ball_2 = ffcl::datastruct::bounds::Ball<ValueType>{{10, 0}, 5};
 
-    const ValueType min_dist = ball_1.min_distance(ball_2);
+    const ValueType min_dist = ffcl::datastruct::bounds::min_distance(ball_1, ball_2);
 
     // std::cout << min_dist << "\n";
 
@@ -52,7 +54,7 @@ TEST(AABBWithCentroidTest, MinDistanceUnboundedBallTest) {
     const auto unbounded_ball_1 = ffcl::datastruct::bounds::UnboundedBall<ValueType>{{-10, 0}};
     const auto unbounded_ball_2 = ffcl::datastruct::bounds::UnboundedBall<ValueType>{{10, 0}};
 
-    const ValueType min_dist = unbounded_ball_1.min_distance(unbounded_ball_2);
+    const ValueType min_dist = ffcl::datastruct::bounds::min_distance(unbounded_ball_1, unbounded_ball_2);
 
     // std::cout << min_dist << "\n";
 
