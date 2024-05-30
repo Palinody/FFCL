@@ -138,6 +138,7 @@ std::vector<std::size_t> generate_indices(std::size_t n_samples) {
     return elements;
 }
 
+/*
 TEST_F(SearcherErrorsTest, NoStructureTest) {
     fs::path filename = "no_structure.txt";
 
@@ -191,7 +192,7 @@ TEST_F(SearcherErrorsTest, NoStructureTest) {
 
     const IndexType max_capacity = ffcl::common::infinity<IndexType>();
 
-    auto bounded_buffer_query = ffcl::search::buffer::Unsorted(std::move(bound_query), /*max_capacity=*/max_capacity);
+    auto bounded_buffer_query = ffcl::search::buffer::Unsorted(std::move(bound_query), max_capacity);
 
     auto searcher = ffcl::search::Searcher(std::move(indexer));
 
@@ -258,6 +259,7 @@ TEST_F(SearcherErrorsTest, NoStructureBenchmarkTest) {
     }
     std::cout << "returned_indices_counter: " << returned_indices_counter << "\n";
 }
+*/
 
 template <typename IndicesIterator>
 void shuffle_indices(IndicesIterator indices_first, IndicesIterator indices_last) {

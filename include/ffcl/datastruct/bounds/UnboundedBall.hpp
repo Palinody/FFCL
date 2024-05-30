@@ -20,17 +20,17 @@ class UnboundedBall : public StaticBoundWithCentroid<UnboundedBall<Value, NFeatu
     std::size_t n_features_impl() const;
 
     template <typename OtherFeaturesIterator>
-    constexpr bool is_in_bounds_impl(const OtherFeaturesIterator& features_range_first,
-                                     const OtherFeaturesIterator& features_range_last) const;
+    constexpr bool is_in_bounds_impl(const OtherFeaturesIterator& other_features_range_first,
+                                     const OtherFeaturesIterator& other_features_range_last) const;
 
     template <typename OtherFeaturesIterator>
-    constexpr auto distance_to_centroid_impl(const OtherFeaturesIterator& features_range_first,
-                                             const OtherFeaturesIterator& features_range_last) const;
+    constexpr auto distance_to_centroid_impl(const OtherFeaturesIterator& other_features_range_first,
+                                             const OtherFeaturesIterator& other_features_range_last) const;
 
     template <typename OtherFeaturesIterator>
     constexpr auto compute_distance_to_centroid_if_within_bounds_impl(
-        const OtherFeaturesIterator& features_range_first,
-        const OtherFeaturesIterator& features_range_last) const;
+        const OtherFeaturesIterator& other_features_range_first,
+        const OtherFeaturesIterator& other_features_range_last) const;
 
     constexpr auto centroid_to_furthest_bound_distance_impl() const;
     constexpr auto centroid_to_bound_distance_impl(std::size_t feature_index) const;
@@ -59,29 +59,29 @@ std::size_t UnboundedBall<Value, NFeatures>::n_features_impl() const {
 template <typename Value, std::size_t NFeatures>
 template <typename OtherFeaturesIterator>
 constexpr bool UnboundedBall<Value, NFeatures>::is_in_bounds_impl(
-    const OtherFeaturesIterator& features_range_first,
-    const OtherFeaturesIterator& features_range_last) const {
-    common::ignore_parameters(features_range_first, features_range_last);
+    const OtherFeaturesIterator& other_features_range_first,
+    const OtherFeaturesIterator& other_features_range_last) const {
+    common::ignore_parameters(other_features_range_first, other_features_range_last);
     return true;
 }
 
 template <typename Value, std::size_t NFeatures>
 template <typename OtherFeaturesIterator>
 constexpr auto UnboundedBall<Value, NFeatures>::distance_to_centroid_impl(
-    const OtherFeaturesIterator& features_range_first,
-    const OtherFeaturesIterator& features_range_last) const {
-    assert(centroid_.size() == std::distance(features_range_first, features_range_last));
+    const OtherFeaturesIterator& other_features_range_first,
+    const OtherFeaturesIterator& other_features_range_last) const {
+    assert(centroid_.size() == std::distance(other_features_range_first, other_features_range_last));
     return common::math::heuristics::auto_distance(
-        features_range_first, features_range_last, centroid_.begin(), centroid_.end());
+        other_features_range_first, other_features_range_last, centroid_.begin(), centroid_.end());
 }
 
 template <typename Value, std::size_t NFeatures>
 template <typename OtherFeaturesIterator>
 constexpr auto UnboundedBall<Value, NFeatures>::compute_distance_to_centroid_if_within_bounds_impl(
-    const OtherFeaturesIterator& features_range_first,
-    const OtherFeaturesIterator& features_range_last) const {
-    assert(centroid_.size() == std::distance(features_range_first, features_range_last));
-    return std::optional<ValueType>(distance_to_centroid_impl(features_range_first, features_range_last));
+    const OtherFeaturesIterator& other_features_range_first,
+    const OtherFeaturesIterator& other_features_range_last) const {
+    assert(centroid_.size() == std::distance(other_features_range_first, other_features_range_last));
+    return std::optional<ValueType>(distance_to_centroid_impl(other_features_range_first, other_features_range_last));
 }
 
 template <typename Value, std::size_t NFeatures>

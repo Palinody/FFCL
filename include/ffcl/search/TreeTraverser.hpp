@@ -227,17 +227,12 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
     const auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
     auto queries_to_buffers_map =
-        buffer::IndicesToBuffersMap<DeducedBufferType,
-                                    typename ForwardedQueryIndexer::SamplesIteratorType,
-                                    typename ReferenceIndexer::SamplesIteratorType>{query_indexer.begin(),
-                                                                                    query_indexer.end(),
-                                                                                    query_indexer.n_features(),
-                                                                                    reference_indexer_.begin(),
-                                                                                    reference_indexer_.end(),
-                                                                                    reference_indexer_.n_features()};
-
-    // Update the caches associated with the root nodes.
-    queries_to_buffers_map.cost(query_indexer.root(), reference_indexer_.root());
+        buffer::make_indices_to_buffers_map<DeducedBufferType>(query_indexer.begin(),
+                                                               query_indexer.end(),
+                                                               query_indexer.n_features(),
+                                                               reference_indexer_.begin(),
+                                                               reference_indexer_.end(),
+                                                               reference_indexer_.n_features());
 
     dual_tree_traversal(query_indexer.root(),
                         reference_indexer_.root(),
@@ -270,6 +265,9 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                           const ReferenceNodePtr& reference_node,
                                                           QueriesToBuffersMap&    queries_to_buffers_map,
                                                           BufferArgs&&... buffer_args) const {
+    // Update the caches associated with the nodes at the current level.
+    queries_to_buffers_map.cost(query_node, reference_node);
+
     // updates the query buffers with the reference set while keeping track of the global shortest edge
     queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
                                                          query_node->indices_range_.second,
@@ -294,7 +292,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
         try_enqueue_combinations_from_cost(query_node, reference_node->left_);
         try_enqueue_combinations_from_cost(query_node, reference_node->right_);
     }
-    for (; !dual_node_priority_queue.empty(); dual_node_priority_queue.pop()) {
+    for (; !dual_node_priority_queue.empty();) {
         const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
 
         // Tries to update the cost based on the current state of the traversal.
@@ -304,13 +302,13 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
 
         dual_tree_traversal(
             pq_query_node, pq_reference_node, queries_to_buffers_map, std::forward<BufferArgs>(buffer_args)...);
+
+        dual_node_priority_queue.pop();
+
+        // if (!dual_node_priority_queue.empty()) {
+        //
+        // }
     }
 }
 
 }  // namespace ffcl::search
-
-// StaticBoundWithCentroid;
-
-// StaticRangeBasedBound;
-
-// StaticCoordinatesBasedBound;
