@@ -98,6 +98,30 @@ class TreeTraverser {
                              QueriesToBuffersMap&    queries_to_buffers_map,
                              BufferArgs&&... buffer_args) const;
 
+    template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+    void process_non_leaf_query(const QueryNodePtr&     query_node,
+                                const ReferenceNodePtr& reference_node,
+                                QueriesToBuffersMap&    queries_to_buffers_map,
+                                BufferArgs&&... buffer_args) const;
+
+    template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+    void process_non_leaf_reference(const QueryNodePtr&     query_node,
+                                    const ReferenceNodePtr& reference_node,
+                                    QueriesToBuffersMap&    queries_to_buffers_map,
+                                    BufferArgs&&... buffer_args) const;
+
+    template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+    void process_non_leaf_both(const QueryNodePtr&     query_node,
+                               const ReferenceNodePtr& reference_node,
+                               QueriesToBuffersMap&    queries_to_buffers_map,
+                               BufferArgs&&... buffer_args) const;
+
+    template <typename Node1Ptr, typename Node2Ptr, typename QueriesToBuffersMap, typename... BufferArgs>
+    void process_child_nodes(const Node1Ptr&      node1,
+                             const Node2Ptr&      node2,
+                             QueriesToBuffersMap& queries_to_buffers_map,
+                             BufferArgs&&... buffer_args) const;
+
     ReferenceIndexer reference_indexer_;
 };
 
@@ -259,15 +283,13 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... bu
 }
 */
 
+/*
 template <typename ReferenceIndexer>
 template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
 void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&     query_node,
                                                           const ReferenceNodePtr& reference_node,
                                                           QueriesToBuffersMap&    queries_to_buffers_map,
                                                           BufferArgs&&... buffer_args) const {
-    // Update the caches associated with the nodes at the current level.
-    queries_to_buffers_map.cost(query_node, reference_node);
-
     // updates the query buffers with the reference set while keeping track of the global shortest edge
     queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
                                                          query_node->indices_range_.second,
@@ -295,19 +317,207 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
     for (; !dual_node_priority_queue.empty();) {
         const auto& [pq_query_node, pq_reference_node, cost] = dual_node_priority_queue.top();
 
-        // Tries to update the cost based on the current state of the traversal.
-        // update_cost(...);
-
-        common::ignore_parameters(cost);
-
         dual_tree_traversal(
             pq_query_node, pq_reference_node, queries_to_buffers_map, std::forward<BufferArgs>(buffer_args)...);
 
         dual_node_priority_queue.pop();
 
-        // if (!dual_node_priority_queue.empty()) {
-        //
-        // }
+        if (!queries_to_buffers_map.should_prune_nodes_combination(pq_query_node, pq_reference_node, cost)) {
+            //
+        }
+    }
+}
+*/
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&     query_node,
+                                                          const ReferenceNodePtr& reference_node,
+                                                          QueriesToBuffersMap&    queries_to_buffers_map,
+                                                          BufferArgs&&... buffer_args) const {
+    // updates the query buffers with the reference set while keeping track of the global shortest edge
+    queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
+                                                         query_node->indices_range_.second,
+                                                         reference_node->indices_range_.first,
+                                                         reference_node->indices_range_.second,
+                                                         std::forward<BufferArgs>(buffer_args)...);
+
+    if (!query_node->is_leaf() && reference_node->is_leaf()) {
+        // The order of traversal doesnt matter for the query node.
+        const auto left_optional_cost  = queries_to_buffers_map.cost(query_node->left_, reference_node);
+        const auto right_optional_cost = queries_to_buffers_map.cost(query_node->right_, reference_node);
+
+        if (left_optional_cost) {
+            dual_tree_traversal(
+                query_node->left_, reference_node, queries_to_buffers_map, std::forward<BufferArgs>(buffer_args)...);
+        }
+        if (right_optional_cost) {
+            dual_tree_traversal(
+                query_node->right_, reference_node, queries_to_buffers_map, std::forward<BufferArgs>(buffer_args)...);
+        }
+    } else if (query_node->is_leaf() && !reference_node->is_leaf()) {
+        // The order of traversal does matter in this case.
+        const auto left_optional_cost  = queries_to_buffers_map.cost(query_node, reference_node->left_);
+        const auto right_optional_cost = queries_to_buffers_map.cost(query_node, reference_node->right_);
+
+        if (left_optional_cost.value_or(common::infinity<DataType>()) <
+            right_optional_cost.value_or(common::infinity<DataType>())) {
+            dual_tree_traversal(
+                query_node, reference_node->left_, queries_to_buffers_map, std::forward<BufferArgs>(buffer_args)...);
+
+            if (!queries_to_buffers_map.should_prune_nodes_combination(
+                    query_node, reference_node->right_, right_optional_cost.value_or(common::infinity<DataType>()))) {
+                dual_tree_traversal(query_node,
+                                    reference_node->right_,
+                                    queries_to_buffers_map,
+                                    std::forward<BufferArgs>(buffer_args)...);
+            }
+        } else if (left_optional_cost.value_or(common::infinity<DataType>()) >
+                   right_optional_cost.value_or(common::infinity<DataType>())) {
+            dual_tree_traversal(
+                query_node, reference_node->right_, queries_to_buffers_map, std::forward<BufferArgs>(buffer_args)...);
+
+            if (!queries_to_buffers_map.should_prune_nodes_combination(
+                    query_node, reference_node->left_, left_optional_cost.value_or(common::infinity<DataType>()))) {
+                dual_tree_traversal(query_node,
+                                    reference_node->left_,
+                                    queries_to_buffers_map,
+                                    std::forward<BufferArgs>(buffer_args)...);
+            }
+        } else if (common::equality(left_optional_cost.value_or(common::infinity<DataType>()),
+                                    right_optional_cost.value_or(common::infinity<DataType>()))) {
+            if (left_optional_cost) {
+                dual_tree_traversal(query_node,
+                                    reference_node->left_,
+                                    queries_to_buffers_map,
+                                    std::forward<BufferArgs>(buffer_args)...);
+
+                if (!queries_to_buffers_map.should_prune_nodes_combination(
+                        query_node,
+                        reference_node->right_,
+                        right_optional_cost.value_or(common::infinity<DataType>()))) {
+                    dual_tree_traversal(query_node,
+                                        reference_node->right_,
+                                        queries_to_buffers_map,
+                                        std::forward<BufferArgs>(buffer_args)...);
+                }
+            }
+        }
+    } else if (!query_node->is_leaf() && !reference_node->is_leaf()) {
+        {
+            // The order of traversal does matter in this case.
+            const auto left_optional_cost  = queries_to_buffers_map.cost(query_node->left_, reference_node->left_);
+            const auto right_optional_cost = queries_to_buffers_map.cost(query_node->left_, reference_node->right_);
+
+            if (left_optional_cost.value_or(common::infinity<DataType>()) <
+                right_optional_cost.value_or(common::infinity<DataType>())) {
+                dual_tree_traversal(query_node->left_,
+                                    reference_node->left_,
+                                    queries_to_buffers_map,
+                                    std::forward<BufferArgs>(buffer_args)...);
+
+                if (!queries_to_buffers_map.should_prune_nodes_combination(
+                        query_node->left_,
+                        reference_node->right_,
+                        right_optional_cost.value_or(common::infinity<DataType>()))) {
+                    dual_tree_traversal(query_node->left_,
+                                        reference_node->right_,
+                                        queries_to_buffers_map,
+                                        std::forward<BufferArgs>(buffer_args)...);
+                }
+            } else if (left_optional_cost.value_or(common::infinity<DataType>()) >
+                       right_optional_cost.value_or(common::infinity<DataType>())) {
+                dual_tree_traversal(query_node->left_,
+                                    reference_node->right_,
+                                    queries_to_buffers_map,
+                                    std::forward<BufferArgs>(buffer_args)...);
+
+                if (!queries_to_buffers_map.should_prune_nodes_combination(
+                        query_node->left_,
+                        reference_node->left_,
+                        left_optional_cost.value_or(common::infinity<DataType>()))) {
+                    dual_tree_traversal(query_node->left_,
+                                        reference_node->left_,
+                                        queries_to_buffers_map,
+                                        std::forward<BufferArgs>(buffer_args)...);
+                }
+            } else if (common::equality(left_optional_cost.value_or(common::infinity<DataType>()),
+                                        right_optional_cost.value_or(common::infinity<DataType>()))) {
+                if (left_optional_cost) {
+                    dual_tree_traversal(query_node->left_,
+                                        reference_node->left_,
+                                        queries_to_buffers_map,
+                                        std::forward<BufferArgs>(buffer_args)...);
+
+                    if (!queries_to_buffers_map.should_prune_nodes_combination(
+                            query_node->left_,
+                            reference_node->right_,
+                            right_optional_cost.value_or(common::infinity<DataType>()))) {
+                        dual_tree_traversal(query_node->left_,
+                                            reference_node->right_,
+                                            queries_to_buffers_map,
+                                            std::forward<BufferArgs>(buffer_args)...);
+                    }
+                }
+            }
+        }
+        {
+            // The order of traversal does matter in this case.
+            const auto left_optional_cost  = queries_to_buffers_map.cost(query_node->right_, reference_node->left_);
+            const auto right_optional_cost = queries_to_buffers_map.cost(query_node->right_, reference_node->right_);
+
+            if (left_optional_cost.value_or(common::infinity<DataType>()) <
+                right_optional_cost.value_or(common::infinity<DataType>())) {
+                dual_tree_traversal(query_node->right_,
+                                    reference_node->left_,
+                                    queries_to_buffers_map,
+                                    std::forward<BufferArgs>(buffer_args)...);
+
+                if (!queries_to_buffers_map.should_prune_nodes_combination(
+                        query_node->right_,
+                        reference_node->right_,
+                        right_optional_cost.value_or(common::infinity<DataType>()))) {
+                    dual_tree_traversal(query_node->right_,
+                                        reference_node->right_,
+                                        queries_to_buffers_map,
+                                        std::forward<BufferArgs>(buffer_args)...);
+                }
+            } else if (left_optional_cost.value_or(common::infinity<DataType>()) >
+                       right_optional_cost.value_or(common::infinity<DataType>())) {
+                dual_tree_traversal(query_node->right_,
+                                    reference_node->right_,
+                                    queries_to_buffers_map,
+                                    std::forward<BufferArgs>(buffer_args)...);
+
+                if (!queries_to_buffers_map.should_prune_nodes_combination(
+                        query_node->right_,
+                        reference_node->left_,
+                        left_optional_cost.value_or(common::infinity<DataType>()))) {
+                    dual_tree_traversal(query_node->right_,
+                                        reference_node->left_,
+                                        queries_to_buffers_map,
+                                        std::forward<BufferArgs>(buffer_args)...);
+                }
+            } else if (common::equality(left_optional_cost.value_or(common::infinity<DataType>()),
+                                        right_optional_cost.value_or(common::infinity<DataType>()))) {
+                if (left_optional_cost) {
+                    dual_tree_traversal(query_node->right_,
+                                        reference_node->left_,
+                                        queries_to_buffers_map,
+                                        std::forward<BufferArgs>(buffer_args)...);
+
+                    if (!queries_to_buffers_map.should_prune_nodes_combination(
+                            query_node->right_,
+                            reference_node->right_,
+                            right_optional_cost.value_or(common::infinity<DataType>()))) {
+                        dual_tree_traversal(query_node->right_,
+                                            reference_node->right_,
+                                            queries_to_buffers_map,
+                                            std::forward<BufferArgs>(buffer_args)...);
+                    }
+                }
+            }
+        }
     }
 }
 
