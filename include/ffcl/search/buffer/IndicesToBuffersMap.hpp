@@ -221,7 +221,7 @@ constexpr auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSample
         // (or to the element that prevented the insertion) and the second element is a boolean
         // indicating whether the insertion took place.
         // We are only interested in the first element of the pair.
-        index_to_buffer_it = queries_to_buffers_map_.emplace(index, std::move(buffer)).first;
+        index_to_buffer_it = emplace(index, std::move(buffer)).first;
     }
     return index_to_buffer_it;
 }
