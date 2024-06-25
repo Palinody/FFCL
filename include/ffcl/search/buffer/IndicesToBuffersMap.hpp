@@ -65,9 +65,9 @@ class IndicesToBuffersMap {
         -> std::optional<DistanceType>;
 
     template <typename QueryNodePtr, typename ReferenceNodePtr>
-    bool should_prune_nodes_combination(const QueryNodePtr&     query_node,
-                                        const ReferenceNodePtr& reference_node,
-                                        const DistanceType&     cost) const;
+    bool should_prune_nodes_combination(const QueryNodePtr& query_node,
+                                        const ReferenceNodePtr&,
+                                        const DistanceType& cost) const;
 
   private:
     template <typename FeaturesRangeIterator, typename... BufferArgs>
@@ -151,14 +151,37 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
     const ReferenceIndicesIterator& reference_indices_range_first,
     const ReferenceIndicesIterator& reference_indices_range_last,
     BufferArgs&&... buffer_args) {
+    static std::size_t n_calls         = 0;
+    static std::size_t n_skipped_calls = 0;
+
+    // std::cout << "n_queries: " << std::distance(query_indices_range_first, query_indices_range_last) << "\n";
+    // std::cout << "n_references: " << std::distance(reference_indices_range_first, reference_indices_range_last) <<
+    // "\n";
+    /*
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+
+    static decltype(timer.elapsed()) total_find_or_emplace_buffer = 0;
+    static decltype(timer.elapsed()) total_partial_search         = 0;
+    static decltype(timer.elapsed()) total_update                 = 0;
+
+    static constexpr std::uint8_t n_decimals = 9;
+    */
     // Iterate through all query indices within the specified range of the query node.
     for (auto query_index_it = query_indices_range_first; query_index_it != query_indices_range_last;
          ++query_index_it) {
+        // timer.reset();
+
         auto query_to_buffer_it = this->find_or_emplace_buffer(
             *query_index_it,
             query_samples_range_first_ + (*query_index_it) * query_n_features_,
             query_samples_range_first_ + (*query_index_it) * query_n_features_ + query_n_features_,
             std::forward<BufferArgs>(buffer_args)...);
+        /*
+        const auto elapsed_time_find_or_emplace_buffer = timer.elapsed();
+        printf("find_or_emplace_buffer time: %.*f\n", n_decimals, (elapsed_time_find_or_emplace_buffer * 1e-9f));
+        total_find_or_emplace_buffer += elapsed_time_find_or_emplace_buffer;
+        */
+        // timer.reset();
 
         // Regardless of whether the buffer was just inserted or already existed, perform a partial search
         // operation on the buffer. This operation updates the buffer based on a range of reference samples.
@@ -167,6 +190,12 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
                                                   reference_samples_range_first_,
                                                   reference_samples_range_last_,
                                                   reference_n_features_);
+        /*
+        const auto elapsed_time_partial_search = timer.elapsed();
+        printf("partial_search time: %.*f\n", n_decimals, (elapsed_time_partial_search * 1e-9f));
+        total_partial_search += elapsed_time_partial_search;
+        */
+        // timer.reset();
 
         // Update if no tightest buffer has been initialised yet.
         // Or, update if the buffer's max capacity has been reached and its furthest distance is less than the one
@@ -177,7 +206,24 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
                  tightest_query_to_buffer_it_->second.furthest_distance())) {
             tightest_query_to_buffer_it_ = query_to_buffer_it;
         }
+        /*
+        const auto elapsed_time_update = timer.elapsed();
+        printf("update time: %.*f\n", n_decimals, (elapsed_time_update * 1e-9f));
+        total_update += elapsed_time_update;
+        */
     }
+    /*
+    printf("total_find_or_emplace_buffer time: %.*f\n", n_decimals, (total_find_or_emplace_buffer * 1e-9f));
+    printf("total_partial_search time: %.*f\n", n_decimals, (total_partial_search * 1e-9f));
+    printf("total_update time: %.*f\n", n_decimals, (total_update * 1e-9f));
+    printf("---\n");
+    */
+    if (std::distance(query_indices_range_first, query_indices_range_last)) {
+        ++n_calls;
+    } else {
+        ++n_skipped_calls;
+    }
+    std::cout << n_calls << "/" << n_skipped_calls + n_calls << "\n";
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
@@ -187,18 +233,16 @@ auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
     const ReferenceNodePtr& reference_node) const -> std::optional<DistanceType> {
     const auto min_distance = datastruct::bounds::min_distance(query_node->bound_, reference_node->bound_);
 
-    return (queries_furthest_distance(query_node) < min_distance) ? std::nullopt : std::make_optional(min_distance);
+    return (queries_furthest_distance(query_node) <= min_distance) ? std::nullopt : std::make_optional(min_distance);
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
 template <typename QueryNodePtr, typename ReferenceNodePtr>
 bool IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::should_prune_nodes_combination(
-    const QueryNodePtr&     query_node,
-    const ReferenceNodePtr& reference_node,
-    const DistanceType&     cost) const {
-    common::ignore_parameters(reference_node);
-
-    return queries_furthest_distance(query_node) < cost;
+    const QueryNodePtr& query_node,
+    const ReferenceNodePtr&,
+    const DistanceType& cost) const {
+    return queries_furthest_distance(query_node) <= cost;
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
@@ -238,11 +282,12 @@ template <typename QueryNodePtr>
 auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::queries_furthest_distance(
     const QueryNodePtr& query_node) const -> DistanceType {
     auto furthest_distance = find_max_furthest_distance_in_node(query_node);
-
+    /*
     if (!query_node->is_leaf()) {
         furthest_distance = std::max(furthest_distance, find_max_furthest_distance_in_node(query_node->left_));
         furthest_distance = std::max(furthest_distance, find_max_furthest_distance_in_node(query_node->right_));
     }
+    */
     return furthest_distance;
 }
 
@@ -263,7 +308,8 @@ auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
         }
         // If there's remaining space in the buffers, then candidates might potentially be further than the
         // buffer's current furthest distance.
-        else if (index_to_buffer_it->second.remaining_capacity()) {
+        else if (index_to_buffer_it->second.remaining_capacity() ||
+                 common::equality(index_to_buffer_it->second.remaining_capacity(), common::infinity<DistanceType>())) {
             return common::infinity<DistanceType>();
 
         } else {

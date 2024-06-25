@@ -93,7 +93,8 @@ class TreeTraverser {
         -> ReferenceNodePtr;
 
     template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
-    void dual_tree_traversal(const QueryNodePtr&     query_node,
+    void dual_tree_traversal(std::size_t             depth,
+                             const QueryNodePtr&     query_node,
                              const ReferenceNodePtr& reference_node,
                              QueriesToBuffersMap&    queries_to_buffers_map,
                              BufferArgs&&... buffer_args) const;
@@ -258,7 +259,8 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
                                                                reference_indexer_.end(),
                                                                reference_indexer_.n_features());
 
-    dual_tree_traversal(query_indexer.root(),
+    dual_tree_traversal(0,
+                        query_indexer.root(),
                         reference_indexer_.root(),
                         queries_to_buffers_map,
                         std::forward<BufferArgs>(buffer_args)...);
@@ -374,7 +376,8 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
 
 template <typename ReferenceIndexer>
 template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
-void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&     query_node,
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(std::size_t             depth,
+                                                          const QueryNodePtr&     query_node,
                                                           const ReferenceNodePtr& reference_node,
                                                           QueriesToBuffersMap&    queries_to_buffers_map,
                                                           BufferArgs&&... buffer_args) const {
@@ -384,26 +387,31 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                          reference_node->indices_range_.first,
                                                          reference_node->indices_range_.second,
                                                          std::forward<BufferArgs>(buffer_args)...);
-
     if (!query_node->is_leaf()) {
         // The order of traversal doesnt matter for the query node.
-        const auto left_optional_cost  = queries_to_buffers_map.cost(query_node->left_, reference_node);
-        const auto right_optional_cost = queries_to_buffers_map.cost(query_node->right_, reference_node);
+        const auto left_optional_cost = queries_to_buffers_map.cost(query_node->left_, reference_node);
 
         if (left_optional_cost) {
-            dual_tree_traversal(/**/ query_node->left_,
+            dual_tree_traversal(depth + 1,
+                                /**/ query_node->left_,
                                 /**/ reference_node,
                                 /**/ queries_to_buffers_map,
                                 /**/ std::forward<BufferArgs>(buffer_args)...);
+        } else {
+            // std::cout << "Pruned: query left & reference\n";
         }
+        const auto right_optional_cost = queries_to_buffers_map.cost(query_node->right_, reference_node);
+
         if (right_optional_cost) {
-            dual_tree_traversal(/**/ query_node->right_,
+            dual_tree_traversal(depth + 1,
+                                /**/ query_node->right_,
                                 /**/ reference_node,
                                 /**/ queries_to_buffers_map,
                                 /**/ std::forward<BufferArgs>(buffer_args)...);
+        } else {
+            // std::cout << "Pruned: query right & reference\n";
         }
     }
-
     if (!reference_node->is_leaf()) {
         // The order of traversal does matter in this case.
         const auto left_cost =
@@ -412,7 +420,8 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
             queries_to_buffers_map.cost(query_node, reference_node->right_).value_or(common::infinity<DataType>());
 
         if (left_cost < right_cost) {
-            dual_tree_traversal(/**/ query_node,
+            dual_tree_traversal(depth + 1,
+                                /**/ query_node,
                                 /**/ reference_node->left_,
                                 /**/ queries_to_buffers_map,
                                 /**/ std::forward<BufferArgs>(buffer_args)...);
@@ -421,13 +430,17 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                     /**/ query_node,
                     /**/ reference_node->right_,
                     /**/ right_cost)) {
-                dual_tree_traversal(/**/ query_node,
+                dual_tree_traversal(depth + 1,
+                                    /**/ query_node,
                                     /**/ reference_node->right_,
                                     /**/ queries_to_buffers_map,
                                     /**/ std::forward<BufferArgs>(buffer_args)...);
+            } else {
+                // std::cout << "Pruned: query & reference right\n";
             }
         } else if (left_cost > right_cost) {
-            dual_tree_traversal(/**/ query_node,
+            dual_tree_traversal(depth + 1,
+                                /**/ query_node,
                                 /**/ reference_node->right_,
                                 /**/ queries_to_buffers_map,
                                 /**/ std::forward<BufferArgs>(buffer_args)...);
@@ -436,13 +449,17 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                     /**/ query_node,
                     /**/ reference_node->left_,
                     /**/ left_cost)) {
-                dual_tree_traversal(/**/ query_node,
+                dual_tree_traversal(depth + 1,
+                                    /**/ query_node,
                                     /**/ reference_node->left_,
                                     /**/ queries_to_buffers_map,
                                     /**/ std::forward<BufferArgs>(buffer_args)...);
+            } else {
+                // std::cout << "Pruned: query & reference left\n";
             }
         } else if (common::equality(left_cost, right_cost) && (left_cost < common::infinity<DataType>())) {
-            dual_tree_traversal(/**/ query_node,
+            dual_tree_traversal(depth + 1,
+                                /**/ query_node,
                                 /**/ reference_node->left_,
                                 /**/ queries_to_buffers_map,
                                 /**/ std::forward<BufferArgs>(buffer_args)...);
@@ -451,10 +468,13 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                     /**/ query_node,
                     /**/ reference_node->right_,
                     /**/ right_cost)) {
-                dual_tree_traversal(/**/ query_node,
+                dual_tree_traversal(depth + 1,
+                                    /**/ query_node,
                                     /**/ reference_node->right_,
                                     /**/ queries_to_buffers_map,
                                     /**/ std::forward<BufferArgs>(buffer_args)...);
+            } else {
+                // std::cout << "Pruned: query & reference right\n";
             }
         }
     }

@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.0.2)
 
 project(ffcl)
 
-# add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
+add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
+
 add_compile_options(
     -std=c++17
     -Ofast
@@ -175,7 +176,7 @@ elseif(MODE STREQUAL "gtest")
     # -------------------------------
     enable_testing()
 
-    # add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
+    # add_compile_options(-std=c++17 -g -pg) # <--- for debug modes
     add_compile_options(
         -std=c++17
         -Ofast
@@ -189,6 +190,9 @@ elseif(MODE STREQUAL "gtest")
         -Wfatal-errors
         -fopenmp
     )
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -pg")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -pg")
+
     include(CTest)
 
     include_directories(test/include/base_fixtures)

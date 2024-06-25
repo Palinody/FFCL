@@ -398,7 +398,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 #endif
 
-    fs::path filename = "no_structure.txt";
+    fs::path filename = "no_structure.txt";  // no_structure, unbalanced_blobs
 
     using IndexType = std::size_t;
     using ValueType = dType;
@@ -429,11 +429,14 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
     const std::size_t increment = 1;  // std::max(std::size_t{1}, n_samples / 100);
 
-    for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
+    std::size_t n_query_nodes     = 0;
+    std::size_t n_reference_nodes = 0;
+
+    for (std::size_t split_index = 25; split_index < 26 /*n_samples*/; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
 
-        auto reference_indices = std::vector(indices.begin(), indices.begin() + split_index);
-        auto query_indices     = std::vector(indices.begin() + split_index, indices.end());
+        auto query_indices     = std::vector(indices.begin(), indices.begin() + split_index);
+        auto reference_indices = std::vector(indices.begin() + split_index, indices.end());
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto reference_indexer = IndexerType(reference_indices.begin(),
@@ -447,11 +450,11 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
 
-        auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+        n_reference_nodes = reference_indexer.n_nodes_;
 
-#if defined(TIME_IT) && TIME_IT
-        timer.reset();
-#endif
+        reference_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_reference.json"));
+
+        auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto query_indexer = IndexerType(query_indices.begin(),
@@ -465,6 +468,10 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
 
+        n_query_nodes = query_indexer.n_nodes_;
+
+        query_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
+
         // auto      union_find             = ffcl::datastruct::UnionFind<IndexType>(n_samples);
         // IndexType queries_representative = union_find.find(query_indices[0]);
         // for (const auto& query_index : query_indices) {
@@ -473,6 +480,10 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         // const auto shortest_edge =
         // searcher.dual_tree_shortest_edge(std::move(query_indexer), union_find, queries_representative, 1);
 
+#if defined(TIME_IT) && TIME_IT
+        timer.reset();
+#endif
+
         const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
 
 #if defined(TIME_IT) && TIME_IT
@@ -480,7 +491,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             const auto elapsed_time = timer.elapsed();
             total_elapsed_time += elapsed_time;
             // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
-
+            /*
             if (split_index == 1) {
                 printf("times_array = [");
 
@@ -490,12 +501,30 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             } else {
                 printf("%.*f, ", n_decimals, (elapsed_time * 1e-9f));
             }
+            */
+            printf("dual tree search time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
         }
 #endif
+
+        auto labels = std::vector<IndexType>(n_samples);
+
+        for (const auto& query_index : query_indices) {
+            labels[query_index] = 0;
+        }
+
+        for (const auto& reference_index : reference_indices) {
+            labels[reference_index] = 1;
+        }
+        labels[std::get<0>(shortest_edge)] = 2;
+        labels[std::get<1>(shortest_edge)] = 3;
+
+        write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 
 #if defined(ASSERT_IT) && ASSERT_IT
         {
 #if defined(TIME_IT) && TIME_IT
+
+            std::cout << "--------------------\n";
             timer.reset();
 #endif
 
@@ -573,6 +602,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     printf("Total runtime: %.*f\n", n_decimals, (total_elapsed_time * 1e-9f));
 #endif
     std::cout << dummy_acc << "\n";
+
+    std::cout << "n_nodes (query): " << n_query_nodes << "\n";
+    std::cout << "n_nodes (reference): " << n_reference_nodes << "\n";
 }
 // */
 

@@ -7,7 +7,7 @@ import copy
 
 import py_helpers.IO as io
 
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Union
 
 KDBoundingBoxType = List[List[Any]]
 FeatureVectorType = List[Any]
@@ -94,7 +94,12 @@ class KDTree:
 
 
 def plot_2dtree(
-    kdnode: KDNode, ax: Axes, x_lim: List[float] = None, y_lim: List[float] = None
+    kdnode: KDNode,
+    ax: Axes,
+    x_lim: List[float] = None,
+    y_lim: List[float] = None,
+    color: Union[None, str] = None,
+    splitting_lane_color: Union[None, str] = None,
 ) -> None:
     if kdnode is None:
         return
@@ -103,7 +108,8 @@ def plot_2dtree(
 
     x, y = zip(*kdnode.points) if kdnode.points else [[], []]
     # set the leaf points to green and the pivot ones to blue
-    points_color = "green" if is_leaf else "blue"
+    # points_color = "green" if is_leaf else "blue"
+    points_color = color if color is not None else ("green" if is_leaf else "blue")
     # put the pivot points in the foreground so that they can be seen
     zorder = -1 if is_leaf else 0
     ax.scatter(x, y, color=points_color, zorder=zorder)
@@ -118,14 +124,18 @@ def plot_2dtree(
 
     if not is_leaf:
         draw_orthogonal_line(
-            kdnode.points[0], kdnode.cut_feature_index, kdnode.kd_bounding_box, ax
+            kdnode.points[0],
+            kdnode.cut_feature_index,
+            kdnode.kd_bounding_box,
+            ax,
+            color=splitting_lane_color,
         )
 
     if kdnode.left is not None:
-        plot_2dtree(kdnode.left, ax)
+        plot_2dtree(kdnode.left, ax, x_lim, y_lim, color, splitting_lane_color)
 
     if kdnode.right is not None:
-        plot_2dtree(kdnode.right, ax)
+        plot_2dtree(kdnode.right, ax, x_lim, y_lim, color, splitting_lane_color)
 
 
 def plot_bbox(bbox, ax, color="red", linestyle="-", alpha=1) -> None:
@@ -186,5 +196,39 @@ def main():
         plt.show()
 
 
+def plot_query_reference():
+    """noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""
+    root_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "kdtree/")
+
+    file_names = [
+        f
+        for f in os.listdir(root_folder)
+        if os.path.isfile(os.path.join(root_folder, f))
+    ]
+
+    for filename in ["no_structure"]:
+        reference_path = root_folder + filename + "_reference.json"
+        query_path = root_folder + filename + "_query.json"
+
+        kdtree = KDTree(reference_path, keep_sequence=False)
+
+        fig, ax = plt.subplots(figsize=(12, 6))  # Create a single plot
+
+        # Plot reference
+        plot_bbox(kdtree.root.kd_bounding_box, ax, color="orange")
+        plot_2dtree(kdtree.root, ax=ax, color="orange", splitting_lane_color="orange")
+
+        # Load query data and plot (assuming query data is loaded in a similar way to KDTree)
+        kdtree_query = KDTree(query_path, keep_sequence=False)
+        plot_bbox(kdtree_query.root.kd_bounding_box, ax, color="blue")
+        plot_2dtree(kdtree_query.root, ax=ax, color="blue", splitting_lane_color="blue")
+
+        # General title and layout
+        ax.set_title(f"{os.path.splitext(filename)[0]}: Reference and Query")
+        ax.grid(False)
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
+        plt.show()
+
+
 if __name__ == "__main__":
-    main()
+    plot_query_reference()
