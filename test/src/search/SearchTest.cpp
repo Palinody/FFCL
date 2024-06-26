@@ -442,7 +442,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(40)
+                                                 .bucket_size(100)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -458,7 +458,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(40)
+                                             .bucket_size(100)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -477,7 +477,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
+        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 10);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -532,7 +532,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                                                  data.begin(),
                                                                  data.end(),
                                                                  n_features,
-                                                                 1);
+                                                                 10);
 
             // const auto brute_force_shortest_edge =
             //     ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),

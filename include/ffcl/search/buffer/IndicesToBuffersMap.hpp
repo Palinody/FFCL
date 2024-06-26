@@ -127,7 +127,7 @@ class IndicesToBuffersMap {
 
     IndexToBufferMapIterator tightest_query_to_buffer_it_ = queries_to_buffers_map_.end();
 
-    std::unordered_set<NodesCombinationKey> nodes_combination_state_buffer_;
+    std::unordered_set<NodesCombinationKey> visited_nodes_combinations_;
 };
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
@@ -201,13 +201,25 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
                                                   reference_samples_range_last_,
                                                   reference_n_features_);
 
-        // Update if no tightest buffer has been initialised yet.
-        // Or, update if the buffer's max capacity has been reached and its furthest distance is less than the one
-        // of the current tightest buffer.
-        if (tightest_query_to_buffer_it_ == queries_to_buffers_map_.end() ||
-            (!query_to_buffer_it->second.remaining_capacity() &&
-             query_to_buffer_it->second.furthest_distance() <
-                 tightest_query_to_buffer_it_->second.furthest_distance())) {
+        // Check if tightest_query_to_buffer_it_ is unset.
+        const bool is_tightest_query_to_buffer_unset = (tightest_query_to_buffer_it_ == queries_to_buffers_map_.end());
+
+        // Only proceed with capacity and distance comparisons if tightest_query_to_buffer_it_ is set.
+        if (!is_tightest_query_to_buffer_unset) {
+            const auto current_capacity           = query_to_buffer_it->second.remaining_capacity();
+            const auto tightest_capacity          = tightest_query_to_buffer_it_->second.remaining_capacity();
+            const auto current_furthest_distance  = query_to_buffer_it->second.furthest_distance();
+            const auto tightest_furthest_distance = tightest_query_to_buffer_it_->second.furthest_distance();
+
+            const bool has_less_capacity = (current_capacity < tightest_capacity);
+            const bool have_no_capacity_and_closest_furthest_distance =
+                (!current_capacity && !tightest_capacity && current_furthest_distance < tightest_furthest_distance);
+
+            if (has_less_capacity || have_no_capacity_and_closest_furthest_distance) {
+                tightest_query_to_buffer_it_ = query_to_buffer_it;
+            }
+        } else {
+            // If tightest_query_to_buffer_it_ is unset, set it to the current iterator.
             tightest_query_to_buffer_it_ = query_to_buffer_it;
         }
     }
@@ -238,11 +250,11 @@ bool IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
     emplace_nodes_combination_if_not_found(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) {
     auto nodes_combination_key = NodesCombinationKey{query_node.get(), reference_node.get()};
 
-    if (nodes_combination_state_buffer_.find(nodes_combination_key) == nodes_combination_state_buffer_.end()) {
+    if (visited_nodes_combinations_.find(nodes_combination_key) == visited_nodes_combinations_.end()) {
         // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
         // insertion) and a bool value set to true if and only if the insertion took place.
         // We are only interested in the boolean value.
-        return nodes_combination_state_buffer_.emplace(nodes_combination_key).second;
+        return visited_nodes_combinations_.emplace(nodes_combination_key).second;
     }
     return false;
 }
@@ -310,8 +322,7 @@ auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
         }
         // If there's remaining space in the buffers, then candidates might potentially be further than the
         // buffer's current furthest distance.
-        else if (index_to_buffer_it->second.remaining_capacity() ||
-                 common::equality(index_to_buffer_it->second.remaining_capacity(), common::infinity<DistanceType>())) {
+        else if (index_to_buffer_it->second.remaining_capacity()) {
             return common::infinity<DistanceType>();
 
         } else {
