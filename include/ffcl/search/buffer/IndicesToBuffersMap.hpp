@@ -98,10 +98,7 @@ class IndicesToBuffersMap {
         -> std::optional<DistanceType>;
 
     template <typename QueryNodePtr, typename ReferenceNodePtr>
-    bool is_nodes_combination_visited(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) const;
-
-    template <typename QueryNodePtr, typename ReferenceNodePtr>
-    void mark_nodes_combination_as_vitited(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node);
+    bool emplace_nodes_combination_if_not_found(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node);
 
   private:
     template <typename FeaturesRangeIterator, typename... BufferArgs>
@@ -237,20 +234,17 @@ auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
 template <typename QueryNodePtr, typename ReferenceNodePtr>
-bool IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::is_nodes_combination_visited(
-    const QueryNodePtr&     query_node,
-    const ReferenceNodePtr& reference_node) const {
-    auto nodes_combination_key = buffer::NodesCombinationKey{query_node.get(), reference_node.get()};
-    return !(nodes_combination_state_buffer_.find(nodes_combination_key) == nodes_combination_state_buffer_.end());
-}
+bool IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::
+    emplace_nodes_combination_if_not_found(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) {
+    auto nodes_combination_key = NodesCombinationKey{query_node.get(), reference_node.get()};
 
-template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
-template <typename QueryNodePtr, typename ReferenceNodePtr>
-void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::mark_nodes_combination_as_vitited(
-    const QueryNodePtr&     query_node,
-    const ReferenceNodePtr& reference_node) {
-    auto nodes_combination_key = buffer::NodesCombinationKey{query_node.get(), reference_node.get()};
-    nodes_combination_state_buffer_.emplace(nodes_combination_key);
+    if (nodes_combination_state_buffer_.find(nodes_combination_key) == nodes_combination_state_buffer_.end()) {
+        // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
+        // insertion) and a bool value set to true if and only if the insertion took place.
+        // We are only interested in the boolean value.
+        return nodes_combination_state_buffer_.emplace(nodes_combination_key).second;
+    }
+    return false;
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
