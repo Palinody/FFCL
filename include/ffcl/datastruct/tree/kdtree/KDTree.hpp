@@ -168,8 +168,6 @@ class KDTree {
     void serialize(const fs::path& filepath) const;
 
   public:
-    std::size_t n_nodes_ = 0;
-
   private:
     NodePtr build(const IndicesIterator& indices_range_first,
                   const IndicesIterator& indices_range_last,
@@ -340,16 +338,12 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
 
         // make the current node
         {
-            ++n_nodes_;
-
             kdnode = std::make_shared<NodeType>(/**/ cut_indices_range,
                                                 /**/ feature_cut_index,
                                                 /**/ bound);
         }
         // make the left node
         {
-            ++n_nodes_;
-
             // set the right bound of the left child to the cut value
             bound.segment_at(feature_cut_index).update_upper_bound(feature_cut_value);
 
@@ -367,8 +361,6 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
         }
         // make the right node
         {
-            ++n_nodes_;
-
             // set the left bound of the right child to the cut value
             bound.segment_at(feature_cut_index).update_lower_bound(feature_cut_value);
 
@@ -386,7 +378,6 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
         }
     } else {
         kdnode = std::make_shared<NodeType>(std::make_pair(indices_range_first, indices_range_last), bound);
-        n_nodes_ += 1;
     }
     return kdnode;
 }

@@ -7,6 +7,35 @@
 #include <cstddef>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
+
+namespace ffcl::search::buffer {
+
+struct NodesCombinationKey {
+    bool operator==(const NodesCombinationKey& other) const {
+        return address_1 == other.address_1 && address_2 == other.address_2;
+    }
+
+    void* address_1;
+    void* address_2;
+};
+
+}  // namespace ffcl::search::buffer
+
+template <>
+struct std::hash<ffcl::search::buffer::NodesCombinationKey> {
+    std::size_t operator()(const ffcl::search::buffer::NodesCombinationKey& key) const noexcept {
+        std::size_t hash_1 = std::hash<void*>{}(key.address_1);
+        std::size_t hash_2 = std::hash<void*>{}(key.address_2);
+
+        if constexpr (sizeof(std::size_t) >= 8) {
+            hash_1 ^= hash_2 + 0x517cc1b727220a95 + (hash_1 << 6) + (hash_1 >> 2);
+        } else {
+            hash_1 ^= hash_2 + 0x9e3779b9 + (hash_1 << 6) + (hash_1 >> 2);
+        }
+        return hash_1;
+    }
+};
 
 namespace ffcl::search::buffer {
 
@@ -65,9 +94,14 @@ class IndicesToBuffersMap {
         -> std::optional<DistanceType>;
 
     template <typename QueryNodePtr, typename ReferenceNodePtr>
-    bool should_prune_nodes_combination(const QueryNodePtr& query_node,
-                                        const ReferenceNodePtr&,
-                                        const DistanceType& cost) const;
+    auto update_cost(const QueryNodePtr& query_node, const ReferenceNodePtr&, const DistanceType& cost) const
+        -> std::optional<DistanceType>;
+
+    template <typename QueryNodePtr, typename ReferenceNodePtr>
+    bool is_nodes_combination_visited(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) const;
+
+    template <typename QueryNodePtr, typename ReferenceNodePtr>
+    void mark_nodes_combination_as_vitited(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node);
 
   private:
     template <typename FeaturesRangeIterator, typename... BufferArgs>
@@ -95,6 +129,8 @@ class IndicesToBuffersMap {
     IndexToBufferMapType queries_to_buffers_map_ = IndexToBufferMapType{};
 
     IndexToBufferMapIterator tightest_query_to_buffer_it_ = queries_to_buffers_map_.end();
+
+    std::unordered_set<NodesCombinationKey> nodes_combination_state_buffer_;
 };
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
@@ -151,37 +187,14 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
     const ReferenceIndicesIterator& reference_indices_range_first,
     const ReferenceIndicesIterator& reference_indices_range_last,
     BufferArgs&&... buffer_args) {
-    static std::size_t n_calls         = 0;
-    static std::size_t n_skipped_calls = 0;
-
-    // std::cout << "n_queries: " << std::distance(query_indices_range_first, query_indices_range_last) << "\n";
-    // std::cout << "n_references: " << std::distance(reference_indices_range_first, reference_indices_range_last) <<
-    // "\n";
-    /*
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    static decltype(timer.elapsed()) total_find_or_emplace_buffer = 0;
-    static decltype(timer.elapsed()) total_partial_search         = 0;
-    static decltype(timer.elapsed()) total_update                 = 0;
-
-    static constexpr std::uint8_t n_decimals = 9;
-    */
     // Iterate through all query indices within the specified range of the query node.
     for (auto query_index_it = query_indices_range_first; query_index_it != query_indices_range_last;
          ++query_index_it) {
-        // timer.reset();
-
         auto query_to_buffer_it = this->find_or_emplace_buffer(
             *query_index_it,
             query_samples_range_first_ + (*query_index_it) * query_n_features_,
             query_samples_range_first_ + (*query_index_it) * query_n_features_ + query_n_features_,
             std::forward<BufferArgs>(buffer_args)...);
-        /*
-        const auto elapsed_time_find_or_emplace_buffer = timer.elapsed();
-        printf("find_or_emplace_buffer time: %.*f\n", n_decimals, (elapsed_time_find_or_emplace_buffer * 1e-9f));
-        total_find_or_emplace_buffer += elapsed_time_find_or_emplace_buffer;
-        */
-        // timer.reset();
 
         // Regardless of whether the buffer was just inserted or already existed, perform a partial search
         // operation on the buffer. This operation updates the buffer based on a range of reference samples.
@@ -190,12 +203,6 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
                                                   reference_samples_range_first_,
                                                   reference_samples_range_last_,
                                                   reference_n_features_);
-        /*
-        const auto elapsed_time_partial_search = timer.elapsed();
-        printf("partial_search time: %.*f\n", n_decimals, (elapsed_time_partial_search * 1e-9f));
-        total_partial_search += elapsed_time_partial_search;
-        */
-        // timer.reset();
 
         // Update if no tightest buffer has been initialised yet.
         // Or, update if the buffer's max capacity has been reached and its furthest distance is less than the one
@@ -206,24 +213,7 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
                  tightest_query_to_buffer_it_->second.furthest_distance())) {
             tightest_query_to_buffer_it_ = query_to_buffer_it;
         }
-        /*
-        const auto elapsed_time_update = timer.elapsed();
-        printf("update time: %.*f\n", n_decimals, (elapsed_time_update * 1e-9f));
-        total_update += elapsed_time_update;
-        */
     }
-    /*
-    printf("total_find_or_emplace_buffer time: %.*f\n", n_decimals, (total_find_or_emplace_buffer * 1e-9f));
-    printf("total_partial_search time: %.*f\n", n_decimals, (total_partial_search * 1e-9f));
-    printf("total_update time: %.*f\n", n_decimals, (total_update * 1e-9f));
-    printf("---\n");
-    */
-    if (std::distance(query_indices_range_first, query_indices_range_last)) {
-        ++n_calls;
-    } else {
-        ++n_skipped_calls;
-    }
-    std::cout << n_calls << "/" << n_skipped_calls + n_calls << "\n";
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
@@ -233,16 +223,34 @@ auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
     const ReferenceNodePtr& reference_node) const -> std::optional<DistanceType> {
     const auto min_distance = datastruct::bounds::min_distance(query_node->bound_, reference_node->bound_);
 
-    return (queries_furthest_distance(query_node) <= min_distance) ? std::nullopt : std::make_optional(min_distance);
+    return (queries_furthest_distance(query_node) < min_distance) ? std::nullopt : std::make_optional(min_distance);
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
 template <typename QueryNodePtr, typename ReferenceNodePtr>
-bool IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::should_prune_nodes_combination(
+auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::update_cost(
     const QueryNodePtr& query_node,
     const ReferenceNodePtr&,
-    const DistanceType& cost) const {
-    return queries_furthest_distance(query_node) <= cost;
+    const DistanceType& cost) const -> std::optional<DistanceType> {
+    return (queries_furthest_distance(query_node) < cost) ? std::nullopt : std::make_optional(cost);
+}
+
+template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
+template <typename QueryNodePtr, typename ReferenceNodePtr>
+bool IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::is_nodes_combination_visited(
+    const QueryNodePtr&     query_node,
+    const ReferenceNodePtr& reference_node) const {
+    auto nodes_combination_key = buffer::NodesCombinationKey{query_node.get(), reference_node.get()};
+    return !(nodes_combination_state_buffer_.find(nodes_combination_key) == nodes_combination_state_buffer_.end());
+}
+
+template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
+template <typename QueryNodePtr, typename ReferenceNodePtr>
+void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::mark_nodes_combination_as_vitited(
+    const QueryNodePtr&     query_node,
+    const ReferenceNodePtr& reference_node) {
+    auto nodes_combination_key = buffer::NodesCombinationKey{query_node.get(), reference_node.get()};
+    nodes_combination_state_buffer_.emplace(nodes_combination_key);
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>

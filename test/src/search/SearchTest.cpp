@@ -429,10 +429,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
     const std::size_t increment = 1;  // std::max(std::size_t{1}, n_samples / 100);
 
-    std::size_t n_query_nodes     = 0;
-    std::size_t n_reference_nodes = 0;
-
-    for (std::size_t split_index = 25; split_index < 26 /*n_samples*/; split_index += increment) {
+    for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
 
         auto query_indices     = std::vector(indices.begin(), indices.begin() + split_index);
@@ -445,14 +442,12 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(0)
+                                                 .bucket_size(40)
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
 
-        n_reference_nodes = reference_indexer.n_nodes_;
-
-        reference_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_reference.json"));
+        // reference_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_reference.json"));
 
         auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
 
@@ -463,14 +458,12 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(0)
+                                             .bucket_size(40)
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
 
-        n_query_nodes = query_indexer.n_nodes_;
-
-        query_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
+        // query_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
 
         // auto      union_find             = ffcl::datastruct::UnionFind<IndexType>(n_samples);
         // IndexType queries_representative = union_find.find(query_indices[0]);
@@ -591,9 +584,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             //   << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
             //   << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
 
-            // ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
-            // ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
-            // ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
+            ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
         }
 #endif
         dummy_acc += std::get<2>(shortest_edge);
@@ -602,9 +595,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     printf("Total runtime: %.*f\n", n_decimals, (total_elapsed_time * 1e-9f));
 #endif
     std::cout << dummy_acc << "\n";
-
-    std::cout << "n_nodes (query): " << n_query_nodes << "\n";
-    std::cout << "n_nodes (reference): " << n_reference_nodes << "\n";
 }
 // */
 
