@@ -27,7 +27,7 @@ SHIFT = 0
 DATA_TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
-n_samples = 50000
+n_samples = 20000
 n_features = 2
 # None to load everything else specify
 n_samples_mnist = None

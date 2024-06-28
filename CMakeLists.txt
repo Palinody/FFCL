@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 
 project(ffcl)
 
-add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
-
+# add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
 add_compile_options(
     -std=c++17
     -Ofast

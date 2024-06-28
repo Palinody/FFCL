@@ -125,11 +125,11 @@ class SearcherErrorsTest : public ::testing::Test {
     static constexpr std::size_t n_iterations_global = 100;
     static constexpr std::size_t n_centroids_global  = 4;
 
-    const fs::path kdtree_folder_root_ = fs::path("../bin/kdtree");
-    const fs::path folder_root_        = fs::path("../bin/clustering");
-    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
-    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
+    const fs::path kdtree_folder_root_                           = fs::path("../bin/kdtree");
+    const fs::path folder_root_                                  = fs::path("../bin/clustering");
+    const fs::path inputs_folder_                                = folder_root_ / fs::path("inputs");
+    const fs::path predictions_folder_                           = folder_root_ / fs::path("predictions");
+    const fs::path dual_tree_traversal_benchmark_results_folder_ = fs::path("../bin/dual_tree_traversal");
 };
 
 std::vector<std::size_t> generate_indices(std::size_t n_samples) {
@@ -427,13 +427,23 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = 1;  // std::max(std::size_t{1}, n_samples / 100);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
 
-    for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
+    const std::size_t k_nearest_neighbors = 1;
+
+    auto split_index_vector           = std::vector<std::size_t>{};
+    auto dual_tree_search_time_vector = std::vector<ValueType>{};
+    auto brute_force_time_vector      = std::vector<ValueType>{};
+
+    for (std::size_t split_index = 1; split_index < n_samples - k_nearest_neighbors + 1; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
 
         auto query_indices     = std::vector(indices.begin(), indices.begin() + split_index);
         auto reference_indices = std::vector(indices.begin() + split_index, indices.end());
+
+#if defined(TIME_IT) && TIME_IT
+        timer.reset();
+#endif
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto reference_indexer = IndexerType(reference_indices.begin(),
@@ -447,9 +457,20 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
 
+#if defined(TIME_IT) && TIME_IT
+        {
+            const auto elapsed_time = timer.elapsed();
+            printf("reference_indexer build time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
+        }
+#endif
+
         // reference_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_reference.json"));
 
         auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
+
+#if defined(TIME_IT) && TIME_IT
+        timer.reset();
+#endif
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
         auto query_indexer = IndexerType(query_indices.begin(),
@@ -462,6 +483,13 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
+
+#if defined(TIME_IT) && TIME_IT
+        {
+            const auto elapsed_time = timer.elapsed();
+            printf("query_indexer build time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
+        }
+#endif
 
         // query_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
 
@@ -477,41 +505,34 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 10);
+        const auto tightest_query_to_buffer =
+            searcher.dual_tree_shortest_edge(std::move(query_indexer), k_nearest_neighbors);
+
+        const auto shortest_edge = ffcl::search::buffer::make_edge(tightest_query_to_buffer.first,
+                                                                   tightest_query_to_buffer.second.furthest_index(),
+                                                                   tightest_query_to_buffer.second.furthest_distance());
 
 #if defined(TIME_IT) && TIME_IT
         {
             const auto elapsed_time = timer.elapsed();
             total_elapsed_time += elapsed_time;
-            // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
-            /*
-            if (split_index == 1) {
-                printf("times_array = [");
 
-            } else if (split_index >= n_samples - increment) {
-                printf("%.*f]\n", n_decimals, (elapsed_time * 1e-9f));
+            dual_tree_search_time_vector.emplace_back(elapsed_time * 1e-9f);
 
-            } else {
-                printf("%.*f, ", n_decimals, (elapsed_time * 1e-9f));
-            }
-            */
             printf("dual tree search time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
         }
 #endif
 
-        auto labels = std::vector<IndexType>(n_samples);
-
-        for (const auto& query_index : query_indices) {
-            labels[query_index] = 0;
-        }
-
-        for (const auto& reference_index : reference_indices) {
-            labels[reference_index] = 1;
-        }
-        labels[std::get<0>(shortest_edge)] = 2;
-        labels[std::get<1>(shortest_edge)] = 3;
-
-        write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
+        // auto labels = std::vector<IndexType>(n_samples);
+        // for (const auto& query_index : query_indices) {
+        // labels[query_index] = 0;
+        // }
+        // for (const auto& reference_index : reference_indices) {
+        // labels[reference_index] = 1;
+        // }
+        // labels[std::get<0>(shortest_edge)] = 2;
+        // labels[std::get<1>(shortest_edge)] = 3;
+        // write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 
 #if defined(ASSERT_IT) && ASSERT_IT
         {
@@ -520,8 +541,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             std::cout << "--------------------\n";
             timer.reset();
 #endif
-
-            const auto brute_force_shortest_edge =
+            const auto brute_force_tightest_query_to_buffer =
                 ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
                                                                  query_indices.end(),
                                                                  data.begin(),
@@ -532,7 +552,12 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                                                  data.begin(),
                                                                  data.end(),
                                                                  n_features,
-                                                                 10);
+                                                                 k_nearest_neighbors);
+
+            const auto brute_force_shortest_edge =
+                ffcl::search::buffer::make_edge(brute_force_tightest_query_to_buffer.first,
+                                                brute_force_tightest_query_to_buffer.second.furthest_index(),
+                                                brute_force_tightest_query_to_buffer.second.furthest_distance());
 
             // const auto brute_force_shortest_edge =
             //     ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
@@ -552,41 +577,21 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
             const auto elapsed_time = timer.elapsed();
 
+            brute_force_time_vector.emplace_back(elapsed_time * 1e-9f);
+
             printf("brute force time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
 
 #endif
 
             std::cout << "split_index: " << split_index << "\n";
 
-            if (ffcl::common::inequality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge))) {
-                std::cout << "\t>>> " << std::get<0>(brute_force_shortest_edge) << " != " << std::get<0>(shortest_edge)
-                          << "\n";
-            } else {
-                std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << "\n";
-            }
-
-            if (ffcl::common::inequality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge))) {
-                std::cout << "\t>>> " << std::get<1>(brute_force_shortest_edge) << " != " << std::get<1>(shortest_edge)
-                          << "\n";
-            } else {
-                std::cout << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << "\n";
-            }
-
-            if (ffcl::common::inequality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge))) {
-                std::cout << "\t>>> " << std::get<2>(brute_force_shortest_edge) << " != " << std::get<2>(shortest_edge)
-                          << "\n";
-            } else {
-                std::cout << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
-            }
             std::cout << "---\n";
-
-            // std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
-            //   << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
-            //   << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
 
             ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
             ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
             ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
+
+            split_index_vector.emplace_back(split_index);
         }
 #endif
         dummy_acc += std::get<2>(shortest_edge);
@@ -595,466 +600,18 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     printf("Total runtime: %.*f\n", n_decimals, (total_elapsed_time * 1e-9f));
 #endif
     std::cout << dummy_acc << "\n";
+
+    write_data<std::size_t>(
+        split_index_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("split_index.txt"));
+
+    write_data<ValueType>(dual_tree_search_time_vector,
+                          1,
+                          dual_tree_traversal_benchmark_results_folder_ / fs::path("dual_tree_search_time.txt"));
+
+    write_data<ValueType>(
+        brute_force_time_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
 }
 // */
-
-// TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
-// #if defined(TIME_IT) && TIME_IT
-//     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-// #endif
-
-//     fs::path filename = "no_structure.txt";
-
-//     using IndexType = std::size_t;
-//     using ValueType = dType;
-
-//     auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
-//     const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
-//     const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-//     auto indices = generate_indices(n_samples);
-
-//     using IndicesIterator = decltype(indices)::iterator;
-//     using SamplesIterator = decltype(data)::iterator;
-//     using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-//     using OptionsType     = IndexerType::Options;
-//     using AxisSelectionPolicyType =
-//         ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-//     using SplittingRulePolicyType =
-//         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-//     ValueType dummy_acc = 0;
-
-// #if defined(TIME_IT) && TIME_IT
-//     static constexpr std::uint8_t n_decimals = 9;
-//     timer.reset();
-//     auto total_elapsed_time = timer.elapsed();
-// #endif
-
-//     const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
-
-//     for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
-//         shuffle_indices(indices.begin(), indices.end());
-
-//         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-//         auto reference_indexer = IndexerType(indices.begin(),
-//                                              indices.end(),
-//                                              data.begin(),
-//                                              data.end(),
-//                                              n_features,
-//                                              OptionsType()
-//                                                  .bucket_size(40)
-//                                                  .max_depth(n_samples)
-//                                                  .axis_selection_policy(AxisSelectionPolicyType{})
-//                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
-
-//         auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
-
-//         auto union_find = ffcl::datastruct::UnionFind<IndexType>(n_samples);
-
-//         auto queries_indices = std::vector(indices.begin(), indices.begin() + split_index);
-
-//         IndexType queries_representative = union_find.find(queries_indices[0]);
-
-//         // merge all the indices in the queries_indices into the same component
-//         for (const auto& query_index : queries_indices) {
-//             queries_representative = union_find.merge(queries_representative, query_index);
-//         }
-// #if defined(TIME_IT) && TIME_IT
-//         timer.reset();
-// #endif
-//         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-//         auto query_indexer = IndexerType(queries_indices.begin(),
-//                                          queries_indices.end(),
-//                                          data.begin(),
-//                                          data.end(),
-//                                          n_features,
-//                                          OptionsType()
-//                                              .bucket_size(40)
-//                                              .axis_selection_policy(AxisSelectionPolicyType{})
-//                                              .splitting_rule_policy(SplittingRulePolicyType{}));
-
-// #if defined(TIME_IT) && TIME_IT
-//         {
-//             const auto elapsed_time = timer.elapsed();
-
-//             printf("Queries tree build: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
-//         }
-// #endif
-
-// #if defined(TIME_IT) && TIME_IT
-//         timer.reset();
-// #endif
-//         const auto shortest_edge = searcher.dual_tree_shortest_edge(/**/ std::move(query_indexer),
-//                                                                     /**/ union_find,
-//                                                                     /**/ queries_representative,
-//                                                                     /**/ 1);
-
-// #if defined(TIME_IT) && TIME_IT
-//         {
-//             const auto elapsed_time = timer.elapsed();
-//             total_elapsed_time += elapsed_time;
-//             // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
-
-//             if (split_index == 1) {
-//                 printf("times_array = [");
-
-//             } else if (split_index >= n_samples - increment) {
-//                 printf("%.*f]\n", n_decimals, (elapsed_time * 1e-9f));
-
-//             } else {
-//                 printf("%.*f, ", n_decimals, (elapsed_time * 1e-9f));
-//             }
-//         }
-// #endif
-
-// #if defined(ASSERT_IT) && ASSERT_IT
-//         {
-// #if defined(TIME_IT) && TIME_IT
-//             timer.reset();
-// #endif
-//             const auto brute_force_shortest_edge =
-//                 ffcl::search::algorithms::dual_set_shortest_edge(queries_indices.begin(),
-//                                                                  queries_indices.end(),
-//                                                                  data.begin(),
-//                                                                  data.end(),
-//                                                                  n_features,
-//                                                                  indices.begin(),
-//                                                                  indices.end(),
-//                                                                  data.begin(),
-//                                                                  data.end(),
-//                                                                  n_features,
-//                                                                  /**/ union_find,
-//                                                                  /**/ queries_representative,
-//                                                                  /**/ 1);
-
-// #if defined(TIME_IT) && TIME_IT
-//             const auto elapsed_time = timer.elapsed();
-
-//             printf("brute force time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
-
-// #endif
-
-//             std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
-//                       << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
-//                       << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
-
-//             ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
-//             ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
-//             ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
-//         }
-// #endif
-//     }
-// #if defined(TIME_IT) && TIME_IT
-//     printf("Total runtime: %.*f\n", n_decimals, (total_elapsed_time * 1e-9f));
-// #endif
-//     std::cout << dummy_acc << "\n";
-// }
-
-/*
-TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "no_structure.txt";
-
-    using IndexType = std::size_t;
-    using ValueType = dType;
-
-    auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
-    const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    ValueType   dummy_acc           = 0;
-    std::size_t wrong_value_counter = 0;
-
-    static constexpr std::uint8_t n_decimals = 9;
-
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
-
-    for (std::size_t split_index = 1; split_index < n_samples; split_index += increment) {
-        shuffle_indices(indices.begin(), indices.end());
-
-        timer.reset();
-
-        // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-        auto query_indexer = IndexerType(indices.begin(),
-                                         indices.begin() + split_index,
-                                         data.begin(),
-                                         data.end(),
-                                         n_features,
-                                         OptionsType()
-                                             .bucket_size(40)
-                                             .max_depth(n_samples)
-                                             .axis_selection_policy(AxisSelectionPolicyType{})
-                                             .splitting_rule_policy(SplittingRulePolicyType{}));
-
-        // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-        auto reference_indexer = IndexerType(indices.begin() + split_index,
-                                             indices.end(),
-                                             data.begin(),
-                                             data.end(),
-                                             n_features,
-                                             OptionsType()
-                                                 .bucket_size(40)
-                                                 .max_depth(n_samples)
-                                                 .axis_selection_policy(AxisSelectionPolicyType{})
-                                                 .splitting_rule_policy(SplittingRulePolicyType{}));
-
-        auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
-
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
-
-        printf("dual_tree_shortest_edge time: %.*f\n", n_decimals, (timer.elapsed() * 1e-9f));
-
-        dummy_acc += std::get<2>(shortest_edge);
-
-        // printf("[%ld/%ld]: %.5f\n", split_index, n_samples, std::get<2>(shortest_edge));
-
-        // if (split_index == 1) {
-        //     printf("times_array = [");
-
-        // } else if (split_index >= n_samples - increment) {
-        //     printf("%.*f] ", n_decimals, (timer.elapsed() * 1e-9f));
-
-        // } else {
-        //     printf("%.*f, ", n_decimals, (timer.elapsed() * 1e-9f));
-        // }
-
-        timer.reset();
-
-        const auto brute_force_shortest_edge =
-            ffcl::search::algorithms::dual_set_shortest_edge(indices.begin(),
-                                                             indices.begin() + split_index,
-                                                             data.begin(),
-                                                             data.end(),
-                                                             n_features,
-                                                             indices.begin() + split_index,
-                                                             indices.end(),
-                                                             data.begin(),
-                                                             data.end(),
-                                                             n_features,
-                                                             1);
-
-        printf("brute_force_shortest_edge time: %.*f\n", n_decimals, (timer.elapsed() * 1e-9f));
-
-        if (!ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge))) {
-            if (std::find(indices.begin(), indices.begin() + split_index, std::get<0>(brute_force_shortest_edge)) ==
-                indices.begin() + split_index) {
-                printf("brute_force_shortest_edge: %ld\n", std::get<0>(brute_force_shortest_edge));
-                ASSERT_TRUE(false);
-            }
-            if (std::find(indices.begin() + split_index, indices.end(), std::get<1>(brute_force_shortest_edge)) ==
-                indices.end()) {
-                printf("brute_force_shortest_edge: %ld\n", std::get<1>(brute_force_shortest_edge));
-                ASSERT_TRUE(false);
-            }
-            if (std::find(indices.begin(), indices.begin() + split_index, std::get<0>(shortest_edge)) ==
-                indices.begin() + split_index) {
-                printf("shortest_edge: %ld\n", std::get<0>(shortest_edge));
-                ASSERT_TRUE(false);
-            }
-            if (std::find(indices.begin() + split_index, indices.end(), std::get<1>(shortest_edge)) == indices.end()) {
-                printf("shortest_edge: %ld\n", std::get<1>(shortest_edge));
-                ASSERT_TRUE(false);
-            }
-
-            std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
-                      << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
-                      << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
-
-            wrong_value_counter++;
-        }
-
-        ASSERT_TRUE(std::get<0>(brute_force_shortest_edge) == std::get<0>(shortest_edge) &&
-                    std::get<1>(brute_force_shortest_edge) == std::get<1>(shortest_edge) &&
-                    ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
-
-        ASSERT_EQ(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge));
-        ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
-    }
-    std::cout << "\nwrong_value_counter:" << wrong_value_counter << "/" << n_samples << "\n";
-
-    std::cout << dummy_acc << "\n";
-}
-*/
-
-/*
-TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithDifferentTreesTest) {
-    fs::path filename = "unbalanced_blobs.txt";
-
-    using IndexType = std::size_t;
-    using ValueType = dType;
-
-    auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
-    const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    const IndexType n_queries_samples = std::max(std::size_t{1}, n_samples / 10);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto reference_indexer = IndexerType(indices.begin() + n_queries_samples,
-                                         indices.end(),
-                                         data.begin(),
-                                         data.end(),
-                                         n_features,
-                                         OptionsType()
-                                             .bucket_size(1)
-                                             .axis_selection_policy(AxisSelectionPolicyType{})
-                                             .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto query_indexer = IndexerType(indices.begin(),
-                                     indices.begin() + n_queries_samples,
-                                     data.begin(),
-                                     data.end(),
-                                     n_features,
-                                     OptionsType()
-                                         .bucket_size(1)
-                                         .axis_selection_policy(AxisSelectionPolicyType{})
-                                         .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
-
-    auto labels = std::vector<IndexType>(n_samples);
-
-    for (auto query_index_it = indices.begin(); query_index_it != indices.begin() + n_queries_samples;
-         ++query_index_it) {
-        labels[*query_index_it] = 0;
-    }
-
-    for (auto reference_index_it = indices.begin() + n_queries_samples; reference_index_it != indices.end();
-         ++reference_index_it) {
-        labels[*reference_index_it] = 1;
-    }
-    labels[std::get<0>(shortest_edge)] = 2;
-    labels[std::get<1>(shortest_edge)] = 3;
-
-    const auto brute_force_shortest_edge =
-        ffcl::search::algorithms::dual_set_shortest_edge(indices.begin(),
-                                                         indices.begin() + n_queries_samples,
-                                                         data.begin(),
-                                                         data.end(),
-                                                         n_features,
-                                                         indices.begin() + n_queries_samples,
-                                                         indices.end(),
-                                                         data.begin(),
-                                                         data.end(),
-                                                         n_features,
-                                                         1);
-
-    std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
-              << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
-              << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
-
-    write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
-}
-*/
-
-/*
-TEST_F(SearcherErrorsTest, DualTreeClosestEdgeWithSameTreesTest) {
-    fs::path filename = "no_structure.txt";
-
-    using IndexType = std::size_t;
-    using ValueType = dType;
-
-    auto            data       = load_data<ValueType>(inputs_folder_ / filename, ' ');
-    const IndexType n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const IndexType n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    const IndexType n_queries_samples = n_samples / 10;
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto reference_indexer = IndexerType(indices.begin(),
-                                         indices.end(),
-                                         data.begin(),
-                                         data.end(),
-                                         n_features,
-                                         OptionsType()
-                                             .bucket_size(1)
-                                             .axis_selection_policy(AxisSelectionPolicyType{})
-                                             .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    auto searcher = ffcl::search::Searcher(std::move(reference_indexer));
-
-    auto queries_indices = std::vector(indices.begin(), indices.begin() + n_queries_samples);
-
-    auto union_find = ffcl::datastruct::UnionFind<IndexType>(n_samples);
-
-    // merge all the indices in the queries_indices into the same component
-    for (const auto& query_index : queries_indices) {
-        union_find.merge(queries_indices[0], query_index);
-    }
-    const auto shortest_edge = searcher.dual_tree_shortest_edge(union_find, union_find.find(queries_indices[0]), 1);
-
-    std::cout << std::get<0>(shortest_edge) << ", " << std::get<1>(shortest_edge) << ", " << std::get<2>(shortest_edge)
-              << "\n";
-
-    auto labels = std::vector<IndexType>(n_samples);
-
-    for (const auto& reference_index : indices) {
-        labels[reference_index] = 1;
-    }
-    for (const auto& query_index : queries_indices) {
-        labels[query_index] = 0;
-    }
-    labels[std::get<0>(shortest_edge)] = 2;
-    labels[std::get<1>(shortest_edge)] = 3;
-
-    const auto brute_force_shortest_edge =
-        ffcl::search::algorithms::dual_set_shortest_edge(indices.begin(),
-                                                         indices.begin() + n_queries_samples,
-                                                         data.begin(),
-                                                         data.end(),
-                                                         n_features,
-                                                         indices.begin() + n_queries_samples,
-                                                         indices.end(),
-                                                         data.begin(),
-                                                         data.end(),
-                                                         n_features,
-                                                         1);
-
-    std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << " && "
-              << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << " && "
-              << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
-
-    write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
-}
-*/
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -70,9 +70,7 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
                             const OtherSamplesIterator& other_samples_range_first,
                             const OtherSamplesIterator& other_samples_range_last,
                             std::size_t                 other_n_features,
-                            BufferArgs&&... buffer_args)
-    -> buffer::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
-                    typename std::iterator_traits<SamplesIterator>::value_type> {
+                            BufferArgs&&... buffer_args) {
     common::ignore_parameters(samples_range_last);
 
     using DeducedBufferType = typename common::select_constructible_type<
@@ -99,7 +97,7 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
                                                          other_indices_range_last,
                                                          std::forward<BufferArgs>(buffer_args)...);
 
-    return queries_to_buffers_map.tightest_edge();
+    return std::move(queries_to_buffers_map).tightest_query_to_buffer();
 }
 
 template <typename IndicesIterator,

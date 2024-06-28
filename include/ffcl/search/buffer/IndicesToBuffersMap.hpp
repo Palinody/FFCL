@@ -73,6 +73,8 @@ class IndicesToBuffersMap {
     using IndexToBufferMapIterator      = typename IndexToBufferMapType::iterator;
     using IndexToBufferMapConstIterator = typename IndexToBufferMapType::const_iterator;
 
+    using QueryToBufferType = std::pair<IndexType, BufferType>;
+
     IndicesToBuffersMap(const QuerySamplesIterator&     query_samples_range_first,
                         const QuerySamplesIterator&     query_samples_range_last,
                         std::size_t                     query_n_features,
@@ -81,6 +83,8 @@ class IndicesToBuffersMap {
                         std::size_t                     reference_n_features);
 
     auto tightest_edge() const;
+
+    auto tightest_query_to_buffer() && -> QueryToBufferType;
 
     template <typename QueryIndicesIterator, typename ReferenceIndicesIterator, typename... BufferArgs>
     void partial_search_for_each_query(const QueryIndicesIterator&     query_indices_range_first,
@@ -177,6 +181,12 @@ auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
 }
 
 template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
+auto IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::
+    tightest_query_to_buffer() && -> QueryToBufferType {
+    return std::move(*tightest_query_to_buffer_it_);
+}
+
+template <typename Buffer, typename QuerySamplesIterator, typename ReferenceSamplesIterator>
 template <typename QueryIndicesIterator, typename ReferenceIndicesIterator, typename... BufferArgs>
 void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>::partial_search_for_each_query(
     const QueryIndicesIterator&     query_indices_range_first,
@@ -211,11 +221,10 @@ void IndicesToBuffersMap<Buffer, QuerySamplesIterator, ReferenceSamplesIterator>
             const auto current_furthest_distance  = query_to_buffer_it->second.furthest_distance();
             const auto tightest_furthest_distance = tightest_query_to_buffer_it_->second.furthest_distance();
 
-            const bool has_less_capacity = (current_capacity < tightest_capacity);
-            const bool have_no_capacity_and_closest_furthest_distance =
-                (!current_capacity && !tightest_capacity && current_furthest_distance < tightest_furthest_distance);
-
-            if (has_less_capacity || have_no_capacity_and_closest_furthest_distance) {
+            // We update the current best query to buffer iterator if the buffer is fuller than the current one or if
+            // both are completely full and the buffer's furthest distance is lesser than the one currently registered.
+            if ((current_capacity < tightest_capacity) ||
+                (!current_capacity && !tightest_capacity && current_furthest_distance < tightest_furthest_distance)) {
                 tightest_query_to_buffer_it_ = query_to_buffer_it;
             }
         } else {
