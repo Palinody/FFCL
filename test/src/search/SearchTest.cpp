@@ -427,7 +427,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / 1000);
 
     const std::size_t k_nearest_neighbors = 1;
 
@@ -452,7 +452,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                              data.end(),
                                              n_features,
                                              OptionsType()
-                                                 .bucket_size(100)
+                                                 /*.bucket_size(50)*/
+                                                 .bucket_size(std::sqrt(reference_indices.size()))
                                                  .max_depth(n_samples)
                                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                                  .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -479,7 +480,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                          data.end(),
                                          n_features,
                                          OptionsType()
-                                             .bucket_size(100)
+                                             /*.bucket_size(50)*/
+                                             .bucket_size(std::sqrt(query_indices.size()))
                                              .max_depth(n_samples)
                                              .axis_selection_policy(AxisSelectionPolicyType{})
                                              .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -613,7 +615,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 }
 // */
 
-// /*
+/*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -832,7 +834,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
     write_data<ValueType>(
         brute_force_time_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
 }
-// */
+*/
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

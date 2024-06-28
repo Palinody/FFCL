@@ -32,7 +32,7 @@ fig, ax1 = plt.subplots(figsize=(12, 8))
 ax1.plot(
     split_index_vector[:max_len],
     dual_tree_search_time_vector[:max_len],
-    label=f"Dual Tree Search Time.\nTotal: {int(np.sum(dual_tree_search_time_vector))} (s)",
+    label=f"Dual Tree Search Time.\nTotal: {np.sum(dual_tree_search_time_vector):.2f} (s)",
     marker="o",
     color="red",
 )
@@ -45,7 +45,7 @@ ax2 = ax1.twinx()
 ax2.plot(
     split_index_vector[:max_len],
     brute_force_time_vector[:max_len],
-    label=f"Brute Force Time.\nTotal: {int(np.sum(brute_force_time_vector))} (s)",
+    label=f"Brute Force Time.\nTotal: {np.sum(brute_force_time_vector):.2f} (s)",
     marker="x",
     color="blue",
 )
