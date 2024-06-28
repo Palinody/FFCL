@@ -2,6 +2,7 @@
 build/
 bin/clustering/
 bin/kdtree/
+bin/dual_tree_traversal/
 bin/single_linkage_cluster_tree/
 Testing/
 .vscode/
