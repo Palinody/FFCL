@@ -10,6 +10,9 @@ namespace ffcl::datastruct::bounds {
 template <class DerivedClass>
 struct StaticBoundWithCentroid {
     template <typename DerivedType = DerivedClass>
+    constexpr auto diameter() const;
+
+    template <typename DerivedType = DerivedClass>
     auto n_features() const;
 
     template <typename FeaturesIterator, typename DerivedType = DerivedClass>
@@ -39,6 +42,12 @@ struct StaticBoundWithCentroid {
     template <typename DerivedType = DerivedClass>
     constexpr auto centroid_end() const;
 };
+
+template <class DerivedClass>
+template <typename DerivedType>
+constexpr auto StaticBoundWithCentroid<DerivedClass>::diameter() const {
+    return static_cast<const DerivedType*>(this)->diameter_impl();
+}
 
 template <class DerivedClass>
 template <typename DerivedType>

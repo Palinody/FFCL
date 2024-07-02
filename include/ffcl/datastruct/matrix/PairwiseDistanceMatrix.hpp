@@ -83,7 +83,7 @@ auto PairwiseDistanceMatrix<SamplesIterator>::operator()(std::size_t row_index, 
     if (row_index == column_index) {
         return static_cast<ValueType>(0);
     }
-    // swap the indices if an upper triangle (diagonal excluded) quiery is made
+    // swap the indices if an upper triangle (diameter excluded) quiery is made
     if (row_index < column_index) {
         std::swap(row_index, column_index);
     }

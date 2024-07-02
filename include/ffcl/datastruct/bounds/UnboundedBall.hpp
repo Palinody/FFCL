@@ -17,6 +17,8 @@ class UnboundedBall : public StaticBoundWithCentroid<UnboundedBall<Value, NFeatu
     UnboundedBall(const CentroidType& centroid);
     UnboundedBall(CentroidType&& centroid) noexcept;
 
+    constexpr auto diameter_impl() const;
+
     std::size_t n_features_impl() const;
 
     template <typename OtherFeaturesIterator>
@@ -50,6 +52,11 @@ UnboundedBall<Value, NFeatures>::UnboundedBall(const CentroidType& centroid)
 template <typename Value, std::size_t NFeatures>
 UnboundedBall<Value, NFeatures>::UnboundedBall(CentroidType&& centroid) noexcept
   : centroid_{std::move(centroid)} {}
+
+template <typename Value, std::size_t NFeatures>
+constexpr auto UnboundedBall<Value, NFeatures>::diameter_impl() const {
+    return common::infinity<ValueType>();
+}
 
 template <typename Value, std::size_t NFeatures>
 std::size_t UnboundedBall<Value, NFeatures>::n_features_impl() const {

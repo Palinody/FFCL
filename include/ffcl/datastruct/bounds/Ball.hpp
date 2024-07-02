@@ -19,6 +19,8 @@ class Ball : public StaticBoundWithCentroid<Ball<Value, NFeatures>> {
     Ball(const CentroidType& centroid, const ValueType& radius);
     Ball(CentroidType&& centroid, const ValueType& radius) noexcept;
 
+    constexpr auto diameter_impl() const;
+
     std::size_t n_features_impl() const;
 
     template <typename OtherFeaturesIterator>
@@ -55,6 +57,11 @@ template <typename Value, std::size_t NFeatures>
 Ball<Value, NFeatures>::Ball(CentroidType&& centroid, const ValueType& radius) noexcept
   : centroid_{std::move(centroid)}
   , radius_{radius} {}
+
+template <typename Value, std::size_t NFeatures>
+constexpr auto Ball<Value, NFeatures>::diameter_impl() const {
+    return 2 * radius_;
+}
 
 template <typename Value, std::size_t NFeatures>
 std::size_t Ball<Value, NFeatures>::n_features_impl() const {
@@ -130,6 +137,8 @@ class BallView : public StaticBoundWithCentroid<BallView<FeaturesIterator>> {
              const FeaturesIterator& center_point_range_last,
              const ValueType&        radius);
 
+    constexpr auto diameter_impl() const;
+
     std::size_t n_features_impl() const;
 
     template <typename OtherFeaturesIterator>
@@ -164,6 +173,11 @@ BallView<FeaturesIterator>::BallView(const FeaturesIterator& center_point_range_
   : centroid_features_range_first_{center_point_range_first}
   , centroid_features_range_last_{center_point_range_last}
   , radius_{radius} {}
+
+template <typename FeaturesIterator>
+constexpr auto BallView<FeaturesIterator>::diameter_impl() const {
+    return 2 * radius_;
+}
 
 template <typename FeaturesIterator>
 std::size_t BallView<FeaturesIterator>::n_features_impl() const {

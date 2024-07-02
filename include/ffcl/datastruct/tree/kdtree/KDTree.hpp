@@ -167,7 +167,6 @@ class KDTree {
 
     void serialize(const fs::path& filepath) const;
 
-  public:
   private:
     NodePtr build(const IndicesIterator& indices_range_first,
                   const IndicesIterator& indices_range_last,

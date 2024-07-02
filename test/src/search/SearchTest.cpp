@@ -8,7 +8,6 @@
 
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
-#include "ffcl/search/Search.hpp"
 #include "ffcl/search/buffer/Unsorted.hpp"
 
 #include "ffcl/datastruct/bounds/segment/LowerBoundAndLength.hpp"
@@ -22,6 +21,7 @@
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"
 
 #include "ffcl/search/ClosestPairOfSamples.hpp"
+#include "ffcl/search/Search.hpp"
 
 #include <sys/types.h>  // ssize_t
 #include <filesystem>
@@ -334,7 +334,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
         const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), 1);
 
         {
-            const auto brute_force_shortest_edge =
+            const auto single_tree_traversal_shortest_edge =
                 ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
                                                                  query_indices.end(),
                                                                  data.begin(),
@@ -349,25 +349,28 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairTest) {
 
             std::cout << "n_queries: " << n_queries << "\n";
 
-            if (ffcl::common::inequality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge))) {
-                std::cout << "\t>>> " << std::get<0>(brute_force_shortest_edge) << " != " << std::get<0>(shortest_edge)
+            if (ffcl::common::inequality(std::get<0>(single_tree_traversal_shortest_edge), std::get<0>(shortest_edge)))
+{ std::cout << "\t>>> " << std::get<0>(single_tree_traversal_shortest_edge) << " != " << std::get<0>(shortest_edge)
                           << "\n";
             } else {
-                std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << "\n";
+                std::cout << std::get<0>(single_tree_traversal_shortest_edge) << " == " << std::get<0>(shortest_edge) <<
+"\n";
             }
 
-            if (ffcl::common::inequality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge))) {
-                std::cout << "\t>>> " << std::get<1>(brute_force_shortest_edge) << " != " << std::get<1>(shortest_edge)
+            if (ffcl::common::inequality(std::get<1>(single_tree_traversal_shortest_edge), std::get<1>(shortest_edge)))
+{ std::cout << "\t>>> " << std::get<1>(single_tree_traversal_shortest_edge) << " != " << std::get<1>(shortest_edge)
                           << "\n";
             } else {
-                std::cout << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << "\n";
+                std::cout << std::get<1>(single_tree_traversal_shortest_edge) << " == " << std::get<1>(shortest_edge) <<
+"\n";
             }
 
-            if (ffcl::common::inequality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge))) {
-                std::cout << "\t>>> " << std::get<2>(brute_force_shortest_edge) << " != " << std::get<2>(shortest_edge)
+            if (ffcl::common::inequality(std::get<2>(single_tree_traversal_shortest_edge), std::get<2>(shortest_edge)))
+{ std::cout << "\t>>> " << std::get<2>(single_tree_traversal_shortest_edge) << " != " << std::get<2>(shortest_edge)
                           << "\n";
             } else {
-                std::cout << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "\n";
+                std::cout << std::get<2>(single_tree_traversal_shortest_edge) << " == " << std::get<2>(shortest_edge) <<
+"\n";
             }
             std::cout << "---\n";
         }
@@ -412,7 +415,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     using IndicesIterator = decltype(indices)::iterator;
     using SamplesIterator = decltype(data)::iterator;
     using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
+    using OptionsType     = typename IndexerType::Options;
     using AxisSelectionPolicyType =
         ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
     using SplittingRulePolicyType =
@@ -427,9 +430,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 500);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / 5);
 
-    const std::size_t k_nearest_neighbors = 3;
+    const std::size_t k_nearest_neighbors = 1;
 
     auto split_index_vector           = std::vector<std::size_t>{};
     auto dual_tree_search_time_vector = std::vector<ValueType>{};
@@ -491,16 +494,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         }
 #endif
 
-        // query_indexer.serialize(kdtree_folder_root_ / fs::path(filename.stem().string() + "_query.json"));
-
-        // auto      union_find             = ffcl::datastruct::UnionFind<IndexType>(n_samples);
-        // IndexType queries_representative = union_find.find(query_indices[0]);
-        // for (const auto& query_index : query_indices) {
-        // queries_representative = union_find.merge(queries_representative, query_index);
-        // }
-        // const auto shortest_edge =
-        // searcher.dual_tree_shortest_edge(std::move(query_indexer), union_find, queries_representative, 1);
-
 #if defined(TIME_IT) && TIME_IT
         timer.reset();
 #endif
@@ -554,25 +547,10 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                                                  n_features,
                                                                  k_nearest_neighbors);
 
-            const auto brute_force_shortest_edge =
+            const auto single_tree_traversal_shortest_edge =
                 ffcl::search::buffer::make_edge(brute_force_tightest_query_to_buffer.first,
                                                 brute_force_tightest_query_to_buffer.second.furthest_index(),
                                                 brute_force_tightest_query_to_buffer.second.furthest_distance());
-
-            // const auto brute_force_shortest_edge =
-            //     ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
-            //                                                      query_indices.end(),
-            //                                                      data.begin(),
-            //                                                      data.end(),
-            //                                                      n_features,
-            //                                                      reference_indices.begin(),
-            //                                                      reference_indices.end(),
-            //                                                      data.begin(),
-            //                                                      data.end(),
-            //                                                      n_features,
-            //                                                      union_find,
-            //                                                      queries_representative,
-            //                                                      1);
 
 #if defined(TIME_IT) && TIME_IT
             const auto elapsed_time = timer.elapsed();
@@ -587,9 +565,12 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
             std::cout << "---\n";
 
-            ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
-            ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
-            ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
+            ASSERT_TRUE(
+                ffcl::common::equality(std::get<0>(single_tree_traversal_shortest_edge), std::get<0>(shortest_edge)));
+            ASSERT_TRUE(
+                ffcl::common::equality(std::get<1>(single_tree_traversal_shortest_edge), std::get<1>(shortest_edge)));
+            ASSERT_TRUE(
+                ffcl::common::equality(std::get<2>(single_tree_traversal_shortest_edge), std::get<2>(shortest_edge)));
 
             split_index_vector.emplace_back(split_index);
         }
@@ -648,9 +629,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 500);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / 5);
 
-    const std::size_t k_nearest_neighbors = 3;
+    const std::size_t k_nearest_neighbors = 1;
 
     auto split_index_vector           = std::vector<std::size_t>{};
     auto dual_tree_search_time_vector = std::vector<ValueType>{};
@@ -771,18 +752,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
             std::cout << "--------------------\n";
             timer.reset();
 #endif
-            // const auto brute_force_tightest_query_to_buffer =
-            //     ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
-            //                                                      query_indices.end(),
-            //                                                      data.begin(),
-            //                                                      data.end(),
-            //                                                      n_features,
-            //                                                      reference_indices.begin(),
-            //                                                      reference_indices.end(),
-            //                                                      data.begin(),
-            //                                                      data.end(),
-            //                                                      n_features,
-            //                                                      k_nearest_neighbors);
 
             const auto brute_force_tightest_query_to_buffer =
                 ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
@@ -799,7 +768,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
                                                                  queries_representative,
                                                                  k_nearest_neighbors);
 
-            const auto brute_force_shortest_edge =
+            const auto single_tree_traversal_shortest_edge =
                 ffcl::search::buffer::make_edge(brute_force_tightest_query_to_buffer.first,
                                                 brute_force_tightest_query_to_buffer.second.furthest_index(),
                                                 brute_force_tightest_query_to_buffer.second.furthest_distance());
@@ -817,13 +786,19 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 
             std::cout << "---\n";
 
-            ASSERT_TRUE(ffcl::common::equality(std::get<0>(brute_force_shortest_edge), std::get<0>(shortest_edge)));
-            ASSERT_TRUE(ffcl::common::equality(std::get<1>(brute_force_shortest_edge), std::get<1>(shortest_edge)));
-            ASSERT_TRUE(ffcl::common::equality(std::get<2>(brute_force_shortest_edge), std::get<2>(shortest_edge)));
+            ASSERT_TRUE(
+                ffcl::common::equality(std::get<0>(single_tree_traversal_shortest_edge), std::get<0>(shortest_edge)));
+            ASSERT_TRUE(
+                ffcl::common::equality(std::get<1>(single_tree_traversal_shortest_edge), std::get<1>(shortest_edge)));
+            ASSERT_TRUE(
+                ffcl::common::equality(std::get<2>(single_tree_traversal_shortest_edge), std::get<2>(shortest_edge)));
 
-            std::cout << std::get<0>(brute_force_shortest_edge) << " == " << std::get<0>(shortest_edge) << "?\n";
-            std::cout << std::get<1>(brute_force_shortest_edge) << " == " << std::get<1>(shortest_edge) << "?\n";
-            std::cout << std::get<2>(brute_force_shortest_edge) << " == " << std::get<2>(shortest_edge) << "?\n";
+            std::cout << std::get<0>(single_tree_traversal_shortest_edge) << " == " << std::get<0>(shortest_edge)
+                      << "?\n";
+            std::cout << std::get<1>(single_tree_traversal_shortest_edge) << " == " << std::get<1>(shortest_edge)
+                      << "?\n";
+            std::cout << std::get<2>(single_tree_traversal_shortest_edge) << " == " << std::get<2>(shortest_edge)
+                      << "?\n";
 
             split_index_vector.emplace_back(split_index);
         }

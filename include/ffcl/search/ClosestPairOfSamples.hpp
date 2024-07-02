@@ -6,6 +6,10 @@
 
 #include "ffcl/search/buffer/IndicesToBuffersMap.hpp"
 
+#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
+
+#include "ffcl/search/Search.hpp"
+
 #include <iterator>
 #include <tuple>
 #include <unordered_map>
@@ -71,33 +75,37 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
                             const OtherSamplesIterator& other_samples_range_last,
                             std::size_t                 other_n_features,
                             BufferArgs&&... buffer_args) {
-    common::ignore_parameters(samples_range_last);
+    using IndexerType = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType = typename IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    using DeducedBufferType = typename common::select_constructible_type<
-        buffer::Unsorted<SamplesIterator>,
-        buffer::WithMemory<SamplesIterator>,
-        buffer::WithUnionFind<SamplesIterator>>::from_signature</**/ SamplesIterator,
-                                                                /**/ SamplesIterator,
-                                                                /**/ BufferArgs...>::type;
+    auto query_indexer = IndexerType(indices_range_first,
+                                     indices_range_last,
+                                     samples_range_first,
+                                     samples_range_last,
+                                     n_features,
+                                     OptionsType()
+                                         .bucket_size(std::distance(indices_range_first, indices_range_last))
+                                         .axis_selection_policy(AxisSelectionPolicyType{})
+                                         .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    static_assert(!std::is_same_v<DeducedBufferType, void>,
-                  "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
+    auto reference_indexer =
+        IndexerType(other_indices_range_first,
+                    other_indices_range_last,
+                    other_samples_range_first,
+                    other_samples_range_last,
+                    other_n_features,
+                    OptionsType()
+                        .bucket_size(std::sqrt(std::distance(other_indices_range_first, other_indices_range_last)))
+                        .axis_selection_policy(AxisSelectionPolicyType{})
+                        .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    auto queries_to_buffers_map =
-        buffer::IndicesToBuffersMap<DeducedBufferType, SamplesIterator, OtherSamplesIterator>{samples_range_first,
-                                                                                              samples_range_last,
-                                                                                              n_features,
-                                                                                              other_samples_range_first,
-                                                                                              other_samples_range_last,
-                                                                                              other_n_features};
+    auto searcher = Searcher(std::move(reference_indexer));
 
-    queries_to_buffers_map.partial_search_for_each_query(indices_range_first,
-                                                         indices_range_last,
-                                                         other_indices_range_first,
-                                                         other_indices_range_last,
-                                                         std::forward<BufferArgs>(buffer_args)...);
-
-    return std::move(queries_to_buffers_map).tightest_query_to_buffer();
+    return searcher.dual_tree_shortest_edge(std::move(query_indexer), std::forward<BufferArgs>(buffer_args)...);
 }
 
 template <typename IndicesIterator,

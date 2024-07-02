@@ -24,6 +24,8 @@ class AABB : public StaticBound<AABB<Segment, NFeatures>> {
     constexpr AABB(const SegmentsType& segments);
     constexpr AABB(SegmentsType&& segments) noexcept;
 
+    constexpr auto diameter_impl() const;
+
     constexpr std::size_t n_features_impl() const;
 
     template <typename OtherFeaturesIterator>
@@ -45,6 +47,17 @@ constexpr AABB<Segment, NFeatures>::AABB(const SegmentsType& segments)
 template <typename Segment, std::size_t NFeatures>
 constexpr AABB<Segment, NFeatures>::AABB(SegmentsType&& segments) noexcept
   : segments_{std::move(segments)} {}
+
+template <typename Segment, std::size_t NFeatures>
+constexpr auto AABB<Segment, NFeatures>::diameter_impl() const {
+    ValueType diameter = 0;
+
+    for (const auto& segment : segments_) {
+        const auto segment_length = segment.upper_bound() - segment.lower_bound();
+        diameter += segment_length * segment_length;
+    }
+    return std::sqrt(diameter);
+}
 
 template <typename Segment, std::size_t NFeatures>
 constexpr std::size_t AABB<Segment, NFeatures>::n_features_impl() const {

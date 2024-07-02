@@ -229,12 +229,7 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
     const auto query_indexer = std::forward<ForwardedQueryIndexer>(forwarded_query_indexer);
 
     auto queries_to_buffers_map =
-        buffer::make_indices_to_buffers_map<DeducedBufferType>(query_indexer.begin(),
-                                                               query_indexer.end(),
-                                                               query_indexer.n_features(),
-                                                               reference_indexer_.begin(),
-                                                               reference_indexer_.end(),
-                                                               reference_indexer_.n_features());
+        buffer::make_indices_to_buffers_map<DeducedBufferType>(query_indexer, reference_indexer_);
 
     dual_tree_traversal(query_indexer.root(),
                         reference_indexer_.root(),

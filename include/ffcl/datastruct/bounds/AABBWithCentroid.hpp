@@ -27,6 +27,8 @@ class AABBWithCentroid : public StaticBoundWithCentroid<AABBWithCentroid<Segment
     constexpr AABBWithCentroid(const CentroidType& centroid, const SegmentsType& segments);
     constexpr AABBWithCentroid(CentroidType&& centroid, SegmentsType&& segments) noexcept;
 
+    constexpr auto diameter_impl() const;
+
     constexpr std::size_t n_features_impl() const;
 
     template <typename OtherFeaturesIterator>
@@ -104,6 +106,17 @@ constexpr AABBWithCentroid<Segment, NFeatures>::AABBWithCentroid(CentroidType&& 
                                                                  SegmentsType&& segments) noexcept
   : centroid_{std::move(centroid)}
   , segments_{std::move(segments)} {}
+
+template <typename Segment, std::size_t NFeatures>
+constexpr auto AABBWithCentroid<Segment, NFeatures>::diameter_impl() const {
+    ValueType diameter = 0;
+
+    for (const auto& segment : segments_) {
+        const auto segment_length = segment.upper_bound() - segment.lower_bound();
+        diameter += segment_length * segment_length;
+    }
+    return std::sqrt(diameter);
+}
 
 template <typename Segment, std::size_t NFeatures>
 constexpr std::size_t AABBWithCentroid<Segment, NFeatures>::n_features_impl() const {

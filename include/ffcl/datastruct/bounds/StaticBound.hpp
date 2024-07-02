@@ -13,12 +13,21 @@ struct always_false : std::false_type {};
 template <class DerivedClass>
 struct StaticBound {
     template <typename DerivedType = DerivedClass>
+    constexpr auto diameter() const;
+
+    template <typename DerivedType = DerivedClass>
     auto n_features() const;
 
     template <typename FeaturesIterator, typename DerivedType = DerivedClass>
     constexpr bool is_in_bounds(const FeaturesIterator& features_range_first,
                                 const FeaturesIterator& features_range_last) const;
 };
+
+template <class DerivedClass>
+template <typename DerivedType>
+constexpr auto StaticBound<DerivedClass>::diameter() const {
+    return static_cast<const DerivedType*>(this)->diameter_impl();
+}
 
 template <class DerivedClass>
 template <typename DerivedType>

@@ -50,6 +50,8 @@ struct KDNodeView {
 
     constexpr auto end() const;
 
+    constexpr auto diameter() const;
+
     bool is_empty() const;
 
     std::size_t n_samples() const;
@@ -156,6 +158,11 @@ constexpr auto KDNodeView<IndicesIterator, Bound>::begin() const {
 template <typename IndicesIterator, typename Bound>
 constexpr auto KDNodeView<IndicesIterator, Bound>::end() const {
     return indices_range_.second;
+}
+
+template <typename IndicesIterator, typename Bound>
+constexpr auto KDNodeView<IndicesIterator, Bound>::diameter() const {
+    return bound_.diameter();
 }
 
 template <typename IndicesIterator, typename Bound>
