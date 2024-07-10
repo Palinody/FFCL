@@ -392,7 +392,7 @@ constexpr void ignore_parameters(Args&&...) noexcept {}
 
 template <typename T>
 static constexpr T infinity() {
-    return std::numeric_limits<T>::max();
+    return std::numeric_limits<T>::infinity();
 }
 
 template <typename T>

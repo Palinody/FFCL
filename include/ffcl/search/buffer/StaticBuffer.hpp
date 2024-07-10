@@ -44,6 +44,7 @@ class StaticBuffer {
       : bound_{std::forward<BoundType>(bound)}
       , indices_{}
       , distances_{}
+      , closest_distance_{common::infinity<DistanceType>()}
       , buffer_index_of_furthest_index_{0}
       , furthest_distance_{common::infinity<DistanceType>()}
       , max_capacity_{max_capacity} {}
@@ -84,12 +85,20 @@ class StaticBuffer {
         return indices_.size();
     }
 
+    std::size_t max_capacity() const {
+        return max_capacity_;
+    }
+
     std::size_t remaining_capacity() const {
-        return max_capacity_ - size();
+        return max_capacity() - size();
     }
 
     bool empty() const {
         return indices_.empty();
+    }
+
+    DistanceType closest_distance() const {
+        return closest_distance_;
     }
 
     IndexType furthest_index() const {
@@ -129,6 +138,7 @@ class StaticBuffer {
     void update_static_buffers(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // update by default if it's being updated for the first time
         if (!size()) {
+            closest_distance_ = distance_candidate;
             // buffer_index_of_furthest_index_ stays 0 (default initialized)
             furthest_distance_ = distance_candidate;
 
@@ -137,6 +147,9 @@ class StaticBuffer {
         }
         // always populate if the max capacity isnt reached
         else if (remaining_capacity()) {
+            if (distance_candidate < closest_distance()) {
+                closest_distance_ = distance_candidate;
+            }
             // if the candidate's distance is greater than the current bound distance, we loosen the bound
             if (distance_candidate > furthest_distance()) {
                 buffer_index_of_furthest_index_ = indices_.size();
@@ -147,6 +160,10 @@ class StaticBuffer {
         }
         // populate if the max capacity is reached and the candidate has a closer distance
         else if (distance_candidate < furthest_distance()) {
+            // If distance_candidate is lesser than furthest_distance, it could as well be lesser than the closest one.
+            if (distance_candidate < closest_distance()) {
+                closest_distance_ = distance_candidate;
+            }
             // replace the previous greatest distance now that the vectors overflow the max capacity
             indices_[buffer_index_of_furthest_index_]   = index_candidate;
             distances_[buffer_index_of_furthest_index_] = distance_candidate;
@@ -160,6 +177,8 @@ class StaticBuffer {
 
     IndicesType   indices_;
     DistancesType distances_;
+
+    DistanceType closest_distance_;
 
     IndexType    buffer_index_of_furthest_index_;
     DistanceType furthest_distance_;

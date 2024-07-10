@@ -206,7 +206,7 @@ def plot_query_reference():
         if os.path.isfile(os.path.join(root_folder, f))
     ]
 
-    for filename in ["no_structure"]:
+    for filename in ["noisy_moons"]:
         reference_path = root_folder + filename + "_reference.json"
         query_path = root_folder + filename + "_query.json"
 

@@ -77,7 +77,12 @@ def nth_closest_pair(dist_matrix, n):
 
 
 def scipy_plot_closest_edges(
-    dataset, labels, axis=None, x_lim: List[float] = None, y_lim: List[float] = None
+    dataset,
+    labels,
+    axis=None,
+    x_lim: List[float] = None,
+    y_lim: List[float] = None,
+    kth_closest=1,
 ):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -104,7 +109,7 @@ def scipy_plot_closest_edges(
     # Find the indices of the closest pair
     # min_dist_indices = np.unravel_index(np.argmin(dist_matrix), dist_matrix.shape)
 
-    kth_closest_dist_indices = nth_closest_pair(dist_matrix, 1)
+    kth_closest_dist_indices = nth_closest_pair(dist_matrix, kth_closest)
 
     # Extract the closest pair of points
     closest_pair_query_point = queries_samples[kth_closest_dist_indices[0]]
@@ -168,8 +173,9 @@ def scipy_plot_closest_edges(
 kdtree_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "kdtree/")
 
 
+"""noisy_circles, noisy_moons, varied, aniso, blobs, no_structure, unbalanced_blobs"""
 for dataset_name in [
-    "no_structure",
+    "noisy_moons",
 ]:  # MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]:
     print(dataset_name)
     n_features = IO.n_features_in_txt_file(datapath + "inputs/" + dataset_name + ".txt")
@@ -196,7 +202,7 @@ for dataset_name in [
     # plot from the c++ generated data
     plot_closest_edge(dataset=data, labels=labels, axis=ax1, x_lim=x_lim, y_lim=y_lim)
     scipy_plot_closest_edges(
-        dataset=data, labels=labels, axis=ax2, x_lim=x_lim, y_lim=y_lim
+        dataset=data, labels=labels, axis=ax2, x_lim=x_lim, y_lim=y_lim, kth_closest=10
     )
 
     # ---

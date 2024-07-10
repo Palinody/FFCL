@@ -238,7 +238,7 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryInde
                         false,
                         std::forward<BufferArgs>(buffer_args)...);
 
-    return std::move(queries_to_buffers_map).tightest_query_to_buffer();
+    return std::move(queries_to_buffers_map).tightest_edge();
 }
 
 /*

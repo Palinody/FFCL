@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -34,6 +35,43 @@ struct hash<ffcl::search::buffer::NodesCombinationKey<QueryNodePtr, ReferenceNod
         const ffcl::search::buffer::NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>& key) const noexcept {
         std::size_t hash_1 = std::hash<typename QueryNodePtr::element_type*>{}(key.query_node.get());
         std::size_t hash_2 = std::hash<typename ReferenceNodePtr::element_type*>{}(key.reference_node.get());
+
+        if constexpr (sizeof(std::size_t) >= 8) {
+            hash_1 ^= hash_2 + 0x517cc1b727220a95 + (hash_1 << 6) + (hash_1 >> 2);
+        } else {
+            hash_1 ^= hash_2 + 0x9e3779b9 + (hash_1 << 6) + (hash_1 >> 2);
+        }
+        return hash_1;
+    }
+};
+
+}  // namespace std
+
+namespace ffcl::search::buffer {
+
+template <typename QueryIndex, typename ReferenceIndex>
+struct IndicesCombinationKey {
+    bool operator==(const IndicesCombinationKey<QueryIndex, ReferenceIndex>& other) const {
+        return query_index == other.query_index && reference_index == other.reference_index;
+    }
+
+    QueryIndex     query_index;
+    ReferenceIndex reference_index;
+};
+
+template <typename QueryIndex, typename ReferenceIndex>
+IndicesCombinationKey(QueryIndex, ReferenceIndex) -> IndicesCombinationKey<QueryIndex, ReferenceIndex>;
+
+}  // namespace ffcl::search::buffer
+
+namespace std {
+
+template <typename QueryIndex, typename ReferenceIndex>
+struct hash<ffcl::search::buffer::IndicesCombinationKey<QueryIndex, ReferenceIndex>> {
+    std::size_t operator()(
+        const ffcl::search::buffer::IndicesCombinationKey<QueryIndex, ReferenceIndex>& key) const noexcept {
+        std::size_t hash_1 = std::hash<QueryIndex>{}(key.query_index);
+        std::size_t hash_2 = std::hash<ReferenceIndex>{}(key.reference_index);
 
         if constexpr (sizeof(std::size_t) >= 8) {
             hash_1 ^= hash_2 + 0x517cc1b727220a95 + (hash_1 << 6) + (hash_1 >> 2);
@@ -94,8 +132,6 @@ class IndicesToBuffersMap {
 
     auto tightest_edge() const;
 
-    auto tightest_query_to_buffer() && -> QueryToBufferType;
-
     template <typename QueryIndicesIterator, typename ReferenceIndicesIterator, typename... BufferArgs>
     void partial_search_for_each_query(const QueryIndicesIterator&     query_indices_range_first,
                                        const QueryIndicesIterator&     query_indices_range_last,
@@ -112,10 +148,6 @@ class IndicesToBuffersMap {
 
   private:
     struct BoundsLimits {
-        BoundsLimits()
-          : closest_limit{common::infinity<DistanceType>()}
-          , furthest_limit{0} {}
-
         void try_update_closest_limit(const DistanceType& closest_limit_candidate) {
             closest_limit = std::min(closest_limit, closest_limit_candidate);
         }
@@ -130,15 +162,17 @@ class IndicesToBuffersMap {
         }
 
         auto compute_adjusted_bound(const DistanceType& node_diameter) const -> DistanceType {
+            common::ignore_parameters(node_diameter);
             return (closest_limit < common::infinity<DistanceType>() - node_diameter)
                        ? std::min(furthest_limit, closest_limit + node_diameter)
                        : common::infinity<DistanceType>();
         }
 
-        DistanceType closest_limit;
-        DistanceType furthest_limit;
+        DistanceType closest_limit  = common::infinity<DistanceType>();
+        DistanceType furthest_limit = 0;
     };
 
+  private:
     template <typename FeaturesRangeIterator, typename... BufferArgs>
     constexpr auto find_or_emplace_buffer(const IndexType&             index,
                                           const FeaturesRangeIterator& features_range_first,
@@ -154,6 +188,31 @@ class IndicesToBuffersMap {
     auto update_bounds_limits(const QueryNodePtr& query_node) ->
         typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator;
 
+  private:
+    using KTHShortestEdgePriorityQueueElementType = std::tuple<IndexType, IndexType, DistanceType>;
+
+    static constexpr auto kth_shortest_edge_less_than_comparator_ = [](const auto& left_tuple,
+                                                                       const auto& right_tuple) {
+        return std::get<2>(left_tuple) < std::get<2>(right_tuple);
+    };
+
+    using KTHShortestEdgePriorityQueueType = std::priority_queue<KTHShortestEdgePriorityQueueElementType,
+                                                                 std::vector<KTHShortestEdgePriorityQueueElementType>,
+                                                                 decltype(kth_shortest_edge_less_than_comparator_)>;
+
+    using PriorityQueueVisitedCombinationsType = std::unordered_set<IndicesCombinationKey<IndexType, IndexType>>;
+
+    /**
+     * @brief Compares the kth shortest edge priority queue to the query to buffer iterator.
+     *
+     * @param pq: priority queue containing the current best kth shortest edges of the traversal.
+     * @param query_to_buffer_it: typename std::unordered_map<IndexType, BufferType>::iterator that maps a query index
+     * to its knn buffer.
+     */
+    void update_priority_queue(KTHShortestEdgePriorityQueueType&     pq,
+                               PriorityQueueVisitedCombinationsType& pq_visited_combinations,
+                               const IndexToBufferMapIterator&       query_to_buffer_it);
+
     QuerySamplesIteratorType query_samples_range_first_;
     QuerySamplesIteratorType query_samples_range_last_;
     std::size_t              query_n_features_;
@@ -164,11 +223,13 @@ class IndicesToBuffersMap {
 
     IndexToBufferMapType queries_to_buffers_map_ = IndexToBufferMapType{};
 
-    IndexToBufferMapIterator tightest_query_to_buffer_it_ = queries_to_buffers_map_.end();
+    std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>> visited_nodes_combinations_{};
 
-    std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>> visited_nodes_combinations_;
+    std::unordered_map<QueryNodePtr, BoundsLimits> query_nodes_to_bounds_limits_map_{};
 
-    std::unordered_map<QueryNodePtr, BoundsLimits> query_nodes_to_bounds_limits_map_;
+    KTHShortestEdgePriorityQueueType kth_closest_edge_priority_queue_{kth_shortest_edge_less_than_comparator_};
+
+    PriorityQueueVisitedCombinationsType priority_queue_visited_combinations_{};
 };
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
@@ -194,14 +255,7 @@ IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::IndicesToBuffersMap
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::tightest_edge() const {
-    return make_edge(tightest_query_to_buffer_it_->first,
-                     tightest_query_to_buffer_it_->second.furthest_index(),
-                     tightest_query_to_buffer_it_->second.furthest_distance());
-}
-
-template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
-auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::tightest_query_to_buffer() && -> QueryToBufferType {
-    return std::move(*tightest_query_to_buffer_it_);
+    return kth_closest_edge_priority_queue_.top();
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
@@ -229,26 +283,8 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::partial_search
                                                   reference_samples_range_last_,
                                                   reference_n_features_);
 
-        // Check if tightest_query_to_buffer_it_ is unset.
-        const bool is_tightest_query_to_buffer_unset = (tightest_query_to_buffer_it_ == queries_to_buffers_map_.end());
-
-        // Only proceed with capacity and distance comparisons if tightest_query_to_buffer_it_ is set.
-        if (!is_tightest_query_to_buffer_unset) {
-            const auto current_capacity           = query_to_buffer_it->second.remaining_capacity();
-            const auto tightest_capacity          = tightest_query_to_buffer_it_->second.remaining_capacity();
-            const auto current_furthest_distance  = query_to_buffer_it->second.furthest_distance();
-            const auto tightest_furthest_distance = tightest_query_to_buffer_it_->second.furthest_distance();
-
-            // We update the current best query to buffer iterator if the buffer is fuller than the current one or if
-            // both are completely full and the buffer's furthest distance is lesser than the one currently registered.
-            if ((current_capacity < tightest_capacity) ||
-                (!current_capacity && !tightest_capacity && current_furthest_distance < tightest_furthest_distance)) {
-                tightest_query_to_buffer_it_ = query_to_buffer_it;
-            }
-        } else {
-            // If tightest_query_to_buffer_it_ is unset, set it to the current iterator.
-            tightest_query_to_buffer_it_ = query_to_buffer_it;
-        }
+        update_priority_queue(
+            kth_closest_edge_priority_queue_, priority_queue_visited_combinations_, query_to_buffer_it);
     }
 }
 
@@ -418,6 +454,82 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::find_max_furth
         }
     }
     return queries_max_upper_bound;
+}
+
+template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
+void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priority_queue(
+    KTHShortestEdgePriorityQueueType&     pq,
+    PriorityQueueVisitedCombinationsType& pq_visited_combinations,
+    const IndexToBufferMapIterator&       query_to_buffer_it) {
+    const auto& [query_index, buffer] = *query_to_buffer_it;
+    // Ensure that the priority queue has the right size properties. A buffer current size could be lesser that its
+    // max_capacity but a priority queue size should never exceed it.
+    while (pq.size() > buffer.max_capacity()) {
+        const auto& top_element = pq.top();
+        pq_visited_combinations.erase({std::get<0>(top_element), std::get<1>(top_element)});
+        pq.pop();
+    }
+    // pq.size() can be lesser of equal than buffer.max_capacity() from here...
+
+    const auto& buffer_indices   = buffer.const_reference_indices();
+    const auto& buffer_distances = buffer.const_reference_distances();
+
+    // If adding all the elements from the buffer end up reaching at most the buffer.max_capacity().
+    if (pq.size() + buffer.size() <= buffer.max_capacity()) {
+        // Priority queue number of elements to add that take into account the possibility that
+        // buffer.size() < buffer.max_capacity()
+        std::size_t n_elements_to_add = std::min(buffer.size(), buffer.max_capacity() - pq.size());
+
+        // Simply emplace all the elements from the buffer in the priority queue without bothering about selecting
+        // only the 'n_elements_to_add' smallest elements from buffer.
+        for (std::size_t buffer_index = 0; buffer_index < n_elements_to_add; ++buffer_index) {
+            // 'second' is a bool in true state when {query_index, buffer_indices[buffer_index]} has been inserted.
+            if (pq_visited_combinations.insert({query_index, buffer_indices[buffer_index]}).second) {
+                // We emplace the combination if it was not already there. (if statement is true).
+                pq.emplace(query_index, buffer_indices[buffer_index], buffer_distances[buffer_index]);
+            }
+        }
+    }
+    // If adding elements from buffer end up overflowing buffer.max_capacity(), then we need to select elements from
+    // buffer to add accordingly.
+    // We need to emplace the elements in such a way that the first 'pq_n_elements_to_add' are the smallest from
+    // buffer. However, buffer is not completely sorted. We only know the furthest_index and its respective distance
+    // as well as the closest distance of the buffer. A simple way to achieve the update is to traverse the entire
+    // buffer and pop and emplace the elements from and into the priority queue along the way. A second method would
+    // be to find the nth_elemnts from the buffer and emplace only those to the priority queue. The first method's
+    // drawback is that it requires management of the emplace/pop-ed elements. The second method's drawback is that
+    // it would require a deep copy of the indices and distances of buffer.
+    else if (buffer.closest_distance() < (pq.empty() ? common::infinity<DistanceType>() : std::get<2>(pq.top()))) {
+        // Iterate over all the buffer indices as we dont know which elements could be valid candidates.
+        for (std::size_t buffer_index = 0; buffer_index < buffer.size(); ++buffer_index) {
+            const auto candidate_index    = buffer_indices[buffer_index];
+            const auto candidate_distance = buffer_distances[buffer_index];
+
+            const auto pq_furthest_distance = pq.empty() ? common::infinity<DistanceType>() : std::get<2>(pq.top());
+
+            if (candidate_distance < pq_furthest_distance) {
+                if (pq.size() < buffer.max_capacity()) {
+                    if (pq_visited_combinations.insert({query_index, candidate_index}).second) {
+                        pq.emplace(query_index, candidate_index, candidate_distance);
+                    }
+                } else {
+                    const auto& top_element = pq.top();
+                    pq_visited_combinations.erase({std::get<0>(top_element), std::get<1>(top_element)});
+                    pq.pop();
+                    if (pq_visited_combinations.insert({query_index, candidate_index}).second) {
+                        pq.emplace(query_index, candidate_index, candidate_distance);
+                    }
+                }
+            }
+        }
+        // Ensures that the priority queue doesnt contain more elements than the  buffer.max_capacity() after
+        // visiting the entire buffer.
+        while (pq.size() > buffer.max_capacity()) {
+            const auto& top_element = pq.top();
+            pq_visited_combinations.erase({std::get<0>(top_element), std::get<1>(top_element)});
+            pq.pop();
+        }
+    }
 }
 
 }  // namespace ffcl::search::buffer

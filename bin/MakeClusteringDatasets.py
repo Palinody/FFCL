@@ -27,7 +27,7 @@ SHIFT = 0
 DATA_TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
-n_samples = 500000
+n_samples = 1000
 n_features = 2
 # None to load everything else specify
 n_samples_mnist = None
@@ -41,7 +41,7 @@ noisy_circles = datasets.make_circles(
     n_samples=n_samples, factor=0.5, noise=0.05, random_state=random_state
 )
 noisy_moons = datasets.make_moons(
-    n_samples=n_samples, noise=0.05, random_state=random_state
+    n_samples=n_samples, noise=0.1, random_state=random_state
 )
 blobs = datasets.make_blobs(
     n_samples=n_samples, n_features=n_features, random_state=random_state
