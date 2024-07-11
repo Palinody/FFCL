@@ -267,7 +267,7 @@ void shuffle_indices(IndicesIterator indices_first, IndicesIterator indices_last
     std::shuffle(indices_first, indices_last, std::mt19937{std::random_device{}()});
 }
 
-// /*
+/*
 TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -302,7 +302,7 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairLoopTimerTest) {
     auto total_elapsed_time = timer.elapsed();
 #endif
 
-    const std::size_t k_nearest_neighbors = 1;
+    const std::size_t k_nearest_neighbors = 10;
 
     {
         auto query_indices     = std::vector<IndexType>{};
@@ -460,9 +460,9 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairLoopTimerTest) {
 #endif
     std::cout << dummy_acc << "\n";
 }
-// */
+*/
 
-/*
+// /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -500,7 +500,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
     const std::size_t increment = std::max(std::size_t{1}, n_samples / 5);
 
-    const std::size_t k_nearest_neighbors = 1;
+    const std::size_t k_nearest_neighbors = 3;
 
     auto split_index_vector           = std::vector<std::size_t>{};
     auto dual_tree_search_time_vector = std::vector<ValueType>{};
@@ -565,12 +565,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto tightest_query_to_buffer =
-            searcher.dual_tree_shortest_edge(std::move(query_indexer), k_nearest_neighbors);
-
-        const auto shortest_edge = ffcl::search::buffer::make_edge(tightest_query_to_buffer.first,
-                                                                   tightest_query_to_buffer.second.furthest_index(),
-                                                                   tightest_query_to_buffer.second.furthest_distance());
+        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -601,7 +596,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             std::cout << "--------------------\n";
             timer.reset();
 #endif
-            const auto brute_force_tightest_query_to_buffer =
+            const auto single_tree_traversal_shortest_edge =
                 ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
                                                                  query_indices.end(),
                                                                  data.begin(),
@@ -613,11 +608,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                                                                  data.end(),
                                                                  n_features,
                                                                  k_nearest_neighbors);
-
-            const auto single_tree_traversal_shortest_edge =
-                ffcl::search::buffer::make_edge(brute_force_tightest_query_to_buffer.first,
-                                                brute_force_tightest_query_to_buffer.second.furthest_index(),
-                                                brute_force_tightest_query_to_buffer.second.furthest_distance());
 
 #if defined(TIME_IT) && TIME_IT
             const auto elapsed_time = timer.elapsed();
@@ -659,7 +649,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     write_data<ValueType>(
         brute_force_time_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
 }
-*/
+// */
 
 /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {

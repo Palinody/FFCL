@@ -153,7 +153,7 @@ class IndicesToBuffersMap {
         }
 
         void try_update_furthest_limit(const DistanceType& furthest_limit_candidate) {
-            closest_limit = std::max(closest_limit, furthest_limit_candidate);
+            furthest_limit = std::max(furthest_limit, furthest_limit_candidate);
         }
 
         void try_update_limits(const DistanceType& bound_candidate) {
@@ -162,7 +162,6 @@ class IndicesToBuffersMap {
         }
 
         auto compute_adjusted_bound(const DistanceType& node_diameter) const -> DistanceType {
-            common::ignore_parameters(node_diameter);
             return (closest_limit < common::infinity<DistanceType>() - node_diameter)
                        ? std::min(furthest_limit, closest_limit + node_diameter)
                        : common::infinity<DistanceType>();
@@ -210,7 +209,7 @@ class IndicesToBuffersMap {
      * to its knn buffer.
      */
     void update_priority_queue(KTHShortestEdgePriorityQueueType&     pq,
-                               PriorityQueueVisitedCombinationsType& pq_visited_combinations,
+                               PriorityQueueVisitedCombinationsType& pq_visited_combinations_set,
                                const IndexToBufferMapIterator&       query_to_buffer_it);
 
     QuerySamplesIteratorType query_samples_range_first_;
@@ -229,7 +228,7 @@ class IndicesToBuffersMap {
 
     KTHShortestEdgePriorityQueueType kth_closest_edge_priority_queue_{kth_shortest_edge_less_than_comparator_};
 
-    PriorityQueueVisitedCombinationsType priority_queue_visited_combinations_{};
+    PriorityQueueVisitedCombinationsType priority_queue_visited_combinations_set_{};
 };
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
@@ -283,8 +282,9 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::partial_search
                                                   reference_samples_range_last_,
                                                   reference_n_features_);
 
-        update_priority_queue(
-            kth_closest_edge_priority_queue_, priority_queue_visited_combinations_, query_to_buffer_it);
+        update_priority_queue(/**/ kth_closest_edge_priority_queue_,
+                              /**/ priority_queue_visited_combinations_set_,
+                              /**/ query_to_buffer_it);
     }
 }
 
@@ -362,32 +362,39 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::query_node_fur
     auto query_node_to_bound_limits_it = update_bounds_limits(query_node);
 
     if (!query_node->is_leaf()) {
-        auto left_query_node_to_bound_limits_it  = query_nodes_to_bounds_limits_map_.find(query_node->left_);
-        auto right_query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.find(query_node->right_);
+        // Left node update:
+        {
+            auto left_query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.find(query_node->left_);
 
-        // Make a default bounds limits cache if the one for the node isnt available yet.
-        if (left_query_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
-            left_query_node_to_bound_limits_it =
-                query_nodes_to_bounds_limits_map_.emplace(query_node->left_, BoundsLimits{}).first;
+            // Make a default bounds limits cache if the one for the node isnt available yet.
+            if (left_query_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
+                left_query_node_to_bound_limits_it =
+                    query_nodes_to_bounds_limits_map_.emplace(query_node->left_, BoundsLimits{}).first;
 
-        } else {
-            query_node_to_bound_limits_it->second.try_update_closest_limit(
-                left_query_node_to_bound_limits_it->second.closest_limit);
+            } else {
+                query_node_to_bound_limits_it->second.try_update_closest_limit(
+                    left_query_node_to_bound_limits_it->second.closest_limit);
 
-            query_node_to_bound_limits_it->second.try_update_furthest_limit(
-                left_query_node_to_bound_limits_it->second.furthest_limit);
+                query_node_to_bound_limits_it->second.try_update_furthest_limit(
+                    left_query_node_to_bound_limits_it->second.furthest_limit);
+            }
         }
-        // Make a default bounds limits cache if the one for the node isnt available yet.
-        if (right_query_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
-            right_query_node_to_bound_limits_it =
-                query_nodes_to_bounds_limits_map_.emplace(query_node->right_, BoundsLimits{}).first;
+        // Right node update:
+        {
+            auto right_query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.find(query_node->right_);
 
-        } else {
-            query_node_to_bound_limits_it->second.try_update_closest_limit(
-                right_query_node_to_bound_limits_it->second.closest_limit);
+            // Make a default bounds limits cache if the one for the node isnt available yet.
+            if (right_query_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
+                right_query_node_to_bound_limits_it =
+                    query_nodes_to_bounds_limits_map_.emplace(query_node->right_, BoundsLimits{}).first;
 
-            query_node_to_bound_limits_it->second.try_update_furthest_limit(
-                right_query_node_to_bound_limits_it->second.furthest_limit);
+            } else {
+                query_node_to_bound_limits_it->second.try_update_closest_limit(
+                    right_query_node_to_bound_limits_it->second.closest_limit);
+
+                query_node_to_bound_limits_it->second.try_update_furthest_limit(
+                    right_query_node_to_bound_limits_it->second.furthest_limit);
+            }
         }
     }
     return query_node_to_bound_limits_it->second.compute_adjusted_bound(query_node->diameter());
@@ -410,11 +417,13 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_bounds_
         // default. We also don't need to iterate further since the next nodes will never be greater than
         // infinity.
         if (index_to_buffer_it == queries_to_buffers_map_.cend()) {
+            // query_node_to_bound_limits_it->second.try_update_furthest_limit(infinity);
             query_node_to_bound_limits_it->second.furthest_limit = infinity;
         }
         // If there's remaining space in the buffers, then candidates might potentially be further than the
         // buffer's current furthest distance.
         else if (index_to_buffer_it->second.remaining_capacity()) {
+            // query_node_to_bound_limits_it->second.try_update_furthest_limit(infinity);
             query_node_to_bound_limits_it->second.furthest_limit = infinity;
 
         } else {
@@ -459,14 +468,14 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::find_max_furth
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priority_queue(
     KTHShortestEdgePriorityQueueType&     pq,
-    PriorityQueueVisitedCombinationsType& pq_visited_combinations,
+    PriorityQueueVisitedCombinationsType& pq_visited_combinations_set,
     const IndexToBufferMapIterator&       query_to_buffer_it) {
     const auto& [query_index, buffer] = *query_to_buffer_it;
     // Ensure that the priority queue has the right size properties. A buffer current size could be lesser that its
     // max_capacity but a priority queue size should never exceed it.
     while (pq.size() > buffer.max_capacity()) {
         const auto& top_element = pq.top();
-        pq_visited_combinations.erase({std::get<0>(top_element), std::get<1>(top_element)});
+        pq_visited_combinations_set.erase({std::get<0>(top_element), std::get<1>(top_element)});
         pq.pop();
     }
     // pq.size() can be lesser of equal than buffer.max_capacity() from here...
@@ -476,15 +485,11 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
 
     // If adding all the elements from the buffer end up reaching at most the buffer.max_capacity().
     if (pq.size() + buffer.size() <= buffer.max_capacity()) {
-        // Priority queue number of elements to add that take into account the possibility that
-        // buffer.size() < buffer.max_capacity()
-        std::size_t n_elements_to_add = std::min(buffer.size(), buffer.max_capacity() - pq.size());
-
         // Simply emplace all the elements from the buffer in the priority queue without bothering about selecting
-        // only the 'n_elements_to_add' smallest elements from buffer.
-        for (std::size_t buffer_index = 0; buffer_index < n_elements_to_add; ++buffer_index) {
+        // the smallest elements from 'buffer'.
+        for (std::size_t buffer_index = 0; buffer_index < buffer.size(); ++buffer_index) {
             // 'second' is a bool in true state when {query_index, buffer_indices[buffer_index]} has been inserted.
-            if (pq_visited_combinations.insert({query_index, buffer_indices[buffer_index]}).second) {
+            if (pq_visited_combinations_set.insert({query_index, buffer_indices[buffer_index]}).second) {
                 // We emplace the combination if it was not already there. (if statement is true).
                 pq.emplace(query_index, buffer_indices[buffer_index], buffer_distances[buffer_index]);
             }
@@ -499,7 +504,7 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
     // be to find the nth_elemnts from the buffer and emplace only those to the priority queue. The first method's
     // drawback is that it requires management of the emplace/pop-ed elements. The second method's drawback is that
     // it would require a deep copy of the indices and distances of buffer.
-    else if (buffer.closest_distance() < (pq.empty() ? common::infinity<DistanceType>() : std::get<2>(pq.top()))) {
+    if (buffer.closest_distance() < (pq.empty() ? common::infinity<DistanceType>() : std::get<2>(pq.top()))) {
         // Iterate over all the buffer indices as we dont know which elements could be valid candidates.
         for (std::size_t buffer_index = 0; buffer_index < buffer.size(); ++buffer_index) {
             const auto candidate_index    = buffer_indices[buffer_index];
@@ -508,26 +513,18 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
             const auto pq_furthest_distance = pq.empty() ? common::infinity<DistanceType>() : std::get<2>(pq.top());
 
             if (candidate_distance < pq_furthest_distance) {
-                if (pq.size() < buffer.max_capacity()) {
-                    if (pq_visited_combinations.insert({query_index, candidate_index}).second) {
-                        pq.emplace(query_index, candidate_index, candidate_distance);
-                    }
-                } else {
-                    const auto& top_element = pq.top();
-                    pq_visited_combinations.erase({std::get<0>(top_element), std::get<1>(top_element)});
-                    pq.pop();
-                    if (pq_visited_combinations.insert({query_index, candidate_index}).second) {
-                        pq.emplace(query_index, candidate_index, candidate_distance);
+                // Insert the combination and check if it was newly inserted.
+                if (pq_visited_combinations_set.insert({query_index, candidate_index}).second) {
+                    pq.emplace(query_index, candidate_index, candidate_distance);
+
+                    // If the priority queue exceeds the maximum capacity, remove the top element.
+                    if (pq.size() > buffer.max_capacity()) {
+                        const auto& top_element = pq.top();
+                        pq_visited_combinations_set.erase({std::get<0>(top_element), std::get<1>(top_element)});
+                        pq.pop();
                     }
                 }
             }
-        }
-        // Ensures that the priority queue doesnt contain more elements than the  buffer.max_capacity() after
-        // visiting the entire buffer.
-        while (pq.size() > buffer.max_capacity()) {
-            const auto& top_element = pq.top();
-            pq_visited_combinations.erase({std::get<0>(top_element), std::get<1>(top_element)});
-            pq.pop();
         }
     }
 }
