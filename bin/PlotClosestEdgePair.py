@@ -202,7 +202,7 @@ for dataset_name in [
     # plot from the c++ generated data
     plot_closest_edge(dataset=data, labels=labels, axis=ax1, x_lim=x_lim, y_lim=y_lim)
     scipy_plot_closest_edges(
-        dataset=data, labels=labels, axis=ax2, x_lim=x_lim, y_lim=y_lim, kth_closest=10
+        dataset=data, labels=labels, axis=ax2, x_lim=x_lim, y_lim=y_lim, kth_closest=100
     )
 
     # ---

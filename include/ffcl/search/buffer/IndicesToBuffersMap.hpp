@@ -182,8 +182,6 @@ class IndicesToBuffersMap {
 
     auto query_node_furthest_bound(const QueryNodePtr& query_node) -> DistanceType;
 
-    auto find_max_furthest_distance_in_node(const QueryNodePtr& query_node) const -> DistanceType;
-
     auto update_bounds_limits(const QueryNodePtr& query_node) ->
         typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator;
 
@@ -356,49 +354,27 @@ template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 
 auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::query_node_furthest_bound(
     const QueryNodePtr& query_node) -> DistanceType {
-    // auto furthest_distance = find_max_furthest_distance_in_node(query_node);
-    // return furthest_distance;
-    // /*
     auto query_node_to_bound_limits_it = update_bounds_limits(query_node);
 
     if (!query_node->is_leaf()) {
-        // Left node update:
-        {
-            auto left_query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.find(query_node->left_);
+        // Update the current node's limits based on the cached children limits.
+        for (const auto& child_node : {query_node->left_, query_node->right_}) {
+            auto child_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.find(child_node);
 
-            // Make a default bounds limits cache if the one for the node isnt available yet.
-            if (left_query_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
-                left_query_node_to_bound_limits_it =
-                    query_nodes_to_bounds_limits_map_.emplace(query_node->left_, BoundsLimits{}).first;
-
-            } else {
-                query_node_to_bound_limits_it->second.try_update_closest_limit(
-                    left_query_node_to_bound_limits_it->second.closest_limit);
-
-                query_node_to_bound_limits_it->second.try_update_furthest_limit(
-                    left_query_node_to_bound_limits_it->second.furthest_limit);
-            }
-        }
-        // Right node update:
-        {
-            auto right_query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.find(query_node->right_);
-
-            // Make a default bounds limits cache if the one for the node isnt available yet.
-            if (right_query_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
-                right_query_node_to_bound_limits_it =
-                    query_nodes_to_bounds_limits_map_.emplace(query_node->right_, BoundsLimits{}).first;
+            if (child_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
+                child_node_to_bound_limits_it =
+                    query_nodes_to_bounds_limits_map_.emplace(child_node, BoundsLimits{}).first;
 
             } else {
                 query_node_to_bound_limits_it->second.try_update_closest_limit(
-                    right_query_node_to_bound_limits_it->second.closest_limit);
+                    child_node_to_bound_limits_it->second.closest_limit);
 
                 query_node_to_bound_limits_it->second.try_update_furthest_limit(
-                    right_query_node_to_bound_limits_it->second.furthest_limit);
+                    child_node_to_bound_limits_it->second.furthest_limit);
             }
         }
     }
     return query_node_to_bound_limits_it->second.compute_adjusted_bound(query_node->diameter());
-    // */
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
@@ -406,63 +382,28 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_bounds_
     -> typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator {
     static constexpr auto infinity = common::infinity<DistanceType>();
 
-    auto query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.find(query_node);
-    // Make a default bounds limits cache if the one for the current query node isnt available yet.
-    if (query_node_to_bound_limits_it == query_nodes_to_bounds_limits_map_.end()) {
-        query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.emplace(query_node, BoundsLimits{}).first;
-    }
+    // Try to emplace if the 'query_node' key is not already present. Return 'first' to discard the bool (not) inserted.
+    auto query_node_to_bound_limits_it = query_nodes_to_bounds_limits_map_.emplace(query_node, BoundsLimits{}).first;
+
     for (const auto& query_index : *query_node) {
         const auto index_to_buffer_it = queries_to_buffers_map_.find(query_index);
         // If the buffer at the current index wasn't initialized, then its furthest distance is infinity by
         // default. We also don't need to iterate further since the next nodes will never be greater than
         // infinity.
         if (index_to_buffer_it == queries_to_buffers_map_.cend()) {
-            // query_node_to_bound_limits_it->second.try_update_furthest_limit(infinity);
             query_node_to_bound_limits_it->second.furthest_limit = infinity;
         }
         // If there's remaining space in the buffers, then candidates might potentially be further than the
         // buffer's current furthest distance.
         else if (index_to_buffer_it->second.remaining_capacity()) {
-            // query_node_to_bound_limits_it->second.try_update_furthest_limit(infinity);
             query_node_to_bound_limits_it->second.furthest_limit = infinity;
 
         } else {
             const auto query_buffer_furthest_distance = index_to_buffer_it->second.furthest_distance();
-
             query_node_to_bound_limits_it->second.try_update_limits(query_buffer_furthest_distance);
         }
     }
     return query_node_to_bound_limits_it;
-}
-
-template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
-auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::find_max_furthest_distance_in_node(
-    const QueryNodePtr& query_node) const -> DistanceType {
-    DistanceType queries_max_upper_bound = 0;
-
-    for (const auto& query_index : *query_node) {
-        const auto index_to_buffer_it = queries_to_buffers_map_.find(query_index);
-
-        // If the buffer at the current index wasn't initialized, then its furthest distance is infinity by
-        // default. We also don't need to iterate further since the next nodes will never be greater than
-        // infinity.
-        if (index_to_buffer_it == queries_to_buffers_map_.cend()) {
-            return common::infinity<DistanceType>();
-        }
-        // If there's remaining space in the buffers, then candidates might potentially be further than the
-        // buffer's current furthest distance.
-        else if (index_to_buffer_it->second.remaining_capacity()) {
-            return common::infinity<DistanceType>();
-
-        } else {
-            const auto query_buffer_furthest_distance = index_to_buffer_it->second.furthest_distance();
-
-            if (query_buffer_furthest_distance > queries_max_upper_bound) {
-                queries_max_upper_bound = query_buffer_furthest_distance;
-            }
-        }
-    }
-    return queries_max_upper_bound;
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>

@@ -72,7 +72,7 @@ class TreeTraverser {
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
     using DualNodePriorityQueueElementType = std::tuple<QueryNodePtr, ReferenceNodePtr, Cost>;
 
-    static constexpr auto dual_node_less_comparator_ = [](const auto& left_tuple, const auto& right_tuple) {
+    static constexpr auto dual_node_greater_than_comparator_ = [](const auto& left_tuple, const auto& right_tuple) {
         return std::get<2>(left_tuple) > std::get<2>(right_tuple);
     };
 
@@ -80,7 +80,7 @@ class TreeTraverser {
     using DualNodePriorityQueueType =
         std::priority_queue<DualNodePriorityQueueElementType<QueryNodePtr, ReferenceNodePtr, Cost>,
                             std::vector<DualNodePriorityQueueElementType<QueryNodePtr, ReferenceNodePtr, Cost>>,
-                            decltype(dual_node_less_comparator_)>;
+                            decltype(dual_node_greater_than_comparator_)>;
 
     template <typename Buffer>
     void single_tree_traversal(ReferenceNodePtr node, Buffer& buffer) const;
@@ -273,7 +273,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                                          std::forward<BufferArgs>(buffer_args)...);
 
     auto dual_node_priority_queue =
-        DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_less_comparator_};
+        DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>{dual_node_greater_than_comparator_};
 
     auto try_enqueue_combinations_from_cost = [&](const QueryNodePtr& q_node, const ReferenceNodePtr& r_node) {
         const auto optional_cost = queries_to_buffers_map.cost(q_node, r_node);
@@ -347,6 +347,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
 }
 */
 
+/*
 template <typename ReferenceIndexer>
 template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
 void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&     query_node,
@@ -450,6 +451,157 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
                                         false,
                                         std::forward<BufferArgs>(buffer_args)...);
                 }
+            }
+        }
+    }
+}
+*/
+
+/*
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&     query_node,
+                                                          const ReferenceNodePtr& reference_node,
+                                                          QueriesToBuffersMap&    queries_to_buffers_map,
+                                                          std::optional<DataType> optional_cost,
+                                                          bool                    bypass_cost_calculation,
+                                                          BufferArgs&&... buffer_args) const {
+    // 'emplace_nodes_combination_if_not_found' emplaces the nodes combination in one of the queries_to_buffers_map
+    // buffers only if its not found. It returns 'true' if emplace was successful, else it returns false.
+    // We want to enter this statement only if the nodes combination have not been visited.
+    if (queries_to_buffers_map.emplace_nodes_combination_if_not_found(query_node, reference_node)) {
+        if (!bypass_cost_calculation) {
+            // If the optional passed as a parameter to this function contains a value, it means that the parent in the
+            // recursive pattern passed a nodes combination that might need to be pruned. We recalculate the cost by
+            // calling 'update_cost'. Otherwise we need to calculate the cost of this node combination.
+            optional_cost = optional_cost
+                                ? queries_to_buffers_map.update_cost(query_node, reference_node, *optional_cost)
+                                : queries_to_buffers_map.cost(query_node, reference_node);
+            // If the returned optional is std::nullopt, then the current nodes combination can be pruned.
+            if (!optional_cost) {
+                return;
+            }
+        }
+        // Else, update the query buffers with the reference set while keeping track of the global shortest edge.
+        queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
+                                                             query_node->indices_range_.second,
+                                                             reference_node->indices_range_.first,
+                                                             reference_node->indices_range_.second,
+                                                             std::forward<BufferArgs>(buffer_args)...);
+
+        // The order of traversal doesn't matter for the query node.
+        if (!query_node->is_leaf()) {
+            for (const auto& child_node : {query_node->left_, query_node->right_}) {
+                dual_tree_traversal(child_node,
+                                    reference_node,
+                                    queries_to_buffers_map,
+                                    std::nullopt,
+                                    false,
+                                    std::forward<BufferArgs>(buffer_args)...);
+            }
+        }
+        // The order of traversal does matter in this case.
+        if (!reference_node->is_leaf()) {
+            const auto optional_left_cost  = queries_to_buffers_map.cost(query_node, reference_node->left_);
+            const auto optional_right_cost = queries_to_buffers_map.cost(query_node, reference_node->right_);
+
+            static constexpr auto infinity = common::infinity<DataType>();
+
+            const auto left_cost  = optional_left_cost.value_or(infinity);
+            const auto right_cost = optional_right_cost.value_or(infinity);
+
+            const auto child_nodes  = std::array<ReferenceNodePtr, 2>{reference_node->left_, reference_node->right_};
+            const auto child_costs  = std::array<std::optional<DataType>, 2>{optional_left_cost, optional_right_cost};
+            const auto bypass_costs = std::array<bool, 2>{true, false};
+
+            // Set the child traversal order w.r.t. the costs. The children with smaller costs are traversed first.
+            const auto [first_child_index, second_child_index] =
+                left_cost < right_cost ? std::make_pair(0, 1) : std::make_pair(1, 0);
+
+            for (auto child_index : {first_child_index, second_child_index}) {
+                dual_tree_traversal(query_node,
+                                    child_nodes[child_index],
+                                    queries_to_buffers_map,
+                                    child_index == first_child_index ? std::nullopt : child_costs[child_index],
+                                    child_index == first_child_index ? bypass_costs[child_index] : false,
+                                    std::forward<BufferArgs>(buffer_args)...);
+            }
+        }
+    }
+}
+*/
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&     query_node,
+                                                          const ReferenceNodePtr& reference_node,
+                                                          QueriesToBuffersMap&    queries_to_buffers_map,
+                                                          std::optional<DataType> optional_cost,
+                                                          bool                    bypass_cost_calculation,
+                                                          BufferArgs&&... buffer_args) const {
+    // 'emplace_nodes_combination_if_not_found' emplaces the nodes combination in one of the queries_to_buffers_map
+    // buffers only if its not found. It returns 'true' if emplace was successful, else it returns false.
+    // We want to enter this statement only if the nodes combination have not been visited.
+    if (queries_to_buffers_map.emplace_nodes_combination_if_not_found(query_node, reference_node)) {
+        if (!bypass_cost_calculation) {
+            // If the optional passed as a parameter to this function contains a value, it means that the parent in the
+            // recursive pattern passed a nodes combination that might need to be pruned. We recalculate the cost by
+            // calling 'update_cost'. Otherwise we need to calculate the cost of this node combination.
+            optional_cost = optional_cost
+                                ? queries_to_buffers_map.update_cost(query_node, reference_node, *optional_cost)
+                                : queries_to_buffers_map.cost(query_node, reference_node);
+            // If the returned optional is std::nullopt, then the current nodes combination can be pruned.
+            if (!optional_cost) {
+                return;
+            }
+        }
+        // Else, update the query buffers with the reference set while keeping track of the global shortest edge.
+        queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
+                                                             query_node->indices_range_.second,
+                                                             reference_node->indices_range_.first,
+                                                             reference_node->indices_range_.second,
+                                                             std::forward<BufferArgs>(buffer_args)...);
+
+        // The order of traversal doesn't matter for the query node.
+        if (!query_node->is_leaf()) {
+            for (const auto& child_node : {query_node->left_, query_node->right_}) {
+                dual_tree_traversal(child_node,
+                                    reference_node,
+                                    queries_to_buffers_map,
+                                    std::nullopt,
+                                    false,
+                                    std::forward<BufferArgs>(buffer_args)...);
+            }
+        }
+        // The order of traversal does matter in this case.
+        if (!reference_node->is_leaf()) {
+            static constexpr auto infinity = common::infinity<DataType>();
+
+            auto children_priority_queue =
+                DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
+
+            const auto child_nodes = std::array<ReferenceNodePtr, 2>{reference_node->left_, reference_node->right_};
+
+            for (const auto& child_node : child_nodes) {
+                const auto child_node_optional_cost = queries_to_buffers_map.cost(query_node, child_node);
+
+                if (child_node_optional_cost) {
+                    children_priority_queue.emplace(query_node, child_node, *child_node_optional_cost);
+                }
+            }
+            while (!children_priority_queue.empty()) {
+                const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
+
+                dual_tree_traversal(pq_query_node,
+                                    pq_reference_node,
+                                    queries_to_buffers_map,
+                                    common::inequality(nodes_combination_cost, infinity)
+                                        ? std::make_optional(nodes_combination_cost)
+                                        : std::nullopt,
+                                    common::inequality(nodes_combination_cost, infinity),
+                                    std::forward<BufferArgs>(buffer_args)...);
+
+                children_priority_queue.pop();
             }
         }
     }

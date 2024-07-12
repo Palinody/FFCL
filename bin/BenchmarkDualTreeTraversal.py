@@ -43,6 +43,10 @@ def plot(root_folder, split_index_fn, brute_force_time_fn, dual_tree_search_time
     ax1.set_ylabel("Dual Tree Search Time (s)", color="red")
     ax1.tick_params(axis="y", labelcolor="red")
 
+    # Show plot
+    plt.tight_layout()
+    plt.show()
+
     # Create a secondary axis and plot brute force search times
     ax2 = ax1.twinx()
     ax2.plot(

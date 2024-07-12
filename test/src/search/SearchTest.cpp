@@ -302,7 +302,7 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairLoopTimerTest) {
     auto total_elapsed_time = timer.elapsed();
 #endif
 
-    const std::size_t k_nearest_neighbors = 10;
+    const std::size_t k_nearest_neighbors = 3;
 
     {
         auto query_indices     = std::vector<IndexType>{};
@@ -498,7 +498,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 5);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
 
     const std::size_t k_nearest_neighbors = 3;
 
@@ -507,6 +507,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     auto brute_force_time_vector      = std::vector<ValueType>{};
 
     for (std::size_t split_index = 1; split_index < n_samples - k_nearest_neighbors + 1; split_index += increment) {
+        std::cout << "split_index: " << split_index << "\n";
+
         shuffle_indices(indices.begin(), indices.end());
         auto query_indices     = std::vector(indices.begin(), indices.begin() + split_index);
         auto reference_indices = std::vector(indices.begin() + split_index, indices.end());
@@ -516,16 +518,17 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #endif
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-        auto reference_indexer = IndexerType(reference_indices.begin(),
-                                             reference_indices.end(),
-                                             data.begin(),
-                                             data.end(),
-                                             n_features,
-                                             OptionsType()
-                                                 .bucket_size(std::sqrt(reference_indices.size()))
-                                                 .max_depth(n_samples)
-                                                 .axis_selection_policy(AxisSelectionPolicyType{})
-                                                 .splitting_rule_policy(SplittingRulePolicyType{}));
+        auto reference_indexer = IndexerType(
+            reference_indices.begin(),
+            reference_indices.end(),
+            data.begin(),
+            data.end(),
+            n_features,
+            OptionsType()
+                .bucket_size(std::max(std::size_t{1}, static_cast<std::size_t>(std::sqrt(reference_indices.size()))))
+                .max_depth(n_samples)
+                .axis_selection_policy(AxisSelectionPolicyType{})
+                .splitting_rule_policy(SplittingRulePolicyType{}));
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -543,16 +546,17 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #endif
 
         // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-        auto query_indexer = IndexerType(query_indices.begin(),
-                                         query_indices.end(),
-                                         data.begin(),
-                                         data.end(),
-                                         n_features,
-                                         OptionsType()
-                                             .bucket_size(std::sqrt(query_indices.size()))
-                                             .max_depth(n_samples)
-                                             .axis_selection_policy(AxisSelectionPolicyType{})
-                                             .splitting_rule_policy(SplittingRulePolicyType{}));
+        auto query_indexer = IndexerType(
+            query_indices.begin(),
+            query_indices.end(),
+            data.begin(),
+            data.end(),
+            n_features,
+            OptionsType()
+                .bucket_size(std::max(std::size_t{1}, static_cast<std::size_t>(std::sqrt(query_indices.size()))))
+                .max_depth(n_samples)
+                .axis_selection_policy(AxisSelectionPolicyType{})
+                .splitting_rule_policy(SplittingRulePolicyType{}));
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -618,10 +622,6 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-            std::cout << "split_index: " << split_index << "\n";
-
-            std::cout << "---\n";
-
             ASSERT_TRUE(
                 ffcl::common::equality(std::get<0>(single_tree_traversal_shortest_edge), std::get<0>(shortest_edge)));
             ASSERT_TRUE(
@@ -632,6 +632,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
             split_index_vector.emplace_back(split_index);
         }
 #endif
+        std::cout << "---\n";
+
         dummy_acc += std::get<2>(shortest_edge);
     }
 #if defined(TIME_IT) && TIME_IT
