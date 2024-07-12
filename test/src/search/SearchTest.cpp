@@ -267,7 +267,7 @@ void shuffle_indices(IndicesIterator indices_first, IndicesIterator indices_last
     std::shuffle(indices_first, indices_last, std::mt19937{std::random_device{}()});
 }
 
-/*
+// /*
 TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -302,7 +302,7 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairLoopTimerTest) {
     auto total_elapsed_time = timer.elapsed();
 #endif
 
-    const std::size_t k_nearest_neighbors = 3;
+    const std::size_t k_nearest_neighbors = 10;
 
     {
         auto query_indices     = std::vector<IndexType>{};
@@ -460,9 +460,9 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairLoopTimerTest) {
 #endif
     std::cout << dummy_acc << "\n";
 }
-*/
+// */
 
-// /*
+/*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -651,7 +651,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
     write_data<ValueType>(
         brute_force_time_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
 }
-// */
+*/
 
 /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {

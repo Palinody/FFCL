@@ -45,7 +45,6 @@ def plot(root_folder, split_index_fn, brute_force_time_fn, dual_tree_search_time
 
     # Show plot
     plt.tight_layout()
-    plt.show()
 
     # Create a secondary axis and plot brute force search times
     ax2 = ax1.twinx()
