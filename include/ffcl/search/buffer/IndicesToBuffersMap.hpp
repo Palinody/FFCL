@@ -419,7 +419,7 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
         pq_visited_combinations_set.erase({std::get<0>(top_element), std::get<1>(top_element)});
         pq.pop();
     }
-    // pq.size() can be lesser of equal than buffer.max_capacity() from here...
+    // pq.size() is lesser of equal than buffer.max_capacity() from here...
 
     const auto& buffer_indices   = buffer.const_reference_indices();
     const auto& buffer_distances = buffer.const_reference_distances();

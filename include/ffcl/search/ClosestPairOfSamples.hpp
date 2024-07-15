@@ -99,7 +99,7 @@ auto dual_set_shortest_edge(const IndicesIterator&      indices_range_first,
                     other_samples_range_last,
                     other_n_features,
                     OptionsType()
-                        .bucket_size(std::sqrt(std::distance(other_indices_range_first, other_indices_range_last)))
+                        .bucket_size(/*std::sqrt*/ (std::distance(other_indices_range_first, other_indices_range_last)))
                         .axis_selection_policy(AxisSelectionPolicyType{})
                         .splitting_rule_policy(SplittingRulePolicyType{}));
 

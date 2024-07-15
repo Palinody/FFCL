@@ -89,13 +89,12 @@ class BoruvkasAlgorithm {
         using MinimumSpanningTreeType = datastruct::mst::EdgesList<RepresentativeType, ValueType>;
 
         Forest(std::size_t n_samples)
-          : n_samples_{n_samples}
-          , minimum_spanning_tree_{}
+          : minimum_spanning_tree_{}
           , representatives_to_components_map_{}
-          , union_find_{UnionFindType(n_samples_)} {
-            minimum_spanning_tree_.reserve(n_samples_ - 1);
+          , union_find_{UnionFindType(n_samples)} {
+            minimum_spanning_tree_.reserve(n_samples - 1);
             // each sample starts as its own component representative
-            for (std::size_t sample_index = 0; sample_index < n_samples_; ++sample_index) {
+            for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
                 representatives_to_components_map_[sample_index] = ComponentType{sample_index};
             }
         }
@@ -193,7 +192,6 @@ class BoruvkasAlgorithm {
             std::cout << "\n";
         }
 
-        std::size_t n_samples_;
         // the container that accumulates the edges for the minimum spanning tree
         MinimumSpanningTreeType minimum_spanning_tree_;
         // the container mapping each component representative to the set of actual sample indices
@@ -445,12 +443,12 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
                                     ? make_core_distances_ptr(searcher, options_.k_nearest_neighbors_)
                                     : CoreDistancesArrayPtr{nullptr};
 
-    // std::size_t counter = 0;
+    std::size_t counter = 0;
 
     if (core_distances) {
         while (forest.n_components() > 1) {
-            // std::cout << "forest.n_components(): " << forest.n_components() << "\n";
-            // counter += forest.n_components();
+            std::cout << "forest.n_components(): " << forest.n_components() << "\n";
+            counter += forest.n_components();
 
             if (forest.n_components() == 2) {
                 dual_component_step_sequential(searcher, core_distances, forest);
@@ -461,8 +459,8 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
         }
     } else {
         while (forest.n_components() > 1) {
-            // std::cout << "forest.n_components(): " << forest.n_components() << "\n";
-            // counter += forest.n_components();
+            std::cout << "forest.n_components(): " << forest.n_components() << "\n";
+            counter += forest.n_components();
 
             if (forest.n_components() == 2) {
                 dual_component_step_sequential(searcher, forest);
@@ -472,7 +470,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
             }
         }
     }
-    // std::cout << "Counter: " << counter << "\n";
+    std::cout << "Counter: " << counter << "\n";
     return std::move(forest).minimum_spanning_tree();
 }
 

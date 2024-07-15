@@ -44,6 +44,7 @@ class StaticBuffer {
       : bound_{std::forward<BoundType>(bound)}
       , indices_{}
       , distances_{}
+      , closest_index_{0}
       , closest_distance_{common::infinity<DistanceType>()}
       , buffer_index_of_furthest_index_{0}
       , furthest_distance_{common::infinity<DistanceType>()}
@@ -97,6 +98,10 @@ class StaticBuffer {
         return indices_.empty();
     }
 
+    IndexType closest_index() const {
+        return closest_index_;
+    }
+
     DistanceType closest_distance() const {
         return closest_distance_;
     }
@@ -138,6 +143,7 @@ class StaticBuffer {
     void update_static_buffers(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // update by default if it's being updated for the first time
         if (!size()) {
+            closest_index_    = index_candidate;
             closest_distance_ = distance_candidate;
             // buffer_index_of_furthest_index_ stays 0 (default initialized)
             furthest_distance_ = distance_candidate;
@@ -148,6 +154,7 @@ class StaticBuffer {
         // always populate if the max capacity isnt reached
         else if (remaining_capacity()) {
             if (distance_candidate < closest_distance()) {
+                closest_index_    = index_candidate;
                 closest_distance_ = distance_candidate;
             }
             // if the candidate's distance is greater than the current bound distance, we loosen the bound
@@ -162,6 +169,7 @@ class StaticBuffer {
         else if (distance_candidate < furthest_distance()) {
             // If distance_candidate is lesser than furthest_distance, it could as well be lesser than the closest one.
             if (distance_candidate < closest_distance()) {
+                closest_index_    = index_candidate;
                 closest_distance_ = distance_candidate;
             }
             // replace the previous greatest distance now that the vectors overflow the max capacity
@@ -178,6 +186,7 @@ class StaticBuffer {
     IndicesType   indices_;
     DistancesType distances_;
 
+    IndexType    closest_index_;
     DistanceType closest_distance_;
 
     IndexType    buffer_index_of_furthest_index_;
