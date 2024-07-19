@@ -3,6 +3,7 @@
 #include "ffcl/common/Utils.hpp"
 #include "ffcl/common/math/heuristics/Distances.hpp"
 #include "ffcl/datastruct/bounds/distances/MinDistance.hpp"
+#include "ffcl/datastruct/graph/spanning_tree/MinimumSpanningTree.hpp"  // for ffcl::datastruct::mst::Edge
 
 #include <cstddef>
 #include <optional>
@@ -85,19 +86,6 @@ struct hash<ffcl::search::buffer::IndicesCombinationKey<QueryIndex, ReferenceInd
 }  // namespace std
 
 namespace ffcl::search::buffer {
-
-template <typename Index, typename Distance>
-using Edge = std::tuple<Index, Index, Distance>;
-
-template <typename Index, typename Distance>
-constexpr auto make_edge(const Index& index_1, const Index& index_2, const Distance& distance) {
-    return std::make_tuple(index_1, index_2, distance);
-}
-
-template <typename Index, typename Distance>
-constexpr auto make_default_edge() {
-    return make_edge(common::infinity<Index>(), common::infinity<Index>(), common::infinity<Distance>());
-}
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 class IndicesToBuffersMap {
@@ -186,7 +174,7 @@ class IndicesToBuffersMap {
         typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator;
 
   private:
-    using KTHShortestEdgePriorityQueueElementType = std::tuple<IndexType, IndexType, DistanceType>;
+    using KTHShortestEdgePriorityQueueElementType = datastruct::mst::Edge<IndexType, DistanceType>;
 
     static constexpr auto kth_shortest_edge_less_than_comparator_ = [](const auto& left_tuple,
                                                                        const auto& right_tuple) {

@@ -10,6 +10,8 @@
 
 #include "ffcl/search/Search.hpp"
 
+#include "ffcl/datastruct/graph/spanning_tree/MinimumSpanningTree.hpp"  // for Edge, make_edge
+
 #include <iterator>
 #include <tuple>
 #include <unordered_map>
@@ -21,23 +23,23 @@ template <typename IndicesIterator,
           typename OtherIndicesIterator,
           typename OtherSamplesIterator>
 auto simple_dual_set_shortest_edge(
-    const IndicesIterator&                                                          indices_range_first,
-    const IndicesIterator&                                                          indices_range_last,
-    const SamplesIterator&                                                          samples_range_first,
-    const SamplesIterator&                                                          samples_range_last,
-    std::size_t                                                                     n_features,
-    const OtherIndicesIterator&                                                     other_indices_range_first,
-    const OtherIndicesIterator&                                                     other_indices_range_last,
-    const OtherSamplesIterator&                                                     other_samples_range_first,
-    const OtherSamplesIterator&                                                     other_samples_range_last,
-    std::size_t                                                                     other_n_features,
-    const buffer::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
-                       typename std::iterator_traits<SamplesIterator>::value_type>& initial_shortest_edge =
-        buffer::make_edge(common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
-                          common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
-                          common::infinity<typename std::iterator_traits<SamplesIterator>::value_type>()))
-    -> buffer::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
-                    typename std::iterator_traits<SamplesIterator>::value_type> {
+    const IndicesIterator&                                                                   indices_range_first,
+    const IndicesIterator&                                                                   indices_range_last,
+    const SamplesIterator&                                                                   samples_range_first,
+    const SamplesIterator&                                                                   samples_range_last,
+    std::size_t                                                                              n_features,
+    const OtherIndicesIterator&                                                              other_indices_range_first,
+    const OtherIndicesIterator&                                                              other_indices_range_last,
+    const OtherSamplesIterator&                                                              other_samples_range_first,
+    const OtherSamplesIterator&                                                              other_samples_range_last,
+    std::size_t                                                                              other_n_features,
+    const datastruct::mst::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
+                                typename std::iterator_traits<SamplesIterator>::value_type>& initial_shortest_edge =
+        datastruct::mst::make_edge(common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
+                                   common::infinity<typename std::iterator_traits<IndicesIterator>::value_type>(),
+                                   common::infinity<typename std::iterator_traits<SamplesIterator>::value_type>()))
+    -> datastruct::mst::Edge<typename std::iterator_traits<IndicesIterator>::value_type,
+                             typename std::iterator_traits<SamplesIterator>::value_type> {
     common::ignore_parameters(samples_range_last, other_samples_range_last);
 
     auto shortest_edge = initial_shortest_edge;
@@ -52,7 +54,7 @@ auto simple_dual_set_shortest_edge(
                 other_samples_range_first + (*other_index_it) * other_n_features + other_n_features);
 
             if (samples_distance > 0 && samples_distance < std::get<2>(shortest_edge)) {
-                shortest_edge = buffer::make_edge(*index_it, *other_index_it, samples_distance);
+                shortest_edge = datastruct::mst::make_edge(*index_it, *other_index_it, samples_distance);
             }
         }
     }

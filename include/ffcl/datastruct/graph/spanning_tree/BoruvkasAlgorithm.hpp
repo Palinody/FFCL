@@ -463,15 +463,21 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
                                                            Forest&                          forest) const {
     common::ignore_parameters(core_distances);
 
-    using QueryIndexerType = typename search::Searcher<Indexer>::IndexerType;
+    using QueryIndexerType        = typename search::Searcher<Indexer>::IndexerType;
+    using QueryIndexerOptionsType = typename QueryIndexerType::Options;
 
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
     auto components_closest_edge = std::unordered_map<IndexType, EdgeType>{};
 
-    for (const auto& [component_representative, component] : forest) {
-        if (component.size() <= searcher.n_samples()) {
-            auto query_indexer = QueryIndexerType();
+    for (auto& [component_representative, component] : forest) {
+        if (component.size() <= searcher.n_samples() / 2) {
+            auto query_indexer = QueryIndexerType(component.begin(),
+                                                  component.end(),
+                                                  searcher.begin(),
+                                                  searcher.end(),
+                                                  searcher.n_features(),
+                                                  QueryIndexerOptionsType().bucket_size(std::sqrt(component.size())));
 
             components_closest_edge[component_representative] =
                 searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
@@ -503,7 +509,7 @@ auto BoruvkasAlgorithm<Indexer>::make_tree_2(ForwardedIndexer&& indexer) const {
         std::cout << "forest.n_components(): " << forest.n_components() << "\n";
         counter += forest.n_components();
 
-        step_dual_tree_sequential(searcher, indexer, core_distances, forest);
+        step_dual_tree_sequential(searcher, core_distances, forest);
     }
     std::cout << "Counter: " << counter << "\n";
     return std::move(forest).minimum_spanning_tree();

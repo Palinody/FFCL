@@ -46,10 +46,10 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
 
     void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the candidate is not in the same component as the representative of the component
-        const bool is_candidate_valid = union_find_const_reference_.find(query_representative_) !=
-                                        union_find_const_reference_.find(index_candidate);
+        const bool are_in_same_component = union_find_const_reference_.find(query_representative_) ==
+                                           union_find_const_reference_.find(index_candidate);
 
-        if (is_candidate_valid) {
+        if (!are_in_same_component) {
             this->update_static_buffers(index_candidate, distance_candidate);
         }
     }

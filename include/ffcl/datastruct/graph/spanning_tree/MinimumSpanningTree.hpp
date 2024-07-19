@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ffcl/common/Utils.hpp"
+
 #include <algorithm>
 #include <tuple>
 #include <vector>
@@ -17,6 +19,11 @@ using EdgesList = std::vector<Edge<Index, Distance>>;
 template <typename Index, typename Distance>
 constexpr auto make_edge(const Index& index_1, const Index& index_2, const Distance& distance) {
     return std::make_tuple(index_1, index_2, distance);
+}
+
+template <typename Index, typename Distance>
+constexpr auto make_default_edge() {
+    return make_edge(common::infinity<Index>(), common::infinity<Index>(), common::infinity<Distance>());
 }
 
 template <typename Index, typename Distance>
