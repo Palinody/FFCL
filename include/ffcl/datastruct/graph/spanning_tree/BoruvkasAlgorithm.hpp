@@ -6,9 +6,9 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
-#include "ffcl/search/buffer/Unsorted.hpp"
 #include "ffcl/search/buffer/WithUnionFind.hpp"
 
+#include "ffcl/datastruct/graph/spanning_tree/CoreDistances.hpp"
 #include "ffcl/search/Search.hpp"
 
 #include <cassert>
@@ -43,8 +43,7 @@ class BoruvkasAlgorithm {
 
     using EdgeType = datastruct::mst::Edge<IndexType, ValueType>;
 
-    using CoreDistancesArray    = std::unique_ptr<ValueType[]>;
-    using CoreDistancesArrayPtr = std::shared_ptr<CoreDistancesArray>;
+    using CoreDistancesArrayType = datastruct::mst::CoreDistancesArray<ValueType>;
 
     struct Options {
         Options() = default;
@@ -75,12 +74,15 @@ class BoruvkasAlgorithm {
     template <typename ForwardedIndexer>
     auto make_tree(ForwardedIndexer&& indexer) const;
 
+    template <typename ForwardedIndexer>
+    auto make_tree_2(ForwardedIndexer&& indexer) const;
+
   private:
     class Forest {
       public:
         using RepresentativeType = IndexType;
 
-        using ComponentType = std::unordered_set<RepresentativeType>;
+        using ComponentType = std::vector<RepresentativeType>;
 
         using RepresentativeToComponentMapType = std::unordered_map<RepresentativeType, ComponentType>;
 
@@ -162,6 +164,7 @@ class BoruvkasAlgorithm {
 
             // move the indices from the component that will be discarded to the final one
             representatives_to_components_map_[retained_representative].insert(
+                representatives_to_components_map_[retained_representative].end(),
                 std::make_move_iterator(representatives_to_components_map_[discarded_representative].cbegin()),
                 std::make_move_iterator(representatives_to_components_map_[discarded_representative].cend()));
 
@@ -200,19 +203,21 @@ class BoruvkasAlgorithm {
         UnionFindType union_find_;
     };
 
-    auto make_core_distances_ptr(const search::Searcher<Indexer>& searcher, const IndexType& k_nearest_neighbors) const;
-
     void step_sequential(const search::Searcher<Indexer>& searcher, Forest& forest) const;
 
     void step_sequential(const search::Searcher<Indexer>& searcher,
-                         const CoreDistancesArrayPtr&     core_distances,
+                         const CoreDistancesArrayType&    core_distances,
                          Forest&                          forest) const;
 
     void dual_component_step_sequential(const search::Searcher<Indexer>& searcher, Forest& forest) const;
 
     void dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
-                                        const CoreDistancesArrayPtr&     core_distances,
+                                        const CoreDistancesArrayType&    core_distances,
                                         Forest&                          forest) const;
+
+    void step_dual_tree_sequential(const search::Searcher<Indexer>& searcher,
+                                   const CoreDistancesArrayType&    core_distances,
+                                   Forest&                          forest) const;
 
     Options options_;
 };
@@ -228,25 +233,6 @@ BoruvkasAlgorithm<Indexer>& BoruvkasAlgorithm<Indexer>::set_options(const Option
 }
 
 template <typename Indexer>
-auto BoruvkasAlgorithm<Indexer>::make_core_distances_ptr(const search::Searcher<Indexer>& searcher,
-                                                         const IndexType&                 k_nearest_neighbors) const {
-    // just a temporary array that allocates enough memory for the core distances
-    auto core_distances = std::make_unique<ValueType[]>(searcher.n_samples());
-
-    for (std::size_t sample_index = 0; sample_index < searcher.n_samples(); ++sample_index) {
-        auto nn_buffer_query = search::buffer::Unsorted(searcher.features_range_first(sample_index),
-                                                        searcher.features_range_last(sample_index),
-                                                        k_nearest_neighbors);
-
-        core_distances[sample_index] = searcher(std::move(nn_buffer_query)).furthest_distance();
-    }
-    // wrap the array in a shared ptr by transfering its ownership
-    auto core_distances_ptr = std::make_shared<CoreDistancesArray>(std::move(core_distances));
-
-    return core_distances_ptr;
-}
-
-template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>& searcher, Forest& forest) const {
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
@@ -254,8 +240,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 
     for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
-        components_closest_edge[component_representative] =
-            EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
+        components_closest_edge[component_representative] = datastruct::mst::make_default_edge<IndexType, ValueType>();
 
         for (const auto& query_index : component) {
             // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
@@ -290,7 +275,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 
 template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>& searcher,
-                                                 const CoreDistancesArrayPtr&     core_distances,
+                                                 const CoreDistancesArrayType&    core_distances,
                                                  Forest&                          forest) const {
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
@@ -298,8 +283,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 
     for (const auto& [component_representative, component] : forest) {
         // initialize the closest edge from the current component to infinity
-        components_closest_edge[component_representative] =
-            EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
+        components_closest_edge[component_representative] = datastruct::mst::make_default_edge<IndexType, ValueType>();
 
         for (const auto& query_index : component) {
             // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
@@ -317,7 +301,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
             const auto current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);
 
             const auto k_mutual_reachability_distance = std::max(
-                {(*core_distances)[query_index], (*core_distances)[nearest_neighbor_index], nearest_neighbor_distance});
+                {core_distances[query_index], core_distances[nearest_neighbor_index], nearest_neighbor_distance});
 
             // update the current shortest edge if the k_mutual_reachability_distance is indeed shortest than the
             // current shortest edge distance
@@ -353,8 +337,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
     const auto& [smallest_component_representative, smallest_component] = find_pair_at_smallest_component(forest);
 
     // initialize the closest edge from the current component to infinity
-    auto closest_edge =
-        EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
+    auto closest_edge = datastruct::mst::make_default_edge<IndexType, ValueType>();
 
     for (const auto& query_index : smallest_component) {
         // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
@@ -383,7 +366,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
 
 template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Searcher<Indexer>& searcher,
-                                                                const CoreDistancesArrayPtr&     core_distances,
+                                                                const CoreDistancesArrayType&    core_distances,
                                                                 Forest&                          forest) const {
     // Lambda to find the component_representative and smallest_component pair at the smallest component size
     auto find_pair_at_smallest_component = [](const auto& key_value_iterable) {
@@ -400,8 +383,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
     const auto& [smallest_component_representative, smallest_component] = find_pair_at_smallest_component(forest);
 
     // initialize the closest edge from the current component to infinity
-    auto closest_edge =
-        EdgeType{common::infinity<IndexType>(), common::infinity<IndexType>(), common::infinity<ValueType>()};
+    auto closest_edge = datastruct::mst::make_default_edge<IndexType, ValueType>();
 
     for (const auto& query_index : smallest_component) {
         // initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
@@ -418,8 +400,8 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
 
         const auto current_closest_edge_distance = std::get<2>(closest_edge);
 
-        const auto k_mutual_reachability_distance = std::max(
-            {(*core_distances)[query_index], (*core_distances)[nearest_neighbor_index], nearest_neighbor_distance});
+        const auto k_mutual_reachability_distance =
+            std::max({core_distances[query_index], core_distances[nearest_neighbor_index], nearest_neighbor_distance});
 
         // update the current shortest edge if the k_mutual_reachability_distance is indeed shortest than the current
         // shortest edge distance
@@ -438,14 +420,13 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
 
     const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
 
-    // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
-    const auto core_distances = options_.k_nearest_neighbors_ > 1
-                                    ? make_core_distances_ptr(searcher, options_.k_nearest_neighbors_)
-                                    : CoreDistancesArrayPtr{nullptr};
-
     std::size_t counter = 0;
 
-    if (core_distances) {
+    // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
+    if (options_.k_nearest_neighbors_ > 1) {
+        const auto core_distances =
+            datastruct::mst::make_static_core_distances(searcher, options_.k_nearest_neighbors_);
+
         while (forest.n_components() > 1) {
             std::cout << "forest.n_components(): " << forest.n_components() << "\n";
             counter += forest.n_components();
@@ -469,6 +450,60 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
                 step_sequential(searcher, forest);
             }
         }
+    }
+    std::cout << "Counter: " << counter << "\n";
+    return std::move(forest).minimum_spanning_tree();
+}
+
+// ---
+
+template <typename Indexer>
+void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searcher<Indexer>& searcher,
+                                                           const CoreDistancesArrayType&    core_distances,
+                                                           Forest&                          forest) const {
+    common::ignore_parameters(core_distances);
+
+    using QueryIndexerType = typename search::Searcher<Indexer>::IndexerType;
+
+    // keep track of the shortest edge from a component's sample index to a sample index thats not within the
+    // same component
+    auto components_closest_edge = std::unordered_map<IndexType, EdgeType>{};
+
+    for (const auto& [component_representative, component] : forest) {
+        if (component.size() <= searcher.n_samples()) {
+            auto query_indexer = QueryIndexerType();
+
+            components_closest_edge[component_representative] =
+                searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
+                                                                     /**/ forest.get_union_find_const_reference(),
+                                                                     /**/ component_representative,
+                                                                     /**/ options_.k_nearest_neighbors_);
+        }
+    }
+    // merge components based on the best edges found in each component so far
+    for (const auto& [component_representative, edge] : components_closest_edge) {
+        assert(std::get<2>(edge) < common::infinity<ValueType>());
+        common::ignore_parameters(component_representative);
+        forest.merge_components(edge);
+    }
+}
+
+template <typename Indexer>
+template <typename ForwardedIndexer>
+auto BoruvkasAlgorithm<Indexer>::make_tree_2(ForwardedIndexer&& indexer) const {
+    Forest forest(indexer.n_samples());
+
+    const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
+
+    std::size_t counter = 0;
+
+    const auto core_distances = datastruct::mst::make_static_core_distances(searcher, options_.k_nearest_neighbors_);
+
+    while (forest.n_components() > 1) {
+        std::cout << "forest.n_components(): " << forest.n_components() << "\n";
+        counter += forest.n_components();
+
+        step_dual_tree_sequential(searcher, indexer, core_distances, forest);
     }
     std::cout << "Counter: " << counter << "\n";
     return std::move(forest).minimum_spanning_tree();
