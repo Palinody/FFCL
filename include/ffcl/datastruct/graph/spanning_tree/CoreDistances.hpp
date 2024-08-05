@@ -12,13 +12,9 @@ class CoreDistancesArray {
   public:
     CoreDistancesArray(std::size_t size) noexcept;
 
-    Value& operator[](std::size_t index) {
-        return data_[index];
-    }
+    Value& operator[](std::size_t index);
 
-    const Value& operator[](std::size_t index) const {
-        return data_[index];
-    }
+    const Value& operator[](std::size_t index) const;
 
   private:
     std::unique_ptr<Value[]> data_;
@@ -29,6 +25,16 @@ template <typename Value>
 CoreDistancesArray<Value>::CoreDistancesArray(std::size_t size) noexcept
   : data_{std::make_unique<Value[]>(size)}
   , size_{size_} {}
+
+template <typename Value>
+Value& CoreDistancesArray<Value>::operator[](std::size_t index) {
+    return data_[index];
+}
+
+template <typename Value>
+const Value& CoreDistancesArray<Value>::operator[](std::size_t index) const {
+    return data_[index];
+}
 
 template <typename Indexer>
 auto make_static_core_distances(const search::Searcher<Indexer>&   searcher,
