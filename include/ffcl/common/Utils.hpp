@@ -413,11 +413,8 @@ constexpr bool equality(const T& a, const U& b) noexcept {
     if constexpr (std::is_integral_v<T> && std::is_integral_v<U>) {
         return a == b;
 
-    } else if constexpr (std::is_floating_point_v<T> && std::is_floating_point_v<U>) {
-        return std::fabs(b - a) <= std::numeric_limits<decltype(b - a)>::epsilon();
-
     } else if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<U>) {
-        return std::abs(b - a) <= std::numeric_limits<decltype(b - a)>::epsilon();
+        return std::fabs(b - a) <= std::numeric_limits<std::common_type_t<T, U>>::epsilon();
 
     } else {
         static_assert(std::is_same_v<T, U>, "(in)equality comparison only supported for comparable types");

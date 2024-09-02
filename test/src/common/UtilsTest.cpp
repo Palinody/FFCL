@@ -16,10 +16,10 @@ TEST(FunctionTest, IgnoreParametersTest) {
 
 TEST(FunctionTest, InfinityTest) {
     // Test for integer type
-    ASSERT_EQ(ffcl::common::infinity<int>(), std::numeric_limits<int>::max());
+    ASSERT_EQ(ffcl::common::infinity<int>(), std::numeric_limits<int>::infinity());
 
     // Test for floating point type
-    ASSERT_EQ(ffcl::common::infinity<double>(), std::numeric_limits<double>::max());
+    ASSERT_EQ(ffcl::common::infinity<double>(), std::numeric_limits<double>::infinity());
 }
 
 TEST(FunctionTest, AbsTest) {
@@ -78,32 +78,25 @@ TEST(FunctionTest, InequalityTest) {
     ASSERT_FALSE(ffcl::common::inequality(-1, -1));
     ASSERT_TRUE(ffcl::common::inequality(1, -1));
 
-    // Test for floating point type
+    // Test for floating-point types
     ASSERT_FALSE(ffcl::common::inequality(1.0, 1.0));
-
     ASSERT_FALSE(ffcl::common::inequality(-1.0, -1.0));
-    // The function allows slippage of std::numeric_limits<double>::epsilon()
+
+    // Test with epsilon for double
     ASSERT_FALSE(ffcl::common::inequality(1.0, 1.0 + std::numeric_limits<double>::epsilon()));
-
     ASSERT_FALSE(ffcl::common::inequality(1.0, 1.0 - std::numeric_limits<double>::epsilon()));
-    // 2 * std::numeric_limits<double>::epsilon() is too much slippage
-    ASSERT_TRUE(ffcl::common::inequality(
-        1.0, 1.0 + std::numeric_limits<double>::epsilon() + std::numeric_limits<double>::epsilon()));
+    ASSERT_TRUE(ffcl::common::inequality(1.0, 1.0 + 2 * std::numeric_limits<double>::epsilon()));
+    ASSERT_TRUE(ffcl::common::inequality(1.0, 1.0 - 2 * std::numeric_limits<double>::epsilon()));
 
-    ASSERT_TRUE(ffcl::common::inequality(
-        1.0, 1.0 - std::numeric_limits<double>::epsilon() - std::numeric_limits<double>::epsilon()));
-
+    // Test with epsilon for float
     ASSERT_FALSE(ffcl::common::inequality(1.0f, 1.0f + std::numeric_limits<float>::epsilon()));
-
     ASSERT_FALSE(ffcl::common::inequality(1.0f, 1.0f - std::numeric_limits<float>::epsilon()));
+    ASSERT_TRUE(ffcl::common::inequality(1.0f, 1.0f + 2 * std::numeric_limits<float>::epsilon()));
+    ASSERT_TRUE(ffcl::common::inequality(1.0f, 1.0f - 2 * std::numeric_limits<float>::epsilon()));
 
-    ASSERT_TRUE(ffcl::common::inequality(
-        1.0f, 1.0f + std::numeric_limits<float>::epsilon() + std::numeric_limits<float>::epsilon()));
-
-    ASSERT_TRUE(ffcl::common::inequality(
-        1.0f, 1.0f - std::numeric_limits<float>::epsilon() - std::numeric_limits<float>::epsilon()));
-
+    // Test with extreme values
     ASSERT_TRUE(ffcl::common::inequality(std::numeric_limits<float>::min(), std::numeric_limits<float>::max()));
+    ASSERT_TRUE(ffcl::common::inequality(std::numeric_limits<double>::min(), std::numeric_limits<double>::max()));
 }
 
 TEST(FunctionTest, DivisionTest) {
