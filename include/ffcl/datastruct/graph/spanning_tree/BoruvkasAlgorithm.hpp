@@ -463,28 +463,37 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
                                                            Forest&                          forest) const {
     common::ignore_parameters(core_distances);
 
+    using IndicesIterator         = typename search::Searcher<Indexer>::IndicesIteratorType;
+    using SamplesIterator         = typename search::Searcher<Indexer>::SamplesIteratorType;
     using QueryIndexerType        = typename search::Searcher<Indexer>::IndexerType;
     using QueryIndexerOptionsType = typename QueryIndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
     // keep track of the shortest edge from a component's sample index to a sample index thats not within the
     // same component
     auto components_closest_edge = std::unordered_map<IndexType, EdgeType>{};
 
     for (auto& [component_representative, component] : forest) {
-        if (component.size() <= searcher.n_samples() / 2) {
-            auto query_indexer = QueryIndexerType(component.begin(),
-                                                  component.end(),
-                                                  searcher.begin(),
-                                                  searcher.end(),
-                                                  searcher.n_features(),
-                                                  QueryIndexerOptionsType().bucket_size(std::sqrt(component.size())));
+        auto query_indexer =
+            QueryIndexerType(component.begin(),
+                             component.end(),
+                             searcher.begin(),
+                             searcher.end(),
+                             searcher.n_features(),
+                             QueryIndexerOptionsType()
+                                 .bucket_size(std::max(40, static_cast<int>(std::sqrt(component.size()))))
+                                 .max_depth(component.size())
+                                 .axis_selection_policy(AxisSelectionPolicyType{})
+                                 .splitting_rule_policy(SplittingRulePolicyType{}));
 
-            components_closest_edge[component_representative] =
-                searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
-                                                                     /**/ forest.get_union_find_const_reference(),
-                                                                     /**/ component_representative,
-                                                                     /**/ options_.k_nearest_neighbors_);
-        }
+        components_closest_edge[component_representative] =
+            searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
+                                                                 /**/ forest.get_union_find_const_reference(),
+                                                                 /**/ component_representative,
+                                                                 /**/ options_.k_nearest_neighbors_);
     }
     // merge components based on the best edges found in each component so far
     for (const auto& [component_representative, edge] : components_closest_edge) {
