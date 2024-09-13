@@ -157,7 +157,7 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(10)
+                            .k_nearest_neighbors(1)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -211,7 +211,7 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(10)
+                            .k_nearest_neighbors(1)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -265,7 +265,7 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(10)
+                            .k_nearest_neighbors(1)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -319,7 +319,7 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(10)
+                            .k_nearest_neighbors(1)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -373,7 +373,7 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(10)
+                            .k_nearest_neighbors(1)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -427,7 +427,7 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(10)
+                            .k_nearest_neighbors(1)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -481,7 +481,7 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(10)
+                            .k_nearest_neighbors(1)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));

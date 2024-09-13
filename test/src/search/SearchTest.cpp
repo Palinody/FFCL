@@ -450,7 +450,7 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairTest) {
 }
 */
 
-// /*
+/*
 TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
@@ -628,7 +628,7 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
 #endif
     std::cout << dummy_acc << "\n";
 }
-// */
+*/
 
 /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
@@ -847,7 +847,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 
     const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
 
-    const std::size_t k_nearest_neighbors = 3;
+    const std::size_t k_nearest_neighbors = 1;
 
     auto split_index_vector           = std::vector<std::size_t>{};
     auto dual_tree_search_time_vector = std::vector<ValueType>{};
@@ -927,8 +927,10 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge =
-            searcher.dual_tree_shortest_edge(query_indexer, union_find, queries_representative, k_nearest_neighbors);
+        const auto shortest_edge = searcher.dual_tree_shortest_edge(/**/ query_indexer,
+                                                                    /**/ union_find,
+                                                                    /**/ queries_representative,
+                                                                    /**/ k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -950,19 +952,18 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 #endif
 
             const auto single_tree_traversal_shortest_edge =
-                ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
-                                                                 query_indices.end(),
-                                                                 data.begin(),
-                                                                 data.end(),
-                                                                 n_features,
-                                                                 indices.begin(),
-                                                                 indices.end(),
-                                                                 data.begin(),
-                                                                 data.end(),
-                                                                 n_features,
-                                                                 union_find,
-                                                                 queries_representative,
-                                                                 k_nearest_neighbors);
+                ffcl::search::algorithms::sequential_dual_set_shortest_edge(query_indices.begin(),
+                                                                            query_indices.end(),
+                                                                            data.begin(),
+                                                                            data.end(),
+                                                                            n_features,
+                                                                            indices.begin(),
+                                                                            indices.end(),
+                                                                            data.begin(),
+                                                                            data.end(),
+                                                                            n_features,
+                                                                            union_find,
+                                                                            queries_representative);
 
 #if defined(TIME_IT) && TIME_IT
             const auto elapsed_time = timer.elapsed();

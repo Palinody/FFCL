@@ -142,4 +142,81 @@ auto dual_set_shortest_distance(const IndicesIterator&      indices_range_first,
     return std::get<2>(brute_force_shortest_edge);
 }
 
+template <typename IndicesIterator,
+          typename SamplesIterator,
+          typename OtherIndicesIterator,
+          typename OtherSamplesIterator,
+          typename... BufferArgs>
+auto sequential_dual_set_shortest_edge(
+    const IndicesIterator&      indices_range_first,
+    const IndicesIterator&      indices_range_last,
+    const SamplesIterator&      samples_range_first,
+    const SamplesIterator&      samples_range_last,
+    std::size_t                 n_features,
+    const OtherIndicesIterator& other_indices_range_first,
+    const OtherIndicesIterator& other_indices_range_last,
+    const OtherSamplesIterator& other_samples_range_first,
+    const OtherSamplesIterator& other_samples_range_last,
+    std::size_t                 other_n_features,
+    const ffcl::datastruct::UnionFind<typename std::iterator_traits<IndicesIterator>::value_type>& union_find,
+    std::size_t queries_representative) {
+    // <just an empty space because of autoformat>
+    common::ignore_parameters(samples_range_last);
+
+    using IndexerType = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
+    using OptionsType = typename IndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    const std::size_t n_reference_samples = std::distance(other_indices_range_first, other_indices_range_last);
+
+    auto reference_indexer =
+        IndexerType(other_indices_range_first,
+                    other_indices_range_last,
+                    other_samples_range_first,
+                    other_samples_range_last,
+                    other_n_features,
+                    OptionsType()
+                        .bucket_size(std::max(40, static_cast<int>(std::sqrt(n_reference_samples))))
+                        .axis_selection_policy(AxisSelectionPolicyType{})
+                        .splitting_rule_policy(SplittingRulePolicyType{}));
+
+    auto searcher = Searcher(std::move(reference_indexer));
+
+    using IndexType = typename IndexerType::IndexType;
+    using ValueType = typename IndexerType::DataType;
+    // using EdgeType  = datastruct::mst::Edge<IndexType, ValueType>;
+
+    // initialize the closest edge from the current component to infinity
+    auto shortest_edge = datastruct::mst::make_default_edge<IndexType, ValueType>();
+
+    for (auto query_it = indices_range_first; query_it < indices_range_last; ++query_it) {
+        // initialize a nearest neighbor buffer to compare the query_it with sample indices that don't belong
+        // to the same component using the UnionFind data structure
+        auto nn_buffer_query =
+            searcher(search::buffer::WithUnionFind(samples_range_first + *query_it * n_features,
+                                                   samples_range_first + *query_it * n_features + n_features,
+                                                   union_find,
+                                                   queries_representative,
+                                                   /*max_capacity=*/static_cast<IndexType>(1)));
+
+        // the furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
+        const auto nearest_neighbor_index    = nn_buffer_query.furthest_index();
+        const auto nearest_neighbor_distance = nn_buffer_query.furthest_distance();
+
+        const auto current_closest_edge_distance = std::get<2>(shortest_edge);
+
+        // update the current shortest edge if the nearest_neighbor_distance is indeed shortest than the current
+        // shortest edge distance
+        if (nearest_neighbor_distance < current_closest_edge_distance) {
+            shortest_edge = std::make_tuple(static_cast<IndexType>(*query_it),
+                                            static_cast<IndexType>(nearest_neighbor_index),
+                                            static_cast<ValueType>(nearest_neighbor_distance));
+        }
+    }
+    return shortest_edge;
+}
+
 }  // namespace ffcl::search::algorithms
