@@ -98,8 +98,8 @@ auto HDBSCAN<Indexer>::predict(ForwardedIndexer&& indexer) const {
     const auto boruvkas_algorithm =
         BoruvkasAlgorithm<Indexer>(BoruvkasAlgorithmOptionsType().k_nearest_neighbors(options_.k_nearest_neighbors_));
 
-    // const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::forward<ForwardedIndexer>(indexer));
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree_2(std::forward<ForwardedIndexer>(indexer));
+    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::forward<ForwardedIndexer>(indexer));
+    // const auto minimum_spanning_tree = boruvkas_algorithm.make_tree_2(std::forward<ForwardedIndexer>(indexer));
 
     const auto single_linkage_cluster_tree = datastruct::SingleLinkageClusterTree(std::move(minimum_spanning_tree));
 
