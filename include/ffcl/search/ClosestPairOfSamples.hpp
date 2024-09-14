@@ -170,18 +170,17 @@ auto sequential_dual_set_shortest_edge(
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    const std::size_t n_reference_samples = std::distance(other_indices_range_first, other_indices_range_last);
+    const std::size_t other_n_samples = std::distance(other_indices_range_first, other_indices_range_last);
 
-    auto reference_indexer =
-        IndexerType(other_indices_range_first,
-                    other_indices_range_last,
-                    other_samples_range_first,
-                    other_samples_range_last,
-                    other_n_features,
-                    OptionsType()
-                        .bucket_size(std::max(40, static_cast<int>(std::sqrt(n_reference_samples))))
-                        .axis_selection_policy(AxisSelectionPolicyType{})
-                        .splitting_rule_policy(SplittingRulePolicyType{}));
+    auto reference_indexer = IndexerType(other_indices_range_first,
+                                         other_indices_range_last,
+                                         other_samples_range_first,
+                                         other_samples_range_last,
+                                         other_n_features,
+                                         OptionsType()
+                                             .bucket_size(std::max(40, static_cast<int>(std::sqrt(other_n_samples))))
+                                             .axis_selection_policy(AxisSelectionPolicyType{})
+                                             .splitting_rule_policy(SplittingRulePolicyType{}));
 
     auto searcher = Searcher(std::move(reference_indexer));
 
@@ -211,9 +210,7 @@ auto sequential_dual_set_shortest_edge(
         // update the current shortest edge if the nearest_neighbor_distance is indeed shortest than the current
         // shortest edge distance
         if (nearest_neighbor_distance < current_closest_edge_distance) {
-            shortest_edge = std::make_tuple(static_cast<IndexType>(*query_it),
-                                            static_cast<IndexType>(nearest_neighbor_index),
-                                            static_cast<ValueType>(nearest_neighbor_distance));
+            shortest_edge = datastruct::mst::make_edge(*query_it, nearest_neighbor_index, nearest_neighbor_distance);
         }
     }
     return shortest_edge;

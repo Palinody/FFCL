@@ -29,9 +29,11 @@ def plot(root_folder, split_index_fn, brute_force_time_fn, dual_tree_search_time
     )
 
     # Create figure and axis objects
-    fig, ax1 = plt.subplots(figsize=(12, 8))
+    fig, (ax1, ax_diff) = plt.subplots(
+        2, 1, figsize=(12, 10), gridspec_kw={"height_ratios": [3, 1]}
+    )
 
-    # Plotting the dual tree search times on primary axis
+    # Plotting the dual tree search times on the primary axis
     ax1.plot(
         split_index_vector[:max_len],
         dual_tree_search_time_vector[:max_len],
@@ -42,9 +44,6 @@ def plot(root_folder, split_index_fn, brute_force_time_fn, dual_tree_search_time
     ax1.set_xlabel("Split Index")
     ax1.set_ylabel("Dual Tree Search Time (s)", color="red")
     ax1.tick_params(axis="y", labelcolor="red")
-
-    # Show plot
-    plt.tight_layout()
 
     # Create a secondary axis and plot brute force search times
     ax2 = ax1.twinx()
@@ -58,12 +57,56 @@ def plot(root_folder, split_index_fn, brute_force_time_fn, dual_tree_search_time
     ax2.set_ylabel("Brute Force Time (s)", color="blue")
     ax2.tick_params(axis="y", labelcolor="blue")
 
-    # Title and legend
     plt.title("Comparison of Search Times")
     ax1.legend(loc="upper left")
     ax2.legend(loc="upper right")
 
-    # Show plot
+    # Plot the difference between brute force and dual tree search times in the lower plot
+    time_diff = (
+        brute_force_time_vector[:max_len] - dual_tree_search_time_vector[:max_len]
+    )
+
+    # Define epsilon for float equality
+    epsilon = 0.001
+
+    # Split points into above zero, below zero, and approximately zero
+    above_zero = time_diff > epsilon
+    below_zero = time_diff < -epsilon
+    approx_zero = np.abs(time_diff) <= epsilon
+
+    # Plot points above zero in green
+    ax_diff.scatter(
+        split_index_vector[:max_len][above_zero],
+        time_diff[above_zero],
+        label="Better (Brute Force > Dual Tree Search)",
+        color="green",
+        marker="s",
+    )
+
+    # Plot points below zero in red
+    ax_diff.scatter(
+        split_index_vector[:max_len][below_zero],
+        time_diff[below_zero],
+        label="Worse (Brute Force < Dual Tree Search)",
+        color="red",
+        marker="s",
+    )
+
+    # Plot points approximately equal to zero in blue
+    ax_diff.scatter(
+        split_index_vector[:max_len][approx_zero],
+        time_diff[approx_zero],
+        label=f"Approx. same (|Diff| <= {epsilon})",
+        color="blue",
+        marker="s",
+    )
+
+    ax_diff.set_xlabel("Split Index")
+    ax_diff.set_ylabel("Time Difference (s)")
+    ax_diff.axhline(0, color="black", linewidth=1, linestyle="--")
+
+    ax_diff.legend(loc="upper left")
+
     plt.tight_layout()
     plt.show()
 
