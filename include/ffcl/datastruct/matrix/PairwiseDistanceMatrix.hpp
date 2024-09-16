@@ -101,7 +101,9 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances_paralle
 
     auto low_triangle_distance_matrix = std::vector<ValueType>(n_samples * (n_samples - 1) / 2);
 
+#if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for schedule(dynamic, 1)
+#endif
     for (std::size_t row_index = 1; row_index < n_samples; ++row_index) {
         const std::size_t flat_index = row_index * (row_index - 1) / 2;
 

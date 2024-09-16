@@ -49,7 +49,9 @@ auto transpose_parallel_openmp(const SamplesIterator& samples_range_first,
 
     static constexpr std::size_t block_size = 64;
 
+#if defined(_OPENMP) && THREADS_ENABLED == true
 #pragma omp parallel for collapse(2)
+#endif
     for (std::size_t sample_index = 0; sample_index < n_samples; sample_index += block_size) {
         for (std::size_t feature_index = 0; feature_index < n_features; feature_index += block_size) {
             // transpose the block

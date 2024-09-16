@@ -2,23 +2,34 @@ cmake_minimum_required(VERSION 3.0.2)
 
 project(ffcl)
 
-# add_compile_options(-std=c++17 -g -pg) # <--- for debug mode
-add_compile_options(
-    -std=c++17
-    -Ofast
-    -march=native
-    -Wall
-    -Wextra
-    -Werror
-    -Wpedantic
-    -Wfloat-equal
-    -Wshadow
-    -Wfatal-errors
-    -fopenmp
-)
-find_package(OpenMP REQUIRED)
+# Debug mode: Enable profiling with -g and -pg for gprof/perf
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message("Building in Debug mode")
 
-# find_package(TBB REQUIRED)
+    # -g: Enable debug information
+    # -pg: Enable profiling support (gprof)
+    # -O0: Disable optimizations (for accurate profiling)
+    add_compile_options(-std=c++17 -g -pg -O0)
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message("Building in Release mode")
+
+    add_compile_options(
+        -std=c++17
+        -march=native
+        -Wall
+        -Wextra
+        -Werror
+        -Wpedantic
+        -Wfloat-equal
+        -Wshadow
+        -Wfatal-errors
+        -fopenmp
+    )
+endif()
+
+find_package(OpenMP REQUIRED)
+find_package(TBB REQUIRED)
+
 include_directories(
     include
 )
@@ -117,6 +128,7 @@ if(MODE STREQUAL "benchmark")
         # PUBLIC
         # TBB::tbb
         ${PCL_LIBRARIES}
+
         OpenMP::OpenMP_CXX
     )
 elseif(MODE STREQUAL "gtest")
@@ -175,22 +187,31 @@ elseif(MODE STREQUAL "gtest")
     # -------------------------------
     enable_testing()
 
-    # add_compile_options(-std=c++17 -g -pg) # <--- for debug modes
-    add_compile_options(
-        -std=c++17
-        -Ofast
-        -march=native
-        -Wall
-        -Wextra
-        -Werror
-        -Wpedantic
-        -Wfloat-equal
-        -Wshadow
-        -Wfatal-errors
-        -fopenmp
-    )
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -pg")
-    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -pg")
+    # Debug mode: Enable profiling with -g and -pg for gprof/perf
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message("Building in Debug mode")
+
+        # -g: Enable debug information
+        # -pg: Enable profiling support (gprof)
+        # -O0: Disable optimizations (for accurate profiling)
+        add_compile_options(-std=c++17 -g -pg -O0)
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        message("Building in Release mode")
+
+        # add_compile_options(-std=c++17 -g -pg)
+        add_compile_options(
+            -std=c++17
+            -march=native
+            -Wall
+            -Wextra
+            -Werror
+            -Wpedantic
+            -Wfloat-equal
+            -Wshadow
+            -Wfatal-errors
+            -fopenmp
+        )
+    endif()
 
     include(CTest)
 
@@ -209,6 +230,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -229,6 +251,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -249,6 +272,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -269,6 +293,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -289,6 +314,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -309,6 +335,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -329,6 +356,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -349,6 +377,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -369,6 +398,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -389,6 +419,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -409,6 +440,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -429,6 +461,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -450,6 +483,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -467,10 +501,11 @@ elseif(MODE STREQUAL "gtest")
     target_link_libraries(
         CondensedClusterTreeTest
 
-        # PUBLIC
-        # TBB::tbb
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -487,10 +522,11 @@ elseif(MODE STREQUAL "gtest")
     target_link_libraries(
         HDBSCANTest
 
-        # PUBLIC
-        # TBB::tbb
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -511,6 +547,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -531,6 +568,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -551,6 +589,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -571,6 +610,7 @@ elseif(MODE STREQUAL "gtest")
         # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -587,10 +627,11 @@ elseif(MODE STREQUAL "gtest")
     target_link_libraries(
         BoruvkasAlgorithmTest
 
-        # PUBLIC
-        # TBB::tbb
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
@@ -607,10 +648,11 @@ elseif(MODE STREQUAL "gtest")
     target_link_libraries(
         SingleLinkageClusterTreeTest
 
-        # PUBLIC
-        # TBB::tbb
+        PUBLIC
+        TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
+
         OpenMP::OpenMP_CXX
     )
     add_test(
