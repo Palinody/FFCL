@@ -4,8 +4,6 @@
 
 #include "ffcl/common/math/heuristics/Distances.hpp"
 
-#include "ffcl/search/buffer/IndicesToBuffersMap.hpp"
-
 #include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
 #include "ffcl/search/Search.hpp"

@@ -219,6 +219,10 @@ class BoruvkasAlgorithm {
                                    const CoreDistancesArrayType&    core_distances,
                                    Forest&                          forest) const;
 
+    void step_dual_tree_parallel(const search::Searcher<Indexer>& searcher,
+                                 const CoreDistancesArrayType&    core_distances,
+                                 Forest&                          forest) const;
+
     Options options_;
 };
 
@@ -485,17 +489,73 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
                              searcher.n_features(),
                              QueryIndexerOptionsType()
                                  .bucket_size(std::max(40, static_cast<int>(std::sqrt(component.size()))))
-                                 .max_depth(component.size())
                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                  .splitting_rule_policy(SplittingRulePolicyType{}));
 
         components_closest_edge[component_representative] =
-            searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
-                                                                 /**/ forest.get_union_find_const_reference(),
-                                                                 /**/ component_representative,
-                                                                 /**/ options_.k_nearest_neighbors_);
+            searcher.dual_tree_shortest_edge_with_core_distances(query_indexer,
+                                                                 forest.get_union_find_const_reference(),
+                                                                 component_representative,
+                                                                 options_.k_nearest_neighbors_);
     }
     // merge components based on the best edges found in each component so far
+    for (const auto& [component_representative, edge] : components_closest_edge) {
+        assert(std::get<2>(edge) < common::infinity<ValueType>());
+        common::ignore_parameters(component_representative);
+        forest.merge_components(edge);
+    }
+}
+
+template <typename Indexer>
+void BoruvkasAlgorithm<Indexer>::step_dual_tree_parallel(const search::Searcher<Indexer>& searcher,
+                                                         const CoreDistancesArrayType&    core_distances,
+                                                         Forest&                          forest) const {
+    common::ignore_parameters(core_distances);
+
+    using IndicesIterator         = typename search::Searcher<Indexer>::IndicesIteratorType;
+    using SamplesIterator         = typename search::Searcher<Indexer>::SamplesIteratorType;
+    using QueryIndexerType        = typename search::Searcher<Indexer>::IndexerType;
+    using QueryIndexerOptionsType = typename QueryIndexerType::Options;
+    using AxisSelectionPolicyType =
+        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
+    using SplittingRulePolicyType =
+        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+
+    // Map to store each component's closest edge
+    auto components_closest_edge = std::unordered_map<IndexType, EdgeType>{};
+
+    // The forest needs to be cast to a contiguous container.
+    auto forest_vector = std::vector(forest.begin(), forest.end());
+
+#pragma omp parallel for
+    for (std::size_t i = 0; i < forest_vector.size(); ++i) {
+        auto& component_representative = forest_vector[i].first;
+        auto& component                = forest_vector[i].second;
+
+        auto query_indexer =
+            QueryIndexerType(component.begin(),
+                             component.end(),
+                             searcher.begin(),
+                             searcher.end(),
+                             searcher.n_features(),
+                             QueryIndexerOptionsType()
+                                 .bucket_size(std::max(40, static_cast<int>(std::sqrt(component.size()))))
+                                 .max_depth(component.size())
+                                 .axis_selection_policy(AxisSelectionPolicyType{})
+                                 .splitting_rule_policy(SplittingRulePolicyType{}));
+
+        auto closest_edge =
+            searcher.dual_tree_shortest_edge_with_core_distances(query_indexer,
+                                                                 forest.get_union_find_const_reference(),
+                                                                 component_representative,
+                                                                 options_.k_nearest_neighbors_);
+
+        // Ensure thread-safe access to shared resource
+#pragma omp critical
+        { components_closest_edge[component_representative] = closest_edge; }
+    }
+
+    // Sequentially merge components based on the best edges found in each component
     for (const auto& [component_representative, edge] : components_closest_edge) {
         assert(std::get<2>(edge) < common::infinity<ValueType>());
         common::ignore_parameters(component_representative);
