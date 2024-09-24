@@ -66,11 +66,11 @@ class StaticBuffer {
         return distances_;
     }
 
-    const auto& const_reference_indices() const& {
+    const auto& indices_const_ref() const& {
         return indices_;
     }
 
-    const auto& const_reference_distances() const& {
+    const auto& distances_const_ref() const& {
         return distances_;
     }
 

@@ -403,8 +403,8 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
     }
     // kth_closest_edge_priority_queue_.size() is lesser of equal than buffer.max_capacity() from here...
 
-    const auto& buffer_indices   = buffer.const_reference_indices();
-    const auto& buffer_distances = buffer.const_reference_distances();
+    const auto& buffer_indices   = buffer.indices_const_ref();
+    const auto& buffer_distances = buffer.distances_const_ref();
 
     // If adding all the elements from the buffer end up reaching at most the buffer.max_capacity().
     if (kth_closest_edge_priority_queue_.size() + buffer.size() <= buffer.max_capacity()) {
