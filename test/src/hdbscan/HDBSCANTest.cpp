@@ -170,7 +170,7 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
-/*
+// /*
 TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
@@ -494,7 +494,7 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
-*/
+// */
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

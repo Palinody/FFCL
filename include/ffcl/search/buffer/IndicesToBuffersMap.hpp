@@ -261,11 +261,17 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::partial_search
 
         // Regardless of whether the buffer was just inserted or already existed, perform a partial search
         // operation on the buffer. This operation updates the buffer based on a range of reference samples.
-        query_to_buffer_it->second.partial_search(reference_indices_range_first,
-                                                  reference_indices_range_last,
-                                                  reference_samples_range_first_,
-                                                  reference_samples_range_last_,
-                                                  reference_n_features_);
+        // 'indices_full_buffer_membership' holds the info about whether indices are in the same union find, memory
+        // buffer etc, depending on 'BufferArgs&&... buffer_args' and how the buffer is implemented. The value may be
+        // std::nullopt if the buffer internal condition is not satisfied.
+        const auto indices_full_buffer_membership =
+            query_to_buffer_it->second.partial_search(reference_indices_range_first,
+                                                      reference_indices_range_last,
+                                                      reference_samples_range_first_,
+                                                      reference_samples_range_last_,
+                                                      reference_n_features_);
+
+        common::ignore_parameters(indices_full_buffer_membership);
 
         update_priority_queue(query_to_buffer_it);
     }
