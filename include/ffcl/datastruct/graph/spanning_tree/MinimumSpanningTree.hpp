@@ -27,12 +27,20 @@ constexpr auto make_default_edge() {
 }
 
 template <typename Index, typename Distance>
-auto sort(EdgesList<Index, Distance>&& mst) {
-    auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
-        return std::get<2>(edge_1) < std::get<2>(edge_2);
-    };
+constexpr bool operator<(const Edge<Index, Distance>& edge1, const Edge<Index, Distance>& edge2) {
+    // Compare based on the edge length (third element).
+    return std::get<2>(edge1) < std::get<2>(edge2);
+}
 
-    std::sort(mst.begin(), mst.end(), edge_comparator);
+template <typename Index, typename Distance>
+constexpr bool operator>(const Edge<Index, Distance>& edge1, const Edge<Index, Distance>& edge2) {
+    // Compare based on the edge length (third element).
+    return std::get<2>(edge1) > std::get<2>(edge2);
+}
+
+template <typename Index, typename Distance>
+auto sort(EdgesList<Index, Distance>&& mst) {
+    std::sort(mst.begin(), mst.end());
 
     return mst;
 }
@@ -41,11 +49,7 @@ template <typename Index, typename Distance>
 auto sort_copy(const EdgesList<Index, Distance>& mst) {
     auto mst_copy = mst;
 
-    auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
-        return std::get<2>(edge_1) < std::get<2>(edge_2);
-    };
-
-    std::sort(mst_copy.begin(), mst_copy.end(), edge_comparator);
+    std::sort(mst_copy.begin(), mst_copy.end());
 
     return mst_copy;
 }
