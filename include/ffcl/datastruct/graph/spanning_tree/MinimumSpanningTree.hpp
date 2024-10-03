@@ -26,21 +26,22 @@ constexpr auto make_default_edge() {
     return make_edge(common::infinity<Index>(), common::infinity<Index>(), common::infinity<Distance>());
 }
 
-template <typename Index, typename Distance>
-constexpr bool operator<(const Edge<Index, Distance>& edge1, const Edge<Index, Distance>& edge2) {
-    // Compare based on the edge length (third element).
-    return std::get<2>(edge1) < std::get<2>(edge2);
-}
+}  // namespace ffcl::datastruct::mst
 
 template <typename Index, typename Distance>
-constexpr bool operator>(const Edge<Index, Distance>& edge1, const Edge<Index, Distance>& edge2) {
-    // Compare based on the edge length (third element).
-    return std::get<2>(edge1) > std::get<2>(edge2);
-}
+struct std::less<std::tuple<Index, Index, Distance>> {
+    bool operator()(const ffcl::datastruct::mst::Edge<Index, Distance>& edge1,
+                    const ffcl::datastruct::mst::Edge<Index, Distance>& edge2) const {
+        // Only compare based on the third element (distance)
+        return std::get<2>(edge1) < std::get<2>(edge2);
+    }
+};
+
+namespace ffcl::datastruct::mst {
 
 template <typename Index, typename Distance>
 auto sort(EdgesList<Index, Distance>&& mst) {
-    std::sort(mst.begin(), mst.end());
+    std::sort(mst.begin(), mst.end(), std::less<Edge<Index, Distance>>());
 
     return mst;
 }
@@ -49,7 +50,7 @@ template <typename Index, typename Distance>
 auto sort_copy(const EdgesList<Index, Distance>& mst) {
     auto mst_copy = mst;
 
-    std::sort(mst_copy.begin(), mst_copy.end());
+    std::sort(mst_copy.begin(), mst_copy.end(), std::less<Edge<Index, Distance>>());
 
     return mst_copy;
 }
