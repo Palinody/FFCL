@@ -121,12 +121,9 @@ class IndicesToBuffersMap {
 
     auto tightest_edge() const;
 
-    template <typename QueryIndicesIterator, typename ReferenceIndicesIterator, typename... BufferArgs>
-    void partial_search_for_each_query(const QueryIndicesIterator&     query_indices_range_first,
-                                       const QueryIndicesIterator&     query_indices_range_last,
-                                       const ReferenceIndicesIterator& reference_indices_range_first,
-                                       const ReferenceIndicesIterator& reference_indices_range_last,
-                                       BufferArgs&&... buffer_args);
+    template <typename... BufferArgs>
+    auto base_case(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node, BufferArgs&&... buffer_args)
+        -> std::optional<IndexType>;
 
     auto cost(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) -> std::optional<DistanceType>;
 
@@ -161,30 +158,28 @@ class IndicesToBuffersMap {
     };
 
   private:
-    template <typename FeaturesRangeIterator, typename... BufferArgs>
-    constexpr auto find_or_emplace_buffer(const IndexType&             index,
-                                          const FeaturesRangeIterator& features_range_first,
-                                          const FeaturesRangeIterator& features_range_last,
-                                          BufferArgs&&... buffer_args) -> IndicesToBuffersMapIterator;
+    template <typename... BufferArgs>
+    constexpr auto find_or_emplace_buffer(const IndexType& index, BufferArgs&&... buffer_args)
+        -> IndicesToBuffersMapIterator;
 
     constexpr auto emplace(const IndexType& index, BufferType&& buffer) -> std::pair<IndicesToBuffersMapIterator, bool>;
 
+    // Function for query_nodes_to_bounds_limits_map_
     auto query_node_furthest_bound(const QueryNodePtr& query_node) -> DistanceType;
 
+    // Function for query_nodes_to_bounds_limits_map_
     auto update_bounds_limits(const QueryNodePtr& query_node) ->
         typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator;
 
+    // Function for nodes_membership_map_
+    void update_nodes_membership(const std::optional<IndexType>& nodes_membership);
+
   private:
     using KTHShortestEdgePriorityQueueElementType = datastruct::mst::Edge<IndexType, DistanceType>;
-
-    static constexpr auto kth_shortest_edge_less_than_comparator_ = [](const auto& left_tuple,
-                                                                       const auto& right_tuple) {
-        return std::get<2>(left_tuple) < std::get<2>(right_tuple);
-    };
-
-    using KTHShortestEdgePriorityQueueType = std::priority_queue<KTHShortestEdgePriorityQueueElementType,
-                                                                 std::vector<KTHShortestEdgePriorityQueueElementType>,
-                                                                 decltype(kth_shortest_edge_less_than_comparator_)>;
+    using KTHShortestEdgePriorityQueueType =
+        std::priority_queue<KTHShortestEdgePriorityQueueElementType,
+                            std::vector<KTHShortestEdgePriorityQueueElementType>,
+                            std::less<datastruct::mst::Edge<IndexType, DistanceType>>>;
 
     using PriorityQueueVisitedCombinationsType = std::unordered_set<IndicesCombinationKey<IndexType, IndexType>>;
 
@@ -211,7 +206,9 @@ class IndicesToBuffersMap {
 
     std::unordered_map<QueryNodePtr, BoundsLimits> query_nodes_to_bounds_limits_map_{};
 
-    KTHShortestEdgePriorityQueueType kth_closest_edge_priority_queue_{kth_shortest_edge_less_than_comparator_};
+    std::unordered_map<QueryNodePtr, std::optional<IndexType>> nodes_membership_map_{};
+
+    KTHShortestEdgePriorityQueueType kth_closest_edge_priority_queue_{};
 
     PriorityQueueVisitedCombinationsType priority_queue_visited_combinations_set_{};
 };
@@ -243,21 +240,21 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::tightest_edge(
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
-template <typename QueryIndicesIterator, typename ReferenceIndicesIterator, typename... BufferArgs>
-void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::partial_search_for_each_query(
-    const QueryIndicesIterator&     query_indices_range_first,
-    const QueryIndicesIterator&     query_indices_range_last,
-    const ReferenceIndicesIterator& reference_indices_range_first,
-    const ReferenceIndicesIterator& reference_indices_range_last,
-    BufferArgs&&... buffer_args) {
+template <typename... BufferArgs>
+auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr&     query_node,
+                                                                            const ReferenceNodePtr& reference_node,
+                                                                            BufferArgs&&... buffer_args)
+    -> std::optional<IndexType> {
+    // To track the current membership value encountered.
+    std::optional<IndexType> current_indices_full_buffer_membership = std::nullopt;
+    // A flag that is set to true only for the first membership check.
+    bool first_visit_flag = true;
+
     // Iterate through all query indices within the specified range of the query node.
-    for (auto query_index_it = query_indices_range_first; query_index_it != query_indices_range_last;
+    for (auto query_index_it = query_node->indices_range_.first; query_index_it != query_node->indices_range_.second;
          ++query_index_it) {
-        auto query_to_buffer_it = this->find_or_emplace_buffer(
-            *query_index_it,
-            query_samples_range_first_ + (*query_index_it) * query_n_features_,
-            query_samples_range_first_ + (*query_index_it) * query_n_features_ + query_n_features_,
-            std::forward<BufferArgs>(buffer_args)...);
+        auto query_to_buffer_it =
+            this->find_or_emplace_buffer(*query_index_it, std::forward<BufferArgs>(buffer_args)...);
 
         // Regardless of whether the buffer was just inserted or already existed, perform a partial search
         // operation on the buffer. This operation updates the buffer based on a range of reference samples.
@@ -265,16 +262,28 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::partial_search
         // buffer etc, depending on 'BufferArgs&&... buffer_args' and how the buffer is implemented. The value may be
         // std::nullopt if the buffer internal condition is not satisfied.
         const auto indices_full_buffer_membership =
-            query_to_buffer_it->second.partial_search(reference_indices_range_first,
-                                                      reference_indices_range_last,
+            query_to_buffer_it->second.partial_search(reference_node->indices_range_.first,
+                                                      reference_node->indices_range_.second,
                                                       reference_samples_range_first_,
                                                       reference_samples_range_last_,
                                                       reference_n_features_);
 
-        common::ignore_parameters(indices_full_buffer_membership);
-
         update_priority_queue(query_to_buffer_it);
+
+        // Store the first encountered component membership if no value was saved yet.
+        if (first_visit_flag) {
+            current_indices_full_buffer_membership = indices_full_buffer_membership;
+
+            first_visit_flag = false;
+
+        } else if (indices_full_buffer_membership != current_indices_full_buffer_membership) {
+            // If the current component_membership differs from the first, mark that they are not all the same
+            current_indices_full_buffer_membership = std::nullopt;
+        }
     }
+    // update_nodes_membership(current_indices_full_buffer_membership);
+
+    return current_indices_full_buffer_membership;
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
@@ -310,18 +319,16 @@ bool IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::emplace_nodes_
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
-template <typename FeaturesRangeIterator, typename... BufferArgs>
+template <typename... BufferArgs>
 constexpr auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::find_or_emplace_buffer(
-    const IndexType&             index,
-    const FeaturesRangeIterator& features_range_first,
-    const FeaturesRangeIterator& features_range_last,
+    const IndexType& index,
     BufferArgs&&... buffer_args) -> IndicesToBuffersMapIterator {
     // Attempt to find the buffer associated with the current index in the buffer map.
     auto index_to_buffer_it = queries_to_buffers_map_.find(index);
     // If the current index does not have an associated buffer in the map,
     if (index_to_buffer_it == queries_to_buffers_map_.end()) {
-        auto buffer = BufferType(/**/ features_range_first,
-                                 /**/ features_range_last,
+        auto buffer = BufferType(query_samples_range_first_ + index * query_n_features_,
+                                 query_samples_range_first_ + index * query_n_features_ + query_n_features_,
                                  /**/ std::forward<BufferArgs>(buffer_args)...);
         // Attempt to insert the newly created buffer into the map. If an element with the same
         // index already exists, emplace does nothing. Otherwise, it inserts the new element.
@@ -397,6 +404,13 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_bounds_
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
+void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_nodes_membership(
+    const std::optional<IndexType>& nodes_membership) {
+    common::ignore_parameters(nodes_membership);
+    // nodes_membership_map_
+}
+
+template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priority_queue(
     const IndicesToBuffersMapIterator& query_to_buffer_it) {
     const auto& [query_index, buffer] = *query_to_buffer_it;
@@ -454,8 +468,10 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
                     // If the priority queue exceeds the maximum capacity, remove the top element.
                     if (kth_closest_edge_priority_queue_.size() > buffer.max_capacity()) {
                         const auto& top_element = kth_closest_edge_priority_queue_.top();
+
                         priority_queue_visited_combinations_set_.erase(
                             {std::get<0>(top_element), std::get<1>(top_element)});
+
                         kth_closest_edge_priority_queue_.pop();
                     }
                 }

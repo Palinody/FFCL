@@ -46,6 +46,8 @@ class Searcher {
 
     constexpr auto cend() const;
 
+    constexpr auto root() const;
+
     constexpr auto features_range_first(std::size_t sample_index) const;
 
     constexpr auto features_range_last(std::size_t sample_index) const;
@@ -130,6 +132,11 @@ constexpr auto Searcher<ReferenceIndexer>::cbegin() const {
 template <typename ReferenceIndexer>
 constexpr auto Searcher<ReferenceIndexer>::cend() const {
     return tree_traverser_.cend();
+}
+
+template <typename ReferenceIndexer>
+constexpr auto Searcher<ReferenceIndexer>::root() const {
+    return tree_traverser_.root();
 }
 
 template <typename ReferenceIndexer>

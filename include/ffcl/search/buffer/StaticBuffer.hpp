@@ -120,18 +120,18 @@ class StaticBuffer {
         return furthest_distance();
     }
 
-    std::optional<std::size_t> update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    std::optional<IndexType> update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         return static_base_traits<DerivedBuffer>::call_update(static_cast<DerivedBuffer*>(this),
                                                               /**/ index_candidate,
                                                               /**/ distance_candidate);
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    std::optional<std::size_t> partial_search(const OtherIndicesIterator& indices_range_first,
-                                              const OtherIndicesIterator& indices_range_last,
-                                              const OtherSamplesIterator& samples_range_first,
-                                              const OtherSamplesIterator& samples_range_last,
-                                              std::size_t                 n_features) {
+    std::optional<IndexType> partial_search(const OtherIndicesIterator& indices_range_first,
+                                            const OtherIndicesIterator& indices_range_last,
+                                            const OtherSamplesIterator& samples_range_first,
+                                            const OtherSamplesIterator& samples_range_last,
+                                            std::size_t                 n_features) {
         return static_base_traits<DerivedBuffer>::call_partial_search(static_cast<DerivedBuffer*>(this),
                                                                       /**/ indices_range_first,
                                                                       /**/ indices_range_last,
@@ -141,7 +141,7 @@ class StaticBuffer {
     }
 
   protected:
-    void update_static_buffers(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    void try_update_static_buffers(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // update by default if it's being updated for the first time
         if (!size()) {
             closest_index_    = index_candidate;

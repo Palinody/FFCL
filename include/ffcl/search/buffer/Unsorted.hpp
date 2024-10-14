@@ -35,17 +35,17 @@ class Unsorted : public StaticBuffer<Unsorted<DistancesIterator, Bound>> {
                       const IndexType&             max_capacity = common::infinity<IndexType>())
       : Unsorted{BoundType{centroid_features_query_first, centroid_features_query_last}, max_capacity} {}
 
-    std::optional<std::size_t> update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        this->update_static_buffers(index_candidate, distance_candidate);
+    std::optional<IndexType> update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        this->try_update_static_buffers(index_candidate, distance_candidate);
         return std::nullopt;
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    std::optional<std::size_t> partial_search_impl(const OtherIndicesIterator& indices_range_first,
-                                                   const OtherIndicesIterator& indices_range_last,
-                                                   const OtherSamplesIterator& samples_range_first,
-                                                   const OtherSamplesIterator& samples_range_last,
-                                                   std::size_t                 n_features) {
+    std::optional<IndexType> partial_search_impl(const OtherIndicesIterator& indices_range_first,
+                                                 const OtherIndicesIterator& indices_range_last,
+                                                 const OtherSamplesIterator& samples_range_first,
+                                                 const OtherSamplesIterator& samples_range_last,
+                                                 std::size_t                 n_features) {
         common::ignore_parameters(samples_range_last);
 
         for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
@@ -77,19 +77,19 @@ struct static_base_traits<Unsorted<DistancesIterator, Bound>> {
     using IndicesIteratorType   = typename IndicesType::iterator;
     using DistancesIteratorType = DistancesIterator;
 
-    static constexpr std::optional<std::size_t> call_update(Unsorted<DistancesIterator, Bound>* unsorted_buffer,
-                                                            const IndexType&                    index_candidate,
-                                                            const DistanceType&                 distance_candidate) {
+    static constexpr std::optional<IndexType> call_update(Unsorted<DistancesIterator, Bound>* unsorted_buffer,
+                                                          const IndexType&                    index_candidate,
+                                                          const DistanceType&                 distance_candidate) {
         return unsorted_buffer->update_impl(index_candidate, distance_candidate);
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    static constexpr std::optional<std::size_t> call_partial_search(Unsorted<DistancesIterator, Bound>* unsorted_buffer,
-                                                                    const OtherIndicesIterator& indices_range_first,
-                                                                    const OtherIndicesIterator& indices_range_last,
-                                                                    const OtherSamplesIterator& samples_range_first,
-                                                                    const OtherSamplesIterator& samples_range_last,
-                                                                    std::size_t                 n_features) {
+    static constexpr std::optional<IndexType> call_partial_search(Unsorted<DistancesIterator, Bound>* unsorted_buffer,
+                                                                  const OtherIndicesIterator& indices_range_first,
+                                                                  const OtherIndicesIterator& indices_range_last,
+                                                                  const OtherSamplesIterator& samples_range_first,
+                                                                  const OtherSamplesIterator& samples_range_last,
+                                                                  std::size_t                 n_features) {
         return unsorted_buffer->partial_search_impl(/**/ indices_range_first,
                                                     /**/ indices_range_last,
                                                     /**/ samples_range_first,

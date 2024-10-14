@@ -88,30 +88,30 @@ class WithMemory : public StaticBuffer<WithMemory<DistancesIterator, Bound>> {
                    visited_indices_last,
                    max_capacity) {}
 
-    std::optional<std::size_t> update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    std::optional<IndexType> update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the candidate hasnt been visited
         const bool is_candidate_valid =
             visited_indices_const_reference_.find(index_candidate) == visited_indices_const_reference_.end();
 
         if (is_candidate_valid) {
-            this->update_static_buffers(index_candidate, distance_candidate);
+            this->try_update_static_buffers(index_candidate, distance_candidate);
             return std::nullopt;
         }
-        return std::optional<std::size_t>{0};
+        return std::optional<IndexType>{0};
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    std::optional<std::size_t> partial_search_impl(const OtherIndicesIterator& indices_range_first,
-                                                   const OtherIndicesIterator& indices_range_last,
-                                                   const OtherSamplesIterator& samples_range_first,
-                                                   const OtherSamplesIterator& samples_range_last,
-                                                   std::size_t                 n_features) {
+    std::optional<IndexType> partial_search_impl(const OtherIndicesIterator& indices_range_first,
+                                                 const OtherIndicesIterator& indices_range_last,
+                                                 const OtherSamplesIterator& samples_range_first,
+                                                 const OtherSamplesIterator& samples_range_last,
+                                                 std::size_t                 n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
 
         // To track the first is_visited value encountered.
-        std::optional<std::size_t> first_is_visited;
-        // To track whether all the indices were already marked as visited.
-        bool are_all_visited = true;
+        std::optional<IndexType> current_is_visited = std::nullopt;
+        // A flag that is set to true only for the first visit check.
+        bool first_visit_flag = true;
 
         for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
             const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
@@ -122,21 +122,20 @@ class WithMemory : public StaticBuffer<WithMemory<DistancesIterator, Bound>> {
                 const auto is_visited = update_impl(*index_it, *optional_candidate_distance);
 
                 // Store the first encountered component membership if no value was saved yet.
-                if (!first_is_visited) {
-                    first_is_visited = is_visited;
+                if (first_visit_flag) {
+                    current_is_visited = is_visited;
 
-                } else if (is_visited != *first_is_visited) {
+                    first_visit_flag = false;
+
+                } else if (is_visited != current_is_visited) {
                     // If the current is_visited differs from the first, mark that they are not all the same
-                    are_all_visited = false;
+                    current_is_visited = std::nullopt;
                 }
-            } else {
-                // All the indices cannot be part of the visited set if at least 1 sample falls out of the bound.
-                first_is_visited = std::nullopt;
             }
         }
         // Return the common membership if all values are the same. Otherwise, if at least 1 is different or if
-        // first_component_membership is std::nullopt, return std::nullopt.
-        return are_all_visited ? first_is_visited : std::nullopt;
+        // current_is_visited is std::nullopt, return std::nullopt.
+        return current_is_visited;
     }
 
   private:
@@ -158,7 +157,7 @@ struct static_base_traits<WithMemory<DistancesIterator, Bound, VisitedIndices>> 
     using IndicesIteratorType   = typename IndicesType::iterator;
     using DistancesIteratorType = DistancesIterator;
 
-    static constexpr std::optional<std::size_t> call_update(
+    static constexpr std::optional<IndexType> call_update(
         WithMemory<DistancesIterator, Bound, VisitedIndices>* unsorted_buffer,
         const IndexType&                                      index_candidate,
         const DistanceType&                                   distance_candidate) {
@@ -166,7 +165,7 @@ struct static_base_traits<WithMemory<DistancesIterator, Bound, VisitedIndices>> 
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    static constexpr std::optional<std::size_t> call_partial_search(
+    static constexpr std::optional<IndexType> call_partial_search(
         WithMemory<DistancesIterator, Bound, VisitedIndices>* unsorted_buffer,
         const OtherIndicesIterator&                           indices_range_first,
         const OtherIndicesIterator&                           indices_range_last,

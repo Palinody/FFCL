@@ -54,6 +54,8 @@ class TreeTraverser {
 
     constexpr auto cend() const;
 
+    constexpr auto root() const;
+
     constexpr auto features_range_first(std::size_t sample_index) const;
 
     constexpr auto features_range_last(std::size_t sample_index) const;
@@ -177,6 +179,11 @@ constexpr auto TreeTraverser<ReferenceIndexer>::cbegin() const {
 template <typename ReferenceIndexer>
 constexpr auto TreeTraverser<ReferenceIndexer>::cend() const {
     return reference_indexer_.cend();
+}
+
+template <typename ReferenceIndexer>
+constexpr auto TreeTraverser<ReferenceIndexer>::root() const {
+    return reference_indexer_.root();
 }
 
 template <typename ReferenceIndexer>
@@ -335,11 +342,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
         }
     }
     // Else, update the query buffers with the reference set while keeping track of the global shortest edge.
-    queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
-                                                         query_node->indices_range_.second,
-                                                         reference_node->indices_range_.first,
-                                                         reference_node->indices_range_.second,
-                                                         std::forward<BufferArgs>(buffer_args)...);
+    queries_to_buffers_map.base_case(query_node, reference_node, std::forward<BufferArgs>(buffer_args)...);
 
     // The order of traversal doesn't matter for the query node.
     if (!query_node->is_leaf()) {
@@ -467,11 +470,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(
         }
     }
     // Else, update the query buffers with the reference set while keeping track of the global shortest edge.
-    queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
-                                                         query_node->indices_range_.second,
-                                                         reference_node->indices_range_.first,
-                                                         reference_node->indices_range_.second,
-                                                         std::forward<BufferArgs>(buffer_args)...);
+    queries_to_buffers_map.base_case(query_node, reference_node, std::forward<BufferArgs>(buffer_args)...);
 
     // The order of traversal doesn't matter for the query node.
     if (!query_node->is_leaf()) {
@@ -516,6 +515,8 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(
             while (!children_priority_queue.empty()) {
                 const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
 
+                // This time, we provide the cost because the previous element of the priority queue might have updated
+                // some of the query buffer. The provided nodes combination might get pruned as a result.
                 dual_tree_traversal_with_core_distances(pq_query_node,
                                                         pq_reference_node,
                                                         queries_to_buffers_map,

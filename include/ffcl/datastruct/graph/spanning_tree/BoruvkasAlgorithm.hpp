@@ -101,11 +101,11 @@ class BoruvkasAlgorithm {
             }
         }
 
-        std::size_t n_components() const {
+        constexpr std::size_t n_components() const {
             return std::distance(representatives_to_components_map_.begin(), representatives_to_components_map_.end());
         }
 
-        const auto& get_union_find_const_reference() const {
+        const auto& get_union_find_const_ref() const {
             return union_find_;
         }
 
@@ -251,7 +251,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
             // the same component using the UnionFind data structure
             auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
                                                                           searcher.features_range_last(query_index),
-                                                                          forest.get_union_find_const_reference(),
+                                                                          forest.get_union_find_const_ref(),
                                                                           component_representative,
                                                                           /*max_capacity=*/static_cast<IndexType>(1)));
 
@@ -294,7 +294,7 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
             // the same component using the UnionFind data structure
             auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
                                                                           searcher.features_range_last(query_index),
-                                                                          forest.get_union_find_const_reference(),
+                                                                          forest.get_union_find_const_ref(),
                                                                           component_representative,
                                                                           /*max_capacity=*/static_cast<IndexType>(1)));
 
@@ -348,7 +348,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
         // the same component using the UnionFind data structure
         auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
                                                                       searcher.features_range_last(query_index),
-                                                                      forest.get_union_find_const_reference(),
+                                                                      forest.get_union_find_const_ref(),
                                                                       smallest_component_representative,
                                                                       /*max_capacity=*/static_cast<IndexType>(1)));
 
@@ -394,7 +394,7 @@ void BoruvkasAlgorithm<Indexer>::dual_component_step_sequential(const search::Se
         // the same component using the UnionFind data structure
         auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
                                                                       searcher.features_range_last(query_index),
-                                                                      forest.get_union_find_const_reference(),
+                                                                      forest.get_union_find_const_ref(),
                                                                       smallest_component_representative,
                                                                       /*max_capacity=*/static_cast<IndexType>(1)));
 
@@ -488,15 +488,13 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
                              searcher.end(),
                              searcher.n_features(),
                              QueryIndexerOptionsType()
-                                 .bucket_size(std::max(40, static_cast<int>(std::sqrt(component.size()))))
+                                 .bucket_size(std::max(static_cast<std::size_t>(40),
+                                                       static_cast<std::size_t>(std::sqrt(component.size()))))
                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                  .splitting_rule_policy(SplittingRulePolicyType{}));
 
-        components_closest_edge[component_representative] =
-            searcher.dual_tree_shortest_edge_with_core_distances(query_indexer,
-                                                                 forest.get_union_find_const_reference(),
-                                                                 component_representative,
-                                                                 options_.k_nearest_neighbors_);
+        components_closest_edge[component_representative] = searcher.dual_tree_shortest_edge_with_core_distances(
+            query_indexer, forest.get_union_find_const_ref(), component_representative, options_.k_nearest_neighbors_);
     }
     // merge components based on the best edges found in each component so far
     for (const auto& [component_representative, edge] : components_closest_edge) {
@@ -528,9 +526,9 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_parallel(const search::Searcher<
     auto forest_vector = std::vector(forest.begin(), forest.end());
 
 #pragma omp parallel for
-    for (std::size_t i = 0; i < forest_vector.size(); ++i) {
-        auto& component_representative = forest_vector[i].first;
-        auto& component                = forest_vector[i].second;
+    for (std::size_t index = 0; index < forest_vector.size(); ++index) {
+        auto& component_representative = forest_vector[index].first;
+        auto& component                = forest_vector[index].second;
 
         auto query_indexer =
             QueryIndexerType(component.begin(),
@@ -539,16 +537,14 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_parallel(const search::Searcher<
                              searcher.end(),
                              searcher.n_features(),
                              QueryIndexerOptionsType()
-                                 .bucket_size(std::max(40, static_cast<int>(std::sqrt(component.size()))))
+                                 .bucket_size(std::max(static_cast<std::size_t>(40),
+                                                       static_cast<std::size_t>(std::sqrt(component.size()))))
                                  .max_depth(component.size())
                                  .axis_selection_policy(AxisSelectionPolicyType{})
                                  .splitting_rule_policy(SplittingRulePolicyType{}));
 
-        auto closest_edge =
-            searcher.dual_tree_shortest_edge_with_core_distances(query_indexer,
-                                                                 forest.get_union_find_const_reference(),
-                                                                 component_representative,
-                                                                 options_.k_nearest_neighbors_);
+        auto closest_edge = searcher.dual_tree_shortest_edge_with_core_distances(
+            query_indexer, forest.get_union_find_const_ref(), component_representative, options_.k_nearest_neighbors_);
 
         // Ensure thread-safe access to shared resource
 #pragma omp critical

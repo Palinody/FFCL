@@ -28,47 +28,46 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
     using UnionFindConstReference = const datastruct::UnionFind<IndexType>&;
 
     WithUnionFind(BoundType&&             bound,
-                  UnionFindConstReference union_find_const_reference,
+                  UnionFindConstReference union_find_const_ref,
                   const IndexType&        query_representative,
                   const IndexType&        max_capacity = common::infinity<IndexType>())
       : StaticBuffer<WithUnionFind<DistancesIterator, BoundType>>(std::forward<BoundType>(bound), max_capacity)
-      , union_find_const_reference_{union_find_const_reference}
+      , union_find_const_ref_{union_find_const_ref}
       , query_representative_{query_representative} {}
 
     WithUnionFind(const DistancesIterator& centroid_features_query_first,
                   const DistancesIterator& centroid_features_query_last,
-                  UnionFindConstReference  union_find_const_reference,
+                  UnionFindConstReference  union_find_const_ref,
                   const IndexType&         query_representative,
                   const IndexType&         max_capacity = common::infinity<IndexType>())
       : WithUnionFind(BoundType(centroid_features_query_first, centroid_features_query_last),
-                      union_find_const_reference,
+                      union_find_const_ref,
                       query_representative,
                       max_capacity) {}
 
-    std::optional<std::size_t> update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        query_representative_ = union_find_const_reference_.find(query_representative_);
+    std::optional<IndexType> update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // consider an update only if the candidate is not in the same component as the representative of the component
-        const bool are_in_same_component = query_representative_ == union_find_const_reference_.find(index_candidate);
+        const bool are_in_same_component = query_representative_ == union_find_const_ref_.find(index_candidate);
 
         if (!are_in_same_component) {
-            this->update_static_buffers(index_candidate, distance_candidate);
+            this->try_update_static_buffers(index_candidate, distance_candidate);
             return std::nullopt;
         }
         return query_representative_;
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    std::optional<std::size_t> partial_search_impl(const OtherIndicesIterator& indices_range_first,
-                                                   const OtherIndicesIterator& indices_range_last,
-                                                   const OtherSamplesIterator& samples_range_first,
-                                                   const OtherSamplesIterator& samples_range_last,
-                                                   std::size_t                 n_features) {
+    std::optional<IndexType> partial_search_impl(const OtherIndicesIterator& indices_range_first,
+                                                 const OtherIndicesIterator& indices_range_last,
+                                                 const OtherSamplesIterator& samples_range_first,
+                                                 const OtherSamplesIterator& samples_range_last,
+                                                 std::size_t                 n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
 
-        // To track the first membership value encountered.
-        std::optional<std::size_t> first_component_membership;
-        // To track whether all component_membership values are the same.
-        bool are_all_same = true;
+        // To track the current membership value encountered.
+        std::optional<IndexType> current_component_membership{std::nullopt};
+        // A flag that is set to true only for the first membership check.
+        bool first_visit_flag = true;
 
         for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
             const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
@@ -79,25 +78,24 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                 const auto component_membership = update_impl(*index_it, *optional_candidate_distance);
 
                 // Store the first encountered component membership if no value was saved yet.
-                if (!first_component_membership) {
-                    first_component_membership = component_membership;
+                if (first_visit_flag) {
+                    current_component_membership = component_membership;
 
-                } else if (component_membership != *first_component_membership) {
+                    first_visit_flag = false;
+
+                } else if (component_membership != current_component_membership) {
                     // If the current component_membership differs from the first, mark that they are not all the same
-                    are_all_same = false;
+                    current_component_membership = std::nullopt;
                 }
-            } else {
-                // All the indices cannot be part of the same component if at least 1 sample falls out of the bound.
-                first_component_membership = std::nullopt;
             }
         }
         // Return the common membership if all values are the same. Otherwise, if at least 1 is different or if
-        // first_component_membership is std::nullopt, return std::nullopt.
-        return are_all_same ? first_component_membership : std::nullopt;
+        // current_component_membership is std::nullopt, return std::nullopt.
+        return current_component_membership;
     }
 
   private:
-    UnionFindConstReference union_find_const_reference_;
+    UnionFindConstReference union_find_const_ref_;
     IndexType               query_representative_;
 };
 
@@ -115,14 +113,14 @@ struct static_base_traits<WithUnionFind<DistancesIterator, Bound>> {
     using IndicesIteratorType   = typename IndicesType::iterator;
     using DistancesIteratorType = DistancesIterator;
 
-    static constexpr std::optional<std::size_t> call_update(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
-                                                            const IndexType&                         index_candidate,
-                                                            const DistanceType& distance_candidate) {
+    static constexpr std::optional<IndexType> call_update(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
+                                                          const IndexType&                         index_candidate,
+                                                          const DistanceType&                      distance_candidate) {
         return unsorted_buffer->update_impl(index_candidate, distance_candidate);
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    static constexpr std::optional<std::size_t> call_partial_search(
+    static constexpr std::optional<IndexType> call_partial_search(
         WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
         const OtherIndicesIterator&              indices_range_first,
         const OtherIndicesIterator&              indices_range_last,
