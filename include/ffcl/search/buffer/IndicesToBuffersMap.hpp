@@ -122,8 +122,7 @@ class IndicesToBuffersMap {
     auto tightest_edge() const;
 
     template <typename... BufferArgs>
-    auto base_case(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node, BufferArgs&&... buffer_args)
-        -> std::optional<IndexType>;
+    void base_case(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node, BufferArgs&&... buffer_args);
 
     auto cost(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) -> std::optional<DistanceType>;
 
@@ -171,8 +170,9 @@ class IndicesToBuffersMap {
     auto update_bounds_limits(const QueryNodePtr& query_node) ->
         typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator;
 
-    // Function for nodes_membership_map_
-    void update_nodes_membership(const std::optional<IndexType>& nodes_membership);
+    // Function for query_nodes_component_membership_map_
+    void update_nodes_membership(const ReferenceNodePtr&         reference_node,
+                                 const std::optional<IndexType>& nodes_membership);
 
   private:
     using KTHShortestEdgePriorityQueueElementType = datastruct::mst::Edge<IndexType, DistanceType>;
@@ -206,7 +206,8 @@ class IndicesToBuffersMap {
 
     std::unordered_map<QueryNodePtr, BoundsLimits> query_nodes_to_bounds_limits_map_{};
 
-    std::unordered_map<QueryNodePtr, std::optional<IndexType>> nodes_membership_map_{};
+    // std::unordered_map<QueryNodePtr, std::optional<IndexType>>     query_nodes_component_membership_map_{};
+    std::unordered_map<ReferenceNodePtr, std::optional<IndexType>> reference_nodes_component_membership_map_{};
 
     KTHShortestEdgePriorityQueueType kth_closest_edge_priority_queue_{};
 
@@ -241,12 +242,11 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::tightest_edge(
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 template <typename... BufferArgs>
-auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr&     query_node,
+void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr&     query_node,
                                                                             const ReferenceNodePtr& reference_node,
-                                                                            BufferArgs&&... buffer_args)
-    -> std::optional<IndexType> {
+                                                                            BufferArgs&&... buffer_args) {
     // To track the current membership value encountered.
-    std::optional<IndexType> current_indices_full_buffer_membership = std::nullopt;
+    std::optional<IndexType> are_nodes_in_same_component = std::nullopt;
     // A flag that is set to true only for the first membership check.
     bool first_visit_flag = true;
 
@@ -258,10 +258,10 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(cons
 
         // Regardless of whether the buffer was just inserted or already existed, perform a partial search
         // operation on the buffer. This operation updates the buffer based on a range of reference samples.
-        // 'indices_full_buffer_membership' holds the info about whether indices are in the same union find, memory
+        // 'is_query_in_same_component' holds the info about whether indices are in the same union find, memory
         // buffer etc, depending on 'BufferArgs&&... buffer_args' and how the buffer is implemented. The value may be
         // std::nullopt if the buffer internal condition is not satisfied.
-        const auto indices_full_buffer_membership =
+        const auto is_query_in_same_component =
             query_to_buffer_it->second.partial_search(reference_node->indices_range_.first,
                                                       reference_node->indices_range_.second,
                                                       reference_samples_range_first_,
@@ -272,24 +272,56 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(cons
 
         // Store the first encountered component membership if no value was saved yet.
         if (first_visit_flag) {
-            current_indices_full_buffer_membership = indices_full_buffer_membership;
+            are_nodes_in_same_component = is_query_in_same_component;
 
             first_visit_flag = false;
 
-        } else if (indices_full_buffer_membership != current_indices_full_buffer_membership) {
+        } else if (is_query_in_same_component != are_nodes_in_same_component) {
             // If the current component_membership differs from the first, mark that they are not all the same
-            current_indices_full_buffer_membership = std::nullopt;
+            are_nodes_in_same_component = std::nullopt;
         }
     }
-    // update_nodes_membership(current_indices_full_buffer_membership);
+    // CODE FOR DEBUG PURPOSES
+    /*
+    static std::size_t counter = 0;
+    static std::size_t total = 0;
+    static auto component_set = std::unordered_set<std::size_t>{};
 
-    return current_indices_full_buffer_membership;
+    if (are_nodes_in_same_component) {
+        std::cout << "(" << (counter++) << "/" << total << "): " << *are_nodes_in_same_component << "\n ";
+        component_set.emplace(*are_nodes_in_same_component);
+
+    } else {
+        std::cout << "(" << (total - counter) << "/" << total << "): -1"
+                  << "\n ";
+    }
+    ++total;
+
+    if (total == 82462) {
+        std::cout << "SET SIZE: " << component_set.size() << "\n";
+
+        for (const auto& component_index : component_set) {
+            std::cout << component_index << ", ";
+        }
+        std::cout << "\n";
+    }
+    */
+
+    update_nodes_membership(reference_node, are_nodes_in_same_component);
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::cost(const QueryNodePtr&     query_node,
                                                                        const ReferenceNodePtr& reference_node)
     -> std::optional<DistanceType> {
+    const auto reference_node_to_component_membership_it =
+        reference_nodes_component_membership_map_.find(reference_node);
+
+    if (reference_node_to_component_membership_it != reference_nodes_component_membership_map_.end() &&
+        reference_node_to_component_membership_it->second) {
+        std::cout << "PRUNNING OCCURED\n";
+        return std::nullopt;
+    }
     const auto min_distance = datastruct::bounds::min_distance(query_node->bound_, reference_node->bound_);
 
     return (query_node_furthest_bound(query_node) < min_distance) ? std::nullopt : std::make_optional(min_distance);
@@ -405,9 +437,44 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_bounds_
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_nodes_membership(
+    const ReferenceNodePtr&         reference_node,
     const std::optional<IndexType>& nodes_membership) {
-    common::ignore_parameters(nodes_membership);
-    // nodes_membership_map_
+    // Inserts and returns the iterator to the inserted element, or the iterator to the element that already exists.
+    auto [reference_node_to_component_membership_it_, is_emplaced] =
+        reference_nodes_component_membership_map_.emplace(reference_node, nodes_membership);
+    // If reference_node membership was already cached, compare it with the new one and declare it as unequal if it is
+    // unequal.
+    if (!is_emplaced) {
+        if (reference_node_to_component_membership_it_->second != nodes_membership) {
+            reference_node_to_component_membership_it_->second = std::nullopt;
+            return;
+        }
+    }
+    // Proceed only if nodes_membership is provided and the node was already present in the map.
+    if (nodes_membership && !is_emplaced && !reference_node->is_leaf()) {
+        auto& reference_node_component_membership = reference_node_to_component_membership_it_->second;
+
+        // Consider only if the reference node component membership is not std::nullopt.
+        if (reference_node_component_membership) {
+            // Iterate through left and right children
+            std::array<ReferenceNodePtr, 2> children = {reference_node->left_, reference_node->right_};
+
+            for (const auto& child_node : children) {
+                const auto child_node_to_component_membership_it =
+                    reference_nodes_component_membership_map_.find(child_node);
+
+                if (child_node_to_component_membership_it != reference_nodes_component_membership_map_.end()) {
+                    const auto& child_node_membership = child_node_to_component_membership_it->second;
+
+                    // If the child's membership differs from the parent node, update the parent membership.
+                    if (child_node_membership && child_node_membership != reference_node_component_membership) {
+                        reference_node_component_membership = std::nullopt;
+                        return;
+                    }
+                }
+            }
+        }
+    }
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
