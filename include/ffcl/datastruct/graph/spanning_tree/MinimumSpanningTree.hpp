@@ -22,7 +22,7 @@ constexpr auto make_edge(const Index& index_1, const Index& index_2, const Dista
 }
 
 template <typename Index, typename Distance>
-constexpr auto make_default_edge() {
+constexpr auto make_infinity_edge() {
     return make_edge(common::infinity<Index>(), common::infinity<Index>(), common::infinity<Distance>());
 }
 
