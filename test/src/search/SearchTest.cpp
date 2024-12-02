@@ -374,7 +374,8 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), k_nearest_neighbors);
+        const auto shortest_edge = searcher.dual_tree_shortest_edge_with_core_distances(std::move(query_indexer),
+k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -558,7 +559,8 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
 #endif
 
         const auto shortest_edge =
-            searcher.dual_tree_shortest_edge(query_indexer, union_find, queries_representative, k_nearest_neighbors);
+            searcher.dual_tree_shortest_edge_with_core_distances(query_indexer, union_find, queries_representative,
+k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -738,7 +740,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), k_nearest_neighbors);
+        const auto shortest_edge =
+            searcher.dual_tree_shortest_edge_with_core_distances(std::move(query_indexer), k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -928,8 +931,10 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge =
-            searcher.dual_tree_shortest_edge(query_indexer, union_find, queries_representative, k_nearest_neighbors);
+        const auto shortest_edge = searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
+                                                                                        /**/ union_find,
+                                                                                        /**/ queries_representative,
+                                                                                        /**/ k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {

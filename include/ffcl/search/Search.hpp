@@ -4,6 +4,8 @@
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
+#include "ffcl/datastruct/graph/spanning_tree/MSTBuilder.hpp"
+
 #include "ffcl/search/DualTreeTraverser.hpp"
 #include "ffcl/search/TreeTraverser.hpp"
 
@@ -30,6 +32,8 @@ class Searcher {
 
     static_assert(common::is_raw_or_smart_ptr<NodePtr>, "NodePtr is not a raw or smart pointer");
 
+    using MSTBuilderType = MSTBuilder<IndexType, DataType>;  // ClusteredMTSBuilderType
+
     explicit Searcher(const ReferenceIndexer& reference_indexer);
 
     explicit Searcher(ReferenceIndexer&& reference_indexer) noexcept;
@@ -47,6 +51,10 @@ class Searcher {
     constexpr auto cend() const;
 
     constexpr auto root() const;
+
+    constexpr auto indexer() const {
+        return tree_traverser_.indexer();
+    }
 
     constexpr auto features_range_first(std::size_t sample_index) const;
 
@@ -88,6 +96,11 @@ class Searcher {
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
     auto dual_tree_shortest_edge_with_core_distances(ForwardedQueryIndexer&& forwarded_query_indexer,
                                                      BufferArgs&&... buffer_args) const;
+
+    template <typename QueryIndexer>
+    auto dtt_shortest_edge(const QueryIndexer&   query_indexer,
+                           const MSTBuilderType& mst_builder,
+                           std::size_t           k_nearest_neighbors = 1) const;
 
   private:
     TreeTraverser<ReferenceIndexer> tree_traverser_;
@@ -219,6 +232,14 @@ auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge_with_core_distances(
     BufferArgs&&... buffer_args) const {
     return tree_traverser_.dual_tree_shortest_edge_with_core_distances(
         std::forward<ForwardedQueryIndexer>(forwarded_query_indexer), std::forward<BufferArgs>(buffer_args)...);
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryIndexer>
+auto Searcher<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&   query_indexer,
+                                                   const MSTBuilderType& mst_builder,
+                                                   std::size_t           k_nearest_neighbors) const {
+    return tree_traverser_.dtt_shortest_edge(query_indexer, mst_builder, k_nearest_neighbors);
 }
 
 }  // namespace ffcl::search

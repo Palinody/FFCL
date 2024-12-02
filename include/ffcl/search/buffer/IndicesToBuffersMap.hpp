@@ -281,39 +281,14 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(cons
             are_nodes_in_same_component = std::nullopt;
         }
     }
-    // CODE FOR DEBUG PURPOSES
-    /*
-    static std::size_t counter = 0;
-    static std::size_t total = 0;
-    static auto component_set = std::unordered_set<std::size_t>{};
-
-    if (are_nodes_in_same_component) {
-        std::cout << "(" << (counter++) << "/" << total << "): " << *are_nodes_in_same_component << "\n ";
-        component_set.emplace(*are_nodes_in_same_component);
-
-    } else {
-        std::cout << "(" << (total - counter) << "/" << total << "): -1"
-                  << "\n ";
-    }
-    ++total;
-
-    if (total == 82462) {
-        std::cout << "SET SIZE: " << component_set.size() << "\n";
-
-        for (const auto& component_index : component_set) {
-            std::cout << component_index << ", ";
-        }
-        std::cout << "\n";
-    }
-    */
-
-    update_nodes_membership(reference_node, are_nodes_in_same_component);
+    // update_nodes_membership(reference_node, are_nodes_in_same_component);
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::cost(const QueryNodePtr&     query_node,
                                                                        const ReferenceNodePtr& reference_node)
     -> std::optional<DistanceType> {
+    /*
     const auto reference_node_to_component_membership_it =
         reference_nodes_component_membership_map_.find(reference_node);
 
@@ -322,6 +297,7 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::cost(const Que
         std::cout << "PRUNNING OCCURED\n";
         return std::nullopt;
     }
+    */
     const auto min_distance = datastruct::bounds::min_distance(query_node->bound_, reference_node->bound_);
 
     return (query_node_furthest_bound(query_node) < min_distance) ? std::nullopt : std::make_optional(min_distance);
@@ -361,7 +337,7 @@ constexpr auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::find
     if (index_to_buffer_it == queries_to_buffers_map_.end()) {
         auto buffer = BufferType(query_samples_range_first_ + index * query_n_features_,
                                  query_samples_range_first_ + index * query_n_features_ + query_n_features_,
-                                 /**/ std::forward<BufferArgs>(buffer_args)...);
+                                 std::forward<BufferArgs>(buffer_args)...);
         // Attempt to insert the newly created buffer into the map. If an element with the same
         // index already exists, emplace does nothing. Otherwise, it inserts the new element.
         // The method returns a pair, where the first element is an iterator to the inserted element
@@ -501,8 +477,9 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
             // 'second' is a bool in true state when {query_index, buffer_indices[buffer_index]} has been inserted.
             if (priority_queue_visited_combinations_set_.insert({query_index, buffer_indices[buffer_index]}).second) {
                 // We emplace the combination if it was not already there. (if statement is true).
-                kth_closest_edge_priority_queue_.emplace(
-                    query_index, buffer_indices[buffer_index], buffer_distances[buffer_index]);
+                kth_closest_edge_priority_queue_.emplace(/**/ query_index,
+                                                         /**/ buffer_indices[buffer_index],
+                                                         /**/ buffer_distances[buffer_index]);
             }
         }
     }

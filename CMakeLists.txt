@@ -15,6 +15,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 
     add_compile_options(
         -std=c++17
+        -Ofast
         -march=native
         -Wall
         -Wextra
@@ -201,6 +202,7 @@ elseif(MODE STREQUAL "gtest")
         # add_compile_options(-std=c++17 -g -pg)
         add_compile_options(
             -std=c++17
+            -Ofast
             -march=native
             -Wall
             -Wextra
