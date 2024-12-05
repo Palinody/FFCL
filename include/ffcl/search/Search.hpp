@@ -4,7 +4,7 @@
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
-#include "ffcl/datastruct/graph/spanning_tree/MSTBuilder.hpp"
+#include "ffcl/datastruct/UnionFind.hpp"
 
 #include "ffcl/search/DualTreeTraverser.hpp"
 #include "ffcl/search/TreeTraverser.hpp"
@@ -31,8 +31,6 @@ class Searcher {
     using NodePtr = typename ReferenceIndexer::NodePtr;
 
     static_assert(common::is_raw_or_smart_ptr<NodePtr>, "NodePtr is not a raw or smart pointer");
-
-    using MSTBuilderType = MSTBuilder<IndexType, DataType>;  // ClusteredMTSBuilderType
 
     explicit Searcher(const ReferenceIndexer& reference_indexer);
 
@@ -98,9 +96,9 @@ class Searcher {
                                                      BufferArgs&&... buffer_args) const;
 
     template <typename QueryIndexer>
-    auto dtt_shortest_edge(const QueryIndexer&   query_indexer,
-                           const MSTBuilderType& mst_builder,
-                           std::size_t           k_nearest_neighbors = 1) const;
+    auto dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                           const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                           std::size_t                             k_nearest_neighbors = 1) const;
 
   private:
     TreeTraverser<ReferenceIndexer> tree_traverser_;
@@ -236,10 +234,10 @@ auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge_with_core_distances(
 
 template <typename ReferenceIndexer>
 template <typename QueryIndexer>
-auto Searcher<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&   query_indexer,
-                                                   const MSTBuilderType& mst_builder,
-                                                   std::size_t           k_nearest_neighbors) const {
-    return tree_traverser_.dtt_shortest_edge(query_indexer, mst_builder, k_nearest_neighbors);
+auto Searcher<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                                                   const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                                                   std::size_t                             k_nearest_neighbors) const {
+    return tree_traverser_.dtt_shortest_edge(query_indexer, union_find_const_ref, k_nearest_neighbors);
 }
 
 }  // namespace ffcl::search

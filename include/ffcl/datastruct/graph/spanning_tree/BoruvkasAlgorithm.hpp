@@ -278,7 +278,7 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
     */
 
     const auto component_to_shortest_edge_map = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
-                                                                           /**/ mst_builder,
+                                                                           /**/ mst_builder.get_union_find_const_ref(),
                                                                            /**/ options_.k_nearest_neighbors_);
 
     // merge components based on the best edges found in each component so far

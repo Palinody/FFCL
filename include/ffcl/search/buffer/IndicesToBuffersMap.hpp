@@ -247,8 +247,6 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(cons
                                                                             BufferArgs&&... buffer_args) {
     // To track the current membership value encountered.
     std::optional<IndexType> are_nodes_in_same_component = std::nullopt;
-    // A flag that is set to true only for the first membership check.
-    bool first_visit_flag = true;
 
     // Iterate through all query indices within the specified range of the query node.
     for (auto query_index_it = query_node->indices_range_.first; query_index_it != query_node->indices_range_.second;
@@ -261,20 +259,20 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(cons
         // 'is_query_in_same_component' holds the info about whether indices are in the same union find, memory
         // buffer etc, depending on 'BufferArgs&&... buffer_args' and how the buffer is implemented. The value may be
         // std::nullopt if the buffer internal condition is not satisfied.
-        const auto is_query_in_same_component =
-            query_to_buffer_it->second.partial_search(reference_node->indices_range_.first,
-                                                      reference_node->indices_range_.second,
-                                                      reference_samples_range_first_,
-                                                      reference_samples_range_last_,
-                                                      reference_n_features_);
+        auto is_query_in_same_component = std::optional<IndexType>{std::nullopt};
+
+        query_to_buffer_it->second.partial_search(reference_node->indices_range_.first,
+                                                  reference_node->indices_range_.second,
+                                                  reference_samples_range_first_,
+                                                  reference_samples_range_last_,
+                                                  reference_n_features_,
+                                                  is_query_in_same_component);
 
         update_priority_queue(query_to_buffer_it);
 
         // Store the first encountered component membership if no value was saved yet.
-        if (first_visit_flag) {
+        if (query_index_it == query_node->indices_range_.first) {
             are_nodes_in_same_component = is_query_in_same_component;
-
-            first_visit_flag = false;
 
         } else if (is_query_in_same_component != are_nodes_in_same_component) {
             // If the current component_membership differs from the first, mark that they are not all the same

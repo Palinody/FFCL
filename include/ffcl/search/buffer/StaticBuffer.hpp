@@ -120,24 +120,50 @@ class StaticBuffer {
         return furthest_distance();
     }
 
-    std::optional<IndexType> update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        return static_base_traits<DerivedBuffer>::call_update(static_cast<DerivedBuffer*>(this),
-                                                              /**/ index_candidate,
-                                                              /**/ distance_candidate);
+    void update(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        static_base_traits<DerivedBuffer>::call_update(static_cast<DerivedBuffer*>(this),
+                                                       /**/ index_candidate,
+                                                       /**/ distance_candidate);
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    std::optional<IndexType> partial_search(const OtherIndicesIterator& indices_range_first,
-                                            const OtherIndicesIterator& indices_range_last,
-                                            const OtherSamplesIterator& samples_range_first,
-                                            const OtherSamplesIterator& samples_range_last,
-                                            std::size_t                 n_features) {
-        return static_base_traits<DerivedBuffer>::call_partial_search(static_cast<DerivedBuffer*>(this),
-                                                                      /**/ indices_range_first,
-                                                                      /**/ indices_range_last,
-                                                                      /**/ samples_range_first,
-                                                                      /**/ samples_range_last,
-                                                                      /**/ n_features);
+    void partial_search(const OtherIndicesIterator& indices_range_first,
+                        const OtherIndicesIterator& indices_range_last,
+                        const OtherSamplesIterator& samples_range_first,
+                        const OtherSamplesIterator& samples_range_last,
+                        std::size_t                 n_features) {
+        static_base_traits<DerivedBuffer>::call_partial_search(static_cast<DerivedBuffer*>(this),
+                                                               /**/ indices_range_first,
+                                                               /**/ indices_range_last,
+                                                               /**/ samples_range_first,
+                                                               /**/ samples_range_last,
+                                                               /**/ n_features);
+    }
+
+    template <typename OptionalType>
+    void update(const IndexType&             index_candidate,
+                const DistanceType&          distance_candidate,
+                std::optional<OptionalType>& optional_parameter) {
+        static_base_traits<DerivedBuffer>::call_update(static_cast<DerivedBuffer*>(this),
+                                                       /**/ index_candidate,
+                                                       /**/ distance_candidate,
+                                                       /**/ optional_parameter);
+    }
+
+    template <typename OtherIndicesIterator, typename OtherSamplesIterator, typename OptionalType>
+    void partial_search(const OtherIndicesIterator&  indices_range_first,
+                        const OtherIndicesIterator&  indices_range_last,
+                        const OtherSamplesIterator&  samples_range_first,
+                        const OtherSamplesIterator&  samples_range_last,
+                        std::size_t                  n_features,
+                        std::optional<OptionalType>& optional_parameter) {
+        static_base_traits<DerivedBuffer>::call_partial_search(static_cast<DerivedBuffer*>(this),
+                                                               /**/ indices_range_first,
+                                                               /**/ indices_range_last,
+                                                               /**/ samples_range_first,
+                                                               /**/ samples_range_last,
+                                                               /**/ n_features,
+                                                               /**/ optional_parameter);
     }
 
   protected:

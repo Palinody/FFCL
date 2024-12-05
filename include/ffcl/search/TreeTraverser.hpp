@@ -13,7 +13,7 @@
 
 #include "ffcl/search/ClosestPairOfSamples.hpp"
 
-#include "ffcl/datastruct/graph/spanning_tree/MSTBuilder.hpp"
+#include "ffcl/datastruct/UnionFind.hpp"
 
 #include <deque>
 #include <iterator>
@@ -40,8 +40,6 @@ class TreeTraverser {
     using ReferenceNodePtr = typename ReferenceIndexer::NodePtr;
 
     static_assert(common::is_raw_or_smart_ptr<ReferenceNodePtr>, "ReferenceNodePtr is not a raw or smart pointer");
-
-    using MSTBuilderType = MSTBuilder<IndexType, DataType>;  // ClusteredMTSBuilderType
 
     explicit TreeTraverser(const ReferenceIndexer& reference_indexer);
 
@@ -107,9 +105,9 @@ class TreeTraverser {
                                                      BufferArgs&&... buffer_args) const;
 
     template <typename QueryIndexer>
-    auto dtt_shortest_edge(const QueryIndexer&   query_indexer,
-                           const MSTBuilderType& mst_builder,
-                           std::size_t           k_nearest_neighbors = 1) const;
+    auto dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                           const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                           std::size_t                             k_nearest_neighbors = 1) const;
 
   private:
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
@@ -540,15 +538,14 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
 
 template <typename ReferenceIndexer>
 template <typename QueryIndexer>
-auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&   query_indexer,
-                                                        const MSTBuilderType& mst_builder,
-                                                        std::size_t           k_nearest_neighbors) const {
-    common::ignore_parameters(mst_builder, k_nearest_neighbors);
+auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                                                        const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                                                        std::size_t k_nearest_neighbors) const {
+    // using BuffersFeaturesIteratorType = decltype(std::declval<QueryIndexer>().features_range_first(0));
+    // using BufferType                  = buffer::Unsorted<BuffersFeaturesIteratorType>;
 
-    using BuffersFeaturesIteratorType = decltype(std::declval<QueryIndexer>().features_range_first(0));
-    using BufferType                  = buffer::Unsorted<BuffersFeaturesIteratorType>;
-
-    auto edge_buffer = buffer::make_edge_buffer<BufferType>(query_indexer, reference_indexer_);
+    auto edge_buffer =
+        buffer::make_edge_buffer(query_indexer, reference_indexer_, union_find_const_ref, k_nearest_neighbors);
 
     // dual_tree_traversal_with_core_distances(/**/ query_indexer.root(),
     // /**/ reference_indexer_.root(),

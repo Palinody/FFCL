@@ -45,29 +45,24 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                       query_representative,
                       max_capacity) {}
 
-    std::optional<IndexType> update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        // consider an update only if the candidate is not in the same component as the representative of the component
-        const bool are_in_same_component = query_representative_ == union_find_const_ref_.find(index_candidate);
+    void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        const auto candidate_representative = union_find_const_ref_.find(index_candidate);
 
-        if (!are_in_same_component) {
+        // consider an update only if the candidate is not in the same component as the representative of the component
+        const bool not_in_same_component = query_representative_ != candidate_representative;
+
+        if (not_in_same_component) {
             this->try_update_static_buffers(index_candidate, distance_candidate);
-            return std::nullopt;
         }
-        return query_representative_;
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    std::optional<IndexType> partial_search_impl(const OtherIndicesIterator& indices_range_first,
-                                                 const OtherIndicesIterator& indices_range_last,
-                                                 const OtherSamplesIterator& samples_range_first,
-                                                 const OtherSamplesIterator& samples_range_last,
-                                                 std::size_t                 n_features) {
+    void partial_search_impl(const OtherIndicesIterator& indices_range_first,
+                             const OtherIndicesIterator& indices_range_last,
+                             const OtherSamplesIterator& samples_range_first,
+                             const OtherSamplesIterator& samples_range_last,
+                             std::size_t                 n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
-
-        // To track the current membership value encountered.
-        std::optional<IndexType> current_component_membership{std::nullopt};
-        // A flag that is set to true only for the first membership check.
-        bool first_visit_flag = true;
 
         for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
             const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
@@ -75,23 +70,54 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                 samples_range_first + *index_it * n_features + n_features);
 
             if (optional_candidate_distance) {
-                const auto component_membership = update_impl(*index_it, *optional_candidate_distance);
+                update_impl(*index_it, *optional_candidate_distance);
+            }
+        }
+    }
+
+    template <typename OptionalType>
+    void update_impl(const IndexType&             index_candidate,
+                     const DistanceType&          distance_candidate,
+                     std::optional<OptionalType>& candidate_representative) {
+        candidate_representative = union_find_const_ref_.find(index_candidate);
+
+        // consider an update only if the candidate is not in the same component as the representative of the component
+        const bool not_in_same_component = query_representative_ != candidate_representative;
+
+        if (not_in_same_component) {
+            this->try_update_static_buffers(index_candidate, distance_candidate);
+        }
+    }
+
+    template <typename OtherIndicesIterator, typename OtherSamplesIterator, typename OptionalType>
+    void partial_search_impl(const OtherIndicesIterator&  indices_range_first,
+                             const OtherIndicesIterator&  indices_range_last,
+                             const OtherSamplesIterator&  samples_range_first,
+                             const OtherSamplesIterator&  samples_range_last,
+                             std::size_t                  n_features,
+                             std::optional<OptionalType>& candidates_component_membership) {
+        ffcl::common::ignore_parameters(samples_range_last);
+
+        for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
+            const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
+                samples_range_first + *index_it * n_features,
+                samples_range_first + *index_it * n_features + n_features);
+
+            if (optional_candidate_distance) {
+                auto component_membership = std::optional<OptionalType>{std::nullopt};
+
+                update_impl(*index_it, *optional_candidate_distance, component_membership);
 
                 // Store the first encountered component membership if no value was saved yet.
-                if (first_visit_flag) {
-                    current_component_membership = component_membership;
+                if (index_it == indices_range_first) {
+                    candidates_component_membership = component_membership;
 
-                    first_visit_flag = false;
-
-                } else if (component_membership != current_component_membership) {
+                } else if (component_membership != candidates_component_membership) {
                     // If the current component_membership differs from the first, mark that they are not all the same
-                    current_component_membership = std::nullopt;
+                    candidates_component_membership = std::nullopt;
                 }
             }
         }
-        // Return the common membership if all values are the same. Otherwise, if at least 1 is different or if
-        // current_component_membership is std::nullopt, return std::nullopt.
-        return current_component_membership;
     }
 
   private:
@@ -113,25 +139,48 @@ struct static_base_traits<WithUnionFind<DistancesIterator, Bound>> {
     using IndicesIteratorType   = typename IndicesType::iterator;
     using DistancesIteratorType = DistancesIterator;
 
-    static constexpr std::optional<IndexType> call_update(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
-                                                          const IndexType&                         index_candidate,
-                                                          const DistanceType&                      distance_candidate) {
-        return unsorted_buffer->update_impl(index_candidate, distance_candidate);
+    static constexpr void call_update(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
+                                      const IndexType&                         index_candidate,
+                                      const DistanceType&                      distance_candidate) {
+        unsorted_buffer->update_impl(index_candidate, distance_candidate);
     }
 
     template <typename OtherIndicesIterator, typename OtherSamplesIterator>
-    static constexpr std::optional<IndexType> call_partial_search(
-        WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
-        const OtherIndicesIterator&              indices_range_first,
-        const OtherIndicesIterator&              indices_range_last,
-        const OtherSamplesIterator&              samples_range_first,
-        const OtherSamplesIterator&              samples_range_last,
-        std::size_t                              n_features) {
-        return unsorted_buffer->partial_search_impl(/**/ indices_range_first,
-                                                    /**/ indices_range_last,
-                                                    /**/ samples_range_first,
-                                                    /**/ samples_range_last,
-                                                    /**/ n_features);
+    static constexpr void call_partial_search(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
+                                              const OtherIndicesIterator&              indices_range_first,
+                                              const OtherIndicesIterator&              indices_range_last,
+                                              const OtherSamplesIterator&              samples_range_first,
+                                              const OtherSamplesIterator&              samples_range_last,
+                                              std::size_t                              n_features) {
+        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
+                                             /**/ indices_range_last,
+                                             /**/ samples_range_first,
+                                             /**/ samples_range_last,
+                                             /**/ n_features);
+    }
+
+    template <typename OptionalType>
+    static constexpr void call_update(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
+                                      const IndexType&                         index_candidate,
+                                      const DistanceType&                      distance_candidate,
+                                      std::optional<OptionalType>&             candidate_representative) {
+        unsorted_buffer->update_impl(index_candidate, distance_candidate, candidate_representative);
+    }
+
+    template <typename OtherIndicesIterator, typename OtherSamplesIterator, typename OptionalType>
+    static constexpr void call_partial_search(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
+                                              const OtherIndicesIterator&              indices_range_first,
+                                              const OtherIndicesIterator&              indices_range_last,
+                                              const OtherSamplesIterator&              samples_range_first,
+                                              const OtherSamplesIterator&              samples_range_last,
+                                              std::size_t                              n_features,
+                                              std::optional<OptionalType>& candidates_component_membership) {
+        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
+                                             /**/ indices_range_last,
+                                             /**/ samples_range_first,
+                                             /**/ samples_range_last,
+                                             /**/ n_features,
+                                             /**/ candidates_component_membership);
     }
 };
 
