@@ -45,7 +45,8 @@ class EdgesBuffer {
 
     auto component_to_shortest_edge_map() const;
 
-    bool emplace_nodes_combination_if_not_found(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node);
+    auto emplace(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node)
+        -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool>;
 
     void base_case(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node);
 
@@ -127,18 +128,14 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::component_to_shortest_edge_map
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-bool EdgesBuffer<QueryIndexer, ReferenceIndexer>::emplace_nodes_combination_if_not_found(
-    const QueryNodePtr&     query_node,
-    const ReferenceNodePtr& reference_node) {
+auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::emplace(const QueryNodePtr&     query_node,
+                                                          const ReferenceNodePtr& reference_node)
+    -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool> {
     auto nodes_combination_key = NodesCombinationKey{query_node, reference_node};
-
-    if (visited_nodes_combinations_.find(nodes_combination_key) == visited_nodes_combinations_.end()) {
-        // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
-        // insertion) and a bool value set to true if and only if the insertion took place.
-        // We are only interested in the boolean value.
-        return visited_nodes_combinations_.emplace(nodes_combination_key).second;
-    }
-    return false;
+    // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
+    // insertion) and a bool value set to true if and only if the insertion took place.
+    // We are only interested in the boolean value.
+    return visited_nodes_combinations_.emplace(nodes_combination_key).second;
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>

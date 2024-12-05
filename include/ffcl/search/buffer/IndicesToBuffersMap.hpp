@@ -129,7 +129,8 @@ class IndicesToBuffersMap {
     auto update_cost(const QueryNodePtr& query_node, const ReferenceNodePtr&, const DistanceType& cost)
         -> std::optional<DistanceType>;
 
-    bool emplace_nodes_combination_if_not_found(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node);
+    auto emplace(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node)
+        -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool>;
 
   private:
     struct BoundsLimits {
@@ -310,18 +311,13 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_cost(co
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
-bool IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::emplace_nodes_combination_if_not_found(
-    const QueryNodePtr&     query_node,
-    const ReferenceNodePtr& reference_node) {
+auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::emplace(const QueryNodePtr&     query_node,
+                                                                          const ReferenceNodePtr& reference_node)
+    -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool> {
     auto nodes_combination_key = NodesCombinationKey{query_node, reference_node};
-
-    if (visited_nodes_combinations_.find(nodes_combination_key) == visited_nodes_combinations_.end()) {
-        // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
-        // insertion) and a bool value set to true if and only if the insertion took place.
-        // We are only interested in the boolean value.
-        return visited_nodes_combinations_.emplace(nodes_combination_key).second;
-    }
-    return false;
+    // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
+    // insertion) and a bool value set to true if and only if the insertion took place.
+    return visited_nodes_combinations_.emplace(nodes_combination_key);
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>

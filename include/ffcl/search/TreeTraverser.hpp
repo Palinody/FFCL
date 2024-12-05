@@ -338,7 +338,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
     // 'emplace_nodes_combination_if_not_found' emplaces the nodes combination in one of the queries_to_buffers_map
     // buffers only if its not found. It returns 'true' if emplace was successful, else it returns false.
     // We want to enter this statement only if the nodes combination have not been visited.
-    if (!queries_to_buffers_map.emplace_nodes_combination_if_not_found(query_node, reference_node)) {
+    if (!queries_to_buffers_map.emplace(query_node, reference_node).second) {
         return;
     }
     // Calculate or update the cost if necessary.
@@ -464,7 +464,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
     // 'emplace_nodes_combination_if_not_found' emplaces the nodes combination in one of the edge_buffer
     // buffers only if its not found. It returns 'true' if emplace was successful, else it returns false.
     // The statement is true only if the nodes combination have not been visited.
-    if (!edge_buffer.emplace_nodes_combination_if_not_found(query_node, reference_node)) {
+    if (!edge_buffer.emplace(query_node, reference_node).second) {
         return;
     }
     // Calculate or update the cost if necessary.
