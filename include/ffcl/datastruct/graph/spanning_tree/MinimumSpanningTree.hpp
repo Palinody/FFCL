@@ -29,7 +29,7 @@ constexpr auto make_infinity_edge() {
 }  // namespace ffcl::datastruct::mst
 
 template <typename Index, typename Distance>
-struct std::less<std::tuple<Index, Index, Distance>> {
+struct std::less<ffcl::datastruct::mst::Edge<Index, Distance>> {
     bool operator()(const ffcl::datastruct::mst::Edge<Index, Distance>& edge1,
                     const ffcl::datastruct::mst::Edge<Index, Distance>& edge2) const {
         // Only compare based on the third element (distance)

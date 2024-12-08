@@ -177,10 +177,9 @@ class IndicesToBuffersMap {
 
   private:
     using KTHShortestEdgePriorityQueueElementType = datastruct::mst::Edge<IndexType, DistanceType>;
-    using KTHShortestEdgePriorityQueueType =
-        std::priority_queue<KTHShortestEdgePriorityQueueElementType,
-                            std::vector<KTHShortestEdgePriorityQueueElementType>,
-                            std::less<datastruct::mst::Edge<IndexType, DistanceType>>>;
+    using KTHShortestEdgePriorityQueueType        = std::priority_queue<KTHShortestEdgePriorityQueueElementType,
+                                                                 std::vector<KTHShortestEdgePriorityQueueElementType>,
+                                                                 std::less<KTHShortestEdgePriorityQueueElementType>>;
 
     using PriorityQueueVisitedCombinationsType = std::unordered_set<IndicesCombinationKey<IndexType, IndexType>>;
 

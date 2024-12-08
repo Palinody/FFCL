@@ -26,14 +26,17 @@ namespace ffcl::search::buffer {
 template <typename QueryIndexer, typename ReferenceIndexer>
 class EdgesBuffer {
   public:
-    using IndexType    = typename QueryIndexer::IndexType;
-    using DistanceType = typename QueryIndexer::DataType;
+    using IndexType    = std::common_type_t<typename QueryIndexer::IndexType, typename ReferenceIndexer::IndexType>;
+    using DistanceType = std::common_type_t<typename QueryIndexer::DataType, typename ReferenceIndexer::DataType>;
 
     static_assert(std::is_trivial_v<IndexType>, "IndexType must be trivial.");
     static_assert(std::is_trivial_v<DistanceType>, "DistanceType must be trivial.");
 
     using QueryNodePtr     = typename QueryIndexer::NodePtr;
     using ReferenceNodePtr = typename ReferenceIndexer::NodePtr;
+
+    using FeaturesIteratorType =
+        std::common_type_t<typename QueryIndexer::SamplesIteratorType, typename ReferenceIndexer::SamplesIteratorType>;
 
   public:
     EdgesBuffer(const QueryIndexer&                     query_indexer,
@@ -63,28 +66,35 @@ class EdgesBuffer {
     // Data structure that helps to determine which nodes are worth descending into.
     const datastruct::UnionFind<IndexType>& union_find_const_ref_;
     // Keeps track of the nodes combination that have already been visited so far.
-    std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>> visited_nodes_combinations_;
+    std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>> visited_nodes_combinations_uset_;
     // Keeps track of the shortest edge found w.r.t. each component.
-    std::unordered_map<IndexType, datastruct::mst::Edge<IndexType, DistanceType>> component_to_shortest_edge_map_;
+    std::unordered_map<IndexType, datastruct::mst::Edge<IndexType, DistanceType>> component_to_shortest_edge_umap_;
+    // Keeps track of the current best edges found w.r.t. each component and place them in a priority queue.
+    using EdgePriorityQueueElementType = datastruct::mst::Edge<IndexType, DistanceType>;
+    using EdgePriorityQueueType        = std::priority_queue<EdgePriorityQueueElementType,
+                                                      std::vector<EdgePriorityQueueElementType>,
+                                                      std::less<EdgePriorityQueueElementType>>;
+    // The edges priority queues are mapped with the component they belong to.
+    using ComponentToEdgePriorityQueueUMapType = std::unordered_map<IndexType, EdgePriorityQueueType>;
+    ComponentToEdgePriorityQueueUMapType component_to_edge_priority_queue_umap_;
     // Keeps track of the component this node and all its descendants belong to.
     // Possible states (current node is included in the 'descendants'):
     //    std::nullopt: if any descendant sample belongs to a different component.
     //    Integer [0, n_samples-1]: the representative of all the descendant samples in the current node.
-    std::unordered_map<QueryNodePtr, std::optional<IndexType>> query_node_to_descendants_component_;
+    std::unordered_map<QueryNodePtr, std::optional<IndexType>> query_node_to_descendants_component_umap_;
     // Same as for the queries.
-    std::unordered_map<ReferenceNodePtr, std::optional<IndexType>> reference_node_to_descendants_component_;
+    std::unordered_map<ReferenceNodePtr, std::optional<IndexType>> reference_node_to_descendants_component_umap_;
 
-    using FeaturesIteratorType =
-        std::common_type_t<typename QueryIndexer::SamplesIteratorType, typename ReferenceIndexer::SamplesIteratorType>;
+    using IndexToBufferUMapType         = std::unordered_map<IndexType, buffer::Unsorted<FeaturesIteratorType>>;
+    using IndexToBufferMapIterator      = typename IndexToBufferUMapType::iterator;
+    using IndexToBufferMapConstIterator = typename IndexToBufferUMapType::const_iterator;
 
-    using IndexToBufferMapType          = std::unordered_map<IndexType, buffer::Unsorted<FeaturesIteratorType>>;
-    using IndexToBufferMapIterator      = typename IndexToBufferMapType::iterator;
-    using IndexToBufferMapConstIterator = typename IndexToBufferMapType::const_iterator;
-
-    IndexToBufferMapType query_to_buffer_map_;
-    std::size_t          buffer_size_;
+    IndexToBufferUMapType query_to_buffer_umap_;
+    std::size_t           buffer_size_;
 
     auto find_or_emplace_buffer(const IndexType& index) -> IndexToBufferMapIterator;
+
+    void update_component_to_edge_priority_queue(const IndexToBufferMapIterator& query_to_buffer_it);
 };
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -106,13 +116,14 @@ EdgesBuffer<QueryIndexer, ReferenceIndexer>::EdgesBuffer(const QueryIndexer&    
   : query_indexer_const_ref_{query_indexer}
   , reference_indexer_const_ref_{reference_indexer}
   , union_find_const_ref_{union_find_const_ref}
-  , visited_nodes_combinations_{}
-  , component_to_shortest_edge_map_{}
-  , query_node_to_descendants_component_{}
-  , reference_node_to_descendants_component_{}
-  , query_to_buffer_map_{}
+  , visited_nodes_combinations_uset_{}
+  , component_to_shortest_edge_umap_{}
+  , component_to_edge_priority_queue_umap_{}
+  , query_node_to_descendants_component_umap_{}
+  , reference_node_to_descendants_component_umap_{}
+  , query_to_buffer_umap_{}
   , buffer_size_{buffer_size} {
-    // visited_nodes_combinations_.reserve(n_components);
+    // visited_nodes_combinations_uset_.reserve(n_components);
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -135,7 +146,7 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::emplace(const QueryNodePtr&   
     // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
     // insertion) and a bool value set to true if and only if the insertion took place.
     // We are only interested in the boolean value.
-    return visited_nodes_combinations_.emplace(nodes_combination_key).second;
+    return visited_nodes_combinations_uset_.emplace(nodes_combination_key);
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -157,6 +168,7 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
 
         const auto query_component = union_find_const_ref_.find(*query_index_it);
 
+        // Do the following for the first iteration of the loop.
         if (query_index_it = query_node->indices_range_.first) {
             // references_component_membership will be updated inplace in this function.
             query_to_buffer_it->second.partial_search(reference_node->indices_range_.first,
@@ -170,12 +182,11 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
 
             // Insert references_component_membership in the container only if the reference_node key doesnt already
             // exist, creating a new key/value pair and not overriding if it already exists.
-            reference_node_to_descendants_component_.emplace(reference_node, references_component_membership);
-
+            reference_node_to_descendants_component_umap_.emplace(reference_node, references_component_membership);
         }
-        // Perform a search through the references if at least one of the reference samples dont belong to the same
-        // component. Or, if its the case, if the query_component is different than the reference node component.
-        else if (!references_component_membership || query_component != references_component_membership) {
+        // Perform a search through the references if at least one of the query_component is different than the
+        // reference node component.
+        else if (query_component != references_component_membership) {
             query_to_buffer_it->second.partial_search(reference_node->indices_range_.first,
                                                       reference_node->indices_range_.second,
                                                       reference_indexer_const_ref_.first(),
@@ -186,21 +197,20 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
         if (query_component != queries_component_membership) {
             queries_component_membership = std::nullopt;
         }
-
-        // update_priority_queue(query_to_buffer_it);
+        update_component_to_edge_priority_queue(query_to_buffer_it);
     }
     // Insert queries_component_membership in the container only if the query_node key doesnt already
     // exist, creating a new key/value pair and not overriding if it already exists.
-    query_node_to_descendants_component_.emplace(query_node, queries_component_membership);
+    query_node_to_descendants_component_umap_.emplace(query_node, queries_component_membership);
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
 auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::find_or_emplace_buffer(const IndexType& index)
     -> IndexToBufferMapIterator {
     // Attempt to find the buffer associated with the current index in the buffer map.
-    auto index_to_buffer_it = query_to_buffer_map_.find(index);
+    auto index_to_buffer_it = query_to_buffer_umap_.find(index);
     // If the current index does not have an associated buffer in the map,
-    if (index_to_buffer_it == query_to_buffer_map_.end()) {
+    if (index_to_buffer_it == query_to_buffer_umap_.end()) {
         auto buffer = buffer::WithUnionFind<FeaturesIteratorType>(
             query_indexer_const_ref_.first() + index * query_indexer_const_ref_.n_features(),
             query_indexer_const_ref_.first() + index * query_indexer_const_ref_.n_features() +
@@ -215,9 +225,46 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::find_or_emplace_buffer(const I
         // (or to the element that prevented the insertion) and the second element is a boolean
         // indicating whether the insertion took place.
         // We are only interested in the first element of the pair.
-        index_to_buffer_it = query_to_buffer_map_.emplace(index, std::move(buffer)).first;
+        index_to_buffer_it = query_to_buffer_umap_.emplace(index, std::move(buffer)).first;
     }
     return index_to_buffer_it;
+}
+
+template <typename QueryIndexer, typename ReferenceIndexer>
+void EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_component_to_edge_priority_queue(
+    const IndexToBufferMapIterator& query_to_buffer_it) {
+    const auto& [query_index, buffer] = *query_to_buffer_it;
+
+    const auto query_component = union_find_const_ref_.find(query_index);
+
+    // Attempt to emplace a default edge.
+    const auto& [component_to_edge_priority_queue_it, is_inserted] =
+        component_to_edge_priority_queue_umap_.emplace(query_component, EdgePriorityQueueType{});
+
+    // If the umap didnt contain a priority queue for the specified query_component or if the max capacity isnt reached
+    // yet.
+    if (is_inserted || component_to_edge_priority_queue_it->second.size() < buffer_size_) {
+        // We can add the edge directly.
+        component_to_edge_priority_queue_it->second.push(
+            ffcl::datastruct::mst::make_edge(/**/ query_index,
+                                             /**/ buffer.closest_index(),
+                                             /**/ buffer.closest_distance()));
+
+    } else {
+        // Finds the edge with the lowest priority in the queue and gets its distance.
+        const auto& edge_priority_queue_furthest_distance =
+            std::get<2>(component_to_edge_priority_queue_it->second.top());
+
+        // The edge with the lowest priority will get replaced if the new edge's distance is inferior.
+        if (buffer.closest_distance() < edge_priority_queue_furthest_distance) {
+            component_to_edge_priority_queue_it->second.pop();
+
+            component_to_edge_priority_queue_it->second.push(
+                ffcl::datastruct::mst::make_edge(/**/ query_index,
+                                                 /**/ buffer.closest_index(),
+                                                 /**/ buffer.closest_distance()));
+        }
+    }
 }
 
 }  // namespace ffcl::search::buffer

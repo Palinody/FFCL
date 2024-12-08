@@ -222,4 +222,20 @@ class StaticBuffer {
     IndexType max_capacity_;
 };
 
+struct StaticBufferLessComparator {
+    template <typename Buffer1, typename Buffer2>
+    bool operator()(const Buffer1& buffer1, const Buffer2& buffer2) const {
+        static_assert(common::is_crtp_of<Buffer1, StaticBuffer>::value,
+                      "Provided a Buffer that does not inherit from ffcl::search::buffer::StaticBuffer<Derived>");
+
+        static_assert(common::is_crtp_of<Buffer2, StaticBuffer>::value,
+                      "Provided a Buffer that does not inherit from ffcl::search::buffer::StaticBuffer<Derived>");
+
+        // Ensures that buffers are sorted by decreasing sizes. If 2 buffers have the same size,
+        // sort by increasing furthest_distance.
+        return std::tie(buffer2.size(), buffer1.furthest_distance()) <
+               std::tie(buffer1.size(), buffer2.furthest_distance());
+    }
+};
+
 }  // namespace ffcl::search::buffer
