@@ -277,15 +277,16 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
     }
     */
 
-    const auto component_to_shortest_edge_map = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
-                                                                           /**/ mst_builder.get_union_find_const_ref(),
-                                                                           /**/ options_.k_nearest_neighbors_);
+    const auto& component_to_k_edge_priority_queue_umap =
+        searcher.dtt_shortest_edge(/**/ searcher.indexer(),
+                                   /**/ mst_builder.get_union_find_const_ref(),
+                                   /**/ options_.k_nearest_neighbors_);
 
     // merge components based on the best edges found in each component so far
-    for (const auto& [component_representative, edge] : component_to_shortest_edge_map) {
-        assert(std::get<2>(edge) < common::infinity<ValueType>());
+    for (const auto& [component_representative, edge_priority_queue] : component_to_k_edge_priority_queue_umap) {
+        assert(std::get<2>(edge_priority_queue.top()) < common::infinity<ValueType>());
         common::ignore_parameters(component_representative);
-        mst_builder.merge_components(edge);
+        mst_builder.merge_components(edge_priority_queue.top());
     }
 }
 

@@ -462,8 +462,8 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
                                                                               bool bypass_cost_calculation,
                                                                               BufferArgs&&... buffer_args) const {
     // Emplaces the nodes combination in one of the edge_buffer buffers only if its not found. It returns 'true' if
-    // emplace was successful, else it returns false. The statement is true only if the nodes combination have not been
-    // visited.
+    // emplace was successful, else it returns false. The statement is true only if the nodes combination have not
+    // been visited.
     if (!edge_buffer.emplace(query_node, reference_node).second) {
         return;
     }
@@ -484,9 +484,13 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
 
     // The order of traversal doesn't matter for the query node.
     if (!query_node->is_leaf()) {
-        for (const auto& child_node : {query_node->left_, query_node->right_}) {
-            dual_tree_traversal_with_core_distances(
-                child_node, reference_node, edge_buffer, std::nullopt, false, std::forward<BufferArgs>(buffer_args)...);
+        for (const auto& child_query_node : {query_node->left_, query_node->right_}) {
+            dual_tree_traversal_with_core_distances(/**/ child_query_node,
+                                                    /**/ reference_node,
+                                                    /**/ edge_buffer,
+                                                    /**/ std::nullopt,
+                                                    /**/ false,
+                                                    /**/ std::forward<BufferArgs>(buffer_args)...);
         }
     }
     // The order of traversal does matter in this case.
@@ -494,11 +498,11 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
         auto children_priority_queue =
             DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
 
-        for (const auto& child_node : {reference_node->left_, reference_node->right_}) {
-            const auto nodes_combination_optional_cost = edge_buffer.cost(query_node, child_node);
+        for (const auto& child_reference_node : {reference_node->left_, reference_node->right_}) {
+            const auto nodes_combination_optional_cost = edge_buffer.cost(query_node, child_reference_node);
 
             if (nodes_combination_optional_cost) {
-                children_priority_queue.emplace(query_node, child_node, *nodes_combination_optional_cost);
+                children_priority_queue.emplace(query_node, child_reference_node, *nodes_combination_optional_cost);
             }
         }
         // Process the first nodes combination and bypass the cost calculation.
@@ -547,13 +551,13 @@ auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&     
     auto edge_buffer =
         buffer::make_edge_buffer(query_indexer, reference_indexer_, union_find_const_ref, k_nearest_neighbors);
 
-    // dual_tree_traversal_with_core_distances(/**/ query_indexer.root(),
-    // /**/ reference_indexer_.root(),
-    // /**/ edge_buffer,
-    // /**/ std::nullopt,
-    // /**/ false);
+    dual_tree_traversal_with_core_distances(/**/ query_indexer.root(),
+                                            /**/ reference_indexer_.root(),
+                                            /**/ edge_buffer,
+                                            /**/ std::nullopt,
+                                            /**/ false);
 
-    return edge_buffer.component_to_shortest_edge_map();
+    return edge_buffer.component_to_k_edge_priority_queue_umap();
 }
 
 }  // namespace ffcl::search
