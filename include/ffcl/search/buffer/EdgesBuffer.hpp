@@ -46,13 +46,12 @@ class EdgesBuffer {
 
     auto tightest_edge() const;
 
-    const auto& component_to_k_edge_priority_queue_umap() const;
+    const auto& component_to_k_shortest_edges() const;
 
-    auto emplace(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node)
+    auto mark_combination_as_visited(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node)
         -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool>;
 
-    template <typename... BufferArgs>
-    void base_case(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node, BufferArgs&&... buffer_args);
+    void base_case(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node);
 
     auto cost(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) -> std::optional<DistanceType>;
 
@@ -177,13 +176,13 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::tightest_edge() const {
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-const auto& EdgesBuffer<QueryIndexer, ReferenceIndexer>::component_to_k_edge_priority_queue_umap() const {
+const auto& EdgesBuffer<QueryIndexer, ReferenceIndexer>::component_to_k_shortest_edges() const {
     return component_to_k_edge_priority_queue_umap_;
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::emplace(const QueryNodePtr&     query_node,
-                                                          const ReferenceNodePtr& reference_node)
+auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::mark_combination_as_visited(const QueryNodePtr&     query_node,
+                                                                              const ReferenceNodePtr& reference_node)
     -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool> {
     auto nodes_combination_key = NodesCombinationKey{query_node, reference_node};
     // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the
@@ -193,11 +192,8 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::emplace(const QueryNodePtr&   
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-template <typename... BufferArgs>
 void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr&     query_node,
-                                                            const ReferenceNodePtr& reference_node,
-                                                            BufferArgs&&... buffer_args) {
-    common::ignore_parameters(std::forward(buffer_args)...);
+                                                            const ReferenceNodePtr& reference_node) {
     // Keeps track of the component membership of the query node. Evaluates to std::nullopt if any of the query
     // samples are different.
     auto queries_component_membership = std::optional<IndexType>{std::nullopt};

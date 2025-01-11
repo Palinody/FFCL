@@ -129,7 +129,7 @@ class IndicesToBuffersMap {
     auto update_cost(const QueryNodePtr& query_node, const ReferenceNodePtr&, const DistanceType& cost)
         -> std::optional<DistanceType>;
 
-    auto emplace(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node)
+    auto mark_combination_as_visited(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node)
         -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool>;
 
   private:
@@ -310,8 +310,9 @@ auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_cost(co
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
-auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::emplace(const QueryNodePtr&     query_node,
-                                                                          const ReferenceNodePtr& reference_node)
+auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::mark_combination_as_visited(
+    const QueryNodePtr&     query_node,
+    const ReferenceNodePtr& reference_node)
     -> std::pair<typename std::unordered_set<NodesCombinationKey<QueryNodePtr, ReferenceNodePtr>>::iterator, bool> {
     auto nodes_combination_key = NodesCombinationKey{query_node, reference_node};
     // Returns a pair consisting of an iterator to the inserted element (or to the element that prevented the

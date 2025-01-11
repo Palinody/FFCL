@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <execution>
 
+#include "ffcl/common/Timer.hpp"
+
 namespace ffcl {
 
 template <typename Indexer>
@@ -200,11 +202,15 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
 template <typename Indexer>
 template <typename ForwardedIndexer>
 auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+
     MSTBuilderType mst_builder(indexer.n_samples());
 
     const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
 
     std::size_t counter = 0;
+
+    printf("---\n");
 
     // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
     if (options_.k_nearest_neighbors_ > 1) {
@@ -212,19 +218,31 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
             datastruct::mst::make_static_core_distances(searcher, options_.k_nearest_neighbors_);
 
         while (mst_builder.n_components() > 1) {
-            std::cout << "mst_builder.n_components(): " << mst_builder.n_components() << "\n";
+            std::cout << "STT n_components(): " << mst_builder.n_components() << "\n";
             counter += mst_builder.n_components();
 
+            timer.reset();
+
             step_sequential(searcher, core_distances, mst_builder);
+
+            timer.print_elapsed_seconds(9);
+            printf("---\n");
         }
     } else {
         while (mst_builder.n_components() > 1) {
-            std::cout << "mst_builder.n_components(): " << mst_builder.n_components() << "\n";
+            std::cout << "STT n_components(): " << mst_builder.n_components() << "\n";
             counter += mst_builder.n_components();
 
+            timer.reset();
+
             step_sequential(searcher, mst_builder);
+
+            timer.print_elapsed_seconds(9);
+            printf("---\n");
         }
     }
+    printf("---\n");
+
     std::cout << "Counter: " << counter << "\n";
     return std::move(mst_builder).minimum_spanning_tree();
 }
@@ -237,53 +255,12 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
                                                            MSTBuilderType&                  mst_builder) const {
     common::ignore_parameters(core_distances);
 
-    /*
-    using IndicesIterator         = typename search::Searcher<Indexer>::IndicesIteratorType;
-    using SamplesIterator         = typename search::Searcher<Indexer>::SamplesIteratorType;
-    using QueryIndexerType        = typename search::Searcher<Indexer>::IndexerType;
-    using QueryIndexerOptionsType = typename QueryIndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    // keep track of the shortest edge from a component's sample index to a sample index thats not within the
-    // same component
-    auto components_closest_edge = std::unordered_map<IndexType, EdgeType>{};
-    for (auto& [component_representative, component] : mst_builder) {
-        auto query_indexer =
-            QueryIndexerType(component.begin(),
-                             component.end(),
-                             searcher.begin(),
-                             searcher.end(),
-                             searcher.n_features(),
-                             QueryIndexerOptionsType()
-                                 .bucket_size(std::max(static_cast<std::size_t>(40),
-                                                       static_cast<std::size_t>(std::sqrt(component.size()))))
-                                 .axis_selection_policy(AxisSelectionPolicyType{})
-                                 .splitting_rule_policy(SplittingRulePolicyType{}));
-
-        components_closest_edge[component_representative] =
-            searcher.dual_tree_shortest_edge_with_core_distances(query_indexer,
-                                                                 mst_builder.get_union_find_const_ref(),
-                                                                 component_representative,
-                                                                 options_.k_nearest_neighbors_);
-    }
-    // merge components based on the best edges found in each component so far
-    for (const auto& [component_representative, edge] : components_closest_edge) {
-        assert(std::get<2>(edge) < common::infinity<ValueType>());
-        common::ignore_parameters(component_representative);
-        mst_builder.merge_components(edge);
-    }
-    */
-
-    const auto& component_to_k_edge_priority_queue_umap =
-        searcher.dtt_shortest_edge(/**/ searcher.indexer(),
-                                   /**/ mst_builder.get_union_find_const_ref(),
-                                   /**/ options_.k_nearest_neighbors_);
+    const auto& component_to_k_shortest_edges = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
+                                                                           /**/ mst_builder.get_union_find_const_ref(),
+                                                                           /**/ options_.k_nearest_neighbors_);
 
     // merge components based on the best edges found in each component so far
-    for (const auto& [component_representative, edge_priority_queue] : component_to_k_edge_priority_queue_umap) {
+    for (const auto& [component_representative, edge_priority_queue] : component_to_k_shortest_edges) {
         assert(std::get<2>(edge_priority_queue.top()) < common::infinity<ValueType>());
         common::ignore_parameters(component_representative);
         mst_builder.merge_components(edge_priority_queue.top());
@@ -350,6 +327,8 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_parallel(const search::Searcher<
 template <typename Indexer>
 template <typename ForwardedIndexer>
 auto BoruvkasAlgorithm<Indexer>::make_tree_2(ForwardedIndexer&& indexer) const {
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+
     MSTBuilderType forest(indexer.n_samples());
 
     const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
@@ -358,12 +337,19 @@ auto BoruvkasAlgorithm<Indexer>::make_tree_2(ForwardedIndexer&& indexer) const {
 
     const auto core_distances = datastruct::mst::make_static_core_distances(searcher, options_.k_nearest_neighbors_);
 
+    printf("---\n");
+
     while (forest.n_components() > 1) {
-        std::cout << "forest.n_components(): " << forest.n_components() << "\n";
+        std::cout << "DTT n_components(): " << forest.n_components() << "\n";
         counter += forest.n_components();
 
+        timer.reset();
         step_dual_tree_sequential(searcher, core_distances, forest);
+        timer.print_elapsed_seconds(9);
+        printf("---\n");
     }
+    printf("---\n");
+
     std::cout << "Counter: " << counter << "\n";
     return std::move(forest).minimum_spanning_tree();
 }
