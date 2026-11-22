@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib
+
+matplotlib.use("PyQt5")  # TkAgg, Qt5Agg, PyQt5
 import matplotlib.pyplot as plt
 import MakeClusteringDatasets
 from py_helpers import IO

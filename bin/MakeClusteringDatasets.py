@@ -17,7 +17,18 @@ except:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn"])
     from sklearn import datasets
 
+try:
+    import pandas
+except:
+    import sys
+    import subprocess
+
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pandas"])
+    import pandas
+
+
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
 
 VERBOSE = True
 
@@ -27,7 +38,7 @@ SHIFT = 0
 DATA_TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
-n_samples = 50000
+n_samples = 1000
 n_features = 2
 # None to load everything else specify
 n_samples_mnist = None
@@ -214,7 +225,7 @@ def write_datasets(root_folder):
     save_dataset(X, y, root_folder=root_folder, dataset_name="unbalanced_blobs")
 
     X, y = datasets.fetch_openml(
-        "mnist_784", return_X_y=True, parser="auto", as_frame=False
+        "mnist_784", return_X_y=True, parser="auto", as_frame=False, cache=False
     )
     X, y = (
         normalize_mnist(X[:n_samples_mnist, :], y[:n_samples_mnist])

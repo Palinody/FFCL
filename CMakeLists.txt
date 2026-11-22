@@ -29,7 +29,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 find_package(OpenMP REQUIRED)
-find_package(TBB REQUIRED)
+# find_package(TBB REQUIRED)
 
 include_directories(
     include
@@ -134,56 +134,19 @@ if(MODE STREQUAL "benchmark")
     )
 elseif(MODE STREQUAL "gtest")
     # -------- GOOGLE TEST ----------
-    if(CMAKE_VERSION VERSION_LESS 3.14)
-        # Download and unpack googletest at configure time
-        configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
-        execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-            RESULT_VARIABLE result
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
+    include(FetchContent)
 
-        if(result)
-            message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-        endif()
-
-        execute_process(COMMAND ${CMAKE_COMMAND} --build .
-            RESULT_VARIABLE result
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
-
-        if(result)
-            message(FATAL_ERROR "Build step for googletest failed: ${result}")
-        endif()
-
-        # Prevent overriding the parent project's compiler/linker
-        # settings on Windows
-        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-        # Add googletest directly to our build. This defines
-        # the gtest and gtest_main targets.
-        add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-            ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-            EXCLUDE_FROM_ALL)
-
-        # The gtest/gtest_main targets carry header search path
-        # dependencies automatically when using CMake 2.8.11 or
-        # later. Otherwise we have to add them here ourselves.
-        if(CMAKE_VERSION VERSION_LESS 2.8.11)
-            include_directories("${gtest_SOURCE_DIR}/include")
-        endif()
-    else()
-        include(FetchContent)
-
+    if(POLICY CMP0135)
         cmake_policy(SET CMP0135 NEW)
-
-        FetchContent_Declare(
-            googletest
-            URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-        )
-
-        # For Windows: Prevent overriding the parent project's compiler/linker settings
-        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-        FetchContent_MakeAvailable(googletest)
     endif()
+
+    FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+    )
+    
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
 
     # -------------------------------
     enable_testing()
@@ -504,7 +467,7 @@ elseif(MODE STREQUAL "gtest")
         CondensedClusterTreeTest
 
         PUBLIC
-        TBB::tbb
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
 
@@ -525,7 +488,7 @@ elseif(MODE STREQUAL "gtest")
         HDBSCANTest
 
         PUBLIC
-        TBB::tbb
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
 
@@ -630,7 +593,7 @@ elseif(MODE STREQUAL "gtest")
         BoruvkasAlgorithmTest
 
         PUBLIC
-        TBB::tbb
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
 
@@ -651,7 +614,7 @@ elseif(MODE STREQUAL "gtest")
         SingleLinkageClusterTreeTest
 
         PUBLIC
-        TBB::tbb
+        # TBB::tbb
         GTest::gtest_main
         GTest::gmock_main
 

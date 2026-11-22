@@ -21,6 +21,10 @@ except:
     from sklearn.cluster import DBSCAN
     from sklearn.neighbors import KDTree
 
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 
 def read_dataset(filepath: str):
     return np.loadtxt(filepath, dtype=np.float32, delimiter=" ")
@@ -35,6 +39,10 @@ def TestHDBSCAN(points: np.ndarray, min_samples, min_cluster_size):
         cluster_selection_epsilon=0,
         core_dist_n_jobs=1,
         allow_single_cluster=True,
+        algorithm="boruvka_kdtree",
+        gen_min_span_tree=True,
+        approx_min_span_tree=False,
+        leaf_size=40,
     )
 
     start_time = time.process_time()
@@ -65,13 +73,13 @@ def run_all():
     ]
 
     datasets_parameters = [
-        (20, 10),
-        (20, 10),
-        (20, 10),
-        (20, 10),
-        (20, 10),
-        (20, 10),
-        (20, 10),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
     ]
 
     for filename, dataset_parameters in zip(file_names, datasets_parameters):

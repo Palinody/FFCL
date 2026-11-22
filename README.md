@@ -2,11 +2,155 @@
 
 **FFCL**: **F**lexible and (probably not the) **f**ast(est) c++ **c**lustering **l**ibrary.
 
+- [Architecture](#architecture)
+- [Branches](#branches)
 - [Current features](#current-features)
 - [Performance](#performance)
 - [Installation](#installation)
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
+
+## Architecture
+
+FFCL is a **header-only C++17** library (`include/ffcl/**/*.hpp`) built around one idea: every clustering
+algorithm that needs neighborhood information talks to a *searcher* over an *indexer* (a `KDTree`), never to
+the raw dataset. `CMakeLists.txt` only wraps the headers into a `SHARED` library target (or into the benchmark /
+gtest executables), and OpenMP is the only hard dependency.
+
+The code is organized in four layers plus a tooling layer:
+
+| Layer | Namespace | Responsibility |
+| --- | --- | --- |
+| Common | `ffcl::common` | `Utils`, `Timer`, distances, statistics, sorting, random distributions/sampling, linear algebra, silhouette method |
+| Data structures | `ffcl::datastruct` | feature containers, bounding volumes, `UnionFind`, pairwise distance matrices, `KDTree`, cluster trees, MST / Boruvka |
+| Search engine | `ffcl::search` | `Searcher` facade, single-tree and dual-tree traversers, pruning buffers, node-combination cache |
+| Clustering | `ffcl` | `DBSCAN`, `HDBSCAN`, `KMeans`, `KMedoids` |
+| Tooling | — | `benchmark/`, `test/`, `bin/*.py` (dataset generation, plotting) |
+
+### Layered view
+
+```mermaid
+flowchart LR
+    subgraph L0["Tooling"]
+        direction TB
+        TP["bin/*.py<br/>dataset generation · plots"]
+        TB["benchmark/<br/>MODE=benchmark"]
+        TG["test/<br/>MODE=gtest"]
+    end
+
+    subgraph L4["Clustering algorithms — ffcl"]
+        direction TB
+        DB["DBSCAN<br/>radius queries"]
+        HDB["HDBSCAN<br/>MST + cluster trees"]
+        KM["KMeans<br/>Lloyd · Hamerly · KMeans++ init"]
+        KMD["KMedoids<br/>FasterPAM · FasterMSC · PAMBuild"]
+    end
+
+    subgraph L3["Search engine — ffcl::search"]
+        direction TB
+        SEA["Searcher<br/>facade over an indexer"]
+        TT["TreeTraverser<br/>single-tree traversal"]
+        DTT["DualTreeTraverser<br/>dual-tree + node cache"]
+        BUF["buffers (CRTP StaticBuffer)<br/>Unsorted · WithMemory<br/>WithUnionFind · EdgesBuffer"]
+    end
+
+    subgraph L2["Data structures — ffcl::datastruct"]
+        direction TB
+        KDT["KDTree · KDNodeView<br/>axis selection + splitting policies"]
+        BOUND["bounds/<br/>AABB · AABBWithCentroid · Ball<br/>UnboundedBall · segment bounds"]
+        GRAPH["graph/spanning_tree/<br/>Edge · MinimumSpanningTree<br/>MSTBuilder · CoreDistances · Boruvka"]
+        CLT["tree/<br/>SingleLinkageClusterTree<br/>CondensedClusterTree"]
+        MISC["UnionFind · FeaturesVector<br/>FeaturesMask · PairwiseDistanceMatrix"]
+    end
+
+    subgraph L1["Common utilities — ffcl::common"]
+        direction TB
+        MA["math/<br/>Distances · Statistics · Sorting<br/>Distributions · Sampling · Silhouette"]
+        UT["Utils · Timer"]
+    end
+
+    TB --> L4
+    TG --> L4
+    TP --> TB
+    L4 --> L3
+    L3 --> L2
+    L2 --> L1
+    HDB --> GRAPH
+    HDB --> CLT
+    SEA -.->|"traverses"| KDT
+    BUF -.->|"prunes with"| BOUND
+```
+
+### HDBSCAN pipeline (the most involved path)
+
+```mermaid
+flowchart LR
+    A["samples + indices<br/>n_samples × n_features"] --> B["KDTree build<br/>bucket_size · max_depth · feature_mask<br/>axis selection + splitting policies"]
+    B --> C["Searcher over the KDTree"]
+    C --> D["core distances<br/>k-NN radius per sample"]
+    D --> E{"Boruvka loop<br/>while components > 1"}
+    E --> F["dual-tree traversal<br/>EdgesBuffer + UnionFind pruning<br/>k shortest inter-component edges"]
+    F --> G["MSTBuilder.merge_components<br/>UnionFind merge"]
+    G --> E
+    E -->|single component| H["MinimumSpanningTree<br/>sorted edge list"]
+    H --> I["SingleLinkageClusterTree<br/>dendrogram from the MST"]
+    I --> J["CondensedClusterTree<br/>min_cluster_size · return_leaf_nodes<br/>allow_single_cluster"]
+    J --> K["cluster labels"]
+```
+
+Key entry points:
+
+- `ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>` — recursive build that only rearranges the
+  *indices* range (the sample buffer is never copied); bounds are `AABBWithCentroid` over
+  `LowerBoundAndUpperBound` segments, and it can be serialized to JSON (rapidjson) for inspection/plotting.
+- `ffcl::search::Searcher<Indexer>` — the single entry point used by all algorithms: `operator()` for
+  k-NN / radius queries, `dual_tree_shortest_edge*` and `dtt_shortest_edge` for dual-tree edge queries.
+- `ffcl::search::buffer::*` — CRTP static-polymorphic buffers. The buffer *is* the query: it carries the bound
+  (unbounded ball, ball with radius, …) and the pruning rule (`WithUnionFind` skips same-component samples,
+  `EdgesBuffer` keeps a per-component priority queue of shortest edges).
+- `ffcl::BoruvkasAlgorithm` — `make_tree` (single-tree steps, optional core distances) and `make_tree_2`
+  (dual-tree steps, the branch under active development on `dtt_with_union_find_pruning`).
+- `ffcl::HDBSCAN::predict` — Boruvka MST → single linkage tree → condensed tree → labels.
+
+### Directory map
+
+```
+include/ffcl/
+├── common/            Utils, Timer, math/{heuristics,statistics,random,linear_algebra,algorithms}
+├── datastruct/        bounds/, tree/{kdtree,single_linkage_cluster_tree,condensed_cluster_tree},
+│                      graph/spanning_tree/, matrix/, vector/, UnionFind.hpp
+├── search/            Search.hpp, TreeTraverser.hpp, DualTreeTraverser.hpp,
+│                      ClosestPairOfSamples.hpp, buffer/{StaticBuffer,Unsorted,WithMemory,
+│                      WithUnionFind,EdgesBuffer,IndicesToBuffersMap}
+├── dbscan/            DBSCAN.hpp
+├── hdbscan/           HDBSCAN.hpp
+├── kmeans/            KMeans.hpp, Lloyd.hpp, Hamerly.hpp, KMeansPlusPlus.hpp, KMeansUtils.hpp
+└── kmedoids/          KMedoids.hpp, FasterPAM.hpp, FasterMSC.hpp, PAMBuild.hpp, PAMUtils.hpp
+include/rapidjson/     vendored JSON parser (KDTree / cluster-tree serialization)
+benchmark/             benchmark drivers, optional PCL comparison (MODE=benchmark)
+test/                  gtest sources + fixtures (MODE=gtest)
+bin/                   python dataset generators, benchmarks and plotters
+```
+
+## Branches
+
+- **`main`** — the default and published branch (`origin/HEAD`), last commit `2024-09-24`
+  ("minor refacto"). It contains HDBSCAN built on the *single-tree* Boruvka MST.
+- **`dtt_with_union_find_pruning`** — the **most up-to-date** branch, last commit `2025-01-12`
+  ("savestate"), **13 commits ahead of `main`** and in sync with `origin`. It is the current working branch
+  and adds the `MSTBuilder`, the `EdgesBuffer`, the dual-tree `dtt_shortest_edge` path and the union-find
+  pruning used by `BoruvkasAlgorithm::make_tree_2`.
+
+Everything else is a historical feature branch (kept for reference, all older than `main`):
+`dual_depth_first_traversal`, `dual_tree_traversal`, `refacto_with_searcher_instead_of_indexer_search`,
+`buffers_with_shapes_dev`, `nearest_neighbors_refacto`, `knn_function_with_index`, `minimum_spanning_tree`,
+`dbscan`, `compile_time_feature_mask`, `nearest_neighbor_functions`, `indexed_nearest_neighbor`,
+`kdtree_with_indexing`, `improve_kd_bounding_box_speed`, `template_build`, `no_local_rapidjson`,
+`hamerly_kmeans`, `lloyd`, `ffcl_with_kdtree_without_index`, `static_dynamic_mode_storage_variant`, `ffcl`.
+
+> Note: `main` is an ancestor of `dtt_with_union_find_pruning`, so the latter is a strict superset of it.
+> The working tree currently also holds uncommitted local edits (`CMakeLists.txt`, `.gitignore`,
+> `bin/*.py`, `BoruvkasAlgorithmTest.cpp`).
 
 ## TODO | New features | Updates
 
