@@ -11,3 +11,4 @@ Testing/
 # Ignore all files with the extension ".<ext>" in any directory
 *.o
 __pycache__/
+build_rel/

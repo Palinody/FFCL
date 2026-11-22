@@ -24,7 +24,7 @@ class CoreDistancesArray {
 template <typename Value>
 CoreDistancesArray<Value>::CoreDistancesArray(std::size_t size) noexcept
   : data_{std::make_unique<Value[]>(size)}
-  , size_{size_} {}
+  , size_{size} {}
 
 template <typename Value>
 Value& CoreDistancesArray<Value>::operator[](std::size_t index) {

@@ -253,17 +253,22 @@ template <typename Indexer>
 void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searcher<Indexer>& searcher,
                                                            const CoreDistancesArrayType&    core_distances,
                                                            MSTBuilderType&                  mst_builder) const {
-    common::ignore_parameters(core_distances);
+    // The MST has to be built on the mutual reachability distances, not on the raw ones, otherwise
+    // `k_nearest_neighbors > 1` has no effect on the dual-tree path.
+    const auto& component_to_shortest_edges = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
+                                                                       /**/ mst_builder.get_union_find_const_ref(),
+                                                                       /**/ options_.k_nearest_neighbors_,
+                                                                       /**/ &core_distances[0]);
 
-    const auto& component_to_k_shortest_edges = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
-                                                                           /**/ mst_builder.get_union_find_const_ref(),
-                                                                           /**/ options_.k_nearest_neighbors_);
-
-    // merge components based on the best edges found in each component so far
-    for (const auto& [component_representative, edge_priority_queue] : component_to_k_shortest_edges) {
-        assert(std::get<2>(edge_priority_queue.top()) < common::infinity<ValueType>());
+    // merge components based on the shortest edge found for each component so far
+    for (const auto& [component_representative, edge] : component_to_shortest_edges) {
         common::ignore_parameters(component_representative);
-        mst_builder.merge_components(edge_priority_queue.top());
+
+        // A component without any finite outgoing edge cannot be merged without corrupting the spanning tree.
+        if (std::get<2>(edge) >= common::infinity<ValueType>()) {
+            continue;
+        }
+        mst_builder.merge_components(edge);
     }
 }
 

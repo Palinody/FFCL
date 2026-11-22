@@ -6,6 +6,7 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
+#include <algorithm>
 #include <optional>
 #include <vector>
 
@@ -45,6 +46,24 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                       query_representative,
                       max_capacity) {}
 
+    // Optional mutual reachability support: when core distances are provided, the buffered distance is the
+    // mutual reachability distance `max(d(query, candidate), core(query), core(candidate))` instead of the raw
+    // distance. This is what HDBSCAN* needs; plain Boruvka leaves it unset and keeps the raw distance.
+    void set_core_distances(const DistanceType* core_distances, const IndexType& query_index) {
+        core_distances_ptr_ = core_distances;
+        query_index_        = query_index;
+    }
+
+    auto mutual_reachability_distance(const IndexType& index_candidate,
+                                      DistanceType     distance_candidate) const -> DistanceType {
+        if (!core_distances_ptr_) {
+            return distance_candidate;
+        }
+        return std::max({distance_candidate,
+                         core_distances_ptr_[query_index_],
+                         core_distances_ptr_[static_cast<std::size_t>(index_candidate)]});
+    }
+
     void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         const auto candidate_representative = union_find_const_ref_.find(index_candidate);
 
@@ -64,13 +83,27 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                              std::size_t                 n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
 
+        // The core-distance branch is hoisted out of the loop: it is constant for the whole search and the
+        // plain distance path is the hot one.
+        if (!core_distances_ptr_) {
+            for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
+                const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
+                    samples_range_first + *index_it * n_features,
+                    samples_range_first + *index_it * n_features + n_features);
+
+                if (optional_candidate_distance) {
+                    update_impl(*index_it, *optional_candidate_distance);
+                }
+            }
+            return;
+        }
         for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
             const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
                 samples_range_first + *index_it * n_features,
                 samples_range_first + *index_it * n_features + n_features);
 
             if (optional_candidate_distance) {
-                update_impl(*index_it, *optional_candidate_distance);
+                update_impl(*index_it, mutual_reachability_distance(*index_it, *optional_candidate_distance));
             }
         }
     }
@@ -106,7 +139,9 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
             if (optional_candidate_distance) {
                 auto component_membership = std::optional<OptionalType>{std::nullopt};
 
-                update_impl(*index_it, *optional_candidate_distance, component_membership);
+                update_impl(*index_it,
+                            mutual_reachability_distance(*index_it, *optional_candidate_distance),
+                            component_membership);
 
                 // Store the first encountered component membership if no value was saved yet.
                 if (index_it == indices_range_first) {
@@ -123,6 +158,9 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
   private:
     UnionFindConstReference union_find_const_ref_;
     IndexType               query_representative_;
+    // Optional core distances (indexed by sample) used to compute mutual reachability distances.
+    const DistanceType* core_distances_ptr_ = nullptr;
+    IndexType           query_index_        = 0;
 };
 
 // Declare and define a static_base_traits specialization for WithUnionFind:

@@ -10,6 +10,11 @@
 
 #include "ffcl/datastruct/bounds/segment/distances/MinDistance.hpp"
 
+#include <cmath>
+#include <cstddef>
+#include <iterator>
+#include <type_traits>
+
 namespace ffcl::datastruct::bounds {
 
 template <typename FirstSegment, typename SecondSegment, std::size_t NFeatures = 0>
@@ -86,6 +91,65 @@ constexpr auto min_distance(const UnboundedBall<FirstValue, NFeatures>&, const U
     using ValueType = std::common_type_t<FirstValue, SecondValue>;
 
     return ValueType{};
+}
+
+// Minimum distance between a single query point and an axis-aligned bounding box.
+// Every feature is clamped to the segment of the box: a feature inside the segment
+// contributes nothing, a feature outside contributes the distance to the closest
+// bound. This is the `referenceNode.MinDistance(queryPoint)` primitive used by the
+// dual-tree Boruvka base case to skip a whole reference node for a query point.
+template <typename FeaturesIterator, typename Segment, std::size_t NFeatures = 0>
+constexpr auto min_distance(const FeaturesIterator&        features_range_first,
+                            const FeaturesIterator&        features_range_last,
+                            const AABB<Segment, NFeatures>& aabb) {
+    using ValueType = std::common_type_t<typename std::iterator_traits<FeaturesIterator>::value_type,
+                                         typename Segment::ValueType>;
+
+    ValueType   squared_distance = 0;
+    std::size_t feature_index    = 0;
+
+    for (auto features_it = features_range_first; features_it != features_range_last; ++features_it, ++feature_index) {
+        const auto&      segment       = aabb.segment_at(feature_index);
+        const ValueType  feature_value = static_cast<ValueType>(*features_it);
+        const ValueType  lower_bound   = static_cast<ValueType>(segment.lower_bound());
+        const ValueType  upper_bound   = static_cast<ValueType>(segment.upper_bound());
+
+        if (feature_value < lower_bound) {
+            const auto delta = lower_bound - feature_value;
+            squared_distance += delta * delta;
+        } else if (feature_value > upper_bound) {
+            const auto delta = feature_value - upper_bound;
+            squared_distance += delta * delta;
+        }
+    }
+    return std::sqrt(squared_distance);
+}
+
+template <typename FeaturesIterator, typename Segment, std::size_t NFeatures = 0>
+constexpr auto min_distance(const FeaturesIterator&                  features_range_first,
+                            const FeaturesIterator&                  features_range_last,
+                            const AABBWithCentroid<Segment, NFeatures>& aabb_with_centroid) {
+    using ValueType = std::common_type_t<typename std::iterator_traits<FeaturesIterator>::value_type,
+                                         typename Segment::ValueType>;
+
+    ValueType   squared_distance = 0;
+    std::size_t feature_index    = 0;
+
+    for (auto features_it = features_range_first; features_it != features_range_last; ++features_it, ++feature_index) {
+        const auto&     segment       = aabb_with_centroid.segment_at(feature_index);
+        const ValueType feature_value = static_cast<ValueType>(*features_it);
+        const ValueType lower_bound   = static_cast<ValueType>(segment.lower_bound());
+        const ValueType upper_bound   = static_cast<ValueType>(segment.upper_bound());
+
+        if (feature_value < lower_bound) {
+            const auto delta = lower_bound - feature_value;
+            squared_distance += delta * delta;
+        } else if (feature_value > upper_bound) {
+            const auto delta = feature_value - upper_bound;
+            squared_distance += delta * delta;
+        }
+    }
+    return std::sqrt(squared_distance);
 }
 
 template <typename FirstFeaturesIterator, typename SecondFeaturesIterator>

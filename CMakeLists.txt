@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.0.2)
 
 project(ffcl)
 
+# The optimization flags below are only added for an explicit build type. When
+# CMAKE_BUILD_TYPE is left empty (the common `cmake ..` invocation) no `-O` flag
+# at all is passed to the compiler, which makes every benchmark run at -O0 and
+# therefore 10-20x slower than it should be. Default to Release in that case.
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type (Release, Debug, ...)" FORCE)
+    message("No CMAKE_BUILD_TYPE specified: defaulting to Release")
+endif()
+
 # Debug mode: Enable profiling with -g and -pg for gprof/perf
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message("Building in Debug mode")

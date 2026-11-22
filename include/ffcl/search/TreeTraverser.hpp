@@ -17,6 +17,7 @@
 
 #include <deque>
 #include <iterator>
+#include <optional>
 #include <queue>
 #include <vector>
 
@@ -107,7 +108,8 @@ class TreeTraverser {
     template <typename QueryIndexer>
     auto dtt_shortest_edge(const QueryIndexer&                     query_indexer,
                            const datastruct::UnionFind<IndexType>& union_find_const_ref,
-                           std::size_t                             k_nearest_neighbors = 1) const;
+                           std::size_t                             k_nearest_neighbors = 1,
+                           const DataType*                         core_distances_ptr  = nullptr) const;
 
   private:
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
@@ -140,6 +142,12 @@ class TreeTraverser {
                              std::optional<DataType> optional_cost,
                              bool                    bypass_cost_calculation,
                              BufferArgs&&... buffer_args) const;
+
+    template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+    void descend_reference_children(const QueryNodePtr&     query_node,
+                                    const ReferenceNodePtr& reference_node,
+                                    EdgesBuffer&            edge_buffer,
+                                    BufferArgs&&... buffer_args) const;
 
     template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
     void dual_tree_traversal_with_core_distances(const QueryNodePtr&     query_node,
@@ -461,9 +469,8 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
                                                                               std::optional<DataType> optional_cost,
                                                                               bool bypass_cost_calculation,
                                                                               BufferArgs&&... buffer_args) const {
-    // Emplaces the nodes combination in one of the edge_buffer buffers only if its not found. It returns 'true' if
-    // emplace was successful, else it returns false. The statement is true only if the nodes combination have not
-    // been visited.
+    // Both descents (query side and reference side) can reach the same node combination, so the combination
+    // is only processed the first time it is seen.
     if (!edge_buffer.mark_combination_as_visited(query_node, reference_node).second) {
         return;
     }
@@ -479,10 +486,16 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
             return;
         }
     }
-    // Else, update the query buffers with the reference set while keeping track of the global shortest edge.
+    // Base case: the points owned by the two nodes. A KDNodeView owns its whole bucket when it is a leaf
+    // and a single pivot sample when it is internal, so the base case has to run on every node combination
+    // (and not only on leaf/leaf ones) for the pivots to be covered. It stays cheap because the
+    // point-to-node bound prune inside `base_case` skips most reference nodes for most query samples.
     edge_buffer.base_case(query_node, reference_node, std::forward<BufferArgs>(buffer_args)...);
 
-    // The order of traversal doesn't matter for the query node.
+    if (query_node->is_leaf() && reference_node->is_leaf()) {
+        return;
+    }
+    // Descend the query node. The recursion order does not matter on the query side.
     if (!query_node->is_leaf()) {
         for (const auto& child_query_node : {query_node->left_, query_node->right_}) {
             dual_tree_traversal_with_core_distances(/**/ child_query_node,
@@ -493,49 +506,61 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
                                                     /**/ std::forward<BufferArgs>(buffer_args)...);
         }
     }
-    // The order of traversal does matter in this case.
+    // Descend the reference node. The recursion order matters here: the closest child is processed first so
+    // that the query buffers are tightened as early as possible, and the remaining child is re-scored
+    // afterwards because the first descent may have made it prunable.
     if (!reference_node->is_leaf()) {
-        auto children_priority_queue =
-            DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
+        this->descend_reference_children(
+            query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
+    }
+}
 
-        for (const auto& child_reference_node : {reference_node->left_, reference_node->right_}) {
-            const auto nodes_combination_optional_cost = edge_buffer.cost(query_node, child_reference_node);
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::descend_reference_children(const QueryNodePtr&     query_node,
+                                                                 const ReferenceNodePtr& reference_node,
+                                                                 EdgesBuffer&            edge_buffer,
+                                                                 BufferArgs&&... buffer_args) const {
+    auto children_priority_queue =
+        DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
 
-            if (nodes_combination_optional_cost) {
-                children_priority_queue.emplace(query_node, child_reference_node, *nodes_combination_optional_cost);
-            }
+    for (const auto& child_reference_node : {reference_node->left_, reference_node->right_}) {
+        const auto nodes_combination_optional_cost = edge_buffer.cost(query_node, child_reference_node);
+
+        if (nodes_combination_optional_cost) {
+            children_priority_queue.emplace(query_node, child_reference_node, *nodes_combination_optional_cost);
         }
-        // Process the first nodes combination and bypass the cost calculation.
-        if (!children_priority_queue.empty()) {
-            {
-                const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
+    }
+    // Process the first nodes combination and bypass the cost calculation.
+    if (!children_priority_queue.empty()) {
+        {
+            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
 
-                common::ignore_parameters(nodes_combination_cost);
+            common::ignore_parameters(nodes_combination_cost);
 
-                dual_tree_traversal_with_core_distances(pq_query_node,
-                                                        pq_reference_node,
-                                                        edge_buffer,
-                                                        std::nullopt,
-                                                        true,
-                                                        std::forward<BufferArgs>(buffer_args)...);
+            dual_tree_traversal_with_core_distances(pq_query_node,
+                                                    pq_reference_node,
+                                                    edge_buffer,
+                                                    std::nullopt,
+                                                    true,
+                                                    std::forward<BufferArgs>(buffer_args)...);
 
-                children_priority_queue.pop();
-            }
-            // Process the rest of the nodes combinations and update the costs. It might prune the combination.
-            while (!children_priority_queue.empty()) {
-                const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
+            children_priority_queue.pop();
+        }
+        // Process the rest of the nodes combinations and update the costs. It might prune the combination.
+        while (!children_priority_queue.empty()) {
+            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
 
-                // This time, we provide the cost because the previous element of the priority queue might have updated
-                // some of the query buffer. The provided nodes combination might get pruned as a result.
-                dual_tree_traversal_with_core_distances(pq_query_node,
-                                                        pq_reference_node,
-                                                        edge_buffer,
-                                                        std::make_optional(nodes_combination_cost),
-                                                        false,
-                                                        std::forward<BufferArgs>(buffer_args)...);
+            // This time, we provide the cost because the previous element of the priority queue might have updated
+            // some of the query buffer. The provided nodes combination might get pruned as a result.
+            dual_tree_traversal_with_core_distances(pq_query_node,
+                                                    pq_reference_node,
+                                                    edge_buffer,
+                                                    std::make_optional(nodes_combination_cost),
+                                                    false,
+                                                    std::forward<BufferArgs>(buffer_args)...);
 
-                children_priority_queue.pop();
-            }
+            children_priority_queue.pop();
         }
     }
 }
@@ -544,12 +569,13 @@ template <typename ReferenceIndexer>
 template <typename QueryIndexer>
 auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                     query_indexer,
                                                         const datastruct::UnionFind<IndexType>& union_find_const_ref,
-                                                        std::size_t k_nearest_neighbors) const {
+                                                        std::size_t                             k_nearest_neighbors,
+                                                        const DataType*                         core_distances_ptr) const {
     // using BuffersFeaturesIteratorType = decltype(std::declval<QueryIndexer>().features_range_first(0));
     // using BufferType                  = buffer::Unsorted<BuffersFeaturesIteratorType>;
 
-    auto edge_buffer =
-        buffer::make_edge_buffer(query_indexer, reference_indexer_, union_find_const_ref, k_nearest_neighbors);
+    auto edge_buffer = buffer::make_edge_buffer(
+        query_indexer, reference_indexer_, union_find_const_ref, k_nearest_neighbors, core_distances_ptr);
 
     dual_tree_traversal_with_core_distances(/**/ query_indexer.root(),
                                             /**/ reference_indexer_.root(),
@@ -557,7 +583,7 @@ auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&     
                                             /**/ std::nullopt,
                                             /**/ false);
 
-    return edge_buffer.component_to_k_shortest_edges();
+    return edge_buffer.component_to_shortest_edge();
 }
 
 }  // namespace ffcl::search
