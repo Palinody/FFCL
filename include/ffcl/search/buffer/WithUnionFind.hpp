@@ -54,18 +54,29 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
         query_index_        = query_index;
     }
 
+    // Optional precomputed representative per sample. The union-find does not change during a Boruvka step,
+    // so the path-compression walk of `find()` does not have to be repeated for every candidate.
+    void set_representatives(const IndexType* representatives) {
+        representatives_ptr_ = representatives;
+    }
+
+    auto candidate_representative(const IndexType& index_candidate) const -> IndexType {
+        return representatives_ptr_ ? representatives_ptr_[static_cast<std::size_t>(index_candidate)]
+                                    : union_find_const_ref_.find(index_candidate);
+    }
+
     auto mutual_reachability_distance(const IndexType& index_candidate,
                                       DistanceType     distance_candidate) const -> DistanceType {
         if (!core_distances_ptr_) {
             return distance_candidate;
         }
-        return std::max({distance_candidate,
-                         core_distances_ptr_[query_index_],
-                         core_distances_ptr_[static_cast<std::size_t>(index_candidate)]});
+        return std::max(distance_candidate,
+                        std::max(core_distances_ptr_[query_index_],
+                                 core_distances_ptr_[static_cast<std::size_t>(index_candidate)]));
     }
 
     void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        const auto candidate_representative = union_find_const_ref_.find(index_candidate);
+        const auto candidate_representative = this->candidate_representative(index_candidate);
 
         // consider an update only if the candidate is not in the same component as the representative of the component
         const bool not_in_same_component = query_representative_ != candidate_representative;
@@ -97,14 +108,14 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
             }
             return;
         }
+        // The bound of this buffer is unbounded, so `compute_distance_to_centroid_if_within_bounds` can never
+        // reject a candidate: call the distance directly and skip the per-candidate std::optional.
         for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
-            const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
+            const auto candidate_distance = this->bound_.distance_to_centroid(
                 samples_range_first + *index_it * n_features,
                 samples_range_first + *index_it * n_features + n_features);
 
-            if (optional_candidate_distance) {
-                update_impl(*index_it, mutual_reachability_distance(*index_it, *optional_candidate_distance));
-            }
+            update_impl(*index_it, mutual_reachability_distance(*index_it, candidate_distance));
         }
     }
 
@@ -112,7 +123,7 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
     void update_impl(const IndexType&             index_candidate,
                      const DistanceType&          distance_candidate,
                      std::optional<OptionalType>& candidate_representative) {
-        candidate_representative = union_find_const_ref_.find(index_candidate);
+        candidate_representative = this->candidate_representative(index_candidate);
 
         // consider an update only if the candidate is not in the same component as the representative of the component
         const bool not_in_same_component = query_representative_ != candidate_representative;
@@ -161,6 +172,8 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
     // Optional core distances (indexed by sample) used to compute mutual reachability distances.
     const DistanceType* core_distances_ptr_ = nullptr;
     IndexType           query_index_        = 0;
+    // Optional precomputed union-find representatives (see `set_representatives`).
+    const IndexType* representatives_ptr_ = nullptr;
 };
 
 // Declare and define a static_base_traits specialization for WithUnionFind:

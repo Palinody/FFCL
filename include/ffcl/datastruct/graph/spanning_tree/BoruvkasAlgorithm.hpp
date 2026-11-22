@@ -208,42 +208,19 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
 
     const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
 
-    std::size_t counter = 0;
-
-    printf("---\n");
-
     // compute the core distances only if knn > 1 -> k_nearest_reachability_distance is activated
     if (options_.k_nearest_neighbors_ > 1) {
         const auto core_distances =
             datastruct::mst::make_static_core_distances(searcher, options_.k_nearest_neighbors_);
 
         while (mst_builder.n_components() > 1) {
-            std::cout << "STT n_components(): " << mst_builder.n_components() << "\n";
-            counter += mst_builder.n_components();
-
-            timer.reset();
-
             step_sequential(searcher, core_distances, mst_builder);
-
-            timer.print_elapsed_seconds(9);
-            printf("---\n");
         }
     } else {
         while (mst_builder.n_components() > 1) {
-            std::cout << "STT n_components(): " << mst_builder.n_components() << "\n";
-            counter += mst_builder.n_components();
-
-            timer.reset();
-
             step_sequential(searcher, mst_builder);
-
-            timer.print_elapsed_seconds(9);
-            printf("---\n");
         }
     }
-    printf("---\n");
-
-    std::cout << "Counter: " << counter << "\n";
     return std::move(mst_builder).minimum_spanning_tree();
 }
 
@@ -256,18 +233,12 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searche
     // The MST has to be built on the mutual reachability distances, not on the raw ones, otherwise
     // `k_nearest_neighbors > 1` has no effect on the dual-tree path.
     const auto& component_to_shortest_edges = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
-                                                                       /**/ mst_builder.get_union_find_const_ref(),
-                                                                       /**/ options_.k_nearest_neighbors_,
-                                                                       /**/ &core_distances[0]);
+                                                                         /**/ mst_builder.get_union_find_const_ref(),
+                                                                         /**/ options_.k_nearest_neighbors_,
+                                                                         /**/ &core_distances[0]);
 
     // merge components based on the shortest edge found for each component so far
-    for (const auto& [component_representative, edge] : component_to_shortest_edges) {
-        common::ignore_parameters(component_representative);
-
-        // A component without any finite outgoing edge cannot be merged without corrupting the spanning tree.
-        if (std::get<2>(edge) >= common::infinity<ValueType>()) {
-            continue;
-        }
+    for (const auto& edge : component_to_shortest_edges) {
         mst_builder.merge_components(edge);
     }
 }
@@ -332,30 +303,15 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_parallel(const search::Searcher<
 template <typename Indexer>
 template <typename ForwardedIndexer>
 auto BoruvkasAlgorithm<Indexer>::make_tree_2(ForwardedIndexer&& indexer) const {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
     MSTBuilderType forest(indexer.n_samples());
 
     const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
 
-    std::size_t counter = 0;
-
     const auto core_distances = datastruct::mst::make_static_core_distances(searcher, options_.k_nearest_neighbors_);
 
-    printf("---\n");
-
     while (forest.n_components() > 1) {
-        std::cout << "DTT n_components(): " << forest.n_components() << "\n";
-        counter += forest.n_components();
-
-        timer.reset();
         step_dual_tree_sequential(searcher, core_distances, forest);
-        timer.print_elapsed_seconds(9);
-        printf("---\n");
     }
-    printf("---\n");
-
-    std::cout << "Counter: " << counter << "\n";
     return std::move(forest).minimum_spanning_tree();
 }
 

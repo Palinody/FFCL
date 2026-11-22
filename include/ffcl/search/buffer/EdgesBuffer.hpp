@@ -23,6 +23,7 @@
 
 namespace ffcl::search::buffer {
 
+
 template <typename QueryIndexer, typename ReferenceIndexer>
 class EdgesBuffer {
   public:
@@ -44,8 +45,8 @@ class EdgesBuffer {
     EdgesBuffer(const QueryIndexer&                     query_indexer,
                 const ReferenceIndexer&                 reference_indexer,
                 const datastruct::UnionFind<IndexType>& union_find_const_ref,
-                std::size_t                             buffer_size           = 1,
-                const DistanceType*                     core_distances_ptr    = nullptr);
+                std::size_t                             buffer_size        = 1,
+                const DistanceType*                     core_distances_ptr = nullptr);
 
     auto tightest_edge() const;
 
@@ -70,7 +71,7 @@ class EdgesBuffer {
     // Smallest edge of every component. Boruvka needs exactly one outgoing edge per component,
     // so this is the edge that has to be merged (the priority queue is a max-heap and its top()
     // is the *furthest* of the k candidates).
-    auto component_to_shortest_edge() const -> std::unordered_map<IndexType, EdgeType>;
+    auto component_to_shortest_edge() const -> std::vector<EdgeType>;
 
     auto cost(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node) -> std::optional<DistanceType>;
 
@@ -97,15 +98,21 @@ class EdgesBuffer {
     // The edges priority queues are mapped with the component they belong to.
     using ComponentToEdgePriorityQueueUMapType = std::unordered_map<IndexType, EdgePriorityQueueType>;
     ComponentToEdgePriorityQueueUMapType component_to_k_edge_priority_queue_umap_;
-    // Keeps track of the shortest edge found so far w.r.t. each component (the merge candidate).
-    std::unordered_map<IndexType, EdgeType> component_to_shortest_edge_umap_;
+    // Keeps track of the shortest edge found so far w.r.t. each component (the merge candidate). Indexed by
+    // the component representative, i.e. a sample index, so no hashing is needed on the hot path.
+    std::vector<EdgeType>  component_to_shortest_edge_vec_;
+    std::vector<char>      component_has_edge_vec_;
+    std::vector<IndexType> components_with_edge_vec_;
     // Keeps track of the component this node and all its descendants belong to.
     // Possible states (current node is included in the 'descendants'):
     //    std::nullopt: if any descendant sample belongs to a different component.
     //    Integer [0, n_samples-1]: the representative of all the descendant samples in the current node.
-    std::unordered_map<QueryNodePtr, std::optional<IndexType>> query_node_to_descendants_component_umap_;
-    // Same as for the queries.
-    std::unordered_map<ReferenceNodePtr, std::optional<IndexType>> reference_node_to_descendants_component_umap_;
+    // Flat per-node caches, indexed by `node_id()`. Both trees share the same ids when the query and the
+    // reference indexer are the same object (the usual Boruvka case), which is the only case the traversal
+    // supports.
+    std::vector<char>          node_component_is_known_vec_;
+    std::vector<IndexType>     node_component_vec_;
+    std::vector<char>          node_component_is_homogeneous_vec_;
 
     using IndexToBufferUMapType         = std::unordered_map<IndexType, buffer::WithUnionFind<FeaturesIteratorType>>;
     using IndexToBufferMapIterator      = typename IndexToBufferUMapType::iterator;
@@ -116,13 +123,14 @@ class EdgesBuffer {
     // are on the hottest path of the traversal and a hash lookup per sample per node combination is a large
     // part of the runtime, so the buffers are also reachable in O(1) without hashing.
     std::vector<buffer::WithUnionFind<FeaturesIteratorType>*> index_to_buffer_ptr_vec_;
-    std::size_t                                                buffer_size_;
+    std::size_t                                               buffer_size_;
     // Optional core distances (HDBSCAN*): when set, every buffered distance is a mutual reachability distance.
     const DistanceType* core_distances_ptr_;
 
-    auto find_or_emplace_buffer(const IndexType& index) -> IndexToBufferMapIterator;
+    auto find_or_emplace_buffer(const IndexType& index) -> buffer::WithUnionFind<FeaturesIteratorType>*;
 
-    void update_component_to_edge_priority_queue(const IndexToBufferMapIterator& query_to_buffer_it);
+    void update_component_to_edge_priority_queue(const IndexType& query_index,
+                                                 const buffer::WithUnionFind<FeaturesIteratorType>& query_buffer);
 
     // ---
 
@@ -151,20 +159,23 @@ class EdgesBuffer {
     };
     // Maps each query nodes to their respective bound limits, updated as the query tree is traversed and used to
     // determine whether a query-reference nodes combination is worth exploring.
-    std::unordered_map<QueryNodePtr, BoundsLimits> query_nodes_to_bounds_limits_umap_;
+    std::vector<BoundsLimits> node_to_bounds_limits_vec_;
+    // A node's limits only have to be recomputed when one of its samples improved its buffer.
+    std::vector<char> node_bounds_limits_dirty_vec_;
     // Cached minimum core distance per node (only used when core distances are provided).
-    std::unordered_map<const void*, DistanceType> node_to_min_core_distance_umap_;
+    std::vector<DistanceType> node_min_core_distance_vec_;
+    std::vector<char>         node_min_core_distance_is_known_vec_;
+    // Union-find representatives, computed once per step (the union-find is fixed for the whole step).
+    std::vector<IndexType>    representatives_vec_;
 
     // Function that updates, as we traverse the query tree, the samples that are associated with the closest and
     // furthest representatives so as to find the lowest and upper bound of the node.
     auto query_node_furthest_bound(const QueryNodePtr& query_node) -> DistanceType;
 
-    auto update_bounds_limits(const QueryNodePtr& query_node) ->
-        typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator;
+    auto update_bounds_limits(const QueryNodePtr& query_node) -> BoundsLimits&;
 
-    template <typename NodePtr, typename NodeToComponentMapType>
-    auto compute_node_component_membership(const NodePtr& node, NodeToComponentMapType& node_to_component_map)
-        -> std::optional<IndexType>;
+    template <typename NodePtr>
+    auto compute_node_component_membership(const NodePtr& node) -> std::optional<IndexType>;
 
     // Smallest core distance among all the samples of a node. It is a valid lower bound of the mutual
     // reachability distance between any sample of the node and any other sample.
@@ -198,14 +209,24 @@ EdgesBuffer<QueryIndexer, ReferenceIndexer>::EdgesBuffer(const QueryIndexer&    
   , visited_nodes_combinations_uset_{}
   , component_to_k_shortest_edge_umap_{}
   , component_to_k_edge_priority_queue_umap_{}
-  , component_to_shortest_edge_umap_{}
-  , query_node_to_descendants_component_umap_{}
-  , reference_node_to_descendants_component_umap_{}
+  , component_to_shortest_edge_vec_(query_indexer.n_samples(), datastruct::mst::make_infinity_edge<IndexType, DistanceType>())
+  , component_has_edge_vec_(query_indexer.n_samples(), 0)
+  , components_with_edge_vec_{}
+  , node_component_is_known_vec_(query_indexer.n_nodes(), 0)
+  , node_component_vec_(query_indexer.n_nodes(), 0)
+  , node_component_is_homogeneous_vec_(query_indexer.n_nodes(), 0)
   , query_to_buffer_umap_{}
   , index_to_buffer_ptr_vec_(query_indexer.n_samples(), nullptr)
   , buffer_size_{buffer_size}
   , core_distances_ptr_{core_distances_ptr}
-  , query_nodes_to_bounds_limits_umap_{} {
+  , node_to_bounds_limits_vec_(query_indexer.n_nodes())
+  , node_bounds_limits_dirty_vec_(query_indexer.n_nodes(), 1)
+  , node_min_core_distance_vec_(query_indexer.n_nodes(), DistanceType{})
+  , node_min_core_distance_is_known_vec_(query_indexer.n_nodes(), 0)
+  , representatives_vec_(query_indexer.n_samples()) {
+    for (std::size_t index = 0; index < query_indexer.n_samples(); ++index) {
+        representatives_vec_[index] = union_find_const_ref_.find(static_cast<IndexType>(index));
+    }
     // visited_nodes_combinations_uset_.reserve(n_components);
 }
 
@@ -239,6 +260,9 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
     // component, a query sample from that component has no candidate to find in this node and the search
     // can be skipped entirely.
     const auto references_component_membership = reference_node_component_membership(reference_node);
+    // Constant for the whole base case: hoisted out of the per-query loop.
+    const auto reference_node_min_core_distance =
+        core_distances_ptr_ ? node_min_core_distance(reference_node) : DistanceType{};
 
     // Iterate through all query indices within the specified range of the query node.
     for (auto query_index_it = query_node->indices_range_.first; query_index_it != query_node->indices_range_.second;
@@ -247,10 +271,10 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
 
         // Attempts to find the buffer corresponding to the current query if it exists. Otherwise it makes and returns
         // it.
-        auto query_to_buffer_it = this->find_or_emplace_buffer(query_index);
-
-        auto&      query_buffer    = query_to_buffer_it->second;
+        auto&      query_buffer    = *this->find_or_emplace_buffer(query_index);
         const auto query_component = union_find_const_ref_.find(query_index);
+
+        const auto previous_closest_distance = query_buffer.closest_distance();
 
         // Perform a search through the references if at least one of the query_component is different than the
         // reference node component.
@@ -264,13 +288,14 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
 
             // Lower bound of the mutual reachability distance between the query sample and the reference
             // node: max(raw point-to-node distance, core(query), min core of the reference node).
-            auto reference_node_lower_bound = datastruct::bounds::min_distance(query_buffer.centroid_begin(),
-                                                                              query_buffer.centroid_end(),
-                                                                              reference_node->bound_);
+            auto reference_node_lower_bound = datastruct::bounds::min_distance(
+                query_buffer.centroid_begin(), query_buffer.centroid_end(), reference_node->bound_);
+
             if (core_distances_ptr_) {
-                reference_node_lower_bound = std::max({reference_node_lower_bound,
-                                                       core_distances_ptr_[static_cast<std::size_t>(query_index)],
-                                                       node_min_core_distance(reference_node)});
+                reference_node_lower_bound =
+                    std::max(reference_node_lower_bound,
+                             std::max(core_distances_ptr_[static_cast<std::size_t>(query_index)],
+                                      reference_node_min_core_distance));
             }
             const bool reference_node_can_improve =
                 !buffer_is_saturated || reference_node_lower_bound < query_buffer.furthest_distance();
@@ -283,7 +308,12 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
                                             reference_indexer_const_ref_.n_features());
             }
         }
-        update_component_to_edge_priority_queue(query_to_buffer_it);
+        // The per-component bookkeeping is only worth updating when this base case actually improved the
+        // buffer of the query sample.
+        if (query_buffer.closest_distance() < previous_closest_distance) {
+            update_component_to_edge_priority_queue(query_index, query_buffer);
+            node_bounds_limits_dirty_vec_[query_node->node_id()] = 1;
+        }
     }
     // Note: the component membership of the nodes is *not* cached here. A node only owns its pivot when it is
     // internal, so the membership derived from `indices_range_` alone would be too optimistic and would make
@@ -292,43 +322,32 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
 
 template <typename QueryIndexer, typename ReferenceIndexer>
 auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::find_or_emplace_buffer(const IndexType& index)
-    -> IndexToBufferMapIterator {
-    // Fast path: the buffer already exists.
+    -> buffer::WithUnionFind<FeaturesIteratorType>* {
+    // Fast path: the buffer already exists, no hashing is needed.
     if (auto* buffer_ptr = index_to_buffer_ptr_vec_[index]) {
-        return query_to_buffer_umap_.find(index);
+        return buffer_ptr;
     }
-    // Attempt to find the buffer associated with the current index in the buffer map.
-    auto index_to_buffer_it = query_to_buffer_umap_.find(index);
-    // If the current index does not have an associated buffer in the map,
-    if (index_to_buffer_it == query_to_buffer_umap_.end()) {
-        auto buffer = buffer::WithUnionFind<FeaturesIteratorType>(
-            query_indexer_const_ref_.begin() + index * query_indexer_const_ref_.n_features(),
-            query_indexer_const_ref_.begin() + (index + 1) * query_indexer_const_ref_.n_features(),
-            union_find_const_ref_,
-            /*query_representative=*/union_find_const_ref_.find(index),
-            /*max_capacity=*/buffer_size_);
+    auto buffer = buffer::WithUnionFind<FeaturesIteratorType>(
+        query_indexer_const_ref_.begin() + index * query_indexer_const_ref_.n_features(),
+        query_indexer_const_ref_.begin() + (index + 1) * query_indexer_const_ref_.n_features(),
+        union_find_const_ref_,
+        /*query_representative=*/union_find_const_ref_.find(index),
+        /*max_capacity=*/buffer_size_);
 
-        // Attempt to insert the newly created buffer into the map. If an element with the same
-        // index already exists, try_emplace does nothing. Otherwise, it inserts the new element.
-        // The method returns a pair, where the first element is an iterator to the inserted element
-        // (or to the element that prevented the insertion) and the second element is a boolean
-        // indicating whether the insertion took place.
-        // We are only interested in the first element of the pair.
-        index_to_buffer_it              = query_to_buffer_umap_.try_emplace(index, std::move(buffer)).first;
-        index_to_buffer_ptr_vec_[index] = &index_to_buffer_it->second;
+    auto& buffer_ref = query_to_buffer_umap_.try_emplace(index, std::move(buffer)).first->second;
 
-        if (core_distances_ptr_) {
-            index_to_buffer_it->second.set_core_distances(core_distances_ptr_, index);
-        }
+    index_to_buffer_ptr_vec_[index] = &buffer_ref;
+
+    if (core_distances_ptr_) {
+        buffer_ref.set_core_distances(core_distances_ptr_, index);
     }
-    return index_to_buffer_it;
+    return &buffer_ref;
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
 void EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_component_to_edge_priority_queue(
-    const IndexToBufferMapIterator& query_to_buffer_it) {
-    const auto& [query_index, buffer] = *query_to_buffer_it;
-
+    const IndexType&                                  query_index,
+    const buffer::WithUnionFind<FeaturesIteratorType>& buffer) {
     // Nothing was found for this query sample yet: do not record an edge. Recording one would push an
     // edge with an infinite distance and a default (0) reference index into the component's queue, which
     // then gets merged into the spanning tree.
@@ -337,49 +356,46 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_component_to_edge_prior
     }
 
     const auto query_component = union_find_const_ref_.find(query_index);
-
     const auto candidate_edge =
         ffcl::datastruct::mst::make_edge(query_index, buffer.closest_index(), buffer.closest_distance());
 
-    // Keep the shortest edge seen so far for this component. Boruvka only needs one outgoing edge per
-    // component and the priority queue below is a max-heap, so its top() is the *furthest* of the k
-    // candidates and cannot be used directly for the merge.
-    const auto shortest_edge_it = component_to_shortest_edge_umap_.find(query_component);
-
-    if (shortest_edge_it == component_to_shortest_edge_umap_.end()) {
-        component_to_shortest_edge_umap_.emplace(query_component, candidate_edge);
-    } else if (std::get<2>(candidate_edge) < std::get<2>(shortest_edge_it->second)) {
-        shortest_edge_it->second = candidate_edge;
+    // Boruvka only needs the single shortest outgoing edge per component, so the flat table is only touched
+    // when the candidate actually improves it. This is the hottest bookkeeping of the traversal.
+    if (component_has_edge_vec_[query_component] &&
+        std::get<2>(candidate_edge) >= std::get<2>(component_to_shortest_edge_vec_[query_component])) {
+        return;
     }
 
-    // Attempt to try_emplace a default edge if the key doesnt exist yet.
-    const auto& [component_to_edge_priority_queue_it, is_inserted] =
-        component_to_k_edge_priority_queue_umap_.try_emplace(query_component, EdgePriorityQueueType{});
+    if (!component_has_edge_vec_[query_component]) {
+        component_has_edge_vec_[query_component] = 1;
+        components_with_edge_vec_.emplace_back(query_component);
+    }
+    component_to_shortest_edge_vec_[query_component] = candidate_edge;
 
-    // If the umap didnt contain a priority queue for the specified query_component or if the max capacity isnt reached
-    // yet.
-    if (is_inserted || component_to_edge_priority_queue_it->second.size() < buffer_size_) {
-        // We can add the edge directly.
-        component_to_edge_priority_queue_it->second.emplace(candidate_edge);
+    // The k-best queue is only needed for the approximate variant; keep it for compatibility but do not
+    // maintain it for the default k == 1.
+    if (buffer_size_ > 1) {
+        auto& edge_priority_queue = component_to_k_edge_priority_queue_umap_[query_component];
 
-    } else {
-        // Finds the edge with the lowest priority in the queue and gets its distance.
-        const auto& edge_priority_queue_furthest_distance =
-            std::get<2>(component_to_edge_priority_queue_it->second.top());
+        if (edge_priority_queue.size() < buffer_size_) {
+            edge_priority_queue.emplace(candidate_edge);
 
-        // The edge with the lowest priority will get replaced if the new edge's distance is inferior.
-        if (buffer.closest_distance() < edge_priority_queue_furthest_distance) {
-            component_to_edge_priority_queue_it->second.pop();
-
-            component_to_edge_priority_queue_it->second.emplace(candidate_edge);
+        } else if (std::get<2>(candidate_edge) < std::get<2>(edge_priority_queue.top())) {
+            edge_priority_queue.pop();
+            edge_priority_queue.emplace(candidate_edge);
         }
     }
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::component_to_shortest_edge() const
-    -> std::unordered_map<IndexType, EdgeType> {
-    return component_to_shortest_edge_umap_;
+auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::component_to_shortest_edge() const -> std::vector<EdgeType> {
+    auto edges = std::vector<EdgeType>{};
+    edges.reserve(components_with_edge_vec_.size());
+
+    for (const auto& component : components_with_edge_vec_) {
+        edges.emplace_back(component_to_shortest_edge_vec_[component]);
+    }
+    return edges;
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -408,16 +424,15 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::cost(const QueryNodePtr&     q
 // demand and cached, so that component based pruning is available at every level of the trees and not
 // only on the node combinations that happened to be used as a base case.
 template <typename QueryIndexer, typename ReferenceIndexer>
-template <typename NodePtr, typename NodeToComponentMapType>
-auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::compute_node_component_membership(
-    const NodePtr&          node,
-    NodeToComponentMapType& node_to_component_map) -> std::optional<IndexType> {
-    const auto cached_it = node_to_component_map.find(node);
+template <typename NodePtr>
+auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::compute_node_component_membership(const NodePtr& node)
+    -> std::optional<IndexType> {
+    const auto node_id = node->node_id();
 
-    if (cached_it != node_to_component_map.end()) {
-        return cached_it->second;
+    if (node_component_is_known_vec_[node_id]) {
+        return node_component_is_homogeneous_vec_[node_id] ? std::make_optional(node_component_vec_[node_id])
+                                                           : std::optional<IndexType>{std::nullopt};
     }
-
     auto optional_component = std::optional<IndexType>{std::nullopt};
     bool is_first_sample    = true;
     bool is_consistent      = true;
@@ -435,7 +450,6 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::compute_node_component_members
         }
     };
 
-    // The samples owned by the node itself (the whole bucket for a leaf, the single pivot otherwise).
     for (auto index_it = node->indices_range_.first; index_it != node->indices_range_.second; ++index_it) {
         consider_sample(static_cast<IndexType>(*index_it));
 
@@ -443,14 +457,12 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::compute_node_component_members
             break;
         }
     }
-    // An internal node is only homogeneous when both of its children are homogeneous and agree with each other.
+    // An internal node is only homogeneous when both of its children are homogeneous and agree.
     if (is_consistent && !node->is_leaf()) {
         for (const auto& child_node : {node->left_, node->right_}) {
-            const auto optional_child_component =
-                compute_node_component_membership(child_node, node_to_component_map);
+            const auto optional_child_component = compute_node_component_membership(child_node);
 
-            if (!optional_child_component ||
-                (optional_component && *optional_component != *optional_child_component)) {
+            if (!optional_child_component || (optional_component && *optional_component != *optional_child_component)) {
                 optional_component = std::nullopt;
                 is_consistent      = false;
                 break;
@@ -460,7 +472,9 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::compute_node_component_members
             }
         }
     }
-    node_to_component_map.emplace(node, optional_component);
+    node_component_is_known_vec_[node_id]       = 1;
+    node_component_is_homogeneous_vec_[node_id] = optional_component.has_value() ? 1 : 0;
+    node_component_vec_[node_id]                = optional_component.value_or(0);
 
     return optional_component;
 }
@@ -471,23 +485,23 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::node_min_core_distance(const N
     if (!core_distances_ptr_) {
         return DistanceType{};
     }
-    const auto cached_it = node_to_min_core_distance_umap_.find(node.get());
+    const auto node_id = node->node_id();
 
-    if (cached_it != node_to_min_core_distance_umap_.end()) {
-        return cached_it->second;
+    if (node_min_core_distance_is_known_vec_[node_id]) {
+        return node_min_core_distance_vec_[node_id];
     }
     auto min_core_distance = common::infinity<DistanceType>();
 
     for (auto index_it = node->indices_range_.first; index_it != node->indices_range_.second; ++index_it) {
-        min_core_distance =
-            std::min(min_core_distance, core_distances_ptr_[static_cast<std::size_t>(*index_it)]);
+        min_core_distance = std::min(min_core_distance, core_distances_ptr_[static_cast<std::size_t>(*index_it)]);
     }
     if (!node->is_leaf()) {
         for (const auto& child_node : {node->left_, node->right_}) {
             min_core_distance = std::min(min_core_distance, node_min_core_distance(child_node));
         }
     }
-    node_to_min_core_distance_umap_.emplace(node.get(), min_core_distance);
+    node_min_core_distance_vec_[node_id]          = min_core_distance;
+    node_min_core_distance_is_known_vec_[node_id] = 1;
 
     return min_core_distance;
 }
@@ -495,46 +509,47 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::node_min_core_distance(const N
 template <typename QueryIndexer, typename ReferenceIndexer>
 auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::query_node_component_membership(const QueryNodePtr& query_node)
     -> std::optional<IndexType> {
-    return compute_node_component_membership(query_node, query_node_to_descendants_component_umap_);
+    return compute_node_component_membership(query_node);
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
 auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::reference_node_component_membership(
     const ReferenceNodePtr& reference_node) -> std::optional<IndexType> {
-    return compute_node_component_membership(reference_node, reference_node_to_descendants_component_umap_);
+    return compute_node_component_membership(reference_node);
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
 auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::query_node_furthest_bound(const QueryNodePtr& query_node)
     -> DistanceType {
-    auto query_node_to_bound_limits_it = update_bounds_limits(query_node);
+    auto& query_node_bounds_limits = update_bounds_limits(query_node);
 
     if (!query_node->is_leaf()) {
-        // Update the current node's limits based on the cached children limits.
+        // Fold in the cached children limits. They are monotone (best decreases, worst increases), so
+        // re-applying them on every call is idempotent and keeps the bound valid as the buffers improve.
         for (const auto& child_node : {query_node->left_, query_node->right_}) {
-            const auto [child_node_to_bound_limits_it, is_emplaced] =
-                query_nodes_to_bounds_limits_umap_.try_emplace(child_node, BoundsLimits{});
+            const auto& child_node_bounds_limits = node_to_bounds_limits_vec_[child_node->node_id()];
 
-            if (!is_emplaced) {
-                query_node_to_bound_limits_it->second.try_update_closest_limit(
-                    child_node_to_bound_limits_it->second.closest_limit);
-
-                query_node_to_bound_limits_it->second.try_update_furthest_limit(
-                    child_node_to_bound_limits_it->second.furthest_limit);
-            }
+            query_node_bounds_limits.try_update_closest_limit(child_node_bounds_limits.closest_limit);
+            query_node_bounds_limits.try_update_furthest_limit(child_node_bounds_limits.furthest_limit);
         }
     }
-    return query_node_to_bound_limits_it->second.compute_adjusted_bound(query_node->diameter());
+    return query_node_bounds_limits.compute_adjusted_bound(query_node->diameter());
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_bounds_limits(const QueryNodePtr& query_node) ->
-    typename std::unordered_map<QueryNodePtr, BoundsLimits>::iterator {
+auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_bounds_limits(const QueryNodePtr& query_node)
+    -> BoundsLimits& {
     static constexpr auto infinity = common::infinity<DistanceType>();
 
-    // Try to emplace if the 'query_node' key is not already present. Return 'first' to discard the bool (not) inserted.
-    auto query_node_to_bound_limits_it =
-        query_nodes_to_bounds_limits_umap_.try_emplace(query_node, BoundsLimits{}).first;
+    const auto node_id = query_node->node_id();
+
+    auto& query_node_bounds_limits = node_to_bounds_limits_vec_[node_id];
+
+    // Nothing changed for this node since the last computation: reuse the cached limits.
+    if (!node_bounds_limits_dirty_vec_[node_id]) {
+        return query_node_bounds_limits;
+    }
+    node_bounds_limits_dirty_vec_[node_id] = 0;
 
     for (const auto& query_index : *query_node) {
         const auto* query_buffer_ptr = index_to_buffer_ptr_vec_[query_index];
@@ -542,20 +557,18 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_bounds_limits(const Que
         // default. We also don't need to iterate further since the next nodes will never be greater than
         // infinity.
         if (!query_buffer_ptr) {
-            query_node_to_bound_limits_it->second.furthest_limit = infinity;
+            query_node_bounds_limits.furthest_limit = infinity;
         }
         // If there's remaining space in the buffers, then candidates might potentially be further than the
         // buffer's current furthest distance.
         else if (query_buffer_ptr->remaining_capacity()) {
-            query_node_to_bound_limits_it->second.furthest_limit = infinity;
+            query_node_bounds_limits.furthest_limit = infinity;
 
         } else {
-            const auto query_buffer_furthest_distance = query_buffer_ptr->furthest_distance();
-
-            query_node_to_bound_limits_it->second.try_update_limits(query_buffer_furthest_distance);
+            query_node_bounds_limits.try_update_limits(query_buffer_ptr->furthest_distance());
         }
     }
-    return query_node_to_bound_limits_it;
+    return query_node_bounds_limits;
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>

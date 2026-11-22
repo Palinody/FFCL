@@ -614,6 +614,19 @@ elseif(MODE STREQUAL "gtest")
     )
 
     add_executable(
+        BoruvkasBenchmark
+
+        # ---
+        test/src/datastruct/graph/spanning_tree/BoruvkasBenchmark.cpp
+    )
+    target_link_libraries(
+        BoruvkasBenchmark
+
+        PUBLIC
+        OpenMP::OpenMP_CXX
+    )
+
+    add_executable(
         SingleLinkageClusterTreeTest
 
         # ---

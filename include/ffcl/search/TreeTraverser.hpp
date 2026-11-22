@@ -144,6 +144,12 @@ class TreeTraverser {
                              BufferArgs&&... buffer_args) const;
 
     template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+    void descend_query_children(const QueryNodePtr&     query_node,
+                                const ReferenceNodePtr& reference_node,
+                                EdgesBuffer&            edge_buffer,
+                                BufferArgs&&... buffer_args) const;
+
+    template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
     void descend_reference_children(const QueryNodePtr&     query_node,
                                     const ReferenceNodePtr& reference_node,
                                     EdgesBuffer&            edge_buffer,
@@ -469,49 +475,82 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
                                                                               std::optional<DataType> optional_cost,
                                                                               bool bypass_cost_calculation,
                                                                               BufferArgs&&... buffer_args) const {
-    // Both descents (query side and reference side) can reach the same node combination, so the combination
-    // is only processed the first time it is seen.
-    if (!edge_buffer.mark_combination_as_visited(query_node, reference_node).second) {
-        return;
-    }
-    // Calculate or update the cost if necessary.
+    // Calculate or update the cost if necessary. The caller already scored the combination when it built its
+    // priority queue, in which case `bypass_cost_calculation` is set and the score is reused.
     if (!bypass_cost_calculation) {
-        // If the optional passed as a parameter to this function contains a value, it means that the parent in the
-        // recursive pattern passed a nodes combination that might need to be pruned. We recalculate the cost by
-        // calling 'update_cost'. Otherwise we need to calculate the cost of this node combination.
         optional_cost = optional_cost ? edge_buffer.update_cost(query_node, reference_node, *optional_cost)
                                       : edge_buffer.cost(query_node, reference_node);
-        // If the returned optional is std::nullopt, then the current nodes combination can be pruned.
+
         if (!optional_cost) {
             return;
         }
     }
-    // Base case: the points owned by the two nodes. A KDNodeView owns its whole bucket when it is a leaf
-    // and a single pivot sample when it is internal, so the base case has to run on every node combination
-    // (and not only on leaf/leaf ones) for the pivots to be covered. It stays cheap because the
-    // point-to-node bound prune inside `base_case` skips most reference nodes for most query samples.
-    edge_buffer.base_case(query_node, reference_node, std::forward<BufferArgs>(buffer_args)...);
-
+    // Base case: only leaf/leaf combinations are brute forced. The leaves of the KDTree cover every sample
+    // exactly once (an internal node owns no sample, its pivot is stored at the end of its left child range),
+    // so the leaf/leaf base cases alone are a complete enumeration of the point pairs.
     if (query_node->is_leaf() && reference_node->is_leaf()) {
+        edge_buffer.base_case(query_node, reference_node, std::forward<BufferArgs>(buffer_args)...);
         return;
     }
-    // Descend the query node. The recursion order does not matter on the query side.
-    if (!query_node->is_leaf()) {
-        for (const auto& child_query_node : {query_node->left_, query_node->right_}) {
-            dual_tree_traversal_with_core_distances(/**/ child_query_node,
-                                                    /**/ reference_node,
-                                                    /**/ edge_buffer,
-                                                    /**/ std::nullopt,
-                                                    /**/ false,
-                                                    /**/ std::forward<BufferArgs>(buffer_args)...);
-        }
-    }
-    // Descend the reference node. The recursion order matters here: the closest child is processed first so
-    // that the query buffers are tightened as early as possible, and the remaining child is re-scored
-    // afterwards because the first descent may have made it prunable.
-    if (!reference_node->is_leaf()) {
+    // Descend a single side per call, always the larger one. This is the size balanced descent of the
+    // reference dual-tree Boruvka implementations: it reaches every leaf/leaf combination exactly once, so no
+    // visited-combination bookkeeping is needed and the recursion depth stays logarithmic.
+    if (query_node->is_leaf() ||
+        (!reference_node->is_leaf() && reference_node->diameter() > query_node->diameter())) {
         this->descend_reference_children(
             query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
+
+    } else {
+        this->descend_query_children(
+            query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
+    }
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::descend_query_children(const QueryNodePtr&     query_node,
+                                                             const ReferenceNodePtr& reference_node,
+                                                             EdgesBuffer&            edge_buffer,
+                                                             BufferArgs&&... buffer_args) const {
+    // Mirror of `descend_reference_children` on the query side: the closest query child is descended first so
+    // that the reference node is scored against tightened buffers as early as possible.
+    auto children_priority_queue =
+        DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
+
+    for (const auto& child_query_node : {query_node->left_, query_node->right_}) {
+        const auto nodes_combination_optional_cost = edge_buffer.cost(child_query_node, reference_node);
+
+        if (nodes_combination_optional_cost) {
+            children_priority_queue.emplace(child_query_node, reference_node, *nodes_combination_optional_cost);
+        }
+    }
+    if (!children_priority_queue.empty()) {
+        {
+            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
+
+            common::ignore_parameters(nodes_combination_cost);
+
+            dual_tree_traversal_with_core_distances(pq_query_node,
+                                                    pq_reference_node,
+                                                    edge_buffer,
+                                                    std::nullopt,
+                                                    true,
+                                                    std::forward<BufferArgs>(buffer_args)...);
+
+            children_priority_queue.pop();
+        }
+        while (!children_priority_queue.empty()) {
+            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
+
+            dual_tree_traversal_with_core_distances(pq_query_node,
+                                                    pq_reference_node,
+                                                    edge_buffer,
+                                                    std::make_optional(nodes_combination_cost),
+                                                    false,
+                                                    std::forward<BufferArgs>(buffer_args)...);
+
+            children_priority_queue.pop();
+        }
     }
 }
 

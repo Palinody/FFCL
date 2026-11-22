@@ -194,6 +194,17 @@ class StaticBuffer {
         }
         // populate if the max capacity is reached and the candidate has a closer distance
         else if (distance_candidate < furthest_distance()) {
+            // Fast path for the single-candidate buffers (the common Boruvka case): the closest and the
+            // furthest candidate are the same element, so no rescan of the buffer is needed.
+            if (max_capacity_ == 1) {
+                closest_index_                  = index_candidate;
+                closest_distance_               = distance_candidate;
+                furthest_distance_              = distance_candidate;
+                buffer_index_of_furthest_index_ = 0;
+                indices_[0]                     = index_candidate;
+                distances_[0]                   = distance_candidate;
+                return;
+            }
             // If distance_candidate is lesser than furthest_distance, it could as well be lesser than the closest one.
             if (distance_candidate < closest_distance()) {
                 closest_index_    = index_candidate;
