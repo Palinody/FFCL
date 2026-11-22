@@ -109,6 +109,9 @@ struct KDNodeView {
     // Dense identifier of the node in its tree (pre-order). It lets the search buffers keep their per-node
     // caches in flat vectors instead of hash maps keyed by node pointer.
     std::size_t node_id_;
+    // Cached AABB diagonal length. `diameter()` is called for every node combination of the dual-tree
+    // traversal, so it must not be recomputed from the segments each time.
+    typename Bound::ValueType diameter_;
     // The index of the feature dimension selected for cutting the dataset at this node. -1 means no cut (leaf node)
     std::ptrdiff_t cut_axis_feature_index_;
     // A 1D bounding box window that stores the actual dataset values referred to by the indices_range_.
@@ -151,6 +154,7 @@ KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType& indices_r
   : indices_range_{indices_range}
   , pivot_index_{0}
   , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{-1}
   , bound_{bound} {}
 
@@ -161,6 +165,7 @@ KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType& indices_r
   : indices_range_{indices_range}
   , pivot_index_{0}
   , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{cut_axis_feature_index}
   , bound_{bound} {}
 
@@ -169,6 +174,7 @@ KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType&& indices_
   : indices_range_{std::move(indices_range)}
   , pivot_index_{0}
   , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{-1}
   , bound_{bound} {}
 
@@ -179,6 +185,7 @@ KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType&& indices_
   : indices_range_{std::move(indices_range)}
   , pivot_index_{0}
   , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{cut_axis_feature_index}
   , bound_{bound} {}
 
@@ -194,7 +201,7 @@ constexpr auto KDNodeView<IndicesIterator, Bound>::end() const {
 
 template <typename IndicesIterator, typename Bound>
 constexpr auto KDNodeView<IndicesIterator, Bound>::diameter() const {
-    return bound_.diameter();
+    return diameter_;
 }
 
 template <typename IndicesIterator, typename Bound>

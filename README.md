@@ -109,6 +109,12 @@ Key entry points:
   every leaf/leaf combination exactly once.
 - `ffcl::search::buffer::EdgesBuffer` — per-node caches (component membership, bounds limits, minimum core
   distance) are flat vectors indexed by `node_id()`, not hash maps keyed by node pointer.
+
+> **Bucket size.** A dual-tree traversal wants *small* buckets: the node level bound prune only pays off
+> when the nodes are tight. `sqrt(n_samples)` (the value used by the older tests) is a good bucket size for
+> the single-tree kNN path but a poor one for `make_tree_2` — at n = 50 000 it is ~2.2x slower than
+> `sqrt(n_samples) / 3`, which is what hdbscan uses internally for its Boruvka tree
+> (`leaf_size // 3`). The tests and benchmarks use `sqrt(n_samples) / 3` (clamped to 16).
 - `ffcl::search::Searcher<Indexer>` — the single entry point used by all algorithms: `operator()` for
   k-NN / radius queries, `dual_tree_shortest_edge*` and `dtt_shortest_edge` for dual-tree edge queries.
 - `ffcl::search::buffer::*` — CRTP static-polymorphic buffers. The buffer *is* the query: it carries the bound

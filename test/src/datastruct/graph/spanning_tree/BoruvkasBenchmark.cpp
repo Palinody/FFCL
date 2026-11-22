@@ -92,7 +92,7 @@ struct Result {
     std::size_t n_clusters    = 0;
 };
 
-Result run_dataset(const fs::path& filepath) {
+Result run_dataset(const fs::path& filepath, std::size_t bucket_override) {
     using IndicesIterator = std::vector<std::size_t>::iterator;
     using SamplesIterator = std::vector<dType>::iterator;
     using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
@@ -109,6 +109,12 @@ Result run_dataset(const fs::path& filepath) {
     auto indices = std::vector<std::size_t>(n_samples);
     std::iota(indices.begin(), indices.end(), 0);
 
+    // hdbscan builds a *second*, smaller tree for Boruvka (`leaf_size // 3`); the dual-tree traversal
+    // benefits a lot from smaller buckets, so the value can be overridden on the command line.
+    const auto bucket_size = bucket_override ? bucket_override
+                                             : std::max(static_cast<std::size_t>(std::sqrt(n_samples) / 3),
+                                                        static_cast<std::size_t>(16));
+
     Result result;
 
     // --- 1) tree build ------------------------------------------------------
@@ -120,7 +126,7 @@ Result run_dataset(const fs::path& filepath) {
                                    const_cast<std::vector<dType>&>(data).end(),
                                    n_features,
                                    OptionsType()
-                                       .bucket_size(std::sqrt(n_samples))
+                                       .bucket_size(bucket_size)
                                        .max_depth(std::log2(n_samples))
                                        .axis_selection_policy(AxisSelectionPolicyType{})
                                        .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -138,7 +144,7 @@ Result run_dataset(const fs::path& filepath) {
                                    local_data.end(),
                                    n_features,
                                    OptionsType()
-                                       .bucket_size(std::sqrt(n_samples))
+                                       .bucket_size(bucket_size)
                                        .max_depth(std::log2(n_samples))
                                        .axis_selection_policy(AxisSelectionPolicyType{})
                                        .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -171,7 +177,7 @@ Result run_dataset(const fs::path& filepath) {
                                    local_data.end(),
                                    n_features,
                                    OptionsType()
-                                       .bucket_size(std::sqrt(n_samples))
+                                       .bucket_size(bucket_size)
                                        .max_depth(std::log2(n_samples))
                                        .axis_selection_policy(AxisSelectionPolicyType{})
                                        .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -198,7 +204,9 @@ Result run_dataset(const fs::path& filepath) {
 
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    const std::size_t bucket_override = (argc > 1) ? std::stoul(argv[1]) : 0;
+
     std::cout << std::left << std::setw(20) << "dataset" << std::right << std::setw(7) << "n" << std::setw(7)
               << "bucket" << std::setw(11) << "build ms" << std::setw(11) << "STT ms" << std::setw(11) << "DTT ms"
               << std::setw(11) << "full ms" << std::setw(12) << "mst weight" << "\n";
@@ -215,7 +223,7 @@ int main() {
         }
         const auto n_samples = load_data(filepath).size() / get_num_features(filepath);
 
-        const auto result = run_dataset(filepath);
+        const auto result = run_dataset(filepath, bucket_override);
 
         sum_build += result.tree_build_ms;
         sum_single += result.mst_single_ms;
@@ -226,7 +234,11 @@ int main() {
         short_name.erase(short_name.size() - 4);
 
         std::cout << std::left << std::setw(20) << short_name << std::right << std::setw(7) << n_samples
-                  << std::setw(7) << static_cast<std::size_t>(std::sqrt(n_samples)) << std::setw(11) << std::fixed
+                  << std::setw(7)
+                  << (bucket_override ? bucket_override
+                                      : std::max(static_cast<std::size_t>(std::sqrt(n_samples) / 3),
+                                                 static_cast<std::size_t>(16)))
+                  << std::setw(11) << std::fixed
                   << std::setprecision(3) << result.tree_build_ms << std::setw(11) << result.mst_single_ms
                   << std::setw(11) << result.mst_dual_ms << std::setw(11) << result.full_ms << std::setw(12)
                   << std::setprecision(6) << result.mst_weight << "\n";

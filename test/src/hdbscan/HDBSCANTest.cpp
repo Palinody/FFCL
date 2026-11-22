@@ -147,7 +147,7 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
                                             data.end(),
                                             n_features,
                                             OptionsType()
-                                                .bucket_size(std::sqrt(n_samples))
+                                                .bucket_size(std::sqrt(n_samples) / 3)
                                                 .max_depth(std::log2(n_samples))
                                                 .axis_selection_policy(AxisSelectionPolicyType{})
                                                 .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -201,7 +201,7 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -255,7 +255,7 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -309,7 +309,7 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -363,7 +363,7 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -417,7 +417,7 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
@@ -471,7 +471,7 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));

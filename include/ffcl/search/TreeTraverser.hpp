@@ -15,8 +15,10 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
+#include <array>
 #include <deque>
 #include <iterator>
+#include <tuple>
 #include <optional>
 #include <queue>
 #include <vector>
@@ -512,45 +514,34 @@ void TreeTraverser<ReferenceIndexer>::descend_query_children(const QueryNodePtr&
                                                              const ReferenceNodePtr& reference_node,
                                                              EdgesBuffer&            edge_buffer,
                                                              BufferArgs&&... buffer_args) const {
-    // Mirror of `descend_reference_children` on the query side: the closest query child is descended first so
-    // that the reference node is scored against tightened buffers as early as possible.
-    auto children_priority_queue =
-        DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
+    // Fixed two-element ordering: a std::priority_queue here would heap-allocate once per node combination,
+    // which dominates at large sample counts.
+    auto children = std::array<std::tuple<QueryNodePtr, DataType>, 2>{};
 
-    for (const auto& child_query_node : {query_node->left_, query_node->right_}) {
-        const auto nodes_combination_optional_cost = edge_buffer.cost(child_query_node, reference_node);
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& child_query_node = (child_index == 0) ? query_node->left_ : query_node->right_;
 
-        if (nodes_combination_optional_cost) {
-            children_priority_queue.emplace(child_query_node, reference_node, *nodes_combination_optional_cost);
-        }
+        children[child_index] = std::make_tuple(
+            child_query_node,
+            edge_buffer.cost(child_query_node, reference_node).value_or(common::infinity<DataType>()));
     }
-    if (!children_priority_queue.empty()) {
-        {
-            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
+    if (std::get<1>(children[1]) < std::get<1>(children[0])) {
+        std::swap(children[0], children[1]);
+    }
+    // The closest child is descended first so that the reference node is scored against tightened buffers as
+    // early as possible; the second one is re-scored because the first descent may have made it prunable.
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& [child_query_node, child_cost] = children[child_index];
 
-            common::ignore_parameters(nodes_combination_cost);
-
-            dual_tree_traversal_with_core_distances(pq_query_node,
-                                                    pq_reference_node,
-                                                    edge_buffer,
-                                                    std::nullopt,
-                                                    true,
-                                                    std::forward<BufferArgs>(buffer_args)...);
-
-            children_priority_queue.pop();
+        if (child_cost >= common::infinity<DataType>()) {
+            continue;
         }
-        while (!children_priority_queue.empty()) {
-            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
-
-            dual_tree_traversal_with_core_distances(pq_query_node,
-                                                    pq_reference_node,
-                                                    edge_buffer,
-                                                    std::make_optional(nodes_combination_cost),
-                                                    false,
-                                                    std::forward<BufferArgs>(buffer_args)...);
-
-            children_priority_queue.pop();
-        }
+        dual_tree_traversal_with_core_distances(child_query_node,
+                                                reference_node,
+                                                edge_buffer,
+                                                child_index == 0 ? std::nullopt : std::make_optional(child_cost),
+                                                child_index == 0,
+                                                std::forward<BufferArgs>(buffer_args)...);
     }
 }
 
@@ -560,47 +551,31 @@ void TreeTraverser<ReferenceIndexer>::descend_reference_children(const QueryNode
                                                                  const ReferenceNodePtr& reference_node,
                                                                  EdgesBuffer&            edge_buffer,
                                                                  BufferArgs&&... buffer_args) const {
-    auto children_priority_queue =
-        DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
+    // Same fixed two-element ordering as `descend_query_children`.
+    auto children = std::array<std::tuple<ReferenceNodePtr, DataType>, 2>{};
 
-    for (const auto& child_reference_node : {reference_node->left_, reference_node->right_}) {
-        const auto nodes_combination_optional_cost = edge_buffer.cost(query_node, child_reference_node);
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& child_reference_node = (child_index == 0) ? reference_node->left_ : reference_node->right_;
 
-        if (nodes_combination_optional_cost) {
-            children_priority_queue.emplace(query_node, child_reference_node, *nodes_combination_optional_cost);
-        }
+        children[child_index] = std::make_tuple(
+            child_reference_node,
+            edge_buffer.cost(query_node, child_reference_node).value_or(common::infinity<DataType>()));
     }
-    // Process the first nodes combination and bypass the cost calculation.
-    if (!children_priority_queue.empty()) {
-        {
-            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
+    if (std::get<1>(children[1]) < std::get<1>(children[0])) {
+        std::swap(children[0], children[1]);
+    }
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& [child_reference_node, child_cost] = children[child_index];
 
-            common::ignore_parameters(nodes_combination_cost);
-
-            dual_tree_traversal_with_core_distances(pq_query_node,
-                                                    pq_reference_node,
-                                                    edge_buffer,
-                                                    std::nullopt,
-                                                    true,
-                                                    std::forward<BufferArgs>(buffer_args)...);
-
-            children_priority_queue.pop();
+        if (child_cost >= common::infinity<DataType>()) {
+            continue;
         }
-        // Process the rest of the nodes combinations and update the costs. It might prune the combination.
-        while (!children_priority_queue.empty()) {
-            const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
-
-            // This time, we provide the cost because the previous element of the priority queue might have updated
-            // some of the query buffer. The provided nodes combination might get pruned as a result.
-            dual_tree_traversal_with_core_distances(pq_query_node,
-                                                    pq_reference_node,
-                                                    edge_buffer,
-                                                    std::make_optional(nodes_combination_cost),
-                                                    false,
-                                                    std::forward<BufferArgs>(buffer_args)...);
-
-            children_priority_queue.pop();
-        }
+        dual_tree_traversal_with_core_distances(query_node,
+                                                child_reference_node,
+                                                edge_buffer,
+                                                child_index == 0 ? std::nullopt : std::make_optional(child_cost),
+                                                child_index == 0,
+                                                std::forward<BufferArgs>(buffer_args)...);
     }
 }
 
