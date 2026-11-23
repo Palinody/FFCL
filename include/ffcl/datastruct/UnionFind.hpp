@@ -23,8 +23,6 @@ class UnionFind {
 
     bool try_merge(const Index& index_1, const Index& index_2);
 
-    Index get_largest_component() const;
-
     void print() const;
 
   private:
@@ -103,34 +101,6 @@ bool UnionFind<Index>::try_merge(const Index& index_1, const Index& index_2) {
         parents_[representative_1] = representative_2;
         return true;
     }
-}
-
-template <typename Index>
-Index UnionFind<Index>::get_largest_component() const {
-    // Determine threshold based on whether n_samples is odd or even.
-    const auto  threshold          = (n_samples_ % 2 == 0) ? (n_samples_ / 2) : (n_samples_ / 2 + 1);
-    Index       largest_component  = 0;
-    auto        component_size_map = std::unordered_map<Index, std::size_t>{};
-    std::size_t max_size           = 0;
-
-    for (std::size_t index = 0; index < n_samples_; ++index) {
-        // Find the root of the current index.
-        const auto root = find(static_cast<Index>(index));
-
-        // Increment the component size for this root in the map
-        ++component_size_map[root];
-
-        if (component_size_map[root] > max_size) {
-            largest_component = root;
-            max_size          = component_size_map[root];
-
-            // Stop early if we reach or exceed half the total samples.
-            if (max_size >= threshold) {
-                break;
-            }
-        }
-    }
-    return largest_component;
 }
 
 template <typename Index>

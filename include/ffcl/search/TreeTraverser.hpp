@@ -112,6 +112,14 @@ class TreeTraverser {
                            const datastruct::UnionFind<IndexType>& union_find_const_ref,
                            const DataType*                         squared_core_distances_ptr) const;
 
+    // Same traversal but restricted to a caller-provided set of query nodes and writing into a
+    // caller-provided buffer. This is what lets the Boruvka step be parallelised over disjoint query
+    // subtrees: each thread owns its buffer, so no state is shared.
+    template <typename QueryIndexer, typename EdgesBuffer>
+    void dtt_shortest_edge(const QueryIndexer&               query_indexer,
+                           const std::vector<ReferenceNodePtr>& query_nodes,
+                           EdgesBuffer&                      edge_buffer) const;
+
   private:
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
     using DualNodePriorityQueueElementType = std::tuple<QueryNodePtr, ReferenceNodePtr, Cost>;
@@ -575,6 +583,22 @@ void TreeTraverser<ReferenceIndexer>::descend_reference_children(const QueryNode
                                                 child_index == 0 ? std::nullopt : std::make_optional(child_cost),
                                                 child_index == 0,
                                                 std::forward<BufferArgs>(buffer_args)...);
+    }
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryIndexer, typename EdgesBuffer>
+void TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                  query_indexer,
+                                                        const std::vector<ReferenceNodePtr>& query_nodes,
+                                                        EdgesBuffer&                         edge_buffer) const {
+    common::ignore_parameters(query_indexer);
+
+    for (const auto& query_node : query_nodes) {
+        dual_tree_traversal_with_core_distances(/**/ query_node,
+                                                /**/ reference_indexer_.root(),
+                                                /**/ edge_buffer,
+                                                /**/ std::nullopt,
+                                                /**/ false);
     }
 }
 

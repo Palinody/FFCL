@@ -21,8 +21,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace ffcl::search::buffer {
@@ -53,11 +51,6 @@ class EdgesBuffer {
 
     auto tightest_edge() const -> EdgeType;
 
-    // Kept for signature compatibility with the generic `IndicesToBuffersMap` buffer used by
-    // `dual_tree_shortest_edge_with_core_distances`; the size balanced descent never revisits a combination.
-    auto mark_combination_as_visited(const QueryNodePtr&, const ReferenceNodePtr&)
-        -> std::pair<std::unordered_set<int>::iterator, bool>;
-
     template <typename... BufferArgs>
     void base_case(const QueryNodePtr& query_node, const ReferenceNodePtr& reference_node, BufferArgs&&...);
 
@@ -67,7 +60,8 @@ class EdgesBuffer {
         -> std::optional<DistanceType>;
 
   private:
-    static constexpr auto infinity = common::infinity<DistanceType>();
+    // Squared distances are always finite and non-negative, so the sentinel is the squared infinity.
+    static constexpr auto kInfinitySquared = common::infinity<DistanceType>();
 
     // The indexer containing the queries but that could also contain reference indices.
     const QueryIndexer& query_indexer_const_ref_;
@@ -137,19 +131,19 @@ EdgesBuffer<QueryIndexer, ReferenceIndexer>::EdgesBuffer(const QueryIndexer&    
   , union_find_const_ref_{union_find_const_ref}
   , squared_core_distances_ptr_{squared_core_distances}
   , representative_vec_(query_indexer.n_samples())
-  , sample_best_distance_vec_(query_indexer.n_samples(), infinity)
+  , sample_best_distance_vec_(query_indexer.n_samples(), kInfinitySquared)
   , sample_best_index_vec_(query_indexer.n_samples(), 0)
   , sample_has_best_vec_(query_indexer.n_samples(), 0)
   , component_best_edge_vec_(query_indexer.n_samples(),
                              datastruct::mst::make_infinity_edge<IndexType, DistanceType>())
   , component_has_edge_vec_(query_indexer.n_samples(), 0)
   , components_with_edge_vec_{}
-  , node_max_bound_vec_(query_indexer.n_nodes(), infinity)
+  , node_max_bound_vec_(query_indexer.n_nodes(), kInfinitySquared)
   , node_component_is_known_vec_(query_indexer.n_nodes(), 0)
   , node_component_is_homogeneous_vec_(query_indexer.n_nodes(), 0)
   , node_component_vec_(query_indexer.n_nodes(), 0)
   , node_min_squared_core_is_known_vec_(query_indexer.n_nodes(), 0)
-  , node_min_squared_core_vec_(query_indexer.n_nodes(), infinity) {
+  , node_min_squared_core_vec_(query_indexer.n_nodes(), kInfinitySquared) {
     for (std::size_t index = 0; index < query_indexer.n_samples(); ++index) {
         representative_vec_[index] = union_find_const_ref_.find(static_cast<IndexType>(index));
     }
@@ -169,14 +163,6 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::component_to_shortest_edge() c
         edges.emplace_back(component_best_edge_vec_[component]);
     }
     return edges;
-}
-
-template <typename QueryIndexer, typename ReferenceIndexer>
-auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::mark_combination_as_visited(const QueryNodePtr&,
-                                                                             const ReferenceNodePtr&)
-    -> std::pair<std::unordered_set<int>::iterator, bool> {
-    static auto dummy = std::unordered_set<int>{};
-    return {dummy.end(), true};
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -364,7 +350,7 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::node_min_squared_core_distance
     if (node_min_squared_core_is_known_vec_[node_id]) {
         return node_min_squared_core_vec_[node_id];
     }
-    auto min_squared_core = infinity;
+    auto min_squared_core = kInfinitySquared;
 
     for (auto index_it = node->indices_range_.first; index_it != node->indices_range_.second; ++index_it) {
         min_squared_core = std::min(

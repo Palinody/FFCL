@@ -110,6 +110,12 @@ Key entry points:
 - `ffcl::search::buffer::EdgesBuffer` — per-node caches (component membership, bounds limits, minimum core
   distance) are flat vectors indexed by `node_id()`, not hash maps keyed by node pointer.
 
+> **Parallelism.** `-DTHREADS_ENABLED=true` parallelises the independent loops: the core-distance kNN
+> queries and the dual-tree Boruvka step (which is split over disjoint query leaves, one `EdgesBuffer` per
+> thread, reduced and merged sequentially). `BoruvkasAlgorithm::Options::parallel_execution(false)` forces the
+> sequential step. At n = 50 000 the Boruvka step is ~6x faster with 6 threads and produces a bit-identical
+> MST weight multiset.
+>
 > **Bucket size.** A dual-tree traversal wants *small* buckets: the node level bound prune only pays off
 > when the nodes are tight. `sqrt(n_samples)` (the value used by the older tests) is a good bucket size for
 > the single-tree kNN path but a poor one for `make_tree_2` — at n = 50 000 it is ~2.2x slower than

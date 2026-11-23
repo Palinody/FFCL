@@ -100,6 +100,11 @@ class Searcher {
                            const datastruct::UnionFind<IndexType>& union_find_const_ref,
                            const DataType*                         squared_core_distances_ptr) const;
 
+    template <typename QueryIndexer, typename EdgesBuffer>
+    void dtt_shortest_edge(const QueryIndexer&                  query_indexer,
+                           const std::vector<NodePtr>&          query_nodes,
+                           EdgesBuffer&                         edge_buffer) const;
+
   private:
     TreeTraverser<ReferenceIndexer> tree_traverser_;
 };
@@ -238,6 +243,14 @@ auto Searcher<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&          
                                                    const datastruct::UnionFind<IndexType>& union_find_const_ref,
                                                    const DataType* squared_core_distances_ptr) const {
     return tree_traverser_.dtt_shortest_edge(query_indexer, union_find_const_ref, squared_core_distances_ptr);
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryIndexer, typename EdgesBuffer>
+void Searcher<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&         query_indexer,
+                                                   const std::vector<NodePtr>& query_nodes,
+                                                   EdgesBuffer&                edge_buffer) const {
+    tree_traverser_.dtt_shortest_edge(query_indexer, query_nodes, edge_buffer);
 }
 
 }  // namespace ffcl::search
