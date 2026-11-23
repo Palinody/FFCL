@@ -137,7 +137,6 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -152,7 +151,9 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
                                                 .axis_selection_policy(AxisSelectionPolicyType{})
                                                 .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
@@ -166,7 +167,9 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -191,7 +194,6 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -206,7 +208,9 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
@@ -220,7 +224,9 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -245,7 +251,6 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -260,7 +265,9 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
@@ -274,7 +281,9 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -299,7 +308,6 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -314,7 +322,9 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
@@ -328,7 +338,9 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -353,7 +365,6 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -368,7 +379,9 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
@@ -382,7 +395,9 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -407,7 +422,6 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -422,7 +436,9 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
@@ -436,7 +452,9 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -461,7 +479,6 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -476,7 +493,9 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
@@ -490,7 +509,9 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }

@@ -208,9 +208,9 @@ int main(int argc, char** argv) {
     const std::size_t bucket_override = (argc > 1) ? std::stoul(argv[1]) : 0;
 
     std::cout << std::left << std::setw(20) << "dataset" << std::right << std::setw(7) << "n" << std::setw(7)
-              << "bucket" << std::setw(11) << "build ms" << std::setw(11) << "STT ms" << std::setw(11) << "DTT ms"
-              << std::setw(11) << "full ms" << std::setw(12) << "mst weight" << "\n";
-    std::cout << std::string(90, '-') << "\n";
+              << "bucket" << std::setw(12) << "build s" << std::setw(12) << "STT s" << std::setw(12) << "DTT s"
+              << std::setw(12) << "full s" << std::setw(14) << "mst weight" << "\n";
+    std::cout << std::string(97, '-') << "\n";
 
     double sum_build = 0, sum_single = 0, sum_dual = 0, sum_full = 0;
 
@@ -238,18 +238,19 @@ int main(int argc, char** argv) {
                   << (bucket_override ? bucket_override
                                       : std::max(static_cast<std::size_t>(std::sqrt(n_samples) / 3),
                                                  static_cast<std::size_t>(16)))
-                  << std::setw(11) << std::fixed
-                  << std::setprecision(3) << result.tree_build_ms << std::setw(11) << result.mst_single_ms
-                  << std::setw(11) << result.mst_dual_ms << std::setw(11) << result.full_ms << std::setw(12)
-                  << std::setprecision(6) << result.mst_weight << "\n";
+                  << std::setw(12) << std::fixed << std::setprecision(6) << result.tree_build_ms / 1e3
+                  << std::setw(12) << result.mst_single_ms / 1e3 << std::setw(12) << result.mst_dual_ms / 1e3
+                  << std::setw(12) << result.full_ms / 1e3 << std::setw(14) << std::setprecision(6)
+                  << result.mst_weight << "\n";
     }
 
     const auto n = static_cast<double>(kFileNames.size());
 
-    std::cout << std::string(90, '-') << "\n";
+    std::cout << std::string(97, '-') << "\n";
     std::cout << std::left << std::setw(20) << "mean" << std::right << std::setw(7) << "" << std::setw(7) << ""
-              << std::setw(11) << std::fixed << std::setprecision(3) << sum_build / n << std::setw(11)
-              << sum_single / n << std::setw(11) << sum_dual / n << std::setw(11) << sum_full / n << "\n";
+              << std::setw(12) << std::fixed << std::setprecision(6) << sum_build / n / 1e3 << std::setw(12)
+              << sum_single / n / 1e3 << std::setw(12) << sum_dual / n / 1e3 << std::setw(12) << sum_full / n / 1e3
+              << "\n";
 
     return 0;
 }

@@ -98,8 +98,22 @@ set(HEADER_FILES
 set(SOURCE_FILES
 )
 
-add_definitions(-DTHREADS_ENABLED=false)
-add_definitions(-DVERBOSE=false)
+# Both options are documented in the README and can be enabled at configure time with
+#   cmake .. -DVERBOSE=true -DTHREADS_ENABLED=true
+option(VERBOSE "Print the per-stage timings (tree build, MST, full pipeline)" OFF)
+option(THREADS_ENABLED "Parallelise the independent loops with OpenMP" OFF)
+
+if(VERBOSE)
+    add_definitions(-DVERBOSE=true)
+else()
+    add_definitions(-DVERBOSE=false)
+endif()
+
+if(THREADS_ENABLED)
+    add_definitions(-DTHREADS_ENABLED=true)
+else()
+    add_definitions(-DTHREADS_ENABLED=false)
+endif()
 
 # disable all assertions
 add_definitions(-DNDEBUG)

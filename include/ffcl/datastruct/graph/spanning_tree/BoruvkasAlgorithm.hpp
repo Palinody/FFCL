@@ -46,6 +46,8 @@ class BoruvkasAlgorithm {
     using EdgeType = datastruct::mst::Edge<IndexType, ValueType>;
 
     using CoreDistancesArrayType = datastruct::mst::CoreDistancesArray<ValueType>;
+    // The dual-tree pass works on squared distances and only takes the square root of the final edges.
+    using SquaredCoreDistancesArrayType = datastruct::mst::CoreDistancesArray<ValueType>;
 
     using ClusteredMTSBuilderType = ClusteredMTSBuilder<IndexType, ValueType>;
     using MSTBuilderType          = MSTBuilder<IndexType, ValueType>;  // ClusteredMTSBuilderType
@@ -89,9 +91,9 @@ class BoruvkasAlgorithm {
                          const CoreDistancesArrayType&    core_distances,
                          MSTBuilderType&                  mst_builder) const;
 
-    void step_dual_tree_sequential(const search::Searcher<Indexer>& searcher,
-                                   const CoreDistancesArrayType&    core_distances,
-                                   MSTBuilderType&                  mst_builder) const;
+    void step_dual_tree_sequential(const search::Searcher<Indexer>&  searcher,
+                                   const SquaredCoreDistancesArrayType& squared_core_distances,
+                                   MSTBuilderType&                     mst_builder) const;
 
     /*
     void step_dual_tree_parallel(const search::Searcher<Indexer>& searcher,
@@ -227,19 +229,21 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
 // ---
 
 template <typename Indexer>
-void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searcher<Indexer>& searcher,
-                                                           const CoreDistancesArrayType&    core_distances,
-                                                           MSTBuilderType&                  mst_builder) const {
+void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searcher<Indexer>&     searcher,
+                                                           const SquaredCoreDistancesArrayType& squared_core_distances,
+                                                           MSTBuilderType&                      mst_builder) const {
     // The MST has to be built on the mutual reachability distances, not on the raw ones, otherwise
     // `k_nearest_neighbors > 1` has no effect on the dual-tree path.
-    const auto& component_to_shortest_edges = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
-                                                                         /**/ mst_builder.get_union_find_const_ref(),
-                                                                         /**/ options_.k_nearest_neighbors_,
-                                                                         /**/ &core_distances[0]);
+    const auto& component_to_shortest_edges =
+        searcher.dtt_shortest_edge(/**/ searcher.indexer(),
+                                   /**/ mst_builder.get_union_find_const_ref(),
+                                   /**/ squared_core_distances.data());
 
-    // merge components based on the shortest edge found for each component so far
+    // merge components based on the shortest edge found for each component so far. The buffer works in
+    // squared space, so the weight is converted back once per merged edge.
     for (const auto& edge : component_to_shortest_edges) {
-        mst_builder.merge_components(edge);
+        mst_builder.merge_components(
+            ffcl::datastruct::mst::make_edge(std::get<0>(edge), std::get<1>(edge), std::sqrt(std::get<2>(edge))));
     }
 }
 
@@ -307,10 +311,11 @@ auto BoruvkasAlgorithm<Indexer>::make_tree_2(ForwardedIndexer&& indexer) const {
 
     const auto searcher = search::Searcher(std::forward<ForwardedIndexer>(indexer));
 
-    const auto core_distances = datastruct::mst::make_static_core_distances(searcher, options_.k_nearest_neighbors_);
+    const auto squared_core_distances =
+        datastruct::mst::make_squared_core_distances(searcher, options_.k_nearest_neighbors_);
 
     while (forest.n_components() > 1) {
-        step_dual_tree_sequential(searcher, core_distances, forest);
+        step_dual_tree_sequential(searcher, squared_core_distances, forest);
     }
     return std::move(forest).minimum_spanning_tree();
 }

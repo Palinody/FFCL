@@ -4,7 +4,9 @@
 #include "ffcl/datastruct/tree/condensed_cluster_tree/CondensedClusterTree.hpp"
 #include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
 
+#include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <functional>
 #include <memory>
 #include <tuple>
@@ -98,12 +100,27 @@ auto HDBSCAN<Indexer>::predict(ForwardedIndexer&& indexer) const {
     const auto boruvkas_algorithm =
         BoruvkasAlgorithm<Indexer>(BoruvkasAlgorithmOptionsType().k_nearest_neighbors(options_.k_nearest_neighbors_));
 
+    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+
+    // --- minimum spanning tree -------------------------------------------------
+    timer.reset();
+
     // const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::forward<ForwardedIndexer>(indexer));
     const auto minimum_spanning_tree = boruvkas_algorithm.make_tree_2(std::forward<ForwardedIndexer>(indexer));
+
+    [[maybe_unused]] const auto mst_seconds = static_cast<double>(timer.elapsed()) / 1e9;
+
+    // --- single linkage tree ---------------------------------------------------
+    timer.reset();
 
     const auto single_linkage_cluster_tree = datastruct::SingleLinkageClusterTree(std::move(minimum_spanning_tree));
 
     const auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
+
+    [[maybe_unused]] const auto single_linkage_seconds = static_cast<double>(timer.elapsed()) / 1e9;
+
+    // --- condensed cluster tree -------------------------------------------------
+    timer.reset();
 
     const auto condensed_cluster_tree =
         CondensedClusterTreeType(single_linkage_cluster_tree_root,
@@ -112,7 +129,26 @@ auto HDBSCAN<Indexer>::predict(ForwardedIndexer&& indexer) const {
                                      .return_leaf_nodes(options_.return_leaf_nodes_)
                                      .allow_single_cluster(options_.allow_single_cluster_));
 
-    return condensed_cluster_tree.predict();
+    [[maybe_unused]] const auto condensed_tree_seconds = static_cast<double>(timer.elapsed()) / 1e9;
+
+    // --- cluster extraction -----------------------------------------------------
+    timer.reset();
+
+    auto predictions = condensed_cluster_tree.predict();
+
+    [[maybe_unused]] const auto extraction_seconds = static_cast<double>(timer.elapsed()) / 1e9;
+
+#if defined(VERBOSE) && VERBOSE == true
+    // Same stages and the same "seconds with 6 decimals" format as the hdbscan benchmark script.
+    std::printf("  MST (boruvka_kdtree): %12.6f s\n", mst_seconds);
+    std::printf("  single linkage tree : %12.6f s\n", single_linkage_seconds);
+    std::printf("  condensed tree      : %12.6f s\n", condensed_tree_seconds);
+    std::printf("  cluster extraction  : %12.6f s\n", extraction_seconds);
+    std::printf("  full HDBSCAN        : %12.6f s\n",
+                mst_seconds + single_linkage_seconds + condensed_tree_seconds + extraction_seconds);
+#endif
+
+    return predictions;
 }
 
 }  // namespace ffcl

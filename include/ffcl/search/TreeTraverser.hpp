@@ -110,8 +110,7 @@ class TreeTraverser {
     template <typename QueryIndexer>
     auto dtt_shortest_edge(const QueryIndexer&                     query_indexer,
                            const datastruct::UnionFind<IndexType>& union_find_const_ref,
-                           std::size_t                             k_nearest_neighbors = 1,
-                           const DataType*                         core_distances_ptr  = nullptr) const;
+                           const DataType*                         squared_core_distances_ptr) const;
 
   private:
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
@@ -583,13 +582,12 @@ template <typename ReferenceIndexer>
 template <typename QueryIndexer>
 auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                     query_indexer,
                                                         const datastruct::UnionFind<IndexType>& union_find_const_ref,
-                                                        std::size_t                             k_nearest_neighbors,
-                                                        const DataType*                         core_distances_ptr) const {
+                                                        const DataType* squared_core_distances_ptr) const {
     // using BuffersFeaturesIteratorType = decltype(std::declval<QueryIndexer>().features_range_first(0));
     // using BufferType                  = buffer::Unsorted<BuffersFeaturesIteratorType>;
 
-    auto edge_buffer = buffer::make_edge_buffer(
-        query_indexer, reference_indexer_, union_find_const_ref, k_nearest_neighbors, core_distances_ptr);
+    auto edge_buffer =
+        buffer::make_edge_buffer(query_indexer, reference_indexer_, union_find_const_ref, squared_core_distances_ptr);
 
     dual_tree_traversal_with_core_distances(/**/ query_indexer.root(),
                                             /**/ reference_indexer_.root(),
