@@ -59,6 +59,10 @@ NAMES = [
 ]
 MIN_SAMPLES = 1
 MIN_CLUSTER_SIZE = 20
+# FFCL's k-nearest-neighbours includes the sample itself while hdbscan's min_samples does not, so the
+# equivalent FFCL setting is min_samples + 1. With k = 1 FFCL's core distances are all zero and its
+# core-distance prune never fires.
+FFCL_K = MIN_SAMPLES + 1
 
 
 def samples_of(fn, repeats):
@@ -75,7 +79,7 @@ def run_ffcl(binary, path, mode, bucket, repeats):
         return [math.nan] * repeats
 
     def once():
-        subprocess.run([binary, path, "-", mode, "1", str(bucket)], capture_output=True, check=False)
+        subprocess.run([binary, path, "-", mode, str(FFCL_K), str(bucket)], capture_output=True, check=False)
 
     return samples_of(once, repeats)
 
