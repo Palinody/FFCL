@@ -74,12 +74,10 @@ class EdgesBuffer {
     // Union-find representatives, resolved once because the union-find is fixed for a whole Boruvka step.
     std::vector<IndexType> representative_vec_;
 
-    // Best candidate found so far for every sample (squared mutual reachability distance).
-    std::vector<DistanceType> sample_best_distance_vec_;
-    std::vector<IndexType>    sample_best_index_vec_;
-    std::vector<char>         sample_has_best_vec_;
-
-    // Shortest outgoing edge of every component, indexed by the component representative.
+    // Shortest outgoing edge found so far for every component, indexed by the component representative.
+    // The candidate is kept per component rather than per sample: a node's bound is then the maximum over
+    // the distinct components it contains, which is tighter than the maximum over its samples and keeps
+    // pruning effective once the components grow.
     std::vector<EdgeType>  component_best_edge_vec_;
     std::vector<char>      component_has_edge_vec_;
     std::vector<IndexType> components_with_edge_vec_;
@@ -103,8 +101,6 @@ class EdgesBuffer {
 
     void refresh_node_max_bound(const QueryNodePtr& leaf_node);
 
-    void update_component_best_edge(const IndexType& query_index, const IndexType& reference_index,
-                                    const DistanceType& squared_distance);
 };
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -130,9 +126,6 @@ EdgesBuffer<QueryIndexer, ReferenceIndexer>::EdgesBuffer(const QueryIndexer&    
   , union_find_const_ref_{union_find_const_ref}
   , squared_core_distances_ptr_{squared_core_distances}
   , representative_vec_(query_indexer.n_samples())
-  , sample_best_distance_vec_(query_indexer.n_samples(), kInfinitySquared)
-  , sample_best_index_vec_(query_indexer.n_samples(), 0)
-  , sample_has_best_vec_(query_indexer.n_samples(), 0)
   , component_best_edge_vec_(query_indexer.n_samples(),
                              datastruct::mst::make_infinity_edge<IndexType, DistanceType>())
   , component_has_edge_vec_(query_indexer.n_samples(), 0)
@@ -190,10 +183,9 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
         const auto query_squared_core = squared_core_distances_ptr_[static_cast<std::size_t>(query_index)];
 
         // Point-to-node prune: the smallest squared mutual reachability distance between this sample and any
-        // sample of the reference node. If it cannot beat the current candidate the whole node is skipped.
-        const auto has_best = sample_has_best_vec_[query_index] != 0;
-
-        if (has_best) {
+        // sample of the reference node. If it cannot beat the component's current candidate the node is
+        // skipped.
+        if (component_has_edge_vec_[query_component]) {
             auto squared_lower_bound = datastruct::bounds::squared_min_distance(
                 query_indexer_const_ref_.begin() + static_cast<std::ptrdiff_t>(query_index) * n_features,
                 query_indexer_const_ref_.begin() + static_cast<std::ptrdiff_t>(query_index + 1) * n_features,
@@ -202,7 +194,7 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
             squared_lower_bound =
                 std::max(squared_lower_bound, std::max(query_squared_core, reference_min_squared_core));
 
-            if (squared_lower_bound >= sample_best_distance_vec_[query_index]) {
+            if (squared_lower_bound >= std::get<2>(component_best_edge_vec_[query_component])) {
                 continue;
             }
         }
@@ -214,9 +206,10 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
             }
             const auto reference_squared_core = squared_core_distances_ptr_[static_cast<std::size_t>(reference_index)];
 
-            // Cheap per-candidate prune of the reference implementations: if the reference sample's own core
-            // distance already exceeds the current candidate there is nothing to gain.
-            if (sample_has_best_vec_[query_index] && reference_squared_core >= sample_best_distance_vec_[query_index]) {
+            // Cheap per-candidate prune: if the reference sample's own core distance already exceeds the
+            // component's current candidate there is nothing to gain.
+            if (component_has_edge_vec_[query_component] &&
+                reference_squared_core >= std::get<2>(component_best_edge_vec_[query_component])) {
                 continue;
             }
             const auto squared_distance = common::math::heuristics::squared_euclidean_distance(
@@ -228,12 +221,14 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
             const auto squared_mutual_reachability =
                 std::max(squared_distance, std::max(query_squared_core, reference_squared_core));
 
-            if (squared_mutual_reachability < sample_best_distance_vec_[query_index]) {
-                sample_best_distance_vec_[query_index] = squared_mutual_reachability;
-                sample_best_index_vec_[query_index]    = reference_index;
-                sample_has_best_vec_[query_index]      = 1;
-
-                update_component_best_edge(query_index, reference_index, squared_mutual_reachability);
+            if (squared_mutual_reachability < std::get<2>(component_best_edge_vec_[query_component]) ||
+                !component_has_edge_vec_[query_component]) {
+                if (!component_has_edge_vec_[query_component]) {
+                    component_has_edge_vec_[query_component] = 1;
+                    components_with_edge_vec_.emplace_back(query_component);
+                }
+                component_best_edge_vec_[query_component] =
+                    ffcl::datastruct::mst::make_edge(query_index, reference_index, squared_mutual_reachability);
             }
         }
     }
@@ -241,29 +236,16 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-void EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_component_best_edge(const IndexType&    query_index,
-                                                                             const IndexType&    reference_index,
-                                                                             const DistanceType& squared_distance) {
-    const auto component = representative_vec_[query_index];
-
-    if (component_has_edge_vec_[component] &&
-        squared_distance >= std::get<2>(component_best_edge_vec_[component])) {
-        return;
-    }
-    if (!component_has_edge_vec_[component]) {
-        component_has_edge_vec_[component] = 1;
-        components_with_edge_vec_.emplace_back(component);
-    }
-    component_best_edge_vec_[component] =
-        ffcl::datastruct::mst::make_edge(query_index, reference_index, squared_distance);
-}
-
-template <typename QueryIndexer, typename ReferenceIndexer>
 void EdgesBuffer<QueryIndexer, ReferenceIndexer>::refresh_node_max_bound(const QueryNodePtr& leaf_node) {
     auto max_bound = DistanceType{};
 
     for (auto index_it = leaf_node->indices_range_.first; index_it != leaf_node->indices_range_.second; ++index_it) {
-        max_bound = std::max(max_bound, sample_best_distance_vec_[static_cast<IndexType>(*index_it)]);
+        const auto component = representative_vec_[static_cast<IndexType>(*index_it)];
+
+        max_bound = std::max(max_bound,
+                             component_has_edge_vec_[component]
+                                 ? std::get<2>(component_best_edge_vec_[component])
+                                 : kInfinitySquared);
     }
     if (max_bound >= node_max_bound_vec_[leaf_node->node_id()]) {
         return;
