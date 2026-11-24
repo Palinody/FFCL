@@ -2,11 +2,10 @@
 
 // Edge buffer of the dual-tree Boruvka traversal.
 //
-// This is the hot path of HDBSCAN*, so unlike the generic `StaticBuffer` strategies (which exist so that a
-// client can pick the kNN / radius query semantics of `Searcher::operator()`) it is deliberately not
-// polymorphic: everything lives in flat arrays indexed by sample index, component representative or dense
-// node id. That removes the per-sample buffer allocation and the hash lookups of the previous
-// implementation.
+// This is the hot path of HDBSCAN*, so it is not polymorphic: everything lives in flat arrays indexed by
+// sample index, component representative or dense node id. The generic `StaticBuffer` strategies remain
+// available for the kNN / radius queries of `Searcher::operator()`, which is where a client selects a buffer
+// strategy.
 //
 // All distances handled here are **squared** mutual reachability distances. The caller squares the core
 // distances once and takes the square root of the resulting spanning-tree edges once.

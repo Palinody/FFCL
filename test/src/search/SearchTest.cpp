@@ -33,6 +33,15 @@
 #define TIME_IT true
 #define ASSERT_IT true
 
+// Bound the work of the loop tests independently of the dataset size. Every iteration builds two KDTrees and
+// runs a dual-tree traversal, and the brute-force cross-check is O(|query| * |reference|), i.e. quadratic in
+// n_samples, so both the iteration count and the cross-check are capped.
+static constexpr std::size_t kMaxBruteForcePairs = 4'000'000;
+
+static auto max_iterations_for(std::size_t n_samples) -> std::size_t {
+    return n_samples > 20'000 ? 15 : 50;
+}
+
 namespace fs = std::filesystem;
 
 class SearcherErrorsTest : public ::testing::Test {
@@ -398,7 +407,9 @@ k_nearest_neighbors);
         write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";
@@ -578,7 +589,9 @@ k_nearest_neighbors);
         write_data<IndexType>(targets, 1, predictions_folder_ / fs::path(filename));
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";
@@ -669,7 +682,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 250);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / max_iterations_for(n_samples));
 
     const std::size_t k_nearest_neighbors = 1;
 
@@ -755,7 +768,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #endif
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";
@@ -849,7 +864,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 250);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / max_iterations_for(n_samples));
 
     const std::size_t k_nearest_neighbors = 1;
 
@@ -948,7 +963,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 #endif
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";

@@ -61,10 +61,10 @@ auto CoreDistancesArray<Value>::size() const -> std::size_t {
     return size_;
 }
 
-// Core distance of every sample, i.e. the distance to its k-th nearest neighbour (the sample itself is part of
-// the k candidates, so `k_nearest_neighbors = k` corresponds to `min_samples = k - 1` in hdbscan).
+// Core distance of every sample: the distance to its k-th nearest neighbour. The sample itself is one of the
+// k candidates, so `k_nearest_neighbors = k` yields the distance to the (k-1)-th other sample.
 //
-// The kNN queries are independent, so they are parallelised when the library is compiled with
+// The kNN queries are independent and are parallelised when the library is compiled with
 // `-DTHREADS_ENABLED=true` (same convention as `datastruct::PairwiseDistanceMatrix`).
 template <typename Indexer>
 auto make_static_core_distances(const search::Searcher<Indexer>&   searcher,
