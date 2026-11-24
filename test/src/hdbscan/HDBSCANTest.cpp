@@ -126,6 +126,10 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -182,6 +186,10 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
 
     auto indices = generate_indices(n_samples);
 
@@ -240,6 +248,10 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -296,6 +308,10 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
 
     auto indices = generate_indices(n_samples);
 
@@ -354,6 +370,10 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -411,6 +431,10 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -467,6 +491,10 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
 
     auto indices = generate_indices(n_samples);
 

@@ -2,27 +2,32 @@
 
 Both libraries are driven at the same stage granularity:
 
-  * "MST"  is FFCL `BoruvkasAlgorithm::make_tree_2` versus hdbscan's
-           `KDTreeBoruvkaAlgorithm.spanning_tree()`.
+  * "MST"  is FFCL `BoruvkasAlgorithm::make_tree_2` (core distances + Boruvka)
+           versus hdbscan `KDTreeBoruvkaAlgorithm.__init__` + `spanning_tree()`
+           (hdbscan computes the core distances in the constructor, so both are
+           included to keep the row comparable).
   * "full" is FFCL `HDBSCAN::predict` versus `hdbscan.HDBSCAN.fit_predict`.
 
-The leaf size is the same for both libraries (`sqrt(n_samples) / 3`, which is
-what hdbscan uses internally for its Boruvka tree when `leaf_size =
-sqrt(n_samples)`), so the numbers are directly comparable.
+Both use the same leaf size (`sqrt(n_samples) / 3`, which is what hdbscan uses
+internally for its Boruvka tree when `leaf_size = sqrt(n_samples)`).
 
-FFCL is run through two pre-built binaries so that the sequential and the
-OpenMP build can be compared without recompiling:
+FFCL is driven through two pre-built binaries so the sequential and the OpenMP
+build can be compared without recompiling:
 
-    build_seq/BoruvkasRunner   (-DTHREADS_ENABLED=false)
-    build_par/BoruvkasRunner   (-DTHREADS_ENABLED=true)
+    cmake .. -DMODE=gtest -DTHREADS_ENABLED=false && make BoruvkasRunner
+    cp build/BoruvkasRunner /tmp/ffcl_seq
+    cmake .. -DMODE=gtest -DTHREADS_ENABLED=true  && make BoruvkasRunner
+    cp build/BoruvkasRunner /tmp/ffcl_par
 
-Usage:
-    python3 bin/CompareHDBSCAN.py --seq-binary ... --par-binary ... [--repeats N]
+    python3 bin/CompareHDBSCAN.py --seq-binary /tmp/ffcl_seq --par-binary /tmp/ffcl_par --repeats 5
+
+Every repeat is recorded, so the report shows the mean and the median.
 """
 
 import argparse
 import math
 import os
+import statistics
 import subprocess
 import sys
 import time
@@ -37,9 +42,7 @@ try:
     from hdbscan._hdbscan_boruvka import KDTreeBoruvkaAlgorithm
     from sklearn.neighbors import KDTree
 except ImportError:  # pragma: no cover
-    import subprocess as _sp
-
-    _sp.check_call([sys.executable, "-m", "pip", "install", "hdbscan", "scikit-learn"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "hdbscan", "scikit-learn"])
     import hdbscan
     from hdbscan._hdbscan_boruvka import KDTreeBoruvkaAlgorithm
     from sklearn.neighbors import KDTree
@@ -58,27 +61,23 @@ MIN_SAMPLES = 1
 MIN_CLUSTER_SIZE = 20
 
 
-def best_of(fn, repeats):
-    best = math.inf
+def samples_of(fn, repeats):
+    times = []
     for _ in range(repeats):
         start = time.perf_counter()
         fn()
-        best = min(best, time.perf_counter() - start)
-    return best
+        times.append(time.perf_counter() - start)
+    return times
 
 
 def run_ffcl(binary, path, mode, bucket, repeats):
     if not binary or not os.path.exists(binary):
-        return math.nan
+        return [math.nan] * repeats
 
     def once():
-        subprocess.run(
-            [binary, path, "-", mode, "1", str(bucket)],
-            capture_output=True,
-            check=False,
-        )
+        subprocess.run([binary, path, "-", mode, "1", str(bucket)], capture_output=True, check=False)
 
-    return best_of(once, repeats)
+    return samples_of(once, repeats)
 
 
 def run_hdbscan(data, bucket, repeats, jobs):
@@ -86,8 +85,6 @@ def run_hdbscan(data, bucket, repeats, jobs):
     tree = KDTree(data, leaf_size=leaf_size)
 
     def mst_once():
-        # `KDTreeBoruvkaAlgorithm.__init__` computes the core distances and `spanning_tree()` runs the
-        # Boruvka loop. FFCL's `make_tree_2` does both, so both are timed here to keep the row comparable.
         alg = KDTreeBoruvkaAlgorithm(
             tree,
             MIN_SAMPLES,
@@ -111,14 +108,14 @@ def run_hdbscan(data, bucket, repeats, jobs):
         )
         return cl.fit_predict(data)
 
-    return best_of(mst_once, repeats), best_of(full_once, repeats)
+    return samples_of(mst_once, repeats), samples_of(full_once, repeats)
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--seq-binary", default="")
-    parser.add_argument("--par-binary", default="")
-    parser.add_argument("--repeats", type=int, default=2)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--seq-binary", default="", help="BoruvkasRunner built with THREADS_ENABLED=false")
+    parser.add_argument("--par-binary", default="", help="BoruvkasRunner built with THREADS_ENABLED=true")
+    parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--bucket", type=int, default=0, help="override the leaf size for both libraries")
     args = parser.parse_args()
 
@@ -129,100 +126,76 @@ def main():
         n = len(data)
         bucket = args.bucket if args.bucket else max(16, int(math.sqrt(n)) // 3)
 
-        ffcl_seq_mst = run_ffcl(args.seq_binary, path, "dual", bucket, args.repeats)
-        ffcl_par_mst = run_ffcl(args.par_binary, path, "dual", bucket, args.repeats)
-        ffcl_seq_full = run_ffcl(args.seq_binary, path, "full", bucket, args.repeats)
-        ffcl_par_full = run_ffcl(args.par_binary, path, "full", bucket, args.repeats)
+        row = {"name": name, "n": n, "bucket": bucket}
+        row["ffcl_mst_seq"] = run_ffcl(args.seq_binary, path, "dual", bucket, args.repeats)
+        row["ffcl_mst_par"] = run_ffcl(args.par_binary, path, "dual", bucket, args.repeats)
+        row["ffcl_full_seq"] = run_ffcl(args.seq_binary, path, "full", bucket, args.repeats)
+        row["ffcl_full_par"] = run_ffcl(args.par_binary, path, "full", bucket, args.repeats)
 
         sk_seq_mst, sk_seq_full = run_hdbscan(data, bucket, args.repeats, 1)
         sk_par_mst, sk_par_full = run_hdbscan(data, bucket, args.repeats, -1)
 
-        rows.append(
-            dict(
-                name=name,
-                n=n,
-                bucket=bucket,
-                ffcl_seq_mst=ffcl_seq_mst,
-                ffcl_par_mst=ffcl_par_mst,
-                ffcl_seq_full=ffcl_seq_full,
-                ffcl_par_full=ffcl_par_full,
-                sk_seq_mst=sk_seq_mst,
-                sk_par_mst=sk_par_mst,
-                sk_seq_full=sk_seq_full,
-                sk_par_full=sk_par_full,
-            )
-        )
-        r = rows[-1]
+        row["sk_mst_seq"], row["sk_mst_par"] = sk_seq_mst, sk_par_mst
+        row["sk_full_seq"], row["sk_full_par"] = sk_seq_full, sk_par_full
+        rows.append(row)
+
         print(
-            f"{name:20s} ffcl {r['ffcl_seq_mst']:.3f}/{r['ffcl_par_mst']:.3f} s  "
-            f"hdbscan {r['sk_seq_mst']:.3f}/{r['sk_par_mst']:.3f} s",
+            f"{name:20s} ffcl {statistics.fmean(row['ffcl_mst_seq']):.3f}s  "
+            f"hdbscan {statistics.fmean(row['sk_mst_seq']):.3f}s",
             flush=True,
         )
 
-    def mean(key):
-        values = [r[key] for r in rows if not math.isnan(r[key])]
-        return sum(values) / len(values) if values else math.nan
+    def report(title, prefix, sk_prefix):
+        # Each cell holds the per-run samples, so aggregate per dataset first and then across datasets.
+        def avg(key):
+            return statistics.fmean([statistics.fmean(r[key]) for r in rows])
 
-    print()
-    print("=" * 108)
-    print("MST construction, seconds (best of {})".format(args.repeats))
-    print("=" * 108)
-    header = (
-        f"{'dataset':20s} {'n':>7s} {'leaf':>5s} "
-        f"{'FFCL seq':>10s} {'FFCL par':>10s} {'FFCL x':>7s} "
-        f"{'sk seq':>10s} {'sk par':>10s} {'sk x':>7s} "
-        f"{'seq F/sk':>9s} {'par F/sk':>9s}"
-    )
-    print(header)
-    print("-" * len(header))
-    for r in rows:
-        fx = r["ffcl_seq_mst"] / r["ffcl_par_mst"]
-        sx = r["sk_seq_mst"] / r["sk_par_mst"]
-        print(
-            f"{r['name']:20s} {r['n']:7d} {r['bucket']:5d} "
-            f"{r['ffcl_seq_mst']:10.3f} {r['ffcl_par_mst']:10.3f} {fx:6.2f}x "
-            f"{r['sk_seq_mst']:10.3f} {r['sk_par_mst']:10.3f} {sx:6.2f}x "
-            f"{r['ffcl_seq_mst'] / r['sk_seq_mst']:8.2f}x {r['ffcl_par_mst'] / r['sk_par_mst']:8.2f}x"
-        )
-    print("-" * len(header))
-    print(
-        f"{'mean':20s} {'':7s} {'':5s} "
-        f"{mean('ffcl_seq_mst'):10.3f} {mean('ffcl_par_mst'):10.3f} "
-        f"{mean('ffcl_seq_mst') / mean('ffcl_par_mst'):6.2f}x "
-        f"{mean('sk_seq_mst'):10.3f} {mean('sk_par_mst'):10.3f} "
-        f"{mean('sk_seq_mst') / mean('sk_par_mst'):6.2f}x "
-        f"{mean('ffcl_seq_mst') / mean('sk_seq_mst'):8.2f}x "
-        f"{mean('ffcl_par_mst') / mean('sk_par_mst'):8.2f}x"
-    )
+        def med(key):
+            return statistics.median([statistics.median(r[key]) for r in rows])
 
-    print()
-    print("=" * 108)
-    print("Full HDBSCAN pipeline, seconds (best of {})".format(args.repeats))
-    print("=" * 108)
-    print(header.replace("MST", "full").replace("seq F/sk", "seq F/sk").replace("par F/sk", "par F/sk"))
-    print("-" * len(header))
-    for r in rows:
-        fx = r["ffcl_seq_full"] / r["ffcl_par_full"]
-        sx = r["sk_seq_full"] / r["sk_par_full"]
-        print(
-            f"{r['name']:20s} {r['n']:7d} {r['bucket']:5d} "
-            f"{r['ffcl_seq_full']:10.3f} {r['ffcl_par_full']:10.3f} {fx:6.2f}x "
-            f"{r['sk_seq_full']:10.3f} {r['sk_par_full']:10.3f} {sx:6.2f}x "
-            f"{r['ffcl_seq_full'] / r['sk_seq_full']:8.2f}x {r['ffcl_par_full'] / r['sk_par_full']:8.2f}x"
+        print()
+        print("=" * 126)
+        print(f"{title} -- seconds, mean/median over {args.repeats} runs per dataset")
+        print("=" * 126)
+        header = (
+            f"{'dataset':20s} {'n':>7s} {'leaf':>5s} "
+            f"{'FFCL seq':>17s} {'FFCL par':>17s} {'FFCL x':>7s} "
+            f"{'hdbscan seq':>17s} {'hdbscan par':>17s} {'hdbs x':>7s} "
+            f"{'F/sk seq':>9s} {'F/sk par':>9s}"
         )
-    print("-" * len(header))
-    print(
-        f"{'mean':20s} {'':7s} {'':5s} "
-        f"{mean('ffcl_seq_full'):10.3f} {mean('ffcl_par_full'):10.3f} "
-        f"{mean('ffcl_seq_full') / mean('ffcl_par_full'):6.2f}x "
-        f"{mean('sk_seq_full'):10.3f} {mean('sk_par_full'):10.3f} "
-        f"{mean('sk_seq_full') / mean('sk_par_full'):6.2f}x "
-        f"{mean('ffcl_seq_full') / mean('sk_seq_full'):8.2f}x "
-        f"{mean('ffcl_par_full') / mean('sk_par_full'):8.2f}x"
-    )
-    print()
-    print("'x' columns are the sequential -> parallel speedup; 'F/sk' columns are FFCL time / hdbscan time")
-    print("(below 1.00 means FFCL is faster).")
+        print(header)
+        print("-" * len(header))
+
+        for r in rows:
+            fs, fp = r[prefix + "_seq"], r[prefix + "_par"]
+            hs, hp = r["sk_" + sk_prefix + "_seq"], r["sk_" + sk_prefix + "_par"]
+            print(
+                f"{r['name']:20s} {r['n']:7d} {r['bucket']:5d} "
+                f"{statistics.fmean(fs):8.3f}/{statistics.median(fs):8.3f} "
+                f"{statistics.fmean(fp):8.3f}/{statistics.median(fp):8.3f} "
+                f"{statistics.fmean(fs) / statistics.fmean(fp):6.2f}x "
+                f"{statistics.fmean(hs):8.3f}/{statistics.median(hs):8.3f} "
+                f"{statistics.fmean(hp):8.3f}/{statistics.median(hp):8.3f} "
+                f"{statistics.fmean(hs) / statistics.fmean(hp):6.2f}x "
+                f"{statistics.fmean(fs) / statistics.fmean(hs):8.2f}x "
+                f"{statistics.fmean(fp) / statistics.fmean(hp):8.2f}x"
+            )
+        print("-" * len(header))
+        f_seq, f_par = avg(prefix + "_seq"), avg(prefix + "_par")
+        h_seq, h_par = avg("sk_" + sk_prefix + "_seq"), avg("sk_" + sk_prefix + "_par")
+        print(
+            f"{'mean of means':20s} {'':7s} {'':5s} "
+            f"{f_seq:8.3f}/{med(prefix + '_seq'):8.3f} {f_par:8.3f}/{med(prefix + '_par'):8.3f} "
+            f"{f_seq / f_par:6.2f}x "
+            f"{h_seq:8.3f}/{med('sk_' + sk_prefix + '_seq'):8.3f} "
+            f"{h_par:8.3f}/{med('sk_' + sk_prefix + '_par'):8.3f} "
+            f"{h_seq / h_par:6.2f}x {f_seq / h_seq:8.2f}x {f_par / h_par:8.2f}x"
+        )
+        print("  mean of means / median of medians across the datasets")
+        print("  'x' = sequential -> parallel speedup; 'F/sk' = FFCL / hdbscan (below 1.00 means FFCL faster)")
+
+    report("MST construction (core distances + Boruvka)", "ffcl_mst", "mst")
+    report("Full HDBSCAN pipeline", "ffcl_full", "full")
 
 
 if __name__ == "__main__":

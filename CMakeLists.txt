@@ -96,6 +96,9 @@ set(HEADER_FILES
 )
 
 set(SOURCE_FILES
+    # FFCL is header-only; this single translation unit gives the shared library target a linker language
+    # and a real artifact.
+    src/ffcl.cpp
 )
 
 # Both options are documented in the README and can be enabled at configure time with
@@ -625,6 +628,21 @@ elseif(MODE STREQUAL "gtest")
     add_test(
         BoruvkasAlgorithmTest
         BoruvkasAlgorithmTest
+    )
+
+    # Small driver for bin/CompareHDBSCAN.py. Build it twice (THREADS_ENABLED off/on) to compare the
+    # sequential and the OpenMP build without recompiling.
+    add_executable(
+        BoruvkasRunner
+
+        # ---
+        test/src/datastruct/graph/spanning_tree/BoruvkasRunner.cpp
+    )
+    target_link_libraries(
+        BoruvkasRunner
+
+        PUBLIC
+        OpenMP::OpenMP_CXX
     )
 
     add_executable(
