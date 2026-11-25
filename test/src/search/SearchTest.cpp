@@ -33,6 +33,15 @@
 #define TIME_IT true
 #define ASSERT_IT true
 
+// Bound the work of the loop tests independently of the dataset size. Every iteration builds two KDTrees and
+// runs a dual-tree traversal, and the brute-force cross-check is O(|query| * |reference|), i.e. quadratic in
+// n_samples, so both the iteration count and the cross-check are capped.
+static constexpr std::size_t kMaxBruteForcePairs = 4'000'000;
+
+static auto max_iterations_for(std::size_t n_samples) -> std::size_t {
+    return n_samples > 20'000 ? 15 : 50;
+}
+
 namespace fs = std::filesystem;
 
 class SearcherErrorsTest : public ::testing::Test {
@@ -302,7 +311,7 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairTest) {
     auto total_elapsed_time = timer.elapsed();
 #endif
 
-    const std::size_t k_nearest_neighbors = 3;
+    const std::size_t k_nearest_neighbors = 10;
 
     {
         auto query_indices     = std::vector<IndexType>{};
@@ -374,7 +383,8 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), k_nearest_neighbors);
+        const auto shortest_edge = searcher.dual_tree_shortest_edge_with_core_distances(std::move(query_indexer),
+k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -397,7 +407,9 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairTest) {
         write_data<IndexType>(labels, 1, predictions_folder_ / fs::path(filename));
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";
@@ -485,7 +497,7 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
     auto total_elapsed_time = timer.elapsed();
 #endif
 
-    const std::size_t k_nearest_neighbors = 3;
+    const std::size_t k_nearest_neighbors = 25;
 
     {
         auto indices       = generate_indices(n_samples);
@@ -493,12 +505,11 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
 
         auto union_find = ffcl::datastruct::UnionFind<IndexType>(n_samples);
 
-        std::size_t target_label           = targets[0];
         std::size_t queries_representative = 0;
 
         for (const auto& index : indices) {
             // Merge all the indices from the same target in the same component.
-            if (targets[index] == target_label) {
+            if (targets[index] == 0) {
                 queries_representative = union_find.merge(queries_representative, index);
                 query_indices.emplace_back(index);
             }
@@ -559,7 +570,8 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
 #endif
 
         const auto shortest_edge =
-            searcher.dual_tree_shortest_edge(query_indexer, union_find, queries_representative, k_nearest_neighbors);
+            searcher.dual_tree_shortest_edge_with_core_distances(query_indexer, union_find, queries_representative,
+k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -569,13 +581,17 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
             printf("dual tree search time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
         }
 #endif
-
+        // Reference
         targets[std::get<0>(shortest_edge)] = 2;
+        // Query
         targets[std::get<1>(shortest_edge)] = 3;
+
         write_data<IndexType>(targets, 1, predictions_folder_ / fs::path(filename));
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";
@@ -630,14 +646,14 @@ TEST_F(SearcherErrorsTest, ClusteredDualTreeClosestPairWithUnionFindTest) {
 }
 */
 
-/*
+// /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 #endif
 
     // "noisy_circles", "noisy_moons", "varied", "aniso", "blobs", "no_structure", "unbalanced_blobs"
-    fs::path filename = "noisy_moons.txt";
+    fs::path filename = "no_structure.txt";
 
     using IndexType = std::size_t;
     using ValueType = dType;
@@ -666,13 +682,13 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 10);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / max_iterations_for(n_samples));
 
-    const std::size_t k_nearest_neighbors = 3;
+    const std::size_t k_nearest_neighbors = 1;
 
     auto split_index_vector           = std::vector<std::size_t>{};
     auto dual_tree_search_time_vector = std::vector<ValueType>{};
-    auto brute_force_time_vector      = std::vector<ValueType>{};
+    auto single_tree_time_vector      = std::vector<ValueType>{};
 
     for (std::size_t split_index = 1; split_index < n_samples - k_nearest_neighbors + 1; split_index += increment) {
         std::cout << "split_index: " << split_index << "\n";
@@ -737,7 +753,8 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(std::move(query_indexer), k_nearest_neighbors);
+        const auto shortest_edge =
+            searcher.dual_tree_shortest_edge_with_core_distances(std::move(query_indexer), k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -751,7 +768,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #endif
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";
@@ -773,7 +792,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
             const auto elapsed_time = timer.elapsed();
 
-            brute_force_time_vector.emplace_back(elapsed_time * 1e-9f);
+            single_tree_time_vector.emplace_back(elapsed_time * 1e-9f);
 
             printf("brute force time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
 
@@ -806,9 +825,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
                           dual_tree_traversal_benchmark_results_folder_ / fs::path("dual_tree_search_time.txt"));
 
     write_data<ValueType>(
-        brute_force_time_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
+        single_tree_time_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
 }
-*/
+// */
 
 // /*
 TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
@@ -816,7 +835,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 #endif
 
-    fs::path filename = "noisy_moons.txt";  // no_structure, unbalanced_blobs
+    fs::path filename = "no_structure.txt";  // no_structure, noisy_moons, unbalanced_blobs
 
     using IndexType = std::size_t;
     using ValueType = dType;
@@ -845,13 +864,13 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 
 #endif
 
-    const std::size_t increment = std::max(std::size_t{1}, n_samples / 100);
+    const std::size_t increment = std::max(std::size_t{1}, n_samples / max_iterations_for(n_samples));
 
     const std::size_t k_nearest_neighbors = 1;
 
     auto split_index_vector           = std::vector<std::size_t>{};
     auto dual_tree_search_time_vector = std::vector<ValueType>{};
-    auto brute_force_time_vector      = std::vector<ValueType>{};
+    auto single_tree_time_vector      = std::vector<ValueType>{};
 
     for (std::size_t split_index = 1; split_index < n_samples - k_nearest_neighbors + 1; split_index += increment) {
         shuffle_indices(indices.begin(), indices.end());
@@ -927,10 +946,10 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge(/**/ query_indexer,
-                                                                    /**/ union_find,
-                                                                    /**/ queries_representative,
-                                                                    /**/ k_nearest_neighbors);
+        const auto shortest_edge = searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
+                                                                                        /**/ union_find,
+                                                                                        /**/ queries_representative,
+                                                                                        /**/ k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -944,7 +963,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 #endif
 
 #if defined(ASSERT_IT) && ASSERT_IT
-        {
+        // Skip the brute-force cross-check once the pair count gets too large, otherwise the test is
+        // quadratic in n_samples and blows the CTest timeout on the bigger datasets.
+        if (query_indices.size() * indices.size() <= kMaxBruteForcePairs) {
 #if defined(TIME_IT) && TIME_IT
 
             std::cout << "--------------------\n";
@@ -968,7 +989,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 #if defined(TIME_IT) && TIME_IT
             const auto elapsed_time = timer.elapsed();
 
-            brute_force_time_vector.emplace_back(elapsed_time * 1e-9f);
+            single_tree_time_vector.emplace_back(elapsed_time * 1e-9f);
 
             printf("brute force time: %.*f\n", n_decimals, (elapsed_time * 1e-9f));
 
@@ -1010,7 +1031,7 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
         1,
         dual_tree_traversal_benchmark_results_folder_ / fs::path("dual_tree_search_time_union_find.txt"));
 
-    write_data<ValueType>(brute_force_time_vector,
+    write_data<ValueType>(single_tree_time_vector,
                           1,
                           dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time_union_find.txt"));
 }

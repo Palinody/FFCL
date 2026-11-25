@@ -126,6 +126,10 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -137,7 +141,6 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -147,17 +150,19 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
                                             data.end(),
                                             n_features,
                                             OptionsType()
-                                                .bucket_size(std::sqrt(n_samples))
+                                                .bucket_size(std::sqrt(n_samples) / 3)
                                                 .max_depth(std::log2(n_samples))
                                                 .axis_selection_policy(AxisSelectionPolicyType{})
                                                 .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(1)
+                            .k_nearest_neighbors(2)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -166,11 +171,13 @@ TEST_F(HDBSCANErrorsTest, NoisyCirclesTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
-/*
+// /*
 TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
@@ -179,6 +186,10 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
 
     auto indices = generate_indices(n_samples);
 
@@ -191,7 +202,6 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -201,17 +211,19 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(1)
+                            .k_nearest_neighbors(2)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -220,7 +232,9 @@ TEST_F(HDBSCANErrorsTest, NoisyMoonsTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -234,6 +248,10 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -245,7 +263,6 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -255,17 +272,19 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(1)
+                            .k_nearest_neighbors(2)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -274,7 +293,9 @@ TEST_F(HDBSCANErrorsTest, VariedTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -288,6 +309,10 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -299,7 +324,6 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -309,17 +333,19 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(1)
+                            .k_nearest_neighbors(2)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -328,7 +354,9 @@ TEST_F(HDBSCANErrorsTest, AnisoTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -342,6 +370,10 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -353,7 +385,6 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -363,17 +394,19 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(1)
+                            .k_nearest_neighbors(2)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -382,7 +415,9 @@ TEST_F(HDBSCANErrorsTest, BlobsTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -396,6 +431,10 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -407,7 +446,6 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -417,17 +455,19 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(1)
+                            .k_nearest_neighbors(2)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -436,7 +476,9 @@ TEST_F(HDBSCANErrorsTest, NoStructureTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
@@ -450,6 +492,10 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
 
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("Input dim: %ld x %ld\n", n_samples, n_features);
+#endif
+
     auto indices = generate_indices(n_samples);
 
     using IndicesIterator = decltype(indices)::iterator;
@@ -461,7 +507,6 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
     using SplittingRulePolicyType =
         ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
 
-    printf("Indexer build:\n");
     timer.reset();
 
     // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
@@ -471,17 +516,19 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
                                data.end(),
                                n_features,
                                OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
+                                   .bucket_size(std::sqrt(n_samples) / 3)
                                    .max_depth(std::log2(n_samples))
                                    .axis_selection_policy(AxisSelectionPolicyType{})
                                    .splitting_rule_policy(SplittingRulePolicyType{}));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  tree build          : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     auto hdbscan = ffcl::HDBSCAN<IndexerType>();
 
     hdbscan.set_options(ffcl::HDBSCAN<IndexerType>::Options()
-                            .k_nearest_neighbors(1)
+                            .k_nearest_neighbors(2)
                             .min_cluster_size(20)
                             .return_leaf_nodes(false)
                             .allow_single_cluster(true));
@@ -490,11 +537,13 @@ TEST_F(HDBSCANErrorsTest, UnbalancedBlobsTest) {
 
     const auto predictions = hdbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
+#if defined(VERBOSE) && VERBOSE == true
+    std::printf("  total               : %12.6f s\n", static_cast<double>(timer.elapsed()) / 1e9);
+#endif
 
     write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
 }
-*/
+// */
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

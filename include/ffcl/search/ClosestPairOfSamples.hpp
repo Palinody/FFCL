@@ -187,7 +187,7 @@ auto sequential_dual_set_shortest_edge(
     // using EdgeType  = datastruct::mst::Edge<IndexType, ValueType>;
 
     // initialize the closest edge from the current component to infinity
-    auto shortest_edge = datastruct::mst::make_default_edge<IndexType, ValueType>();
+    auto shortest_edge = datastruct::mst::make_infinity_edge<IndexType, ValueType>();
 
     for (auto query_it = indices_range_first; query_it < indices_range_last; ++query_it) {
         // initialize a nearest neighbor buffer to compare the query_it with sample indices that don't belong

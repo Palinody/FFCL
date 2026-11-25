@@ -6,7 +6,9 @@ bin/dual_tree_traversal/
 bin/single_linkage_cluster_tree/
 Testing/
 .vscode/
+.venv/
 
 # Ignore all files with the extension ".<ext>" in any directory
 *.o
 __pycache__/
+build_rel/

@@ -58,6 +58,22 @@ struct KDNodeView {
 
     bool is_leaf() const;
 
+    void set_pivot_index(std::size_t pivot_index) {
+        pivot_index_ = pivot_index;
+    }
+
+    std::size_t pivot_index() const {
+        return pivot_index_;
+    }
+
+    void set_node_id(std::size_t node_id) {
+        node_id_ = node_id;
+    }
+
+    std::size_t node_id() const {
+        return node_id_;
+    }
+
     bool has_parent() const;
 
     bool has_children() const;
@@ -83,8 +99,19 @@ struct KDNodeView {
                    std::size_t                                 reference_n_features) const;
 
     // A pair of iterators representing a window in the index array, referring to samples in the dataset.
-    // This window can represent various ranges: empty, a 1 value range for pivot, or 1+ values range for a leaf node.
+    // This window is the set of samples *owned* by the node: the whole bucket for a leaf, and empty for an
+    // internal node (its pivot sample also lives in a leaf, see `pivot_index_`).
     IteratorPairType indices_range_;
+    // Sample index of the pivot of an internal node. It is the value the queries are routed against. It is
+    // stored explicitly instead of being read from `indices_range_` because the pivot is also part of the
+    // left child range, and the child's quickselect rearranges that position.
+    std::size_t pivot_index_;
+    // Dense identifier of the node in its tree (pre-order). It lets the search buffers keep their per-node
+    // caches in flat vectors instead of hash maps keyed by node pointer.
+    std::size_t node_id_;
+    // Cached AABB diagonal length. `diameter()` is called for every node combination of the dual-tree
+    // traversal, so it must not be recomputed from the segments each time.
+    typename Bound::ValueType diameter_;
     // The index of the feature dimension selected for cutting the dataset at this node. -1 means no cut (leaf node)
     std::ptrdiff_t cut_axis_feature_index_;
     // A 1D bounding box window that stores the actual dataset values referred to by the indices_range_.
@@ -125,6 +152,9 @@ KDNodeView(IteratorPairType&&, std::ptrdiff_t, const Bound&)
 template <typename IndicesIterator, typename Bound>
 KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType& indices_range, const BoundType& bound)
   : indices_range_{indices_range}
+  , pivot_index_{0}
+  , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{-1}
   , bound_{bound} {}
 
@@ -133,12 +163,18 @@ KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType& indices_r
                                                std::ptrdiff_t          cut_axis_feature_index,
                                                const BoundType&        bound)
   : indices_range_{indices_range}
+  , pivot_index_{0}
+  , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{cut_axis_feature_index}
   , bound_{bound} {}
 
 template <typename IndicesIterator, typename Bound>
 KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType&& indices_range, const BoundType& bound)
   : indices_range_{std::move(indices_range)}
+  , pivot_index_{0}
+  , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{-1}
   , bound_{bound} {}
 
@@ -147,6 +183,9 @@ KDNodeView<IndicesIterator, Bound>::KDNodeView(const IteratorPairType&& indices_
                                                std::ptrdiff_t           cut_axis_feature_index,
                                                const BoundType&         bound)
   : indices_range_{std::move(indices_range)}
+  , pivot_index_{0}
+  , node_id_{0}
+  , diameter_{bound.diameter()}
   , cut_axis_feature_index_{cut_axis_feature_index}
   , bound_{bound} {}
 
@@ -162,7 +201,7 @@ constexpr auto KDNodeView<IndicesIterator, Bound>::end() const {
 
 template <typename IndicesIterator, typename Bound>
 constexpr auto KDNodeView<IndicesIterator, Bound>::diameter() const {
-    return bound_.diameter();
+    return diameter_;
 }
 
 template <typename IndicesIterator, typename Bound>
@@ -221,7 +260,7 @@ auto KDNodeView<IndicesIterator, Bound>::select_sibling_node(
 
     if (parent_node) {
         // get the pivot sample index in the dataset
-        const auto pivot_index = parent_node->indices_range_.first[0];
+        const auto pivot_index = parent_node->pivot_index_;
         // get the split value according to the current split dimension
         const auto pivot_split_value =
             reference_samples_range_first[pivot_index * reference_n_features + parent_node->cut_axis_feature_index_];
@@ -237,8 +276,7 @@ auto KDNodeView<IndicesIterator, Bound>::select_sibling_node(
                                            query_buffer.furthest_distance(parent_node->cut_axis_feature_index_)
                                      : common::abs(pivot_split_value - query_split_value) <
                                            query_buffer.furthest_distance(parent_node->cut_axis_feature_index_);
-        };
-        return query_buffer.remaining_capacity() || visit_sibling()
+        };        return query_buffer.remaining_capacity() || visit_sibling()
                    ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
                    : nullptr;
     }
@@ -259,7 +297,7 @@ auto KDNodeView<IndicesIterator, Bound>::select_closest_child(
     common::ignore_parameters(reference_samples_range_last, query_features_range_last);
 
     // get the pivot sample index in the dataset
-    const auto pivot_index = indices_range_.first[0];
+    const auto pivot_index = pivot_index_;
     // get the split value according to the current split dimension
     const auto pivot_split_value =
         reference_samples_range_first[pivot_index * reference_n_features + cut_axis_feature_index_];
@@ -284,7 +322,11 @@ void KDNodeView<IndicesIterator, Bound>::serialize(rapidjson::Writer<rapidjson::
     common::ignore_parameters(reference_samples_range_last);
 
     writer.StartArray();
-    for (auto subrange_index_it = indices_range_first; subrange_index_it != indices_range_last; ++subrange_index_it) {
+    // An internal node owns no sample (its pivot lives in a leaf), so the pivot is written instead to keep
+    // one entry per node in the serialized tree.
+    const auto subrange_first = is_leaf() ? indices_range_first : &pivot_index_;
+    const auto subrange_last  = is_leaf() ? indices_range_last : &pivot_index_ + 1;
+    for (auto subrange_index_it = subrange_first; subrange_index_it != subrange_last; ++subrange_index_it) {
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < reference_n_features; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {

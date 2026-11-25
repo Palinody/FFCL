@@ -22,17 +22,26 @@ constexpr auto make_edge(const Index& index_1, const Index& index_2, const Dista
 }
 
 template <typename Index, typename Distance>
-constexpr auto make_default_edge() {
+constexpr auto make_infinity_edge() {
     return make_edge(common::infinity<Index>(), common::infinity<Index>(), common::infinity<Distance>());
 }
 
+}  // namespace ffcl::datastruct::mst
+
+template <typename Index, typename Distance>
+struct std::less<ffcl::datastruct::mst::Edge<Index, Distance>> {
+    bool operator()(const ffcl::datastruct::mst::Edge<Index, Distance>& edge1,
+                    const ffcl::datastruct::mst::Edge<Index, Distance>& edge2) const {
+        // Only compare based on the third element (distance)
+        return std::get<2>(edge1) < std::get<2>(edge2);
+    }
+};
+
+namespace ffcl::datastruct::mst {
+
 template <typename Index, typename Distance>
 auto sort(EdgesList<Index, Distance>&& mst) {
-    auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
-        return std::get<2>(edge_1) < std::get<2>(edge_2);
-    };
-
-    std::sort(mst.begin(), mst.end(), edge_comparator);
+    std::sort(mst.begin(), mst.end(), std::less<Edge<Index, Distance>>());
 
     return mst;
 }
@@ -41,11 +50,7 @@ template <typename Index, typename Distance>
 auto sort_copy(const EdgesList<Index, Distance>& mst) {
     auto mst_copy = mst;
 
-    auto edge_comparator = [](const auto& edge_1, const auto& edge_2) {
-        return std::get<2>(edge_1) < std::get<2>(edge_2);
-    };
-
-    std::sort(mst_copy.begin(), mst_copy.end(), edge_comparator);
+    std::sort(mst_copy.begin(), mst_copy.end(), std::less<Edge<Index, Distance>>());
 
     return mst_copy;
 }

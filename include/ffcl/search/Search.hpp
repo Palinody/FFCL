@@ -4,6 +4,8 @@
 
 #include "ffcl/search/buffer/StaticBuffer.hpp"
 
+#include "ffcl/datastruct/UnionFind.hpp"
+
 #include "ffcl/search/DualTreeTraverser.hpp"
 #include "ffcl/search/TreeTraverser.hpp"
 
@@ -46,6 +48,12 @@ class Searcher {
 
     constexpr auto cend() const;
 
+    constexpr auto root() const;
+
+    constexpr auto indexer() const {
+        return tree_traverser_.indexer();
+    }
+
     constexpr auto features_range_first(std::size_t sample_index) const;
 
     constexpr auto features_range_last(std::size_t sample_index) const;
@@ -72,9 +80,6 @@ class Searcher {
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
     auto dual_tree_shortest_edge(ForwardedQueryIndexer&& forwarded_query_indexer, BufferArgs&&... buffer_args) const;
 
-    // template <typename... BufferArgs>
-    // auto dual_tree_shortest_edge(BufferArgs&&... buffer_args) const;
-
     template <typename QueryIndexer,
               typename... BufferArgs,
               typename std::enable_if_t<std::is_same_v<QueryIndexer, ReferenceIndexer>, bool> = true>
@@ -86,6 +91,16 @@ class Searcher {
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
     auto dual_tree_shortest_edge_with_core_distances(ForwardedQueryIndexer&& forwarded_query_indexer,
                                                      BufferArgs&&... buffer_args) const;
+
+    template <typename QueryIndexer>
+    auto dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                           const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                           const DataType*                         squared_core_distances_ptr) const;
+
+    template <typename QueryIndexer, typename EdgesBuffer>
+    void dtt_shortest_edge(const QueryIndexer&                  query_indexer,
+                           const std::vector<NodePtr>&          query_nodes,
+                           EdgesBuffer&                         edge_buffer) const;
 
   private:
     TreeTraverser<ReferenceIndexer> tree_traverser_;
@@ -130,6 +145,11 @@ constexpr auto Searcher<ReferenceIndexer>::cbegin() const {
 template <typename ReferenceIndexer>
 constexpr auto Searcher<ReferenceIndexer>::cend() const {
     return tree_traverser_.cend();
+}
+
+template <typename ReferenceIndexer>
+constexpr auto Searcher<ReferenceIndexer>::root() const {
+    return tree_traverser_.root();
 }
 
 template <typename ReferenceIndexer>
@@ -185,13 +205,6 @@ auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryIndexer&&
                                                    std::forward<BufferArgs>(buffer_args)...);
 }
 
-/*
-template <typename ReferenceIndexer>
-template <typename... BufferArgs>
-auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... buffer_args) const {
-    return tree_traverser_.dual_tree_shortest_edge(std::forward<BufferArgs>(buffer_args)...);
-}
-*/
 
 template <typename ReferenceIndexer>
 template <typename QueryIndexer,
@@ -212,6 +225,22 @@ auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge_with_core_distances(
     BufferArgs&&... buffer_args) const {
     return tree_traverser_.dual_tree_shortest_edge_with_core_distances(
         std::forward<ForwardedQueryIndexer>(forwarded_query_indexer), std::forward<BufferArgs>(buffer_args)...);
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryIndexer>
+auto Searcher<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                                                   const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                                                   const DataType* squared_core_distances_ptr) const {
+    return tree_traverser_.dtt_shortest_edge(query_indexer, union_find_const_ref, squared_core_distances_ptr);
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryIndexer, typename EdgesBuffer>
+void Searcher<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&         query_indexer,
+                                                   const std::vector<NodePtr>& query_nodes,
+                                                   EdgesBuffer&                edge_buffer) const {
+    tree_traverser_.dtt_shortest_edge(query_indexer, query_nodes, edge_buffer);
 }
 
 }  // namespace ffcl::search

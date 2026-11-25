@@ -8,6 +8,7 @@
 #include "ffcl/datastruct/bounds/UnboundedBall.hpp"  // default bound
 
 #include <cstddef>
+#include <optional>
 #include <tuple>
 #include <vector>
 
@@ -139,8 +140,34 @@ class StaticBuffer {
                                                                /**/ n_features);
     }
 
+    template <typename OptionalType>
+    void update(const IndexType&             index_candidate,
+                const DistanceType&          distance_candidate,
+                std::optional<OptionalType>& optional_parameter) {
+        static_base_traits<DerivedBuffer>::call_update(static_cast<DerivedBuffer*>(this),
+                                                       /**/ index_candidate,
+                                                       /**/ distance_candidate,
+                                                       /**/ optional_parameter);
+    }
+
+    template <typename OtherIndicesIterator, typename OtherSamplesIterator, typename OptionalType>
+    void partial_search(const OtherIndicesIterator&  indices_range_first,
+                        const OtherIndicesIterator&  indices_range_last,
+                        const OtherSamplesIterator&  samples_range_first,
+                        const OtherSamplesIterator&  samples_range_last,
+                        std::size_t                  n_features,
+                        std::optional<OptionalType>& optional_parameter) {
+        static_base_traits<DerivedBuffer>::call_partial_search(static_cast<DerivedBuffer*>(this),
+                                                               /**/ indices_range_first,
+                                                               /**/ indices_range_last,
+                                                               /**/ samples_range_first,
+                                                               /**/ samples_range_last,
+                                                               /**/ n_features,
+                                                               /**/ optional_parameter);
+    }
+
   protected:
-    void update_static_buffers(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+    void try_update_static_buffers(const IndexType& index_candidate, const DistanceType& distance_candidate) {
         // update by default if it's being updated for the first time
         if (!size()) {
             closest_index_    = index_candidate;
@@ -167,6 +194,17 @@ class StaticBuffer {
         }
         // populate if the max capacity is reached and the candidate has a closer distance
         else if (distance_candidate < furthest_distance()) {
+            // Fast path for the single-candidate buffers (the common Boruvka case): the closest and the
+            // furthest candidate are the same element, so no rescan of the buffer is needed.
+            if (max_capacity_ == 1) {
+                closest_index_                  = index_candidate;
+                closest_distance_               = distance_candidate;
+                furthest_distance_              = distance_candidate;
+                buffer_index_of_furthest_index_ = 0;
+                indices_[0]                     = index_candidate;
+                distances_[0]                   = distance_candidate;
+                return;
+            }
             // If distance_candidate is lesser than furthest_distance, it could as well be lesser than the closest one.
             if (distance_candidate < closest_distance()) {
                 closest_index_    = index_candidate;
@@ -193,6 +231,22 @@ class StaticBuffer {
     DistanceType furthest_distance_;
 
     IndexType max_capacity_;
+};
+
+struct StaticBufferLessComparator {
+    template <typename Buffer1, typename Buffer2>
+    bool operator()(const Buffer1& buffer1, const Buffer2& buffer2) const {
+        static_assert(common::is_crtp_of<Buffer1, StaticBuffer>::value,
+                      "Provided a Buffer that does not inherit from ffcl::search::buffer::StaticBuffer<Derived>");
+
+        static_assert(common::is_crtp_of<Buffer2, StaticBuffer>::value,
+                      "Provided a Buffer that does not inherit from ffcl::search::buffer::StaticBuffer<Derived>");
+
+        // Ensures that buffers are sorted by decreasing sizes. If 2 buffers have the same size,
+        // sort by increasing furthest_distance.
+        return std::tie(buffer2.size(), buffer1.furthest_distance()) <
+               std::tie(buffer1.size(), buffer2.furthest_distance());
+    }
 };
 
 }  // namespace ffcl::search::buffer

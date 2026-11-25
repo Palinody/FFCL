@@ -212,10 +212,16 @@ auto shift_median_to_leftmost_equal_value(std::size_t                    median_
         // Update the ranges accordingly
         median_indices_range.first  = std::next(left_neighbor_it);
         median_indices_range.second = median_indices_range.first + 1;
-        right_indices_range.first   = median_indices_range.second;
-        left_indices_range.second   = median_indices_range.first;
         median_index                = std::distance(left_indices_range.first, median_indices_range.first);
     }
+    // The pivot sample is kept in the node's own `indices_range_` because it is needed to route the queries
+    // (`select_closest_child` / `select_sibling_node` compare against its value). It is *also* kept as the last
+    // element of the left range so that the leaves of the tree cover every sample exactly once. Without this
+    // duplication the pivot samples only live in internal nodes, which forces a dual-tree traversal to visit
+    // every node combination twice (query side and reference side) and makes it quadratic in the number of
+    // nodes.
+    left_indices_range.second  = median_indices_range.second;
+    right_indices_range.first  = median_indices_range.second;
     return std::make_tuple(median_index,
                            std::forward<ForwardedIndicesIteratorPair>(left_indices_range),
                            std::forward<ForwardedIndicesIteratorPair>(median_indices_range),

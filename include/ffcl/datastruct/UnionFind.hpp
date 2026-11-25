@@ -21,6 +21,8 @@ class UnionFind {
 
     Index merge(const Index& index_1, const Index& index_2);
 
+    bool try_merge(const Index& index_1, const Index& index_2);
+
     void print() const;
 
   private:
@@ -35,14 +37,14 @@ UnionFind<Index>::UnionFind(std::size_t n_samples)
   , parents_{std::make_unique<Index[]>(n_samples)}
   , ranks_{std::make_unique<Index[]>(n_samples)} {
     // set each element as its own parent
-    std::iota(parents_.get(), parents_.get() + n_samples, static_cast<Index>(0));
+    std::iota(parents_.get(), parents_.get() + n_samples_, static_cast<Index>(0));
 }
 
 template <typename Index>
 UnionFind<Index>::UnionFind(std::size_t n_samples, std::unique_ptr<Index[]> labels)
   : n_samples_{n_samples}
   , parents_{std::move(labels)}
-  , ranks_{std::make_unique<Index[]>(n_samples)} {}
+  , ranks_{std::make_unique<Index[]>(n_samples_)} {}
 
 template <typename Index>
 Index UnionFind<Index>::find(Index index) const {
@@ -75,6 +77,29 @@ Index UnionFind<Index>::merge(const Index& index_1, const Index& index_2) {
     } else {
         parents_[representative_1] = representative_2;
         return representative_2;
+    }
+}
+
+template <typename Index>
+bool UnionFind<Index>::try_merge(const Index& index_1, const Index& index_2) {
+    const auto representative_1 = find(index_1);
+    const auto representative_2 = find(index_2);
+
+    if (representative_1 == representative_2) {
+        return false;
+
+    } else if (ranks_[representative_1] == ranks_[representative_2]) {
+        parents_[representative_2] = parents_[representative_1];
+        ++ranks_[representative_1];
+        return true;
+
+    } else if (ranks_[representative_1] > ranks_[representative_2]) {
+        parents_[representative_2] = representative_1;
+        return true;
+
+    } else {
+        parents_[representative_1] = representative_2;
+        return true;
     }
 }
 

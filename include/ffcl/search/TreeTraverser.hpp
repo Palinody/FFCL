@@ -8,12 +8,18 @@
 #include "ffcl/search/buffer/WithMemory.hpp"
 #include "ffcl/search/buffer/WithUnionFind.hpp"
 
+#include "ffcl/search/buffer/EdgesBuffer.hpp"
 #include "ffcl/search/buffer/IndicesToBuffersMap.hpp"
 
 #include "ffcl/search/ClosestPairOfSamples.hpp"
 
+#include "ffcl/datastruct/UnionFind.hpp"
+
+#include <array>
 #include <deque>
 #include <iterator>
+#include <tuple>
+#include <optional>
 #include <queue>
 #include <vector>
 
@@ -54,6 +60,12 @@ class TreeTraverser {
 
     constexpr auto cend() const;
 
+    constexpr auto root() const;
+
+    constexpr auto indexer() const {
+        return reference_indexer_;
+    }
+
     constexpr auto features_range_first(std::size_t sample_index) const;
 
     constexpr auto features_range_last(std::size_t sample_index) const;
@@ -80,9 +92,6 @@ class TreeTraverser {
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
     auto dual_tree_shortest_edge(ForwardedQueryIndexer&& forwarded_query_indexer, BufferArgs&&... buffer_args) const;
 
-    // template <typename... BufferArgs>
-    // auto dual_tree_shortest_edge(BufferArgs&&... buffer_args) const;
-
     template <typename QueryIndexer,
               typename... BufferArgs,
               typename std::enable_if_t<std::is_same_v<QueryIndexer, ReferenceIndexer>, bool> = true>
@@ -94,6 +103,19 @@ class TreeTraverser {
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
     auto dual_tree_shortest_edge_with_core_distances(ForwardedQueryIndexer&& forwarded_query_indexer,
                                                      BufferArgs&&... buffer_args) const;
+
+    template <typename QueryIndexer>
+    auto dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                           const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                           const DataType*                         squared_core_distances_ptr) const;
+
+    // Same traversal but restricted to a caller-provided set of query nodes and writing into a
+    // caller-provided buffer. This is what lets the Boruvka step be parallelised over disjoint query
+    // subtrees: each thread owns its buffer, so no state is shared.
+    template <typename QueryIndexer, typename EdgesBuffer>
+    void dtt_shortest_edge(const QueryIndexer&               query_indexer,
+                           const std::vector<ReferenceNodePtr>& query_nodes,
+                           EdgesBuffer&                      edge_buffer) const;
 
   private:
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
@@ -127,10 +149,22 @@ class TreeTraverser {
                              bool                    bypass_cost_calculation,
                              BufferArgs&&... buffer_args) const;
 
-    template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
+    template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+    void descend_query_children(const QueryNodePtr&     query_node,
+                                const ReferenceNodePtr& reference_node,
+                                EdgesBuffer&            edge_buffer,
+                                BufferArgs&&... buffer_args) const;
+
+    template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+    void descend_reference_children(const QueryNodePtr&     query_node,
+                                    const ReferenceNodePtr& reference_node,
+                                    EdgesBuffer&            edge_buffer,
+                                    BufferArgs&&... buffer_args) const;
+
+    template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
     void dual_tree_traversal_with_core_distances(const QueryNodePtr&     query_node,
                                                  const ReferenceNodePtr& reference_node,
-                                                 QueriesToBuffersMap&    queries_to_buffers_map,
+                                                 EdgesBuffer&            edge_buffer,
                                                  std::optional<DataType> optional_cost,
                                                  bool                    bypass_cost_calculation,
                                                  BufferArgs&&... buffer_args) const;
@@ -177,6 +211,11 @@ constexpr auto TreeTraverser<ReferenceIndexer>::cbegin() const {
 template <typename ReferenceIndexer>
 constexpr auto TreeTraverser<ReferenceIndexer>::cend() const {
     return reference_indexer_.cend();
+}
+
+template <typename ReferenceIndexer>
+constexpr auto TreeTraverser<ReferenceIndexer>::root() const {
+    return reference_indexer_.root();
 }
 
 template <typename ReferenceIndexer>
@@ -319,7 +358,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
     // 'emplace_nodes_combination_if_not_found' emplaces the nodes combination in one of the queries_to_buffers_map
     // buffers only if its not found. It returns 'true' if emplace was successful, else it returns false.
     // We want to enter this statement only if the nodes combination have not been visited.
-    if (!queries_to_buffers_map.emplace_nodes_combination_if_not_found(query_node, reference_node)) {
+    if (!queries_to_buffers_map.mark_combination_as_visited(query_node, reference_node).second) {
         return;
     }
     // Calculate or update the cost if necessary.
@@ -335,11 +374,7 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal(const QueryNodePtr&   
         }
     }
     // Else, update the query buffers with the reference set while keeping track of the global shortest edge.
-    queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
-                                                         query_node->indices_range_.second,
-                                                         reference_node->indices_range_.first,
-                                                         reference_node->indices_range_.second,
-                                                         std::forward<BufferArgs>(buffer_args)...);
+    queries_to_buffers_map.base_case(query_node, reference_node, std::forward<BufferArgs>(buffer_args)...);
 
     // The order of traversal doesn't matter for the query node.
     if (!query_node->is_leaf()) {
@@ -415,17 +450,16 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge_with_core_distance
     static_assert(!std::is_same_v<DeducedBufferType, void>,
                   "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
 
-    auto queries_to_buffers_map =
-        buffer::make_indices_to_buffers_map<DeducedBufferType>(query_indexer, reference_indexer_);
+    auto edge_buffer = buffer::make_indices_to_buffers_map<DeducedBufferType>(query_indexer, reference_indexer_);
 
     dual_tree_traversal_with_core_distances(query_indexer.root(),
                                             reference_indexer_.root(),
-                                            queries_to_buffers_map,
+                                            edge_buffer,
                                             std::nullopt,
                                             false,
                                             std::forward<BufferArgs>(buffer_args)...);
 
-    return std::move(queries_to_buffers_map).tightest_edge();
+    return std::move(edge_buffer).tightest_edge();
 }
 
 template <typename ReferenceIndexer>
@@ -440,93 +474,149 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge_with_core_distance
 }
 
 template <typename ReferenceIndexer>
-template <typename QueryNodePtr, typename QueriesToBuffersMap, typename... BufferArgs>
-void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(
-    const QueryNodePtr&     query_node,
-    const ReferenceNodePtr& reference_node,
-    QueriesToBuffersMap&    queries_to_buffers_map,
-    std::optional<DataType> optional_cost,
-    bool                    bypass_cost_calculation,
-    BufferArgs&&... buffer_args) const {
-    // 'emplace_nodes_combination_if_not_found' emplaces the nodes combination in one of the queries_to_buffers_map
-    // buffers only if its not found. It returns 'true' if emplace was successful, else it returns false.
-    // The statement is true only if the nodes combination have not been visited.
-    if (!queries_to_buffers_map.emplace_nodes_combination_if_not_found(query_node, reference_node)) {
-        return;
-    }
-    // Calculate or update the cost if necessary.
+template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(const QueryNodePtr&     query_node,
+                                                                              const ReferenceNodePtr& reference_node,
+                                                                              EdgesBuffer&            edge_buffer,
+                                                                              std::optional<DataType> optional_cost,
+                                                                              bool bypass_cost_calculation,
+                                                                              BufferArgs&&... buffer_args) const {
+    // Calculate or update the cost if necessary. The caller already scored the combination when it built its
+    // priority queue, in which case `bypass_cost_calculation` is set and the score is reused.
     if (!bypass_cost_calculation) {
-        // If the optional passed as a parameter to this function contains a value, it means that the parent in the
-        // recursive pattern passed a nodes combination that might need to be pruned. We recalculate the cost by
-        // calling 'update_cost'. Otherwise we need to calculate the cost of this node combination.
-        optional_cost = optional_cost ? queries_to_buffers_map.update_cost(query_node, reference_node, *optional_cost)
-                                      : queries_to_buffers_map.cost(query_node, reference_node);
-        // If the returned optional is std::nullopt, then the current nodes combination can be pruned.
+        optional_cost = optional_cost ? edge_buffer.update_cost(query_node, reference_node, *optional_cost)
+                                      : edge_buffer.cost(query_node, reference_node);
+
         if (!optional_cost) {
             return;
         }
     }
-    // Else, update the query buffers with the reference set while keeping track of the global shortest edge.
-    queries_to_buffers_map.partial_search_for_each_query(query_node->indices_range_.first,
-                                                         query_node->indices_range_.second,
-                                                         reference_node->indices_range_.first,
-                                                         reference_node->indices_range_.second,
-                                                         std::forward<BufferArgs>(buffer_args)...);
-
-    // The order of traversal doesn't matter for the query node.
-    if (!query_node->is_leaf()) {
-        for (const auto& child_node : {query_node->left_, query_node->right_}) {
-            dual_tree_traversal_with_core_distances(child_node,
-                                                    reference_node,
-                                                    queries_to_buffers_map,
-                                                    std::nullopt,
-                                                    false,
-                                                    std::forward<BufferArgs>(buffer_args)...);
-        }
+    // Base case: only leaf/leaf combinations are brute forced. The leaves of the KDTree cover every sample
+    // exactly once (an internal node owns no sample, its pivot is stored at the end of its left child range),
+    // so the leaf/leaf base cases alone are a complete enumeration of the point pairs.
+    if (query_node->is_leaf() && reference_node->is_leaf()) {
+        edge_buffer.base_case(query_node, reference_node, std::forward<BufferArgs>(buffer_args)...);
+        return;
     }
-    // The order of traversal does matter in this case.
-    if (!reference_node->is_leaf()) {
-        auto children_priority_queue =
-            DualNodePriorityQueueType<QueryNodePtr, ReferenceNodePtr, DataType>(dual_node_greater_than_comparator_);
+    // Descend a single side per call, always the larger one. This is the size balanced descent of the
+    // reference dual-tree Boruvka implementations: it reaches every leaf/leaf combination exactly once, so no
+    // visited-combination bookkeeping is needed and the recursion depth stays logarithmic.
+    if (query_node->is_leaf() ||
+        (!reference_node->is_leaf() && reference_node->diameter() > query_node->diameter())) {
+        this->descend_reference_children(
+            query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
 
-        for (const auto& child_node : {reference_node->left_, reference_node->right_}) {
-            const auto nodes_combination_optional_cost = queries_to_buffers_map.cost(query_node, child_node);
-
-            if (nodes_combination_optional_cost) {
-                children_priority_queue.emplace(query_node, child_node, *nodes_combination_optional_cost);
-            }
-        }
-        // Process the first nodes combination and bypass the cost calculation.
-        if (!children_priority_queue.empty()) {
-            {
-                const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
-
-                common::ignore_parameters(nodes_combination_cost);
-
-                dual_tree_traversal_with_core_distances(pq_query_node,
-                                                        pq_reference_node,
-                                                        queries_to_buffers_map,
-                                                        std::nullopt,
-                                                        true,
-                                                        std::forward<BufferArgs>(buffer_args)...);
-
-                children_priority_queue.pop();
-            }
-            // Process the rest of the nodes combinations and update the costs. It might prune the combination.
-            while (!children_priority_queue.empty()) {
-                const auto& [pq_query_node, pq_reference_node, nodes_combination_cost] = children_priority_queue.top();
-
-                dual_tree_traversal_with_core_distances(pq_query_node,
-                                                        pq_reference_node,
-                                                        queries_to_buffers_map,
-                                                        std::make_optional(nodes_combination_cost),
-                                                        false,
-                                                        std::forward<BufferArgs>(buffer_args)...);
-
-                children_priority_queue.pop();
-            }
-        }
+    } else {
+        this->descend_query_children(
+            query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
     }
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::descend_query_children(const QueryNodePtr&     query_node,
+                                                             const ReferenceNodePtr& reference_node,
+                                                             EdgesBuffer&            edge_buffer,
+                                                             BufferArgs&&... buffer_args) const {
+    // Fixed two-element ordering: a std::priority_queue here would heap-allocate once per node combination,
+    // which dominates at large sample counts.
+    auto children = std::array<std::tuple<QueryNodePtr, DataType>, 2>{};
+
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& child_query_node = (child_index == 0) ? query_node->left_ : query_node->right_;
+
+        children[child_index] = std::make_tuple(
+            child_query_node,
+            edge_buffer.cost(child_query_node, reference_node).value_or(common::infinity<DataType>()));
+    }
+    if (std::get<1>(children[1]) < std::get<1>(children[0])) {
+        std::swap(children[0], children[1]);
+    }
+    // The closest child is descended first so that the reference node is scored against tightened buffers as
+    // early as possible; the second one is re-scored because the first descent may have made it prunable.
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& [child_query_node, child_cost] = children[child_index];
+
+        if (child_cost >= common::infinity<DataType>()) {
+            continue;
+        }
+        dual_tree_traversal_with_core_distances(child_query_node,
+                                                reference_node,
+                                                edge_buffer,
+                                                child_index == 0 ? std::nullopt : std::make_optional(child_cost),
+                                                child_index == 0,
+                                                std::forward<BufferArgs>(buffer_args)...);
+    }
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
+void TreeTraverser<ReferenceIndexer>::descend_reference_children(const QueryNodePtr&     query_node,
+                                                                 const ReferenceNodePtr& reference_node,
+                                                                 EdgesBuffer&            edge_buffer,
+                                                                 BufferArgs&&... buffer_args) const {
+    // Same fixed two-element ordering as `descend_query_children`.
+    auto children = std::array<std::tuple<ReferenceNodePtr, DataType>, 2>{};
+
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& child_reference_node = (child_index == 0) ? reference_node->left_ : reference_node->right_;
+
+        children[child_index] = std::make_tuple(
+            child_reference_node,
+            edge_buffer.cost(query_node, child_reference_node).value_or(common::infinity<DataType>()));
+    }
+    if (std::get<1>(children[1]) < std::get<1>(children[0])) {
+        std::swap(children[0], children[1]);
+    }
+    for (std::size_t child_index = 0; child_index < 2; ++child_index) {
+        const auto& [child_reference_node, child_cost] = children[child_index];
+
+        if (child_cost >= common::infinity<DataType>()) {
+            continue;
+        }
+        dual_tree_traversal_with_core_distances(query_node,
+                                                child_reference_node,
+                                                edge_buffer,
+                                                child_index == 0 ? std::nullopt : std::make_optional(child_cost),
+                                                child_index == 0,
+                                                std::forward<BufferArgs>(buffer_args)...);
+    }
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryIndexer, typename EdgesBuffer>
+void TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                  query_indexer,
+                                                        const std::vector<ReferenceNodePtr>& query_nodes,
+                                                        EdgesBuffer&                         edge_buffer) const {
+    common::ignore_parameters(query_indexer);
+
+    for (const auto& query_node : query_nodes) {
+        dual_tree_traversal_with_core_distances(/**/ query_node,
+                                                /**/ reference_indexer_.root(),
+                                                /**/ edge_buffer,
+                                                /**/ std::nullopt,
+                                                /**/ false);
+    }
+}
+
+template <typename ReferenceIndexer>
+template <typename QueryIndexer>
+auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&                     query_indexer,
+                                                        const datastruct::UnionFind<IndexType>& union_find_const_ref,
+                                                        const DataType* squared_core_distances_ptr) const {
+    // using BuffersFeaturesIteratorType = decltype(std::declval<QueryIndexer>().features_range_first(0));
+    // using BufferType                  = buffer::Unsorted<BuffersFeaturesIteratorType>;
+
+    auto edge_buffer =
+        buffer::make_edge_buffer(query_indexer, reference_indexer_, union_find_const_ref, squared_core_distances_ptr);
+
+    dual_tree_traversal_with_core_distances(/**/ query_indexer.root(),
+                                            /**/ reference_indexer_.root(),
+                                            /**/ edge_buffer,
+                                            /**/ std::nullopt,
+                                            /**/ false);
+
+    return edge_buffer.component_to_shortest_edge();
 }
 
 }  // namespace ffcl::search

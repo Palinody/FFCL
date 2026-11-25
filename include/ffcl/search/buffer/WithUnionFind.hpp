@@ -6,6 +6,8 @@
 
 #include "ffcl/datastruct/UnionFind.hpp"
 
+#include <algorithm>
+#include <optional>
 #include <vector>
 
 namespace ffcl::search::buffer {
@@ -27,30 +29,60 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
     using UnionFindConstReference = const datastruct::UnionFind<IndexType>&;
 
     WithUnionFind(BoundType&&             bound,
-                  UnionFindConstReference union_find_const_reference,
+                  UnionFindConstReference union_find_const_ref,
                   const IndexType&        query_representative,
                   const IndexType&        max_capacity = common::infinity<IndexType>())
       : StaticBuffer<WithUnionFind<DistancesIterator, BoundType>>(std::forward<BoundType>(bound), max_capacity)
-      , union_find_const_reference_{union_find_const_reference}
+      , union_find_const_ref_{union_find_const_ref}
       , query_representative_{query_representative} {}
 
     WithUnionFind(const DistancesIterator& centroid_features_query_first,
                   const DistancesIterator& centroid_features_query_last,
-                  UnionFindConstReference  union_find_const_reference,
+                  UnionFindConstReference  union_find_const_ref,
                   const IndexType&         query_representative,
                   const IndexType&         max_capacity = common::infinity<IndexType>())
       : WithUnionFind(BoundType(centroid_features_query_first, centroid_features_query_last),
-                      union_find_const_reference,
+                      union_find_const_ref,
                       query_representative,
                       max_capacity) {}
 
-    void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
-        // consider an update only if the candidate is not in the same component as the representative of the component
-        const bool are_in_same_component = union_find_const_reference_.find(query_representative_) ==
-                                           union_find_const_reference_.find(index_candidate);
+    // Optional mutual reachability support: when core distances are provided, the buffered distance is the
+    // mutual reachability distance `max(d(query, candidate), core(query), core(candidate))` instead of the raw
+    // distance. This is what HDBSCAN* needs; plain Boruvka leaves it unset and keeps the raw distance.
+    void set_core_distances(const DistanceType* core_distances, const IndexType& query_index) {
+        core_distances_ptr_ = core_distances;
+        query_index_        = query_index;
+    }
 
-        if (!are_in_same_component) {
-            this->update_static_buffers(index_candidate, distance_candidate);
+    // Optional precomputed representative per sample. The union-find does not change during a Boruvka step,
+    // so the path-compression walk of `find()` does not have to be repeated for every candidate.
+    void set_representatives(const IndexType* representatives) {
+        representatives_ptr_ = representatives;
+    }
+
+    auto candidate_representative(const IndexType& index_candidate) const -> IndexType {
+        return representatives_ptr_ ? representatives_ptr_[static_cast<std::size_t>(index_candidate)]
+                                    : union_find_const_ref_.find(index_candidate);
+    }
+
+    auto mutual_reachability_distance(const IndexType& index_candidate,
+                                      DistanceType     distance_candidate) const -> DistanceType {
+        if (!core_distances_ptr_) {
+            return distance_candidate;
+        }
+        return std::max(distance_candidate,
+                        std::max(core_distances_ptr_[query_index_],
+                                 core_distances_ptr_[static_cast<std::size_t>(index_candidate)]));
+    }
+
+    void update_impl(const IndexType& index_candidate, const DistanceType& distance_candidate) {
+        const auto candidate_representative = this->candidate_representative(index_candidate);
+
+        // consider an update only if the candidate is not in the same component as the representative of the component
+        const bool not_in_same_component = query_representative_ != candidate_representative;
+
+        if (not_in_same_component) {
+            this->try_update_static_buffers(index_candidate, distance_candidate);
         }
     }
 
@@ -62,23 +94,86 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                              std::size_t                 n_features) {
         ffcl::common::ignore_parameters(samples_range_last);
 
-        // reference_index_it is an iterator that iterates over all the indices from the indices_range_first to
-        // indices_range_last range
-        for (auto reference_index_it = indices_range_first; reference_index_it != indices_range_last;
-             ++reference_index_it) {
+        // The core-distance branch is hoisted out of the loop: it is constant for the whole search and the
+        // plain distance path is the hot one.
+        if (!core_distances_ptr_) {
+            for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
+                const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
+                    samples_range_first + *index_it * n_features,
+                    samples_range_first + *index_it * n_features + n_features);
+
+                if (optional_candidate_distance) {
+                    update_impl(*index_it, *optional_candidate_distance);
+                }
+            }
+            return;
+        }
+        // The bound of this buffer is unbounded, so `compute_distance_to_centroid_if_within_bounds` can never
+        // reject a candidate: call the distance directly and skip the per-candidate std::optional.
+        for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
+            const auto candidate_distance = this->bound_.distance_to_centroid(
+                samples_range_first + *index_it * n_features,
+                samples_range_first + *index_it * n_features + n_features);
+
+            update_impl(*index_it, mutual_reachability_distance(*index_it, candidate_distance));
+        }
+    }
+
+    template <typename OptionalType>
+    void update_impl(const IndexType&             index_candidate,
+                     const DistanceType&          distance_candidate,
+                     std::optional<OptionalType>& candidate_representative) {
+        candidate_representative = this->candidate_representative(index_candidate);
+
+        // consider an update only if the candidate is not in the same component as the representative of the component
+        const bool not_in_same_component = query_representative_ != candidate_representative;
+
+        if (not_in_same_component) {
+            this->try_update_static_buffers(index_candidate, distance_candidate);
+        }
+    }
+
+    template <typename OtherIndicesIterator, typename OtherSamplesIterator, typename OptionalType>
+    void partial_search_impl(const OtherIndicesIterator&  indices_range_first,
+                             const OtherIndicesIterator&  indices_range_last,
+                             const OtherSamplesIterator&  samples_range_first,
+                             const OtherSamplesIterator&  samples_range_last,
+                             std::size_t                  n_features,
+                             std::optional<OptionalType>& candidates_component_membership) {
+        ffcl::common::ignore_parameters(samples_range_last);
+
+        for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
             const auto optional_candidate_distance = this->bound_.compute_distance_to_centroid_if_within_bounds(
-                samples_range_first + *reference_index_it * n_features,
-                samples_range_first + *reference_index_it * n_features + n_features);
+                samples_range_first + *index_it * n_features,
+                samples_range_first + *index_it * n_features + n_features);
 
             if (optional_candidate_distance) {
-                update_impl(*reference_index_it, *optional_candidate_distance);
+                auto component_membership = std::optional<OptionalType>{std::nullopt};
+
+                update_impl(*index_it,
+                            mutual_reachability_distance(*index_it, *optional_candidate_distance),
+                            component_membership);
+
+                // Store the first encountered component membership if no value was saved yet.
+                if (index_it == indices_range_first) {
+                    candidates_component_membership = component_membership;
+
+                } else if (component_membership != candidates_component_membership) {
+                    // If the current component_membership differs from the first, mark that they are not all the same
+                    candidates_component_membership = std::nullopt;
+                }
             }
         }
     }
 
   private:
-    UnionFindConstReference union_find_const_reference_;
+    UnionFindConstReference union_find_const_ref_;
     IndexType               query_representative_;
+    // Optional core distances (indexed by sample) used to compute mutual reachability distances.
+    const DistanceType* core_distances_ptr_ = nullptr;
+    IndexType           query_index_        = 0;
+    // Optional precomputed union-find representatives (see `set_representatives`).
+    const IndexType* representatives_ptr_ = nullptr;
 };
 
 // Declare and define a static_base_traits specialization for WithUnionFind:
@@ -113,6 +208,30 @@ struct static_base_traits<WithUnionFind<DistancesIterator, Bound>> {
                                              /**/ samples_range_first,
                                              /**/ samples_range_last,
                                              /**/ n_features);
+    }
+
+    template <typename OptionalType>
+    static constexpr void call_update(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
+                                      const IndexType&                         index_candidate,
+                                      const DistanceType&                      distance_candidate,
+                                      std::optional<OptionalType>&             candidate_representative) {
+        unsorted_buffer->update_impl(index_candidate, distance_candidate, candidate_representative);
+    }
+
+    template <typename OtherIndicesIterator, typename OtherSamplesIterator, typename OptionalType>
+    static constexpr void call_partial_search(WithUnionFind<DistancesIterator, Bound>* unsorted_buffer,
+                                              const OtherIndicesIterator&              indices_range_first,
+                                              const OtherIndicesIterator&              indices_range_last,
+                                              const OtherSamplesIterator&              samples_range_first,
+                                              const OtherSamplesIterator&              samples_range_last,
+                                              std::size_t                              n_features,
+                                              std::optional<OptionalType>& candidates_component_membership) {
+        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
+                                             /**/ indices_range_last,
+                                             /**/ samples_range_first,
+                                             /**/ samples_range_last,
+                                             /**/ n_features,
+                                             /**/ candidates_component_membership);
     }
 };
 

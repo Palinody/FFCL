@@ -207,7 +207,7 @@ for dataset_name in [
         axis=ax2,
         x_lim=x_lim,
         y_lim=y_lim,
-        kth_closest=3,
+        kth_closest=25,
     )
 
     # ---
