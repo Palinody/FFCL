@@ -69,10 +69,10 @@ auto euclidean_distance(const LeftFeaturesIterator&  left_features_range_first,
                         const LeftFeaturesIterator&  left_features_range_last,
                         const RightFeaturesIterator& right_features_range_first,
                         const RightFeaturesIterator& right_features_range_last) {
-    return std::sqrt(squared_euclidean_distance(/**/ left_features_range_first,
-                                                /**/ left_features_range_last,
-                                                /**/ right_features_range_first,
-                                                /**/ right_features_range_last));
+    return std::sqrt(squared_euclidean_distance(left_features_range_first,
+                                                left_features_range_last,
+                                                right_features_range_first,
+                                                right_features_range_last));
 }
 
 template <typename FeaturesIterator>
@@ -174,20 +174,20 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
 
     const std::size_t n_features = std::distance(left_features_range_first, left_features_range_last);
 
-    const ResultType dot_product = std::inner_product(/**/ left_features_range_first,
-                                                      /**/ left_features_range_last,
-                                                      /**/ right_features_range_first,
-                                                      /**/ static_cast<ResultType>(0));
+    const ResultType dot_product = std::inner_product(left_features_range_first,
+                                                      left_features_range_last,
+                                                      right_features_range_first,
+                                                      static_cast<ResultType>(0));
 
-    const ResultType magnitude_1 = std::sqrt(std::inner_product(/**/ left_features_range_first,
-                                                                /**/ left_features_range_last,
-                                                                /**/ left_features_range_first,
-                                                                /**/ static_cast<ResultType>(0)));
+    const ResultType magnitude_1 = std::sqrt(std::inner_product(left_features_range_first,
+                                                                left_features_range_last,
+                                                                left_features_range_first,
+                                                                static_cast<ResultType>(0)));
 
-    const ResultType magnitude_2 = std::sqrt(std::inner_product(/**/ right_features_range_first,
-                                                                /**/ right_features_range_last,
-                                                                /**/ right_features_range_first,
-                                                                /**/ static_cast<ResultType>(0)));
+    const ResultType magnitude_2 = std::sqrt(std::inner_product(right_features_range_first,
+                                                                right_features_range_last,
+                                                                right_features_range_first,
+                                                                static_cast<ResultType>(0)));
     // returns "infinity" if the denominator is zero
     return division(dot_product, magnitude_1 * magnitude_2, infinity<ResultType>());
 }
@@ -271,31 +271,31 @@ auto auto_distance(const LeftFeaturesIterator&  left_features_range_first,
     static_assert(std::is_same_v<FeatureType1, FeatureType2>);
 
     if constexpr (std::is_floating_point_v<FeatureType1>) {
-        return euclidean_distance(/**/ left_features_range_first,
-                                  /**/ left_features_range_last,
-                                  /**/ right_features_range_first,
-                                  /**/ right_features_range_last);
+        return euclidean_distance(left_features_range_first,
+                                  left_features_range_last,
+                                  right_features_range_first,
+                                  right_features_range_last);
 
     } else if constexpr (std::is_signed_v<FeatureType1>) {
-        return manhattan_distance(/**/ left_features_range_first,
-                                  /**/ left_features_range_last,
-                                  /**/ right_features_range_first,
-                                  /**/ right_features_range_last);
+        return manhattan_distance(left_features_range_first,
+                                  left_features_range_last,
+                                  right_features_range_first,
+                                  right_features_range_last);
 
     } else if constexpr (std::is_unsigned_v<FeatureType1>) {
-        return unsigned_manhattan_distance(/**/ left_features_range_first,
-                                           /**/ left_features_range_last,
-                                           /**/ right_features_range_first,
-                                           /**/ right_features_range_last);
+        return unsigned_manhattan_distance(left_features_range_first,
+                                           left_features_range_last,
+                                           right_features_range_first,
+                                           right_features_range_last);
 
     } else {
 #if defined(VERBOSE) && VERBOSE == true
         std::cout << "[WARN] requested type for auto_distance not handled. Using default: euclidean.\n";
 #endif
-        return euclidean_distance(/**/ left_features_range_first,
-                                  /**/ left_features_range_last,
-                                  /**/ right_features_range_first,
-                                  /**/ right_features_range_last);
+        return euclidean_distance(left_features_range_first,
+                                  left_features_range_last,
+                                  right_features_range_first,
+                                  right_features_range_last);
     }
 }
 

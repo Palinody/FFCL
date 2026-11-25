@@ -236,8 +236,10 @@ std::vector<Data> KMeans<Data>::fit(const SamplesIterator& samples_range_first,
                                     std::size_t            n_features) {
     // execute fit function with a default initialization algorithm
     // kmeansplusplus::make_centroids || common::math::random::init_uniform
-    return fit<KMeansAlgorithm>(
-        samples_range_first, samples_range_last, n_features, kmeansplusplus::make_centroids<SamplesIterator>);
+    return fit<KMeansAlgorithm>(samples_range_first,
+                                samples_range_last,
+                                n_features,
+                                kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename Data>
@@ -258,10 +260,10 @@ std::vector<Data> KMeans<Data>::fit(const SamplesIterator& samples_range_first,
                                     std::size_t            n_features) {
     // execute fit function with a default initialization algorithm
     // kmeansplusplus::make_centroids || common::math::random::init_uniform
-    return fit<Hamerly>(/**/ samples_range_first,
-                        /**/ samples_range_last,
-                        /**/ n_features,
-                        /**/ kmeansplusplus::make_centroids<SamplesIterator>);
+    return fit<Hamerly>(samples_range_first,
+                        samples_range_last,
+                        n_features,
+                        kmeansplusplus::make_centroids<SamplesIterator>);
 }
 
 template <typename Data>
@@ -269,8 +271,10 @@ template <typename SamplesIterator>
 std::vector<Data> KMeans<Data>::forward(const SamplesIterator& samples_range_first,
                                         const SamplesIterator& samples_range_last,
                                         std::size_t            n_features) const {
-    return kmeans::utils::samples_to_nearest_centroid_distances(
-        samples_range_first, samples_range_last, n_features, centroids_);
+    return kmeans::utils::samples_to_nearest_centroid_distances(samples_range_first,
+                                                                samples_range_last,
+                                                                n_features,
+                                                                centroids_);
 }
 
 template <typename Data>
@@ -278,8 +282,10 @@ template <typename SamplesIterator>
 std::vector<std::size_t> KMeans<Data>::predict(const SamplesIterator& samples_range_first,
                                                const SamplesIterator& samples_range_last,
                                                std::size_t            n_features) const {
-    return kmeans::utils::samples_to_nearest_centroid_indices(
-        samples_range_first, samples_range_last, n_features, centroids_);
+    return kmeans::utils::samples_to_nearest_centroid_indices(samples_range_first,
+                                                              samples_range_last,
+                                                              n_features,
+                                                              centroids_);
 }
 
 }  // namespace ffcl

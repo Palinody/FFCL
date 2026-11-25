@@ -86,8 +86,10 @@ TYPED_TEST(MathStatisticsTestFixture, ComputeVariance) {
 
 TYPED_TEST(MathStatisticsTestFixture, ArgmaxVariancePerFeature) {
     for (std::size_t test_index = 0; test_index < this->n_tests_; ++test_index) {
-        const auto data = this->generate_random_uniform_vector(
-            this->n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
+        const auto data = this->generate_random_uniform_vector(this->n_samples_,
+                                                               this->n_features_,
+                                                               this->lower_bound_,
+                                                               this->upper_bound_);
 
         const auto var_per_feat =
             ffcl::common::math::statistics::compute_variance_per_feature(data.begin(), data.end(), this->n_features_);

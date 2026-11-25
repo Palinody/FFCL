@@ -95,8 +95,9 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
             bench::io::txt::write_data(predictions, 1, predictions_filepath.value());
         } else {
             char message[100];
-            std::sprintf(
-                message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+            std::sprintf(message,
+                         "File extension found '%s' but only supports .txt or .bin",
+                         filepath.extension().c_str());
             throw std::runtime_error(message);
         }
     }
@@ -174,8 +175,9 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
             bench::io::txt::write_data(predictions, 1, predictions_filepath.value());
         } else {
             char message[100];
-            std::sprintf(
-                message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+            std::sprintf(message,
+                         "File extension found '%s' but only supports .txt or .bin",
+                         filepath.extension().c_str());
             throw std::runtime_error(message);
         }
     }
@@ -253,8 +255,9 @@ utils::DurationsSummary run_dbscan(const fs::path&                filepath,
             bench::io::txt::write_data(predictions, 1, predictions_filepath.value());
         } else {
             char message[100];
-            std::sprintf(
-                message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+            std::sprintf(message,
+                         "File extension found '%s' but only supports .txt or .bin",
+                         filepath.extension().c_str());
             throw std::runtime_error(message);
         }
     }
@@ -353,15 +356,23 @@ void run_point_cloud_sequences() {
                 */
 
                 timer.reset();
-                run_pointclouds_sequences_benchmark(
-                    &ffcl_::run_dbscan, relative_path, false, "FFCL", min_samples, radius);
+                run_pointclouds_sequences_benchmark(&ffcl_::run_dbscan,
+                                                    relative_path,
+                                                    false,
+                                                    "FFCL",
+                                                    min_samples,
+                                                    radius);
                 timer.print_elapsed_seconds();
 
                 std::cout << "\n---\n";
 
                 timer.reset();
-                run_pointclouds_sequences_benchmark(
-                    &pcl_flann_::run_dbscan, relative_path, false, "PCL (FLANN)", min_samples, radius);
+                run_pointclouds_sequences_benchmark(&pcl_flann_::run_dbscan,
+                                                    relative_path,
+                                                    false,
+                                                    "PCL (FLANN)",
+                                                    min_samples,
+                                                    radius);
                 timer.print_elapsed_seconds();
 
                 std::cout << "---\n";

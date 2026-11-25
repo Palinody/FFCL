@@ -148,8 +148,11 @@ std::size_t CycleThroughAxesBuild<IndicesIterator, SamplesIterator, Bound>::oper
     std::size_t            n_features,
     std::size_t            depth,
     const Bound&           bound) const {
-    ffcl::common::ignore_parameters(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, bound);
+    ffcl::common::ignore_parameters(indices_range_first,
+                                    indices_range_last,
+                                    samples_range_first,
+                                    samples_range_last,
+                                    bound);
     if (feature_mask_.empty()) {
         // cycle through the cut_feature_index (dimension) according to the current depth & post-increment depth
         // select the cut_feature_index according to the one with the most variance
@@ -173,21 +176,21 @@ std::size_t HighestVarianceBuild<IndicesIterator, SamplesIterator, Bound>::opera
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most variance
         return kdtree::algorithms::select_largest_variance_axis<IndicesIterator, SamplesIterator, Bound>(
-            /**/ indices_range_first,
-            /**/ indices_range_last,
-            /**/ samples_range_first,
-            /**/ samples_range_last,
-            /**/ n_features,
-            /**/ sampling_rate_);
+            indices_range_first,
+            indices_range_last,
+            samples_range_first,
+            samples_range_last,
+            n_features,
+            sampling_rate_);
     }
     return kdtree::algorithms::select_largest_variance_axis<IndicesIterator, SamplesIterator, Bound>(
-        /**/ indices_range_first,
-        /**/ indices_range_last,
-        /**/ samples_range_first,
-        /**/ samples_range_last,
-        /**/ n_features,
-        /**/ sampling_rate_,
-        /**/ feature_mask_);
+        indices_range_first,
+        indices_range_last,
+        samples_range_first,
+        samples_range_last,
+        n_features,
+        sampling_rate_,
+        feature_mask_);
 }
 
 template <typename IndicesIterator, typename SamplesIterator, typename Bound>
@@ -199,8 +202,12 @@ std::size_t MaximumSpreadBuild<IndicesIterator, SamplesIterator, Bound>::operato
     std::size_t            n_features,
     std::size_t            depth,
     const Bound&           bound) const {
-    ffcl::common::ignore_parameters(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, depth);
+    ffcl::common::ignore_parameters(indices_range_first,
+                                    indices_range_last,
+                                    samples_range_first,
+                                    samples_range_last,
+                                    n_features,
+                                    depth);
 
     if (feature_mask_.empty()) {
         // select the cut_feature_index according to the one with the most spread (min-max values)

@@ -817,15 +817,17 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairLoopTimerTest) {
 #endif
     std::cout << dummy_acc << "\n";
 
-    write_data<std::size_t>(
-        split_index_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("split_index.txt"));
+    write_data<std::size_t>(split_index_vector,
+                            1,
+                            dual_tree_traversal_benchmark_results_folder_ / fs::path("split_index.txt"));
 
     write_data<ValueType>(dual_tree_search_time_vector,
                           1,
                           dual_tree_traversal_benchmark_results_folder_ / fs::path("dual_tree_search_time.txt"));
 
-    write_data<ValueType>(
-        single_tree_time_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
+    write_data<ValueType>(single_tree_time_vector,
+                          1,
+                          dual_tree_traversal_benchmark_results_folder_ / fs::path("brute_force_time.txt"));
 }
 // */
 
@@ -946,10 +948,10 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
         timer.reset();
 #endif
 
-        const auto shortest_edge = searcher.dual_tree_shortest_edge_with_core_distances(/**/ query_indexer,
-                                                                                        /**/ union_find,
-                                                                                        /**/ queries_representative,
-                                                                                        /**/ k_nearest_neighbors);
+        const auto shortest_edge = searcher.dual_tree_shortest_edge_with_core_distances(query_indexer,
+                                                                                        union_find,
+                                                                                        queries_representative,
+                                                                                        k_nearest_neighbors);
 
 #if defined(TIME_IT) && TIME_IT
         {
@@ -1023,8 +1025,9 @@ TEST_F(SearcherErrorsTest, DualTreeClosestPairWithUnionFindLoopTimerTest) {
 #endif
     std::cout << dummy_acc << "\n";
 
-    write_data<std::size_t>(
-        split_index_vector, 1, dual_tree_traversal_benchmark_results_folder_ / fs::path("split_index_union_find.txt"));
+    write_data<std::size_t>(split_index_vector,
+                            1,
+                            dual_tree_traversal_benchmark_results_folder_ / fs::path("split_index_union_find.txt"));
 
     write_data<ValueType>(
         dual_tree_search_time_vector,

@@ -187,8 +187,9 @@ auto separation(const SamplesIterator&       samples_range_first,
         // set the current cluster index distance value to infinity so that it doesnt get chosen
         sample_to_other_cluster_samples_distance_mean[centroid_index] = common::infinity<ElementType>();
         // normalise the sum of the distances from the current sample to all the other samples in the same cluster
-        samples_separation_scores[sample_index] = *std::min_element(
-            sample_to_other_cluster_samples_distance_mean.begin(), sample_to_other_cluster_samples_distance_mean.end());
+        samples_separation_scores[sample_index] =
+            *std::min_element(sample_to_other_cluster_samples_distance_mean.begin(),
+                              sample_to_other_cluster_samples_distance_mean.end());
     }
     return samples_separation_scores;
 }
@@ -226,17 +227,17 @@ auto silhouette(const SamplesIterator&       samples_range_first,
 
     const auto n_samples = get_n_samples(samples_range_first, samples_range_last, n_features);
 
-    const auto cohesion_values = cohesion(/**/ samples_range_first,
-                                          /**/ samples_range_last,
-                                          /**/ n_features,
-                                          /**/ cluster_labels_range_first,
-                                          /**/ cluster_labels_range_last);
+    const auto cohesion_values = cohesion(samples_range_first,
+                                          samples_range_last,
+                                          n_features,
+                                          cluster_labels_range_first,
+                                          cluster_labels_range_last);
 
-    const auto separation_values = separation(/**/ samples_range_first,
-                                              /**/ samples_range_last,
-                                              /**/ n_features,
-                                              /**/ cluster_labels_range_first,
-                                              /**/ cluster_labels_range_last);
+    const auto separation_values = separation(samples_range_first,
+                                              samples_range_last,
+                                              n_features,
+                                              cluster_labels_range_first,
+                                              cluster_labels_range_last);
 
     auto samples_silhouette_scores = std::vector<ElementType>(n_samples);
 

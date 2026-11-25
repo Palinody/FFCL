@@ -88,19 +88,18 @@ class EdgesBuffer {
     std::vector<DistanceType> node_max_bound_vec_;
 
     // Component membership of every node: the representative shared by all of its samples, or nullopt.
-    std::vector<char>          node_component_is_known_vec_;
-    std::vector<char>          node_component_is_homogeneous_vec_;
-    std::vector<IndexType>     node_component_vec_;
+    std::vector<char>      node_component_is_known_vec_;
+    std::vector<char>      node_component_is_homogeneous_vec_;
+    std::vector<IndexType> node_component_vec_;
     // Smallest squared core distance of the subtree of every node.
-    std::vector<char>          node_min_squared_core_is_known_vec_;
-    std::vector<DistanceType>  node_min_squared_core_vec_;
+    std::vector<char>         node_min_squared_core_is_known_vec_;
+    std::vector<DistanceType> node_min_squared_core_vec_;
 
     auto compute_node_component_membership(const QueryNodePtr& node) -> std::optional<IndexType>;
 
     auto node_min_squared_core_distance(const QueryNodePtr& node) -> DistanceType;
 
     void refresh_node_max_bound(const QueryNodePtr& leaf_node);
-
 };
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -109,25 +108,23 @@ auto make_edge_buffer(const QueryIndexer&                                       
                       const datastruct::UnionFind<typename QueryIndexer::IndexType>& union_find_const_ref,
                       const typename QueryIndexer::DataType*                         squared_core_distances)
     -> EdgesBuffer<QueryIndexer, ReferenceIndexer> {
-    return EdgesBuffer<QueryIndexer, ReferenceIndexer>(
-        /**/ query_indexer,
-        /**/ reference_indexer,
-        /**/ union_find_const_ref,
-        /**/ squared_core_distances);
+    return EdgesBuffer<QueryIndexer, ReferenceIndexer>(query_indexer,
+                                                       reference_indexer,
+                                                       union_find_const_ref,
+                                                       squared_core_distances);
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
 EdgesBuffer<QueryIndexer, ReferenceIndexer>::EdgesBuffer(const QueryIndexer&                     query_indexer,
                                                          const ReferenceIndexer&                 reference_indexer,
                                                          const datastruct::UnionFind<IndexType>& union_find_const_ref,
-                                                         const DistanceType* squared_core_distances)
+                                                         const DistanceType*                     squared_core_distances)
   : query_indexer_const_ref_{query_indexer}
   , reference_indexer_const_ref_{reference_indexer}
   , union_find_const_ref_{union_find_const_ref}
   , squared_core_distances_ptr_{squared_core_distances}
   , representative_vec_(query_indexer.n_samples())
-  , component_best_edge_vec_(query_indexer.n_samples(),
-                             datastruct::mst::make_infinity_edge<IndexType, DistanceType>())
+  , component_best_edge_vec_(query_indexer.n_samples(), datastruct::mst::make_infinity_edge<IndexType, DistanceType>())
   , component_has_edge_vec_(query_indexer.n_samples(), 0)
   , components_with_edge_vec_{}
   , node_max_bound_vec_(query_indexer.n_nodes(), kInfinitySquared)
@@ -172,8 +169,7 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::base_case(const QueryNodePtr& 
 
     const auto n_features = reference_indexer_const_ref_.n_features();
 
-    for (auto query_it = query_node->indices_range_.first; query_it != query_node->indices_range_.second;
-         ++query_it) {
+    for (auto query_it = query_node->indices_range_.first; query_it != query_node->indices_range_.second; ++query_it) {
         const auto query_index     = static_cast<IndexType>(*query_it);
         const auto query_component = representative_vec_[query_index];
 
@@ -242,10 +238,9 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::refresh_node_max_bound(const Q
     for (auto index_it = leaf_node->indices_range_.first; index_it != leaf_node->indices_range_.second; ++index_it) {
         const auto component = representative_vec_[static_cast<IndexType>(*index_it)];
 
-        max_bound = std::max(max_bound,
-                             component_has_edge_vec_[component]
-                                 ? std::get<2>(component_best_edge_vec_[component])
-                                 : kInfinitySquared);
+        max_bound = std::max(
+            max_bound,
+            component_has_edge_vec_[component] ? std::get<2>(component_best_edge_vec_[component]) : kInfinitySquared);
     }
     if (max_bound >= node_max_bound_vec_[leaf_node->node_id()]) {
         return;
@@ -257,9 +252,8 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::refresh_node_max_bound(const Q
 
     while (parent_node) {
         const auto parent_id = parent_node->node_id();
-        const auto new_bound =
-            std::max(node_max_bound_vec_[parent_node->left_->node_id()],
-                     node_max_bound_vec_[parent_node->right_->node_id()]);
+        const auto new_bound = std::max(node_max_bound_vec_[parent_node->left_->node_id()],
+                                        node_max_bound_vec_[parent_node->right_->node_id()]);
 
         if (new_bound >= node_max_bound_vec_[parent_id]) {
             break;
@@ -334,8 +328,7 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::node_min_squared_core_distance
     auto min_squared_core = kInfinitySquared;
 
     for (auto index_it = node->indices_range_.first; index_it != node->indices_range_.second; ++index_it) {
-        min_squared_core = std::min(
-            min_squared_core, squared_core_distances_ptr_[static_cast<std::size_t>(*index_it)]);
+        min_squared_core = std::min(min_squared_core, squared_core_distances_ptr_[static_cast<std::size_t>(*index_it)]);
     }
     if (!node->is_leaf()) {
         min_squared_core = std::min(min_squared_core, node_min_squared_core_distance(node->left_));
@@ -359,11 +352,10 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::cost(const QueryNodePtr&     q
         return std::nullopt;
     }
     // Bound prune: the smallest possible squared mutual reachability distance between the two nodes.
-    auto squared_min_distance =
-        datastruct::bounds::squared_min_distance(query_node->bound_, reference_node->bound_);
+    auto squared_min_distance = datastruct::bounds::squared_min_distance(query_node->bound_, reference_node->bound_);
 
-    const auto min_squared_core = std::max(node_min_squared_core_distance(query_node),
-                                           node_min_squared_core_distance(reference_node));
+    const auto min_squared_core =
+        std::max(node_min_squared_core_distance(query_node), node_min_squared_core_distance(reference_node));
 
     squared_min_distance = std::max(squared_min_distance, min_squared_core);
 
@@ -373,10 +365,9 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::cost(const QueryNodePtr&     q
 }
 
 template <typename QueryIndexer, typename ReferenceIndexer>
-auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_cost(const QueryNodePtr&     query_node,
+auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_cost(const QueryNodePtr& query_node,
                                                               const ReferenceNodePtr&,
-                                                              const DistanceType&     cost)
-    -> std::optional<DistanceType> {
+                                                              const DistanceType& cost) -> std::optional<DistanceType> {
     return node_max_bound_vec_[query_node->node_id()] <= cost ? std::nullopt : std::make_optional(cost);
 }
 

@@ -76,7 +76,8 @@ constexpr auto StaticBoundWithCentroid<DerivedClass>::compute_distance_to_centro
     const FeaturesIterator& features_range_first,
     const FeaturesIterator& features_range_last) const {
     return static_cast<const DerivedType*>(this)->compute_distance_to_centroid_if_within_bounds_impl(
-        features_range_first, features_range_last);
+        features_range_first,
+        features_range_last);
 }
 
 template <class DerivedClass>

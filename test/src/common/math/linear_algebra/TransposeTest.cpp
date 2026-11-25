@@ -43,8 +43,10 @@ TYPED_TEST_SUITE(TransposeTestFixture, DataTypes);
 
 TYPED_TEST(TransposeTestFixture, TransposeSerialTest) {
     for (std::size_t test_index = 0; test_index < this->n_tests_; ++test_index) {
-        const auto data = this->generate_random_uniform_vector(
-            this->n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
+        const auto data = this->generate_random_uniform_vector(this->n_samples_,
+                                                               this->n_features_,
+                                                               this->lower_bound_,
+                                                               this->upper_bound_);
 
         const auto [transposed_data, n_samples_transposed, n_features_transposed] =
             ffcl::common::math::linear_algebra::transpose(data.begin(), data.end(), this->n_features_);
@@ -52,8 +54,10 @@ TYPED_TEST(TransposeTestFixture, TransposeSerialTest) {
         ASSERT_EQ(data.size(), transposed_data.size());
 
         // retrieve the original data
-        const auto [orig_data, n_samples_orig, n_features_orig] = ffcl::common::math::linear_algebra::transpose(
-            transposed_data.begin(), transposed_data.end(), n_features_transposed);
+        const auto [orig_data, n_samples_orig, n_features_orig] =
+            ffcl::common::math::linear_algebra::transpose(transposed_data.begin(),
+                                                          transposed_data.end(),
+                                                          n_features_transposed);
 
         ASSERT_EQ(n_samples_orig, this->n_samples_);
         ASSERT_EQ(n_features_orig, this->n_features_);
@@ -73,8 +77,10 @@ TYPED_TEST(TransposeTestFixture, TransposeSerialTest) {
 
 TYPED_TEST(TransposeTestFixture, TransposeOpenMPTest) {
     for (std::size_t test_index = 0; test_index < this->n_tests_; ++test_index) {
-        const auto data = this->generate_random_uniform_vector(
-            this->n_samples_, this->n_features_, this->lower_bound_, this->upper_bound_);
+        const auto data = this->generate_random_uniform_vector(this->n_samples_,
+                                                               this->n_features_,
+                                                               this->lower_bound_,
+                                                               this->upper_bound_);
 
         const auto [transposed_data, n_samples_transposed, n_features_transposed] =
             ffcl::common::math::linear_algebra::transpose_parallel_openmp(data.begin(), data.end(), this->n_features_);
@@ -83,8 +89,9 @@ TYPED_TEST(TransposeTestFixture, TransposeOpenMPTest) {
 
         // retrieve the original data
         const auto [orig_data, n_samples_orig, n_features_orig] =
-            ffcl::common::math::linear_algebra::transpose_parallel_openmp(
-                transposed_data.begin(), transposed_data.end(), n_features_transposed);
+            ffcl::common::math::linear_algebra::transpose_parallel_openmp(transposed_data.begin(),
+                                                                          transposed_data.end(),
+                                                                          n_features_transposed);
 
         ASSERT_EQ(n_samples_orig, this->n_samples_);
         ASSERT_EQ(n_features_orig, this->n_features_);

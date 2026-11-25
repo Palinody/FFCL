@@ -613,22 +613,7 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
 TEST_F(SingleLinkageClusterTreeErrorsTest, MainTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
-    auto data = std::vector<float>({/**/ 1,
-                                    2,
-                                    /**/ 1.5,
-                                    2.2,
-                                    /**/ 2.5,
-                                    2.9,
-                                    /**/ 2,
-                                    3,
-                                    /**/ 4,
-                                    2,
-                                    /**/ 3,
-                                    3,
-                                    /**/ 3.5,
-                                    2.2,
-                                    /**/ 2.3,
-                                    2});
+    auto data = std::vector<float>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
 
     const std::size_t n_features = 2;
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);

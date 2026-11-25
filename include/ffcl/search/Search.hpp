@@ -98,9 +98,9 @@ class Searcher {
                            const DataType*                         squared_core_distances_ptr) const;
 
     template <typename QueryIndexer, typename EdgesBuffer>
-    void dtt_shortest_edge(const QueryIndexer&                  query_indexer,
-                           const std::vector<NodePtr>&          query_nodes,
-                           EdgesBuffer&                         edge_buffer) const;
+    void dtt_shortest_edge(const QueryIndexer&         query_indexer,
+                           const std::vector<NodePtr>& query_nodes,
+                           EdgesBuffer&                edge_buffer) const;
 
   private:
     TreeTraverser<ReferenceIndexer> tree_traverser_;
@@ -205,7 +205,6 @@ auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryIndexer&&
                                                    std::forward<BufferArgs>(buffer_args)...);
 }
 
-
 template <typename ReferenceIndexer>
 template <typename QueryIndexer,
           typename... BufferArgs,
@@ -224,7 +223,8 @@ auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge_with_core_distances(
     ForwardedQueryIndexer&& forwarded_query_indexer,
     BufferArgs&&... buffer_args) const {
     return tree_traverser_.dual_tree_shortest_edge_with_core_distances(
-        std::forward<ForwardedQueryIndexer>(forwarded_query_indexer), std::forward<BufferArgs>(buffer_args)...);
+        std::forward<ForwardedQueryIndexer>(forwarded_query_indexer),
+        std::forward<BufferArgs>(buffer_args)...);
 }
 
 template <typename ReferenceIndexer>

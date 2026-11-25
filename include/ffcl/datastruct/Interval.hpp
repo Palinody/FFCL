@@ -87,7 +87,8 @@ auto make_tight_bound(const SamplesIterator& samples_range_first,
 
     // min max elements per feature vector
     auto segments = std::vector<SegmentType>(
-        n_features, SegmentType{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
+        n_features,
+        SegmentType{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
@@ -122,7 +123,8 @@ auto make_tight_bound(const IndicesIterator& indices_range_first,
 
     // min max elements per feature vector
     auto segments = std::vector<SegmentType>(
-        n_features, SegmentType{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
+        n_features,
+        SegmentType{std::numeric_limits<DataType>::max(), std::numeric_limits<DataType>::lowest()});
 
     for (auto subrange_index_it = indices_range_first; subrange_index_it != indices_range_last; ++subrange_index_it) {
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {

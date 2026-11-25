@@ -323,24 +323,22 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
     // if the current number of samples is greater than the target bucket size, the node is not leaf
     if (depth < options_.max_depth_ && n_node_samples > options_.bucket_size_) {
         // select the feature_cut_index according to the one with the most spread (min-max values)
-        feature_cut_index = (*options_.axis_selection_policy_ptr_)(
-            /**/ indices_range_first,
-            /**/ indices_range_last,
-            /**/ samples_range_first_,
-            /**/ samples_range_last_,
-            /**/ n_features_,
-            /**/ depth,
-            /**/ bound);
+        feature_cut_index = (*options_.axis_selection_policy_ptr_)(indices_range_first,
+                                                                   indices_range_last,
+                                                                   samples_range_first_,
+                                                                   samples_range_last_,
+                                                                   n_features_,
+                                                                   depth,
+                                                                   bound);
 
         // left_partition_range, middle_partition_range, right_partition_range
         auto [cut_index, left_indices_range, cut_indices_range, right_indices_range] =
-            (*options_.splitting_rule_policy_ptr_)(
-                /**/ indices_range_first,
-                /**/ indices_range_last,
-                /**/ samples_range_first_,
-                /**/ samples_range_last_,
-                /**/ n_features_,
-                /**/ feature_cut_index);
+            (*options_.splitting_rule_policy_ptr_)(indices_range_first,
+                                                   indices_range_last,
+                                                   samples_range_first_,
+                                                   samples_range_last_,
+                                                   n_features_,
+                                                   feature_cut_index);
 
         common::ignore_parameters(cut_index);
 
@@ -350,9 +348,9 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
         // make the current node. Its pivot sample is owned by the left child (so that the leaves of the
         // tree cover every sample exactly once) and only its index is kept here for the query routing.
         {
-            kdnode = std::make_shared<NodeType>(/**/ std::make_pair(indices_range_first, indices_range_first),
-                                                /**/ feature_cut_index,
-                                                /**/ bound);
+            kdnode = std::make_shared<NodeType>(std::make_pair(indices_range_first, indices_range_first),
+                                                feature_cut_index,
+                                                bound);
             kdnode->set_pivot_index(static_cast<std::size_t>(cut_indices_range.first[0]));
             kdnode->set_node_id(n_nodes_++);
         }
@@ -361,11 +359,8 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
             // set the right bound of the left child to the cut value
             bound.segment_at(feature_cut_index).update_upper_bound(feature_cut_value);
 
-            kdnode->left_ = build(/**/ left_indices_range.first,
-                                  /**/ left_indices_range.second,
-                                  /**/ feature_cut_index,
-                                  /**/ depth + 1,
-                                  /**/ bound);
+            kdnode->left_ =
+                build(left_indices_range.first, left_indices_range.second, feature_cut_index, depth + 1, bound);
             // provide a parent pointer to the child node for reversed traversal of the kdtree
             kdnode->left_->parent_ = kdnode;
 
@@ -378,11 +373,8 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
             // set the left bound of the right child to the cut value
             bound.segment_at(feature_cut_index).update_lower_bound(feature_cut_value);
 
-            kdnode->right_ = build(/**/ right_indices_range.first,
-                                   /**/ right_indices_range.second,
-                                   /**/ feature_cut_index,
-                                   /**/ depth + 1,
-                                   /**/ bound);
+            kdnode->right_ =
+                build(right_indices_range.first, right_indices_range.second, feature_cut_index, depth + 1, bound);
             // provide a parent pointer to the child node for reversed traversal of the kdtree
             kdnode->right_->parent_ = kdnode;
 

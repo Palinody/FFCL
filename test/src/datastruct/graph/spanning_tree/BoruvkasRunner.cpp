@@ -91,15 +91,17 @@ int main(int argc, char** argv) {
     const std::size_t n_samples  = data.size() / n_features;
 
     if (n_samples < 2) {
-        std::fprintf(stderr, "error: '%s' holds %zu sample(s), at least 2 are needed\n",
-                     input.string().c_str(), n_samples);
+        std::fprintf(stderr,
+                     "error: '%s' holds %zu sample(s), at least 2 are needed\n",
+                     input.string().c_str(),
+                     n_samples);
         return 1;
     }
 
     // Same default as the tests and the Python benchmark: sqrt(n) / 3, clamped.
-    const std::size_t bucket_size =
-        (argc > 5) ? std::stoul(argv[5])
-                   : std::max<std::size_t>(16, static_cast<std::size_t>(std::sqrt(n_samples) / 3));
+    const std::size_t bucket_size = (argc > 5)
+                                        ? std::stoul(argv[5])
+                                        : std::max<std::size_t>(16, static_cast<std::size_t>(std::sqrt(n_samples) / 3));
 
     if (bucket_size < 1) {
         std::fprintf(stderr, "error: bucket size must be >= 1\n");
@@ -151,8 +153,7 @@ int main(int argc, char** argv) {
         return 0;
     }
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-    boruvkas_algorithm.set_options(
-        typename ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(k));
+    boruvkas_algorithm.set_options(typename ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(k));
 
     auto minimum_spanning_tree = (mode == "dual") ? boruvkas_algorithm.make_tree_2(std::move(indexer))
                                                   : boruvkas_algorithm.make_tree(std::move(indexer));

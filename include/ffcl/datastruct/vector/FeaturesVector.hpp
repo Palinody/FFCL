@@ -80,7 +80,7 @@ template <typename Value>
 FeaturesVector(const std::vector<Value>&) -> FeaturesVector<Value, 0>;
 
 template <typename Value>
-FeaturesVector(std::vector<Value> &&) -> FeaturesVector<Value, 0>;
+FeaturesVector(std::vector<Value>&&) -> FeaturesVector<Value, 0>;
 
 template <typename Iterator>
 FeaturesVector(const Iterator&, const Iterator&) -> FeaturesVector<typename Iterator::value_type, 0>;
@@ -155,6 +155,6 @@ template <typename Value, std::size_t NFeatures>
 FeaturesVector(const std::array<Value, NFeatures>&) -> FeaturesVector<Value, NFeatures>;
 
 template <typename Value, std::size_t NFeatures>
-FeaturesVector(std::array<Value, NFeatures> &&) -> FeaturesVector<Value, NFeatures>;
+FeaturesVector(std::array<Value, NFeatures>&&) -> FeaturesVector<Value, NFeatures>;
 
 }  // namespace ffcl::datastruct

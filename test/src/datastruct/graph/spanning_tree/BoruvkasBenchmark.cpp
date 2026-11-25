@@ -33,7 +33,7 @@ namespace {
 
 using dType = float;
 
-constexpr std::size_t kMinClusterSize = 20;
+constexpr std::size_t kMinClusterSize   = 20;
 constexpr std::size_t kNearestNeighbors = 1;
 constexpr std::size_t kRepeats          = 3;
 
@@ -48,9 +48,9 @@ const std::vector<std::string> kFileNames = {"noisy_circles.txt",
 const fs::path kRootFolder = fs::path("../bin/clustering/inputs");
 
 std::vector<dType> load_data(const fs::path& filename, char delimiter = ' ') {
-    std::ifstream  filestream(filename);
+    std::ifstream      filestream(filename);
     std::vector<dType> data;
-    std::string    row_str, elem_str;
+    std::string        row_str, elem_str;
 
     while (std::getline(filestream, row_str, '\n')) {
         std::stringstream row_str_stream(row_str);
@@ -111,9 +111,9 @@ Result run_dataset(const fs::path& filepath, std::size_t bucket_override) {
 
     // hdbscan builds a *second*, smaller tree for Boruvka (`leaf_size // 3`); the dual-tree traversal
     // benefits a lot from smaller buckets, so the value can be overridden on the command line.
-    const auto bucket_size = bucket_override ? bucket_override
-                                             : std::max(static_cast<std::size_t>(std::sqrt(n_samples) / 3),
-                                                        static_cast<std::size_t>(16));
+    const auto bucket_size =
+        bucket_override ? bucket_override
+                        : std::max(static_cast<std::size_t>(std::sqrt(n_samples) / 3), static_cast<std::size_t>(16));
 
     Result result;
 
@@ -121,15 +121,15 @@ Result run_dataset(const fs::path& filepath, std::size_t bucket_override) {
     result.tree_build_ms = best_of(kRepeats, [&] {
         auto local_indices = indices;
         auto indexer       = IndexerType(local_indices.begin(),
-                                   local_indices.end(),
-                                   const_cast<std::vector<dType>&>(data).begin(),
-                                   const_cast<std::vector<dType>&>(data).end(),
-                                   n_features,
-                                   OptionsType()
-                                       .bucket_size(bucket_size)
-                                       .max_depth(std::log2(n_samples))
-                                       .axis_selection_policy(AxisSelectionPolicyType{})
-                                       .splitting_rule_policy(SplittingRulePolicyType{}));
+                                         local_indices.end(),
+                                         const_cast<std::vector<dType>&>(data).begin(),
+                                         const_cast<std::vector<dType>&>(data).end(),
+                                         n_features,
+                                         OptionsType()
+                                             .bucket_size(bucket_size)
+                                             .max_depth(std::log2(n_samples))
+                                             .axis_selection_policy(AxisSelectionPolicyType{})
+                                             .splitting_rule_policy(SplittingRulePolicyType{}));
         (void)indexer;
     });
 
@@ -160,7 +160,7 @@ Result run_dataset(const fs::path& filepath, std::size_t bucket_override) {
     result.mst_single_ms = best_of(kRepeats, [&] { (void)run_mst(false); });
     result.mst_dual_ms   = best_of(kRepeats, [&] { (void)run_mst(true); });
 
-    const auto mst = run_mst(true);
+    const auto mst  = run_mst(true);
     result.mst_size = mst.size();
     for (const auto& edge : mst) {
         result.mst_weight += static_cast<double>(std::get<2>(edge));
@@ -198,7 +198,6 @@ Result run_dataset(const fs::path& filepath, std::size_t bucket_override) {
         result.n_clusters = labels.size() - (labels.empty() ? 0 : (labels.front() == 0 ? 1 : 0));
     });
 
-
     return result;
 }
 
@@ -233,15 +232,13 @@ int main(int argc, char** argv) {
         auto short_name = name;
         short_name.erase(short_name.size() - 4);
 
-        std::cout << std::left << std::setw(20) << short_name << std::right << std::setw(7) << n_samples
-                  << std::setw(7)
-                  << (bucket_override ? bucket_override
-                                      : std::max(static_cast<std::size_t>(std::sqrt(n_samples) / 3),
-                                                 static_cast<std::size_t>(16)))
-                  << std::setw(12) << std::fixed << std::setprecision(6) << result.tree_build_ms / 1e3
-                  << std::setw(12) << result.mst_single_ms / 1e3 << std::setw(12) << result.mst_dual_ms / 1e3
-                  << std::setw(12) << result.full_ms / 1e3 << std::setw(14) << std::setprecision(6)
-                  << result.mst_weight << "\n";
+        std::cout << std::left << std::setw(20) << short_name << std::right << std::setw(7) << n_samples << std::setw(7)
+                  << (bucket_override
+                          ? bucket_override
+                          : std::max(static_cast<std::size_t>(std::sqrt(n_samples) / 3), static_cast<std::size_t>(16)))
+                  << std::setw(12) << std::fixed << std::setprecision(6) << result.tree_build_ms / 1e3 << std::setw(12)
+                  << result.mst_single_ms / 1e3 << std::setw(12) << result.mst_dual_ms / 1e3 << std::setw(12)
+                  << result.full_ms / 1e3 << std::setw(14) << std::setprecision(6) << result.mst_weight << "\n";
     }
 
     const auto n = static_cast<double>(kFileNames.size());

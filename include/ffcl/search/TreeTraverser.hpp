@@ -18,9 +18,9 @@
 #include <array>
 #include <deque>
 #include <iterator>
-#include <tuple>
 #include <optional>
 #include <queue>
+#include <tuple>
 #include <vector>
 
 namespace ffcl::search {
@@ -113,9 +113,9 @@ class TreeTraverser {
     // caller-provided buffer. This is what lets the Boruvka step be parallelised over disjoint query
     // subtrees: each thread owns its buffer, so no state is shared.
     template <typename QueryIndexer, typename EdgesBuffer>
-    void dtt_shortest_edge(const QueryIndexer&               query_indexer,
+    void dtt_shortest_edge(const QueryIndexer&                  query_indexer,
                            const std::vector<ReferenceNodePtr>& query_nodes,
-                           EdgesBuffer&                      edge_buffer) const;
+                           EdgesBuffer&                         edge_buffer) const;
 
   private:
     template <typename QueryNodePtr, typename ReferenceNodePtr, typename Cost>
@@ -248,8 +248,9 @@ template <typename ForwardedBufferBatch,
 ForwardedBufferBatch TreeTraverser<ReferenceIndexer>::operator()(ForwardedBufferBatch&& forwarded_buffer_batch) const {
     auto buffer_batch = std::forward<ForwardedBufferBatch>(forwarded_buffer_batch);
 
-    std::for_each(
-        buffer_batch.begin(), buffer_batch.end(), [this](auto& buffer) { buffer = (*this)(std::move(buffer)); });
+    std::for_each(buffer_batch.begin(), buffer_batch.end(), [this](auto& buffer) {
+        buffer = (*this)(std::move(buffer));
+    });
 
     return buffer_batch;
 }
@@ -296,10 +297,10 @@ auto TreeTraverser<ReferenceIndexer>::get_parent_node_after_sibling_traversal(co
                                                                               Buffer&                 buffer) const
     -> ReferenceNodePtr {
     // if a sibling node has been selected (is not nullptr)
-    if (auto sibling_node = reference_node->select_sibling_node(/**/ reference_indexer_.begin(),
-                                                                /**/ reference_indexer_.end(),
-                                                                /**/ reference_indexer_.n_features(),
-                                                                /**/ buffer)) {
+    if (auto sibling_node = reference_node->select_sibling_node(reference_indexer_.begin(),
+                                                                reference_indexer_.end(),
+                                                                reference_indexer_.n_features(),
+                                                                buffer)) {
         // search for other candidates from the sibling node
         single_tree_traversal(sibling_node, buffer);
     }
@@ -315,12 +316,11 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge(const QueryIndexer
                                                               BufferArgs&&... buffer_args) const {
     using BuffersFeaturesIteratorType = decltype(std::declval<QueryIndexer>().features_range_first(0));
 
-    using DeducedBufferType = typename common::select_constructible_type<
-        buffer::Unsorted<BuffersFeaturesIteratorType>,
-        buffer::WithMemory<BuffersFeaturesIteratorType>,
-        buffer::WithUnionFind<BuffersFeaturesIteratorType>>::from_signature</**/ BuffersFeaturesIteratorType,
-                                                                            /**/ BuffersFeaturesIteratorType,
-                                                                            /**/ BufferArgs...>::type;
+    using DeducedBufferType =
+        typename common::select_constructible_type<buffer::Unsorted<BuffersFeaturesIteratorType>,
+                                                   buffer::WithMemory<BuffersFeaturesIteratorType>,
+                                                   buffer::WithUnionFind<BuffersFeaturesIteratorType>>::
+            from_signature<BuffersFeaturesIteratorType, BuffersFeaturesIteratorType, BufferArgs...>::type;
 
     static_assert(!std::is_same_v<DeducedBufferType, void>,
                   "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
@@ -440,12 +440,11 @@ auto TreeTraverser<ReferenceIndexer>::dual_tree_shortest_edge_with_core_distance
                                                                                   BufferArgs&&... buffer_args) const {
     using BuffersFeaturesIteratorType = decltype(std::declval<QueryIndexer>().features_range_first(0));
 
-    using DeducedBufferType = typename common::select_constructible_type<
-        buffer::Unsorted<BuffersFeaturesIteratorType>,
-        buffer::WithMemory<BuffersFeaturesIteratorType>,
-        buffer::WithUnionFind<BuffersFeaturesIteratorType>>::from_signature</**/ BuffersFeaturesIteratorType,
-                                                                            /**/ BuffersFeaturesIteratorType,
-                                                                            /**/ BufferArgs...>::type;
+    using DeducedBufferType =
+        typename common::select_constructible_type<buffer::Unsorted<BuffersFeaturesIteratorType>,
+                                                   buffer::WithMemory<BuffersFeaturesIteratorType>,
+                                                   buffer::WithUnionFind<BuffersFeaturesIteratorType>>::
+            from_signature<BuffersFeaturesIteratorType, BuffersFeaturesIteratorType, BufferArgs...>::type;
 
     static_assert(!std::is_same_v<DeducedBufferType, void>,
                   "Deduced DeducedBufferType: void. Buffer type couldn't be deduced from 'BufferArgs&&...'.");
@@ -501,14 +500,14 @@ void TreeTraverser<ReferenceIndexer>::dual_tree_traversal_with_core_distances(co
     // Descend a single side per call, always the larger one. This is the size balanced descent of the
     // reference dual-tree Boruvka implementations: it reaches every leaf/leaf combination exactly once, so no
     // visited-combination bookkeeping is needed and the recursion depth stays logarithmic.
-    if (query_node->is_leaf() ||
-        (!reference_node->is_leaf() && reference_node->diameter() > query_node->diameter())) {
-        this->descend_reference_children(
-            query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
+    if (query_node->is_leaf() || (!reference_node->is_leaf() && reference_node->diameter() > query_node->diameter())) {
+        this->descend_reference_children(query_node,
+                                         reference_node,
+                                         edge_buffer,
+                                         std::forward<BufferArgs>(buffer_args)...);
 
     } else {
-        this->descend_query_children(
-            query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
+        this->descend_query_children(query_node, reference_node, edge_buffer, std::forward<BufferArgs>(buffer_args)...);
     }
 }
 
@@ -525,9 +524,9 @@ void TreeTraverser<ReferenceIndexer>::descend_query_children(const QueryNodePtr&
     for (std::size_t child_index = 0; child_index < 2; ++child_index) {
         const auto& child_query_node = (child_index == 0) ? query_node->left_ : query_node->right_;
 
-        children[child_index] = std::make_tuple(
-            child_query_node,
-            edge_buffer.cost(child_query_node, reference_node).value_or(common::infinity<DataType>()));
+        children[child_index] =
+            std::make_tuple(child_query_node,
+                            edge_buffer.cost(child_query_node, reference_node).value_or(common::infinity<DataType>()));
     }
     if (std::get<1>(children[1]) < std::get<1>(children[0])) {
         std::swap(children[0], children[1]);
@@ -561,9 +560,9 @@ void TreeTraverser<ReferenceIndexer>::descend_reference_children(const QueryNode
     for (std::size_t child_index = 0; child_index < 2; ++child_index) {
         const auto& child_reference_node = (child_index == 0) ? reference_node->left_ : reference_node->right_;
 
-        children[child_index] = std::make_tuple(
-            child_reference_node,
-            edge_buffer.cost(query_node, child_reference_node).value_or(common::infinity<DataType>()));
+        children[child_index] =
+            std::make_tuple(child_reference_node,
+                            edge_buffer.cost(query_node, child_reference_node).value_or(common::infinity<DataType>()));
     }
     if (std::get<1>(children[1]) < std::get<1>(children[0])) {
         std::swap(children[0], children[1]);
@@ -591,11 +590,11 @@ void TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&     
     common::ignore_parameters(query_indexer);
 
     for (const auto& query_node : query_nodes) {
-        dual_tree_traversal_with_core_distances(/**/ query_node,
-                                                /**/ reference_indexer_.root(),
-                                                /**/ edge_buffer,
-                                                /**/ std::nullopt,
-                                                /**/ false);
+        dual_tree_traversal_with_core_distances(query_node,
+                                                reference_indexer_.root(),
+                                                edge_buffer,
+                                                std::nullopt,
+                                                false);
     }
 }
 
@@ -610,11 +609,11 @@ auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&     
     auto edge_buffer =
         buffer::make_edge_buffer(query_indexer, reference_indexer_, union_find_const_ref, squared_core_distances_ptr);
 
-    dual_tree_traversal_with_core_distances(/**/ query_indexer.root(),
-                                            /**/ reference_indexer_.root(),
-                                            /**/ edge_buffer,
-                                            /**/ std::nullopt,
-                                            /**/ false);
+    dual_tree_traversal_with_core_distances(query_indexer.root(),
+                                            reference_indexer_.root(),
+                                            edge_buffer,
+                                            std::nullopt,
+                                            false);
 
     return edge_buffer.component_to_shortest_edge();
 }

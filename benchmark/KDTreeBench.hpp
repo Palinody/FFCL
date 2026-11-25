@@ -369,7 +369,8 @@ utils::DurationsSummary radius_search_around_query_index_bench(const fs::path& f
     flann::Matrix<bench::io::DataType> dataset(data_xyz.data(), n_samples, n_features);
     // build 1 kdtree
     flann::Index<flann::L2<bench::io::DataType>> index(
-        dataset, flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
+        dataset,
+        flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
     index.buildIndex();
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -443,7 +444,8 @@ utils::DurationsSummary k_nearest_neighbors_search_around_query_index_bench(cons
     flann::Matrix<bench::io::DataType> dataset(data_xyz.data(), n_samples, n_features);
     // build 1 kdtree
     flann::Index<flann::L2<bench::io::DataType>> index(
-        dataset, flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
+        dataset,
+        flann::KDTreeSingleIndexParams(/*leaf_max_size=*/std::sqrt(n_samples), /*reorder=*/true));
     index.buildIndex();
 
     bench_summary.indexer_build_duration = timer.elapsed();
@@ -540,13 +542,13 @@ void run_benchmarks(const fs::path& filepath, float radius) {
 }
 
 void run_toy_datasets_benchmarks() {
-    const auto filenames = std::vector<fs::path>{/**/ "noisy_circles.txt",
-                                                 /**/ "noisy_moons.txt",
-                                                 /**/ "varied.txt",
-                                                 /**/ "aniso.txt",
-                                                 /**/ "blobs.txt",
-                                                 /**/ "no_structure.txt",
-                                                 /**/ "unbalanced_blobs.txt"};
+    const auto filenames = std::vector<fs::path>{"noisy_circles.txt",
+                                                 "noisy_moons.txt",
+                                                 "varied.txt",
+                                                 "aniso.txt",
+                                                 "blobs.txt",
+                                                 "no_structure.txt",
+                                                 "unbalanced_blobs.txt"};
 
     const bench::io::DataType radius = 0.5;
 
@@ -640,22 +642,28 @@ void run_radius_search_benchmarks_on_point_cloud_sequences() {
         for (const auto& relative_path : relative_paths) {
             std::cout << "---\nSequence in folder: " << relative_path.c_str() << "\n\n";
             timer.reset();
-            run_pointclouds_sequences_benchmark(
-                &ffcl_::radius_search_around_query_index_bench, relative_path, "FFCL", radius);
+            run_pointclouds_sequences_benchmark(&ffcl_::radius_search_around_query_index_bench,
+                                                relative_path,
+                                                "FFCL",
+                                                radius);
             timer.print_elapsed_seconds();
 
             std::cout << "---\n";
 
             timer.reset();
-            run_pointclouds_sequences_benchmark(
-                &flann_::radius_search_around_query_index_bench, relative_path, "FLANN", radius);
+            run_pointclouds_sequences_benchmark(&flann_::radius_search_around_query_index_bench,
+                                                relative_path,
+                                                "FLANN",
+                                                radius);
             timer.print_elapsed_seconds();
 
             std::cout << "---\n";
 
             timer.reset();
-            run_pointclouds_sequences_benchmark(
-                &pcl_::radius_search_around_query_index_bench, relative_path, "PCL", radius);
+            run_pointclouds_sequences_benchmark(&pcl_::radius_search_around_query_index_bench,
+                                                relative_path,
+                                                "PCL",
+                                                radius);
             timer.print_elapsed_seconds();
 
             std::cout << "\n---\n";
@@ -678,24 +686,30 @@ void run_k_nearest_neighbors_search_benchmarks_on_point_cloud_sequences() {
         for (const auto& relative_path : relative_paths) {
             std::cout << "---\nSequence in folder: " << relative_path.c_str() << "\n\n";
             timer.reset();
-            run_pointclouds_sequences_benchmark(
-                &ffcl_::k_nearest_neighbors_search_around_query_index_bench, relative_path, "FFCL", n_neighbors);
+            run_pointclouds_sequences_benchmark(&ffcl_::k_nearest_neighbors_search_around_query_index_bench,
+                                                relative_path,
+                                                "FFCL",
+                                                n_neighbors);
             timer.print_elapsed_seconds();
 
             std::cout << "---\n";
 
             timer.reset();
             // n_neighbors + 1 because flann also returns the query
-            run_pointclouds_sequences_benchmark(
-                &flann_::k_nearest_neighbors_search_around_query_index_bench, relative_path, "FLANN", n_neighbors + 1);
+            run_pointclouds_sequences_benchmark(&flann_::k_nearest_neighbors_search_around_query_index_bench,
+                                                relative_path,
+                                                "FLANN",
+                                                n_neighbors + 1);
             timer.print_elapsed_seconds();
 
             std::cout << "---\n";
 
             timer.reset();
             // n_neighbors + 1 because pcl also returns the query
-            run_pointclouds_sequences_benchmark(
-                &pcl_::k_nearest_neighbors_search_around_query_index_bench, relative_path, "PCL", n_neighbors + 1);
+            run_pointclouds_sequences_benchmark(&pcl_::k_nearest_neighbors_search_around_query_index_bench,
+                                                relative_path,
+                                                "PCL",
+                                                n_neighbors + 1);
             timer.print_elapsed_seconds();
 
             std::cout << "\n---\n";

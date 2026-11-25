@@ -93,8 +93,12 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, Make1DBoundingBoxIndexedTest) {
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto interval = ffcl::datastruct::make_tight_segment(
-                        data_indices.begin(), data_indices.end(), data.begin(), data.end(), features, feature_index);
+                    const auto interval = ffcl::datastruct::make_tight_segment(data_indices.begin(),
+                                                                               data_indices.end(),
+                                                                               data.begin(),
+                                                                               data.end(),
+                                                                               features,
+                                                                               feature_index);
 
                     const auto [min, max] = std::make_pair(interval.lower_bound(), interval.upper_bound());
 
@@ -149,8 +153,11 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, MakeKDBoundingBoxIndexedTest) {
 
                 auto data_indices = this->generate_indices(samples);
 
-                const auto bound = ffcl::datastruct::make_tight_bound(
-                    data_indices.begin(), data_indices.end(), data.begin(), data.end(), features);
+                const auto bound = ffcl::datastruct::make_tight_bound(data_indices.begin(),
+                                                                      data_indices.end(),
+                                                                      data.begin(),
+                                                                      data.end(),
+                                                                      features);
 
                 // test on all the possible feature indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
@@ -183,8 +190,9 @@ TYPED_TEST(KDTreeAlgorithmsTestFixture, QuickselectMedianRangeTest) {
 
                     auto data_indices = this->generate_indices(samples);
 
-                    auto shuffled_ascending_elements_array = this->shuffle_by_row(
-                        ascending_elements_array.begin(), ascending_elements_array.end(), features);
+                    auto shuffled_ascending_elements_array = this->shuffle_by_row(ascending_elements_array.begin(),
+                                                                                  ascending_elements_array.end(),
+                                                                                  features);
 
                     const auto [cut_index, left_indexed_range, cut_indexed_range, right_indexed_range] =
                         ffcl::datastruct::kdtree::algorithms::quickselect_median(

@@ -63,12 +63,12 @@ TYPED_TEST(SortingTestFixture, MedianIndexOfThreeRangesTest) {
 
                 // test on all the possible feature data_indices
                 for (std::size_t feature_index = 0; feature_index < features; ++feature_index) {
-                    const auto index = ffcl::common::algorithms::median_index_of_three(/**/ data_indices.begin(),
-                                                                                       /**/ data_indices.end(),
-                                                                                       /**/ data.begin(),
-                                                                                       /**/ data.end(),
-                                                                                       /**/ features,
-                                                                                       /**/ feature_index);
+                    const auto index = ffcl::common::algorithms::median_index_of_three(data_indices.begin(),
+                                                                                       data_indices.end(),
+                                                                                       data.begin(),
+                                                                                       data.end(),
+                                                                                       features,
+                                                                                       feature_index);
 
                     ASSERT_TRUE(index == 0 || index == (samples - 1) / 2 || index == samples - 1);
                 }
@@ -160,8 +160,9 @@ TYPED_TEST(SortingTestFixture, QuickselectRangeTest) {
 
                         auto data_indices = this->generate_indices(samples);
 
-                        auto shuffled_ascending_elements_array = this->shuffle_by_row(
-                            ascending_elements_array.begin(), ascending_elements_array.end(), features);
+                        auto shuffled_ascending_elements_array = this->shuffle_by_row(ascending_elements_array.begin(),
+                                                                                      ascending_elements_array.end(),
+                                                                                      features);
 
                         const auto [kth_smallest_index_begin, kth_smallest_index_end] =
                             ffcl::common::algorithms::quickselect(data_indices.begin(),
@@ -210,8 +211,9 @@ TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
 
                         auto data_indices = this->generate_indices(samples);
 
-                        auto shuffled_ascending_elements_array = this->shuffle_by_row(
-                            ascending_elements_array.begin(), ascending_elements_array.end(), features);
+                        auto shuffled_ascending_elements_array = this->shuffle_by_row(ascending_elements_array.begin(),
+                                                                                      ascending_elements_array.end(),
+                                                                                      features);
 
                         // new_pivot_index indicates where the original pivot has moved after quicksort
                         const auto new_pivot_index =
@@ -225,8 +227,10 @@ TYPED_TEST(SortingTestFixture, QuicksortRangeTest) {
 
                         // sort the shuffled_ascending_elements_array with the index vector remapped inplace by
                         // quicksort
-                        shuffled_ascending_elements_array = ffcl::common::remap_ranges_from_indices(
-                            data_indices, shuffled_ascending_elements_array, features);
+                        shuffled_ascending_elements_array =
+                            ffcl::common::remap_ranges_from_indices(data_indices,
+                                                                    shuffled_ascending_elements_array,
+                                                                    features);
 
                         // the data sorted by quickselect should now be the same as the original dataset
                         // shuffled_ascending_elements_array has been sorted inplace by quicksort

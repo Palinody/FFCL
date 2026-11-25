@@ -165,7 +165,8 @@ std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     if (medoids_.empty()) {
         for (std::size_t medoid_index = 0; medoid_index < options_.n_init_; ++medoid_index) {
             const auto random_medoids = common::math::random::make_n_elements_from_interval<std::size_t>(
-                n_medoids_, {0, common::get_n_samples(samples_range_first, samples_range_last, n_features)});
+                n_medoids_,
+                {0, common::get_n_samples(samples_range_first, samples_range_last, n_features)});
 
             // default initialization of the medoids indices if not initialized
             medoids_candidates.emplace_back(random_medoids);
@@ -262,7 +263,8 @@ std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::fit(
     if (medoids_.empty()) {
         for (std::size_t medoid_index = 0; medoid_index < options_.n_init_; ++medoid_index) {
             const auto random_medoids = common::math::random::make_n_elements_from_interval<std::size_t>(
-                n_medoids_, {0, pairwise_distance_matrix.n_rows()});
+                n_medoids_,
+                {0, pairwise_distance_matrix.n_rows()});
 
             // default initialization of the medoids indices if not initialized
             medoids_candidates.emplace_back(random_medoids);
@@ -340,8 +342,10 @@ template <typename SamplesIterator>
 std::vector<Data> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::forward(const SamplesIterator& samples_range_first,
                                                                             const SamplesIterator& samples_range_last,
                                                                             std::size_t            n_features) const {
-    return pam::utils::samples_to_nearest_medoid_distances(
-        samples_range_first, samples_range_last, n_features, medoids_);
+    return pam::utils::samples_to_nearest_medoid_distances(samples_range_first,
+                                                           samples_range_last,
+                                                           n_features,
+                                                           medoids_);
 }
 
 template <typename Data, bool PrecomputePairwiseDistanceMatrix>
@@ -357,8 +361,10 @@ std::vector<std::size_t> KMedoids<Data, PrecomputePairwiseDistanceMatrix>::predi
     const SamplesIterator& samples_range_first,
     const SamplesIterator& samples_range_last,
     std::size_t            n_features) const {
-    return pam::utils::samples_to_nth_nearest_medoid_indices(
-        samples_range_first, samples_range_last, n_features, medoids_);
+    return pam::utils::samples_to_nth_nearest_medoid_indices(samples_range_first,
+                                                             samples_range_last,
+                                                             n_features,
+                                                             medoids_);
 }
 
 template <typename Data, bool PrecomputePairwiseDistanceMatrix>

@@ -50,8 +50,10 @@ auto make_centroids(const SamplesIterator& samples_range_first,
 
     for (std::size_t centroid_index = 1; centroid_index < n_centroids; ++centroid_index) {
         // recompute the distances from each sample to its closest centroid
-        auto nearest_centroid_distances = kmeans::utils::samples_to_nearest_centroid_distances(
-            samples_range_first, samples_range_last, n_features, centroids);
+        auto nearest_centroid_distances = kmeans::utils::samples_to_nearest_centroid_distances(samples_range_first,
+                                                                                               samples_range_last,
+                                                                                               n_features,
+                                                                                               centroids);
         // use these distances as weighted probabilities
         auto alias_method = common::math::random::VosesAliasMethod(nearest_centroid_distances);
 
@@ -95,8 +97,10 @@ auto make_centroids_from_previous_centroid(const SamplesIterator& samples_range_
 
     for (std::size_t centroid_index = 1; centroid_index < n_centroids; ++centroid_index) {
         // recompute the distances from each sample to the previous centroid
-        auto previous_centroid_distances = kmeans::utils::samples_to_nearest_centroid_distances(
-            samples_range_first, samples_range_last, n_features, previous_centroid);
+        auto previous_centroid_distances = kmeans::utils::samples_to_nearest_centroid_distances(samples_range_first,
+                                                                                                samples_range_last,
+                                                                                                n_features,
+                                                                                                previous_centroid);
         // use these distances as weighted probabilities
         auto alias_method = common::math::random::VosesAliasMethod(previous_centroid_distances);
 

@@ -65,8 +65,8 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
                                     : union_find_const_ref_.find(index_candidate);
     }
 
-    auto mutual_reachability_distance(const IndexType& index_candidate,
-                                      DistanceType     distance_candidate) const -> DistanceType {
+    auto mutual_reachability_distance(const IndexType& index_candidate, DistanceType distance_candidate) const
+        -> DistanceType {
         if (!core_distances_ptr_) {
             return distance_candidate;
         }
@@ -111,9 +111,9 @@ class WithUnionFind : public StaticBuffer<WithUnionFind<DistancesIterator, Bound
         // The bound of this buffer is unbounded, so `compute_distance_to_centroid_if_within_bounds` can never
         // reject a candidate: call the distance directly and skip the per-candidate std::optional.
         for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
-            const auto candidate_distance = this->bound_.distance_to_centroid(
-                samples_range_first + *index_it * n_features,
-                samples_range_first + *index_it * n_features + n_features);
+            const auto candidate_distance =
+                this->bound_.distance_to_centroid(samples_range_first + *index_it * n_features,
+                                                  samples_range_first + *index_it * n_features + n_features);
 
             update_impl(*index_it, mutual_reachability_distance(*index_it, candidate_distance));
         }
@@ -203,11 +203,11 @@ struct static_base_traits<WithUnionFind<DistancesIterator, Bound>> {
                                               const OtherSamplesIterator&              samples_range_first,
                                               const OtherSamplesIterator&              samples_range_last,
                                               std::size_t                              n_features) {
-        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
-                                             /**/ indices_range_last,
-                                             /**/ samples_range_first,
-                                             /**/ samples_range_last,
-                                             /**/ n_features);
+        unsorted_buffer->partial_search_impl(indices_range_first,
+                                             indices_range_last,
+                                             samples_range_first,
+                                             samples_range_last,
+                                             n_features);
     }
 
     template <typename OptionalType>
@@ -226,12 +226,12 @@ struct static_base_traits<WithUnionFind<DistancesIterator, Bound>> {
                                               const OtherSamplesIterator&              samples_range_last,
                                               std::size_t                              n_features,
                                               std::optional<OptionalType>& candidates_component_membership) {
-        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
-                                             /**/ indices_range_last,
-                                             /**/ samples_range_first,
-                                             /**/ samples_range_last,
-                                             /**/ n_features,
-                                             /**/ candidates_component_membership);
+        unsorted_buffer->partial_search_impl(indices_range_first,
+                                             indices_range_last,
+                                             samples_range_first,
+                                             samples_range_last,
+                                             n_features,
+                                             candidates_component_membership);
     }
 };
 

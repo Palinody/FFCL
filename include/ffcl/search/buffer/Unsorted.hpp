@@ -115,11 +115,11 @@ struct static_base_traits<Unsorted<DistancesIterator, Bound>> {
                                               const OtherSamplesIterator&         samples_range_first,
                                               const OtherSamplesIterator&         samples_range_last,
                                               std::size_t                         n_features) {
-        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
-                                             /**/ indices_range_last,
-                                             /**/ samples_range_first,
-                                             /**/ samples_range_last,
-                                             /**/ n_features);
+        unsorted_buffer->partial_search_impl(indices_range_first,
+                                             indices_range_last,
+                                             samples_range_first,
+                                             samples_range_last,
+                                             n_features);
     }
 
     template <typename OptionalType>
@@ -138,16 +138,16 @@ struct static_base_traits<Unsorted<DistancesIterator, Bound>> {
                                               const OtherSamplesIterator&         samples_range_last,
                                               std::size_t                         n_features,
                                               std::optional<OptionalType>&) {
-        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
-                                             /**/ indices_range_last,
-                                             /**/ samples_range_first,
-                                             /**/ samples_range_last,
-                                             /**/ n_features);
+        unsorted_buffer->partial_search_impl(indices_range_first,
+                                             indices_range_last,
+                                             samples_range_first,
+                                             samples_range_last,
+                                             n_features);
     }
 };
 
 template <typename Bound>
-Unsorted(Bound &&) -> Unsorted<typename Bound::IteratorType, Bound>;
+Unsorted(Bound&&) -> Unsorted<typename Bound::IteratorType, Bound>;
 
 template <typename DistancesIteratorType>
 Unsorted(const DistancesIteratorType&, const DistancesIteratorType&)

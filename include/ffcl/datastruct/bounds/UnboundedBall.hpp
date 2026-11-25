@@ -78,8 +78,10 @@ constexpr auto UnboundedBall<Value, NFeatures>::distance_to_centroid_impl(
     const OtherFeaturesIterator& other_features_range_first,
     const OtherFeaturesIterator& other_features_range_last) const {
     assert(centroid_.size() == std::distance(other_features_range_first, other_features_range_last));
-    return common::math::heuristics::auto_distance(
-        other_features_range_first, other_features_range_last, centroid_.begin(), centroid_.end());
+    return common::math::heuristics::auto_distance(other_features_range_first,
+                                                   other_features_range_last,
+                                                   centroid_.begin(),
+                                                   centroid_.end());
 }
 
 template <typename Value, std::size_t NFeatures>
