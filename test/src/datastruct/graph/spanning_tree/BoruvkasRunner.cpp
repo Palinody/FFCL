@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <numeric>
@@ -33,7 +34,12 @@ namespace {
 using dType = float;
 
 std::vector<dType> load_data(const fs::path& filename, char delimiter = ' ') {
-    std::ifstream      filestream(filename);
+    std::ifstream filestream(filename);
+
+    if (!filestream.is_open()) {
+        std::fprintf(stderr, "error: cannot open input file '%s'\n", filename.string().c_str());
+        std::exit(1);
+    }
     std::vector<dType> data;
     std::string        row_str, elem_str;
 
@@ -51,8 +57,16 @@ std::vector<dType> load_data(const fs::path& filename, char delimiter = ' ') {
 std::size_t get_num_features(const fs::path& filename, char delimiter = ' ') {
     std::ifstream file(filename);
     std::string   line;
-    std::getline(file, line);
+
+    if (!std::getline(file, line)) {
+        std::fprintf(stderr, "error: input file '%s' is empty\n", filename.string().c_str());
+        std::exit(1);
+    }
     return std::count(line.begin(), line.end(), delimiter) + 1;
+}
+
+auto is_valid_mode(const std::string& mode) -> bool {
+    return mode == "dual" || mode == "single" || mode == "full";
 }
 
 }  // namespace
@@ -65,16 +79,32 @@ int main(int argc, char** argv) {
     const fs::path    input{argv[1]};
     const std::string output{argv[2]};
     const std::string mode{argv[3]};
+    if (!is_valid_mode(mode)) {
+        std::fprintf(stderr, "error: unknown mode '%s' (expected dual, single or full)\n", mode.c_str());
+        std::fprintf(stderr, "usage: %s <input> <output|-> <dual|single|full> [k] [bucket]\n", argv[0]);
+        return 1;
+    }
     const std::size_t k = (argc > 4) ? std::stoul(argv[4]) : 1;
 
     auto              data       = load_data(input);
     const std::size_t n_features = get_num_features(input);
     const std::size_t n_samples  = data.size() / n_features;
 
+    if (n_samples < 2) {
+        std::fprintf(stderr, "error: '%s' holds %zu sample(s), at least 2 are needed\n",
+                     input.string().c_str(), n_samples);
+        return 1;
+    }
+
     // Same default as the tests and the Python benchmark: sqrt(n) / 3, clamped.
     const std::size_t bucket_size =
         (argc > 5) ? std::stoul(argv[5])
                    : std::max<std::size_t>(16, static_cast<std::size_t>(std::sqrt(n_samples) / 3));
+
+    if (bucket_size < 1) {
+        std::fprintf(stderr, "error: bucket size must be >= 1\n");
+        return 1;
+    }
 
     auto indices = std::vector<std::size_t>(n_samples);
     std::iota(indices.begin(), indices.end(), 0);
