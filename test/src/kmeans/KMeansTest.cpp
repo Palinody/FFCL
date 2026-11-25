@@ -1,343 +1,85 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ffcl/common/math/heuristics/SilhouetteMethod.hpp"
-#include "ffcl/common/math/random/VosesAliasMethod.hpp"
-#include "ffcl/common/math/statistics/Statistics.hpp"
-#include "ffcl/kmeans/Hamerly.hpp"
 #include "ffcl/kmeans/KMeans.hpp"
-#include "ffcl/kmeans/Lloyd.hpp"
 
-#include <sys/types.h>  // ssize_t
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <iterator>
-#include <vector>
+#include "base_fixtures/ClusteringFixtures.hpp"
 
-namespace fs = std::filesystem;
+namespace {
 
-class KMeansErrorsTest : public ::testing::Test {
-  public:
-    using dType = float;
+using dType = float;
 
-  protected:
-    ssize_t get_num_features_in_file(const fs::path& filepath, char delimiter = ' ') {
-        std::ifstream file(filepath);
-        ssize_t       n_features = -1;
-        if (file.is_open()) {
-            std::string line;
+namespace Fixture = ffcl::fixtures;
 
-            std::getline(file, line);
-            // count the number of values at the first line, delimited by the specified delimiter
-            n_features = std::count(line.begin(), line.end(), delimiter) + 1;
+// With two centres and two well separated squares, the converged centroids are the centre of each
+// square regardless of the algorithm or the initialisation.
+TEST(KMeansTest, ConvergesToTheTwoSquareCentres) {
+    auto& data             = Fixture::two_blobs();
+    const auto  n_features = std::size_t{2};
 
-            file.close();
+    auto kmeans = ffcl::KMeans<dType>(2);
 
-        } else {
-            throw std::ios_base::failure("Unable to open file: " + filepath.string());
-        }
-        return n_features;
+    const auto centroids = kmeans.fit(data.begin(), data.end(), n_features);
+
+    ASSERT_EQ(centroids.size(), 4u);  // 2 centroids * 2 features
+
+    // the two centroids are {0.375, 0.375} and {9.375, 9.375} in some order
+    auto sorted_centroids = centroids;
+    auto as_pairs         = std::vector<std::pair<dType, dType>>{};
+
+    for (std::size_t i = 0; i + 1 < sorted_centroids.size(); i += 2) {
+        as_pairs.emplace_back(sorted_centroids[i], sorted_centroids[i + 1]);
     }
+    std::sort(as_pairs.begin(), as_pairs.end());
 
-    template <typename T = float>
-    std::vector<T> load_data(const fs::path& filename, char delimiter = ' ') {
-        std::ifstream  filestream(filename);
-        std::vector<T> data;
+    EXPECT_NEAR(as_pairs[0].first, 0.375f, 1e-4f);
+    EXPECT_NEAR(as_pairs[0].second, 0.375f, 1e-4f);
+    EXPECT_NEAR(as_pairs[1].first, 9.375f, 1e-4f);
+    EXPECT_NEAR(as_pairs[1].second, 9.375f, 1e-4f);
+}
 
-        if (filestream.is_open()) {
-            // temporary string data
-            std::string row_str, elem_str;
+TEST(KMeansTest, PredictAssignsEachSquareToOneCluster) {
+    auto& data             = Fixture::two_blobs();
+    const auto  n_features = std::size_t{2};
 
-            while (std::getline(filestream, row_str, '\n')) {
-                std::stringstream row_str_stream(row_str);
+    auto kmeans = ffcl::KMeans<dType>(2);
+    kmeans.fit(data.begin(), data.end(), n_features);
 
-                while (std::getline(row_str_stream, elem_str, delimiter)) {
-                    data.emplace_back(std::stof(elem_str));
-                }
-            }
-            filestream.close();
-        }
-        return data;
-    }
+    const auto predictions = kmeans.predict(data.begin(), data.end(), n_features);
 
-    void make_directories(const fs::path& directory_path) {
-        try {
-            if (!std::filesystem::exists(directory_path)) {
-                std::filesystem::create_directories(directory_path);
+    ASSERT_EQ(predictions.size(), 8u);
+    EXPECT_EQ(Fixture::count_clusters(predictions, static_cast<std::size_t>(-1)), 2u);
 
-#if defined(VERBOSE) && VERBOSE == true
-                std::cout << "Directory created: " << directory_path << "\n";
+    EXPECT_EQ(predictions[0], predictions[1]);
+    EXPECT_EQ(predictions[0], predictions[3]);
+    EXPECT_EQ(predictions[4], predictions[5]);
+    EXPECT_NE(predictions[0], predictions[4]);
+}
 
-            } else {
-                std::cout << "Dir. already exists\n";
-#endif
-            }
-        } catch (std::filesystem::filesystem_error& e) {
-            std::cerr << e.what() << std::endl;
-        }
-    }
+// Lloyd and Hamerly must agree on this fixture: it is the property that the fast variant relies on.
+TEST(KMeansTest, LloydAndHamerlyAgree) {
+    auto& data             = Fixture::two_blobs();
+    const auto  n_features = std::size_t{2};
 
-    template <typename T = float>
-    void write_data(const std::vector<T>& data, std::size_t n_features, const fs::path& filename) {
-        const auto parent_path = filename.parent_path();
+    auto lloyd = ffcl::KMeans<dType>(2);
+    lloyd.fit<ffcl::Lloyd>(data.begin(), data.end(), n_features);
+    const auto lloyd_predictions = lloyd.predict(data.begin(), data.end(), n_features);
 
-        make_directories(parent_path);
+    auto hamerly = ffcl::KMeans<dType>(2);
+    hamerly.fit<ffcl::Hamerly>(data.begin(), data.end(), n_features);
+    const auto hamerly_predictions = hamerly.predict(data.begin(), data.end(), n_features);
 
-        std::ofstream filestream(filename);
+    ASSERT_EQ(lloyd_predictions.size(), hamerly_predictions.size());
 
-        if (filestream.is_open()) {
-            std::size_t iter{};
+    // cluster labels are arbitrary, so the two algorithms must agree on the partition rather than on
+    // the label values: two samples share a cluster in one result iff they share it in the other
+    for (std::size_t i = 0; i < lloyd_predictions.size(); ++i) {
+        for (std::size_t j = 0; j < lloyd_predictions.size(); ++j) {
+            const auto same_group_lloyd   = lloyd_predictions[i] == lloyd_predictions[j];
+            const auto same_group_hamerly = hamerly_predictions[i] == hamerly_predictions[j];
 
-            for (const auto& elem : data) {
-                filestream << elem;
-
-                ++iter;
-
-                if (iter % n_features == 0 && iter != 0) {
-                    filestream << '\n';
-
-                } else {
-                    filestream << ' ';
-                }
-            }
+            EXPECT_EQ(same_group_lloyd, same_group_hamerly) << "samples " << i << " and " << j;
         }
     }
-
-    template <typename SamplesIterator>
-    std::pair<std::vector<std::size_t>, std::vector<typename SamplesIterator::value_type>> simple_fit(
-        const SamplesIterator& samples_first,
-        const SamplesIterator& samples_last,
-        std::size_t            n_centroids,
-        std::size_t            n_features,
-        std::size_t            n_iterations = 1) {
-        using KMeans = ffcl::KMeans<dType>;
-
-        auto kmeans = KMeans(n_centroids);
-
-        kmeans.set_options(
-            /*KMeans options=*/KMeans::Options()
-                .max_iter(n_iterations)
-                .early_stopping(true)
-                .tolerance(0.001)
-                .patience(0)
-                .n_init(10));
-
-        const auto centroids = kmeans.fit<ffcl::Hamerly>(samples_first,
-                                                         samples_last,
-                                                         n_features,
-                                                         ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
-
-        const auto predictions = kmeans.predict(samples_first, samples_last, n_features);
-
-        return {predictions, centroids};
-    }
-
-    static constexpr std::size_t n_iterations_global = 100;
-    static constexpr std::size_t n_centroids_global  = 4;
-
-    const fs::path folder_root_        = fs::path("../bin/clustering");
-    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
-    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
-    const fs::path centroids_folder_   = folder_root_ / fs::path("centroids");
-};
-
-TEST_F(KMeansErrorsTest, SilhouetteTest) {
-    using KMeans = ffcl::KMeans<dType>;
-
-    fs::path filename = "unbalanced_blobs.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    std::size_t k_min = 2;
-    std::size_t k_max = 10;
-
-    std::vector<dType> scores(k_max - k_min);
-
-    // range n_centroids/n_medoids in [2, 10[
-    for (std::size_t k = k_min; k < k_max; ++k) {
-        // use any clustering algorithm that better suits your use case
-        KMeans kmeans(k);
-        // fit the centroids (or medoids if it was KMedoids)
-        kmeans.fit(data.begin(), data.end(), n_features);
-        // map the samples to their closest centroid/medoid
-        const auto predictions = kmeans.predict(data.begin(), data.end(), n_features);
-        // compute the silhouette scores for each sample
-        const auto samples_silhouette_values = ffcl::common::math::heuristics::silhouette(data.begin(),
-                                                                                          data.end(),
-                                                                                          n_features,
-                                                                                          predictions.begin(),
-                                                                                          predictions.end());
-        // get the average score
-        const auto average_silhouette =
-            ffcl::common::math::heuristics::get_average_silhouette(samples_silhouette_values.begin(),
-                                                                   samples_silhouette_values.end());
-        // accumulate the current scores
-        scores[k - k_min] = average_silhouette;
-    }
-    // find the k corresponding to the number of centroids/medoids k with the best average silhouette score
-    const auto best_k = k_min + ffcl::common::math::statistics::argmax(scores.begin(), scores.end());
-
-    std::cout << "best k: " << best_k << "\n";
 }
 
-TEST_F(KMeansErrorsTest, NoisyCirclesTest) {
-    fs::path filename = "noisy_circles.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    // const auto n_centroids = 2;  // 2
-    const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, NoisyMoonsTest) {
-    fs::path filename = "noisy_moons.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    // const auto n_centroids = 2;
-    const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());  // 2
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, VariedTest) {
-    fs::path filename = "varied.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    // const auto n_centroids = 3;
-    const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, AnisoTest) {
-    fs::path filename = "aniso.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    // const auto n_centroids = 3;
-    const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, BlobsTest) {
-    fs::path filename = "blobs.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    // const auto n_centroids = 3;
-    const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, NoStructureTest) {
-    fs::path filename = "no_structure.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    const auto n_centroids = 4;
-    // const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, IrisTest) {
-    fs::path filename = "iris.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    // const auto n_centroids = 3;
-    const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, UnbalancedBlobsTest) {
-    fs::path filename = "unbalanced_blobs.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    // const auto n_centroids = 3;
-    const std::size_t n_centroids = 1 + *std::max_element(labels.begin(), labels.end());
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-TEST_F(KMeansErrorsTest, MnistSimpleFitTest) {
-    fs::path filename = "mnist.txt";
-
-    const auto        data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const auto        labels     = load_data<std::size_t>(targets_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-
-    std::cout << data.size() << " | " << labels.size() << " | " << n_features << std::endl;
-    const auto n_centroids = 10;
-
-    const auto [predictions, centroids] =
-        simple_fit(data.begin(), data.end(), n_centroids, n_features, n_iterations_global);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-    write_data<dType>(centroids, 1, centroids_folder_ / fs::path(filename));
-}
-
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+}  // namespace

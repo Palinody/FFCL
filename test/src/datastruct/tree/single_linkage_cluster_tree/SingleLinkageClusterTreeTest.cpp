@@ -167,6 +167,11 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyCirclesTest) {
 
     fs::path filename = "noisy_circles.txt";
 
+    // Interim: this test is dataset driven and belongs in benchmark/.
+    if (!fs::exists(inputs_folder_ / filename)) {
+        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
+    }
+
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
@@ -230,6 +235,11 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoisyMoonsTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "noisy_moons.txt";
+
+    // Interim: this test is dataset driven and belongs in benchmark/.
+    if (!fs::exists(inputs_folder_ / filename)) {
+        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
+    }
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
@@ -295,6 +305,11 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, VariedTest) {
 
     fs::path filename = "varied.txt";
 
+    // Interim: this test is dataset driven and belongs in benchmark/.
+    if (!fs::exists(inputs_folder_ / filename)) {
+        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
+    }
+
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
@@ -358,6 +373,11 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, AnisoTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "aniso.txt";
+
+    // Interim: this test is dataset driven and belongs in benchmark/.
+    if (!fs::exists(inputs_folder_ / filename)) {
+        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
+    }
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
@@ -423,6 +443,11 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, BlobsTest) {
 
     fs::path filename = "blobs.txt";
 
+    // Interim: this test is dataset driven and belongs in benchmark/.
+    if (!fs::exists(inputs_folder_ / filename)) {
+        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
+    }
+
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
@@ -487,6 +512,11 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, NoStructureTest) {
 
     fs::path filename = "no_structure.txt";
 
+    // Interim: this test is dataset driven and belongs in benchmark/.
+    if (!fs::exists(inputs_folder_ / filename)) {
+        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
+    }
+
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
     const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
@@ -550,6 +580,11 @@ TEST_F(SingleLinkageClusterTreeErrorsTest, UnbalancedBlobsTest) {
     ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
 
     fs::path filename = "unbalanced_blobs.txt";
+
+    // Interim: this test is dataset driven and belongs in benchmark/.
+    if (!fs::exists(inputs_folder_ / filename)) {
+        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
+    }
 
     auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
     const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);

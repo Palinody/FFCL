@@ -2,6 +2,25 @@ cmake_minimum_required(VERSION 3.0.2)
 
 project(ffcl)
 
+# =============================================================================
+#  FFCL
+#
+#  The tree is split into three independent parts:
+#
+#    include/  src/   the library itself (header-only, src/ has one translation unit)
+#    test/            fast functional unit tests (should stay well under a minute)
+#    benchmark/       dataset-driven measurements against reference libraries
+#
+#  Build the library only:      cmake .. && make
+#  Build and run the tests:     cmake .. -DMODE=gtest && make && ctest
+#  Build and run the benchmark: cmake .. -DMODE=benchmark && make && ./benchmark/ffcl_benchmark
+#
+#  Options:
+#    -DVERBOSE=true          print per-stage timings
+#    -DTHREADS_ENABLED=true  parallelise the independent loops with OpenMP
+# =============================================================================
+
+# --- build type -------------------------------------------------------------
 # The optimization flags below are only added for an explicit build type. When
 # CMAKE_BUILD_TYPE is left empty (the common `cmake ..` invocation) no `-O` flag
 # at all is passed to the compiler, which makes every benchmark run at -O0 and
@@ -11,17 +30,11 @@ if(NOT CMAKE_BUILD_TYPE)
     message("No CMAKE_BUILD_TYPE specified: defaulting to Release")
 endif()
 
-# Debug mode: Enable profiling with -g and -pg for gprof/perf
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message("Building in Debug mode")
-
-    # -g: Enable debug information
-    # -pg: Enable profiling support (gprof)
-    # -O0: Disable optimizations (for accurate profiling)
     add_compile_options(-std=c++17 -g -pg -O0)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message("Building in Release mode")
-
     add_compile_options(
         -std=c++17
         -Ofast
@@ -38,71 +51,19 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 find_package(OpenMP REQUIRED)
-# find_package(TBB REQUIRED)
 
-include_directories(
-    include
-)
+# Optional reference libraries for the benchmark. Each one guards its own
+# comparisons, so the benchmark still builds when they are absent.
+#
+#   PCL    -> KD-tree / FLANN index comparison for the neighbour searches
+#   FLANN  -> standalone KD-tree comparison
+#   MLPACK -> dual-tree Boruvka MST comparison
+#   HDBSCAN-> not a C++ dependency: compared against through the Python scripts
+find_package(PCL QUIET)
+find_package(FLANN QUIET)
+find_package(Armadillo QUIET)
+find_package(MLPACK QUIET)
 
-set(HEADER_FILES
-    include/ffcl/kmeans/KMeans.hpp
-    include/ffcl/kmeans/Lloyd.hpp
-    include/ffcl/kmeans/Hamerly.hpp
-    include/ffcl/kmeans/KMeansUtils.hpp
-    include/ffcl/kmeans/KMeansPlusPlus.hpp
-
-    include/ffcl/kmedoids/FasterMSC.hpp
-    include/ffcl/kmedoids/FasterPAM.hpp
-    include/ffcl/kmedoids/KMedoids.hpp
-    include/ffcl/kmedoids/PAMUtils.hpp
-    include/ffcl/kmedoids/PAMBuild.hpp
-
-    include/ffcl/dbscan/DBSCAN.hpp
-
-    include/ffcl/hdbscan/HDBSCAN.hpp
-
-    include/ffcl/search/buffer/StaticBuffer.hpp
-    include/ffcl/search/buffer/Unsorted.hpp
-    include/ffcl/search/buffer/WithMemory.hpp
-    include/ffcl/search/buffer/WithUnionFind.hpp
-
-    include/ffcl/search/Search.hpp
-
-    include/ffcl/datastruct/tree/kdtree/policy/AxisSelectionPolicy.hpp
-    include/ffcl/datastruct/tree/kdtree/policy/SplittingRulePolicy.hpp
-    include/ffcl/datastruct/tree/kdtree/KDNodeView.hpp
-    include/ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp
-    include/ffcl/datastruct/tree/kdtree/KDTree.hpp
-
-    include/ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
-
-    include/ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp
-
-    include/ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp
-    include/ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp
-
-    include/ffcl/datastruct/vector/FeaturesMask.hpp
-    include/ffcl/datastruct/vector/FeaturesVector.hpp
-    include/ffcl/datastruct/Interval.hpp
-
-    include/ffcl/common/math/random/Distributions.hpp
-    include/ffcl/common/math/random/VosesAliasMethod.hpp
-
-    include/ffcl/common/math/heuristics/Distances.hpp
-    include/ffcl/common/math/heuristics/SilhouetteMethod.hpp
-
-    include/ffcl/common/Utils.hpp
-    include/ffcl/common/Timer.hpp
-)
-
-set(SOURCE_FILES
-    # FFCL is header-only; this single translation unit gives the shared library target a linker language
-    # and a real artifact.
-    src/ffcl.cpp
-)
-
-# Both options are documented in the README and can be enabled at configure time with
-#   cmake .. -DVERBOSE=true -DTHREADS_ENABLED=true
 option(VERBOSE "Print the per-stage timings (tree build, MST, full pipeline)" OFF)
 option(THREADS_ENABLED "Parallelise the independent loops with OpenMP" OFF)
 
@@ -118,48 +79,103 @@ else()
     add_definitions(-DTHREADS_ENABLED=false)
 endif()
 
-# disable all assertions
-add_definitions(-DNDEBUG)
+include_directories(include)
 
-execute_process(
-    COMMAND ${CMAKE_CXX_COMPILER} --version
-    OUTPUT_VARIABLE GPP_VERSION_OUTPUT
+# =============================================================================
+#  Code
+# =============================================================================
+
+set(HEADER_FILES
+    include/ffcl/kmeans/KMeans.hpp
+    include/ffcl/kmeans/Lloyd.hpp
+    include/ffcl/kmeans/Hamerly.hpp
+    include/ffcl/kmeans/KMeansUtils.hpp
+    include/ffcl/kmeans/KMeansPlusPlus.hpp
+
+    include/ffcl/kmedoids/FasterMSC.hpp
+    include/ffcl/kmedoids/FasterPAM.hpp
+    include/ffcl/kmedoids/KMedoids.hpp
+    include/ffcl/kmedoids/PAMUtils.hpp
+    include/ffcl/kmedoids/PAMBuild.hpp
+
+    include/ffcl/dbscan/DBSCAN.hpp
+    include/ffcl/hdbscan/HDBSCAN.hpp
+
+    include/ffcl/search/Search.hpp
+    include/ffcl/search/TreeTraverser.hpp
+    include/ffcl/search/DualTreeTraverser.hpp
+    include/ffcl/search/ClosestPairOfSamples.hpp
+    include/ffcl/search/buffer/StaticBuffer.hpp
+    include/ffcl/search/buffer/Unsorted.hpp
+    include/ffcl/search/buffer/WithMemory.hpp
+    include/ffcl/search/buffer/WithUnionFind.hpp
+    include/ffcl/search/buffer/EdgesBuffer.hpp
+    include/ffcl/search/buffer/IndicesToBuffersMap.hpp
+
+    include/ffcl/datastruct/tree/kdtree/KDTree.hpp
+    include/ffcl/datastruct/tree/kdtree/KDNodeView.hpp
+    include/ffcl/datastruct/tree/kdtree/KDTreeAlgorithms.hpp
+    include/ffcl/datastruct/tree/kdtree/policy/AxisSelectionPolicy.hpp
+    include/ffcl/datastruct/tree/kdtree/policy/SplittingRulePolicy.hpp
+
+    include/ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp
+    include/ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp
+    include/ffcl/datastruct/tree/condensed_cluster_tree/CondensedClusterTree.hpp
+    include/ffcl/datastruct/tree/condensed_cluster_tree/CondensedClusterNode.hpp
+
+    include/ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp
+    include/ffcl/datastruct/graph/spanning_tree/MSTBuilder.hpp
+    include/ffcl/datastruct/graph/spanning_tree/MinimumSpanningTree.hpp
+    include/ffcl/datastruct/graph/spanning_tree/CoreDistances.hpp
+
+    include/ffcl/datastruct/bounds/AABB.hpp
+    include/ffcl/datastruct/bounds/AABBWithCentroid.hpp
+    include/ffcl/datastruct/bounds/Ball.hpp
+    include/ffcl/datastruct/bounds/UnboundedBall.hpp
+    include/ffcl/datastruct/bounds/StaticBound.hpp
+    include/ffcl/datastruct/bounds/StaticBoundWithCentroid.hpp
+    include/ffcl/datastruct/bounds/distances/MinDistance.hpp
+    include/ffcl/datastruct/bounds/segment/LowerBoundAndUpperBound.hpp
+    include/ffcl/datastruct/bounds/segment/LowerBoundAndLength.hpp
+    include/ffcl/datastruct/bounds/segment/StaticSegment.hpp
+    include/ffcl/datastruct/bounds/segment/distances/MinDistance.hpp
+
+    include/ffcl/datastruct/matrix/PairwiseDistanceMatrix.hpp
+    include/ffcl/datastruct/matrix/PairwiseDistanceMatrixDynamic.hpp
+    include/ffcl/datastruct/vector/FeaturesVector.hpp
+    include/ffcl/datastruct/vector/FeaturesMask.hpp
+    include/ffcl/datastruct/UnionFind.hpp
+    include/ffcl/datastruct/Interval.hpp
+
+    include/ffcl/common/Utils.hpp
+    include/ffcl/common/Timer.hpp
+    include/ffcl/common/algorithms/Sorting.hpp
+    include/ffcl/common/math/statistics/Statistics.hpp
+    include/ffcl/common/math/heuristics/Distances.hpp
+    include/ffcl/common/math/heuristics/SilhouetteMethod.hpp
+    include/ffcl/common/math/linear_algebra/Transpose.hpp
+    include/ffcl/common/math/linear_algebra/Translation.hpp
+    include/ffcl/common/math/random/Distributions.hpp
+    include/ffcl/common/math/random/Sampling.hpp
+    include/ffcl/common/math/random/VosesAliasMethod.hpp
 )
 
-string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" GPP_VERSION "${GPP_VERSION_OUTPUT}")
+set(SOURCE_FILES
+    # FFCL is header-only; this single translation unit gives the shared library target a linker
+    # language and a real artifact.
+    src/ffcl.cpp
+)
 
-message(" Using g++ Version: ${GPP_VERSION} ")
+add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
 
-# set(MODE "benchmarks")
-if(MODE STREQUAL "benchmark")
-    # Find PCL package
-    find_package(PCL REQUIRED)
+# =============================================================================
+#  Test
+# =============================================================================
+# Fast functional unit tests. Everything here must stay cheap: the dataset-driven
+# accuracy and performance measurements live in benchmark/.
 
-    # Include PCL headers
-    include_directories(${PCL_INCLUDE_DIRS})
-
-    # Link against PCL libraries
-    link_directories(${PCL_LIBRARY_DIRS})
-    add_definitions(${PCL_DEFINITIONS})
-
-    add_executable(
-        ${PROJECT_NAME}
-        benchmark/main.cpp
-
-        ${HEADER_FILES}
-        ${SOURCE_FILES}
-    )
-    target_link_libraries(
-        ${PROJECT_NAME}
-
-        # PUBLIC
-        # TBB::tbb
-        ${PCL_LIBRARIES}
-
-        OpenMP::OpenMP_CXX
-    )
-elseif(MODE STREQUAL "gtest")
-    # -------- GOOGLE TEST ----------
+if(MODE STREQUAL "gtest")
     include(FetchContent)
 
     if(POLICY CMP0135)
@@ -170,543 +186,145 @@ elseif(MODE STREQUAL "gtest")
         googletest
         URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
     )
-    
+
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 
-    # -------------------------------
     enable_testing()
 
-    # Debug mode: Enable profiling with -g and -pg for gprof/perf
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        message("Building in Debug mode")
+    include_directories(test/include test/include/base_fixtures)
 
-        # -g: Enable debug information
-        # -pg: Enable profiling support (gprof)
-        # -O0: Disable optimizations (for accurate profiling)
-        add_compile_options(-std=c++17 -g -pg -O0)
-    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-        message("Building in Release mode")
-
-        # add_compile_options(-std=c++17 -g -pg)
-        add_compile_options(
-            -std=c++17
-            -Ofast
-            -march=native
-            -Wall
-            -Wextra
-            -Werror
-            -Wpedantic
-            -Wfloat-equal
-            -Wshadow
-            -Wfatal-errors
-            -fopenmp
-        )
-    endif()
-
-    include(CTest)
-
-    include_directories(test/include/base_fixtures)
-
-    add_executable(
-        SortingTest
-
-        # ---
-        test/src/common/algorithms/SortingTest.cpp
-    )
-    target_link_libraries(
-        SortingTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        SortingTest
-        SortingTest
-    )
-
-    add_executable(
-        UnsortedTest
-
-        # ---
-        test/src/search/buffer/UnsortedTest.cpp
-    )
-    target_link_libraries(
-        UnsortedTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        UnsortedTest
-        UnsortedTest
-    )
-
-    add_executable(
-        WithMemoryTest
-
-        # ---
-        test/src/search/buffer/WithMemoryTest.cpp
-    )
-    target_link_libraries(
-        WithMemoryTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        WithMemoryTest
-        WithMemoryTest
-    )
-
-    add_executable(
-        WithUnionFindTest
-
-        # ---
-        test/src/search/buffer/WithUnionFindTest.cpp
-    )
-    target_link_libraries(
-        WithUnionFindTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        WithUnionFindTest
-        WithUnionFindTest
-    )
-
-    add_executable(
-        SearchTest
-
-        # ---
-        test/src/search/SearchTest.cpp
-    )
-    target_link_libraries(
-        SearchTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        SearchTest
-        SearchTest
-    )
-
-    add_executable(
-        StatisticsTest
-
-        # ---
-        test/src/common/math/statistics/StatisticsTest.cpp
-    )
-    target_link_libraries(
-        StatisticsTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        StatisticsTest
-        StatisticsTest
-    )
-
-    add_executable(
-        TransposeTest
-
-        # ---
-        test/src/common/math/linear_algebra/TransposeTest.cpp
-    )
-    target_link_libraries(
-        TransposeTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        TransposeTest
-        TransposeTest
-    )
-
-    add_executable(
-        DistributionsTest
-
-        # ---
-        test/src/common/math/random/DistributionsTest.cpp
-    )
-    target_link_libraries(
-        DistributionsTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        DistributionsTest
-        DistributionsTest
-    )
-
-    add_executable(
-        UtilsTest
-
-        # ---
+    # One target per test translation unit, named after the file. The directory layout under
+    # test/src mirrors include/ffcl so a header and its test are always in the same relative place.
+    set(FFCL_TEST_SOURCES
         test/src/common/UtilsTest.cpp
-    )
-    target_link_libraries(
-        UtilsTest
+        test/src/common/algorithms/SortingTest.cpp
+        test/src/common/math/linear_algebra/TransposeTest.cpp
+        test/src/common/math/linear_algebra/TranslationTest.cpp
+        test/src/common/math/random/DistributionsTest.cpp
+        test/src/common/math/random/SamplingTest.cpp
+        test/src/common/math/random/VosesAliasMethodTest.cpp
+        test/src/common/math/statistics/StatisticsTest.cpp
+        test/src/common/math/heuristics/DistancesTest.cpp
+        test/src/common/math/heuristics/SilhouetteMethodTest.cpp
 
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
+        test/src/datastruct/UnionFindTest.cpp
+        test/src/datastruct/IntervalTest.cpp
+        test/src/datastruct/vector/FeaturesVectorTest.cpp
+        test/src/datastruct/vector/FeaturesMaskTest.cpp
+        test/src/datastruct/matrix/PairwiseDistanceMatrixTest.cpp
+        test/src/datastruct/bounds/distance/BoundsDistanceTest.cpp
 
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        UtilsTest
-        UtilsTest
-    )
+        test/src/datastruct/tree/kdtree/KDTreeTest.cpp
+        test/src/datastruct/tree/kdtree/KDTreeAlgorithmsTest.cpp
+        test/src/datastruct/tree/kdtree/policy/AxisSelectionPolicyTest.cpp
+        test/src/datastruct/tree/kdtree/policy/SplittingRulePolicyTest.cpp
+        test/src/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
+        test/src/datastruct/tree/condensed_cluster_tree/CondensedClusterTreeTest.cpp
+        test/src/datastruct/graph/spanning_tree/BoruvkasAlgorithmTest.cpp
 
-    add_executable(
-        KMedoidsTest
+        test/src/search/SearchTest.cpp
+        test/src/search/buffer/UnsortedTest.cpp
+        test/src/search/buffer/WithMemoryTest.cpp
+        test/src/search/buffer/WithUnionFindTest.cpp
+        test/src/search/buffer/EdgesBufferTest.cpp
+        test/src/search/ClosestPairOfSamplesTest.cpp
 
-        # ---
+        test/src/dbscan/DBSCANTest.cpp
+        test/src/hdbscan/HDBSCANTest.cpp
+        test/src/kmeans/KMeansTest.cpp
         test/src/kmedoids/KMedoidsTest.cpp
     )
-    target_link_libraries(
-        KMedoidsTest
 
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
+    foreach(test_source ${FFCL_TEST_SOURCES})
+        get_filename_component(test_name ${test_source} NAME_WE)
 
-        OpenMP::OpenMP_CXX
+        add_executable(${test_name} ${test_source})
+        target_link_libraries(${test_name} PUBLIC GTest::gtest_main GTest::gmock_main OpenMP::OpenMP_CXX)
+        add_test(${test_name} ${test_name})
+    endforeach()
+
+    set_tests_properties(
+        SortingTest DistributionsTest SamplingTest VosesAliasMethodTest
+        PROPERTIES LABELS "utilities"
     )
-    add_test(
-        KMedoidsTest
-        KMedoidsTest
+    set_tests_properties(
+        UtilsTest StatisticsTest DistancesTest SilhouetteMethodTest TransposeTest TranslationTest
+        PROPERTIES LABELS "utilities"
     )
-
-    add_executable(
-        KMeansTest
-
-        # ---
-        test/src/kmeans/KMeansTest.cpp
-    )
-    target_link_libraries(
-        KMeansTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        KMeansTest
-        KMeansTest
-    )
-
-    add_executable(
-        DBSCANTest
-
-        # ---
-        test/src/dbscan/DBSCANTest.cpp
-    )
-    target_link_libraries(
-        DBSCANTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        DBSCANTest
-        DBSCANTest
-    )
-
-    # ---
-    add_executable(
+    set_tests_properties(
+        UnionFindTest IntervalTest FeaturesVectorTest FeaturesMaskTest PairwiseDistanceMatrixTest
         BoundsDistanceTest
-
-        # ---
-        test/src/datastruct/bounds/distance/BoundsDistanceTest.cpp
+        PROPERTIES LABELS "datastruct"
     )
-    target_link_libraries(
-        BoundsDistanceTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
+    set_tests_properties(
+        KDTreeTest KDTreeAlgorithmsTest AxisSelectionPolicyTest SplittingRulePolicyTest
+        PROPERTIES LABELS "indexing"
     )
-    add_test(
-        BoundsDistanceTest
-        BoundsDistanceTest
+    set_tests_properties(
+        SingleLinkageClusterTreeTest CondensedClusterTreeTest BoruvkasAlgorithmTest
+        PROPERTIES LABELS "datastruct"
     )
-
-    # ---
-    add_executable(
-        CondensedClusterTreeTest
-
-        # ---
-        test/src/datastruct/tree/condensed_cluster_tree/CondensedClusterTreeTest.cpp
+    set_tests_properties(
+        SearchTest UnsortedTest WithMemoryTest WithUnionFindTest EdgesBufferTest ClosestPairOfSamplesTest
+        PROPERTIES LABELS "search"
     )
-    target_link_libraries(
-        CondensedClusterTreeTest
-
-        PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
+    set_tests_properties(
+        DBSCANTest HDBSCANTest KMeansTest KMedoidsTest
+        PROPERTIES LABELS "clustering"
     )
-    add_test(
-        CondensedClusterTreeTest
-        CondensedClusterTreeTest
-    )
+endif()
 
-    add_executable(
-        HDBSCANTest
+# =============================================================================
+#  Benchmark
+# =============================================================================
+# Dataset-driven measurements of every algorithm against the reference libraries that are available
+# on this machine. Nothing here is registered with CTest: these runs take minutes.
 
-        # ---
-        test/src/hdbscan/HDBSCANTest.cpp
-    )
-    target_link_libraries(
-        HDBSCANTest
+if(MODE STREQUAL "benchmark")
+    include_directories(benchmark/include)
 
-        PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
+    add_executable(ffcl_benchmark
+        benchmark/src/main.cpp
 
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        HDBSCANTest
-        HDBSCANTest
+        benchmark/src/kdtree/KDTreeBenchmark.cpp
+        benchmark/src/dbscan/DBSCANBenchmark.cpp
+        benchmark/src/hdbscan/HDBSCANBenchmark.cpp
+        benchmark/src/kmeans/KMeansBenchmark.cpp
+        benchmark/src/kmedoids/KMedoidsBenchmark.cpp
+        benchmark/src/graph/MinimumSpanningTreeBenchmark.cpp
+
+        benchmark/src/reference/PCLBenchmark.cpp
+        benchmark/src/reference/FLANNBenchmark.cpp
+        benchmark/src/reference/MLPACKBenchmark.cpp
     )
 
-    add_executable(
-        KDTreeAlgorithmsTest
+    target_link_libraries(ffcl_benchmark PUBLIC ${PROJECT_NAME} OpenMP::OpenMP_CXX)
 
-        # ---
-        test/src/datastruct/tree/kdtree/KDTreeAlgorithmsTest.cpp
-    )
-    target_link_libraries(
-        KDTreeAlgorithmsTest
+    if(PCL_FOUND)
+        message("Benchmark: PCL found, enabling the PCL comparisons")
+        include_directories(${PCL_INCLUDE_DIRS})
+        target_link_libraries(ffcl_benchmark PUBLIC ${PCL_LIBRARIES})
+        target_compile_definitions(ffcl_benchmark PUBLIC FFCL_BENCH_HAS_PCL)
+    else()
+        message("Benchmark: PCL not found, its comparisons will be reported as unavailable")
+    endif()
 
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
+    if(FLANN_FOUND)
+        message("Benchmark: FLANN found, enabling the FLANN comparisons")
+        include_directories(${FLANN_INCLUDE_DIRS})
+        target_link_libraries(ffcl_benchmark PUBLIC ${FLANN_LIBRARIES})
+        target_compile_definitions(ffcl_benchmark PUBLIC FFCL_BENCH_HAS_FLANN)
+    else()
+        message("Benchmark: FLANN not found, its comparisons will be reported as unavailable")
+    endif()
 
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        KDTreeAlgorithmsTest
-        KDTreeAlgorithmsTest
-    )
-
-    add_executable(
-        SplittingRulePolicyTest
-
-        # ---
-        test/src/datastruct/tree/kdtree/policy/SplittingRulePolicyTest.cpp
-    )
-    target_link_libraries(
-        SplittingRulePolicyTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        SplittingRulePolicyTest
-        SplittingRulePolicyTest
-    )
-
-    add_executable(
-        AxisSelectionPolicyTest
-
-        # ---
-        test/src/datastruct/tree/kdtree/policy/AxisSelectionPolicyTest.cpp
-    )
-    target_link_libraries(
-        AxisSelectionPolicyTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        AxisSelectionPolicyTest
-        AxisSelectionPolicyTest
-    )
-
-    add_executable(
-        KDTreeTest
-
-        # ---
-        test/src/datastruct/tree/kdtree/KDTreeTest.cpp
-    )
-    target_link_libraries(
-        KDTreeTest
-
-        # PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        KDTreeTest
-        KDTreeTest
-    )
-
-    add_executable(
-        BoruvkasAlgorithmTest
-
-        # ---
-        test/src/datastruct/graph/spanning_tree/BoruvkasAlgorithmTest.cpp
-    )
-    target_link_libraries(
-        BoruvkasAlgorithmTest
-
-        PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        BoruvkasAlgorithmTest
-        BoruvkasAlgorithmTest
-    )
-
-    # Small driver for bin/CompareHDBSCAN.py. Build it twice (THREADS_ENABLED off/on) to compare the
-    # sequential and the OpenMP build without recompiling.
-    add_executable(
-        BoruvkasRunner
-
-        # ---
-        test/src/datastruct/graph/spanning_tree/BoruvkasRunner.cpp
-    )
-    target_link_libraries(
-        BoruvkasRunner
-
-        PUBLIC
-        OpenMP::OpenMP_CXX
-    )
-
-    add_executable(
-        BoruvkasBenchmark
-
-        # ---
-        test/src/datastruct/graph/spanning_tree/BoruvkasBenchmark.cpp
-    )
-    target_link_libraries(
-        BoruvkasBenchmark
-
-        PUBLIC
-        OpenMP::OpenMP_CXX
-    )
-
-    add_executable(
-        SingleLinkageClusterTreeTest
-
-        # ---
-        test/src/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
-    )
-    target_link_libraries(
-        SingleLinkageClusterTreeTest
-
-        PUBLIC
-        # TBB::tbb
-        GTest::gtest_main
-        GTest::gmock_main
-
-        OpenMP::OpenMP_CXX
-    )
-    add_test(
-        SingleLinkageClusterTreeTest
-        SingleLinkageClusterTreeTest
-    )
-
-    set_tests_properties(SortingTest DistributionsTest PROPERTIES
-        LABELS "DistributionTests"
-    )
-
-    set_tests_properties(UtilsTest KDTreeAlgorithmsTest PROPERTIES
-        LABELS "UtilityTests"
-    )
-
-    set_tests_properties(KDTreeTest PROPERTIES
-        LABELS "IndexingTests"
-    )
-
-    set_tests_properties(DBSCANTest KMedoidsTest KMeansTest PROPERTIES
-        LABELS "ClusteringTests"
-    )
-
-else()
-    add_library(
-        ${PROJECT_NAME}
-        SHARED
-        ${HEADER_FILES}
-        ${SOURCE_FILES}
-    )
-    target_link_libraries(
-        ${PROJECT_NAME}
-
-        # PUBLIC
-        # TBB::tbb
-        OpenMP::OpenMP_CXX
-    )
+    if(MLPACK_FOUND)
+        message("Benchmark: MLPACK found, enabling the MLPACK comparisons")
+        include_directories(${MLPACK_INCLUDE_DIRS})
+        target_link_libraries(ffcl_benchmark PUBLIC ${MLPACK_LIBRARIES})
+        target_compile_definitions(ffcl_benchmark PUBLIC FFCL_BENCH_HAS_MLPACK)
+    else()
+        message("Benchmark: MLPACK not found, its comparisons will be reported as unavailable")
+    endif()
 endif()
