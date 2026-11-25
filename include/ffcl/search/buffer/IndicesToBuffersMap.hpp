@@ -177,7 +177,7 @@ class IndicesToBuffersMap {
 
   private:
     using KTHShortestEdgePriorityQueueElementType = datastruct::mst::Edge<IndexType, DistanceType>;
-    using KTHShortestEdgePriorityQueueType        = std::priority_queue<KTHShortestEdgePriorityQueueElementType,
+    using KTHShortestEdgePriorityQueueType = std::priority_queue<KTHShortestEdgePriorityQueueElementType,
                                                                  std::vector<KTHShortestEdgePriorityQueueElementType>,
                                                                  std::less<KTHShortestEdgePriorityQueueElementType>>;
 
@@ -459,9 +459,9 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::update_priorit
             // 'second' is a bool in true state when {query_index, buffer_indices[buffer_index]} has been inserted.
             if (priority_queue_visited_combinations_set_.insert({query_index, buffer_indices[buffer_index]}).second) {
                 // We emplace the combination if it was not already there. (if statement is true).
-                kth_closest_edge_priority_queue_.emplace(/**/ query_index,
-                                                         /**/ buffer_indices[buffer_index],
-                                                         /**/ buffer_distances[buffer_index]);
+                kth_closest_edge_priority_queue_.emplace(query_index,
+                                                         buffer_indices[buffer_index],
+                                                         buffer_distances[buffer_index]);
             }
         }
     }

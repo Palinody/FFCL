@@ -43,7 +43,7 @@ class QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, Sampl
                     const SamplesIterator& samples_range_first,
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
-                    std::size_t            feature_index) const -> std::tuple<std::size_t,
+                    std::size_t feature_index) const -> std::tuple<std::size_t,
                                                                    std::pair<IndicesIterator, IndicesIterator>,
                                                                    std::pair<IndicesIterator, IndicesIterator>,
                                                                    std::pair<IndicesIterator, IndicesIterator>>;
@@ -60,13 +60,12 @@ auto QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(const 
                   std::pair<IndicesIterator, IndicesIterator>,
                   std::pair<IndicesIterator, IndicesIterator>,
                   std::pair<IndicesIterator, IndicesIterator>> {
-    return kdtree::algorithms::quickselect_median(
-        /**/ indices_range_first,
-        /**/ indices_range_last,
-        /**/ samples_range_first,
-        /**/ samples_range_last,
-        /**/ n_features,
-        /**/ feature_index);
+    return kdtree::algorithms::quickselect_median(indices_range_first,
+                                                  indices_range_last,
+                                                  samples_range_first,
+                                                  samples_range_last,
+                                                  n_features,
+                                                  feature_index);
 }
 
 }  // namespace ffcl::datastruct::kdtree::policy

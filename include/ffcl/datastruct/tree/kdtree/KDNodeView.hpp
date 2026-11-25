@@ -276,7 +276,8 @@ auto KDNodeView<IndicesIterator, Bound>::select_sibling_node(
                                            query_buffer.furthest_distance(parent_node->cut_axis_feature_index_)
                                      : common::abs(pivot_split_value - query_split_value) <
                                            query_buffer.furthest_distance(parent_node->cut_axis_feature_index_);
-        };        return query_buffer.remaining_capacity() || visit_sibling()
+        };
+        return query_buffer.remaining_capacity() || visit_sibling()
                    ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
                    : nullptr;
     }

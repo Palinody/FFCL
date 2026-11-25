@@ -155,8 +155,9 @@ auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances(const S
 template <typename SamplesIterator>
 auto PairwiseDistanceMatrix<SamplesIterator>::compute_pairwise_distances(
     const DatasetDescriptorType& dataset_descriptor) {
-    return compute_pairwise_distances(
-        std::get<0>(dataset_descriptor), std::get<1>(dataset_descriptor), std::get<2>(dataset_descriptor));
+    return compute_pairwise_distances(std::get<0>(dataset_descriptor),
+                                      std::get<1>(dataset_descriptor),
+                                      std::get<2>(dataset_descriptor));
 }
 
 template <typename Matrix>

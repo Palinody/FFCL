@@ -28,8 +28,11 @@ build(const SamplesIterator& samples_range_first,
     auto medoids_indices = std::vector<std::size_t>(1, medoid_index_first);
 
     // initialize the distance from the first medoid to all samples
-    auto sample_to_nearest_medoid_distances = samples_to_nth_nearest_medoid_distances(
-        samples_range_first, samples_range_last, n_features, medoids_indices, /*nth_closest*/ 1);
+    auto sample_to_nearest_medoid_distances = samples_to_nth_nearest_medoid_distances(samples_range_first,
+                                                                                      samples_range_last,
+                                                                                      n_features,
+                                                                                      medoids_indices,
+                                                                                      /*nth_closest*/ 1);
 
     auto compute_distance = [&](std::size_t left_idx, std::size_t right_idx) -> DataType {
         return ffcl::common::math::heuristics::auto_distance(samples_range_first + left_idx * n_features,
@@ -53,8 +56,9 @@ build(const SamplesIterator& samples_range_first,
                 // foreach x_o !∈ {m_0, ..., m_i, x c}
                 for (std::size_t other_sample_idx = 0; other_sample_idx < n_samples; ++other_sample_idx) {
                     if (medoid_candidate_idx != other_sample_idx &&
-                        ffcl::common::is_element_not_in(
-                            medoids_indices.begin(), medoids_indices.end(), other_sample_idx)) {
+                        ffcl::common::is_element_not_in(medoids_indices.begin(),
+                                                        medoids_indices.end(),
+                                                        other_sample_idx)) {
                         const auto candidate_to_other_distance =
                             compute_distance(medoid_candidate_idx, other_sample_idx);
 
@@ -75,8 +79,11 @@ build(const SamplesIterator& samples_range_first,
         total_deviation += selected_deviation_candidate;
         // Update the distances from each non medoid sample to its nearest medoid.
         // No need to take care about the medoids indices bc they are not swapped.
-        sample_to_nearest_medoid_distances = samples_to_nth_nearest_medoid_distances(
-            samples_range_first, samples_range_last, n_features, medoids_indices, /*nth_closest=*/1);
+        sample_to_nearest_medoid_distances = samples_to_nth_nearest_medoid_distances(samples_range_first,
+                                                                                     samples_range_last,
+                                                                                     n_features,
+                                                                                     medoids_indices,
+                                                                                     /*nth_closest=*/1);
     }
     return {total_deviation, medoids_indices, sample_to_nearest_medoid_distances};
 }

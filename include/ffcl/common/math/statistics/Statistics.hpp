@@ -151,9 +151,9 @@ auto compute_mean_per_feature(const SamplesIterator& samples_range_first,
                        mean_per_feature.begin(),
                        std::plus<>());
     }
-    std::transform(/**/ mean_per_feature.begin(),
-                   /**/ mean_per_feature.end(),
-                   /**/ mean_per_feature.begin(),
+    std::transform(mean_per_feature.begin(),
+                   mean_per_feature.end(),
+                   mean_per_feature.begin(),
                    [n_samples](const auto& feature) { return feature / n_samples; });
     return mean_per_feature;
 }
@@ -177,9 +177,9 @@ auto compute_mean_per_feature(const IndicesIterator& indices_range_first,
             mean_per_feature[feature_index] += samples_range_first[*indices_range_it * n_features + feature_index];
         }
     }
-    std::transform(/**/ mean_per_feature.begin(),
-                   /**/ mean_per_feature.end(),
-                   /**/ mean_per_feature.begin(),
+    std::transform(mean_per_feature.begin(),
+                   mean_per_feature.end(),
+                   mean_per_feature.begin(),
                    [n_samples](const auto& feature) { return feature / n_samples; });
     return mean_per_feature;
 }
@@ -205,11 +205,10 @@ auto compute_mean_per_feature(const IndicesIterator&          indices_range_firs
                 samples_range_first[*indices_range_it * n_features + feature_mask[mask_index]];
         }
     }
-    std::transform(
-        /**/ mean_per_feature.begin(),
-        /**/ mean_per_feature.end(),
-        /**/ mean_per_feature.begin(),
-        [n_samples](const auto& feature) { return feature / n_samples; });
+    std::transform(mean_per_feature.begin(),
+                   mean_per_feature.end(),
+                   mean_per_feature.begin(),
+                   [n_samples](const auto& feature) { return feature / n_samples; });
     return mean_per_feature;
 }
 
@@ -261,11 +260,11 @@ auto compute_variance_per_feature(const IndicesIterator& indices_range_first,
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    const auto mean_per_feature = compute_mean_per_feature(/**/ indices_range_first,
-                                                           /**/ indices_range_last,
-                                                           /**/ samples_range_first,
-                                                           /**/ samples_range_last,
-                                                           /**/ n_features);
+    const auto mean_per_feature = compute_mean_per_feature(indices_range_first,
+                                                           indices_range_last,
+                                                           samples_range_first,
+                                                           samples_range_last,
+                                                           n_features);
 
     auto variance_per_feature = std::vector<DataType>(n_features);
 
@@ -306,8 +305,12 @@ auto compute_variance_per_feature(const IndicesIterator&          indices_range_
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    const auto mean_per_feature = compute_mean_per_feature(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, feature_mask);
+    const auto mean_per_feature = compute_mean_per_feature(indices_range_first,
+                                                           indices_range_last,
+                                                           samples_range_first,
+                                                           samples_range_last,
+                                                           n_features,
+                                                           feature_mask);
 
     auto variance_per_feature = std::vector<DataType>(feature_mask.size());
 
@@ -371,8 +374,11 @@ std::size_t argmax_variance_per_feature(const IndicesIterator& indices_range_fir
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    const auto mean_per_feature = compute_mean_per_feature(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features);
+    const auto mean_per_feature = compute_mean_per_feature(indices_range_first,
+                                                           indices_range_last,
+                                                           samples_range_first,
+                                                           samples_range_last,
+                                                           n_features);
 
     auto variance_per_feature = std::vector<DataType>(n_features);
 
@@ -408,8 +414,12 @@ std::size_t argmax_variance_per_feature(const IndicesIterator&          indices_
 
     const std::size_t n_samples = std::distance(indices_range_first, indices_range_last);
 
-    const auto mean_per_feature = compute_mean_per_feature(
-        indices_range_first, indices_range_last, samples_range_first, samples_range_last, n_features, feature_mask);
+    const auto mean_per_feature = compute_mean_per_feature(indices_range_first,
+                                                           indices_range_last,
+                                                           samples_range_first,
+                                                           samples_range_last,
+                                                           n_features,
+                                                           feature_mask);
 
     auto variance_per_feature = std::vector<DataType>(feature_mask.size());
 
@@ -435,10 +445,8 @@ auto compute_variance(SamplesIterator samples_range_first, SamplesIterator sampl
 
     const auto sum = std::accumulate(samples_range_first, samples_range_last, static_cast<DataType>(0));
 
-    const auto sum_of_squares = std::inner_product(/**/ samples_range_first,
-                                                   /**/ samples_range_last,
-                                                   /**/ samples_range_first,
-                                                   /**/ static_cast<DataType>(0));
+    const auto sum_of_squares =
+        std::inner_product(samples_range_first, samples_range_last, samples_range_first, static_cast<DataType>(0));
 
     return (sum_of_squares - sum * sum / n_elements) / (n_elements - 1);
 }

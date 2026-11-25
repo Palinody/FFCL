@@ -38,11 +38,11 @@ constexpr auto squared_min_distance(const AABBWithCentroid<FirstSegment, NFeatur
 }
 
 template <typename FeaturesIterator, typename Segment, std::size_t NFeatures = 0>
-constexpr auto squared_min_distance(const FeaturesIterator&                    features_range_first,
-                                    const FeaturesIterator&                    features_range_last,
+constexpr auto squared_min_distance(const FeaturesIterator&                     features_range_first,
+                                    const FeaturesIterator&                     features_range_last,
                                     const AABBWithCentroid<Segment, NFeatures>& aabb_with_centroid) {
-    using ValueType = std::common_type_t<typename std::iterator_traits<FeaturesIterator>::value_type,
-                                         typename Segment::ValueType>;
+    using ValueType =
+        std::common_type_t<typename std::iterator_traits<FeaturesIterator>::value_type, typename Segment::ValueType>;
 
     ValueType   squared_distance = 0;
     std::size_t feature_index    = 0;

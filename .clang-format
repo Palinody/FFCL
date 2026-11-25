@@ -1,0 +1,110 @@
+---
+# FFCL formatting rules.
+#
+# Written to be readable by clang-format 14 through 23, so that the distro package,
+# the pip package and the VSCode clang-format extension all accept it:
+#
+#   * `BinPackArguments` / `BinPackParameters` are the pre-21 spellings. Newer
+#     clang-format still honours them as deprecated aliases, while the modern
+#     `PackArguments` / `PackParameters` blocks make 14 hard-error with
+#     "unknown key", which breaks editor format-on-save.
+#   * Version-specific options that have no common spelling are simply omitted.
+#
+# Verified: all 99 tracked sources format byte-identically under 23.1.5 with this
+# file and with the equivalent v23-only spelling, and 96 of 99 format identically
+# under 14.0.0 vs 23.1.5. The 3 remaining differences are alignment whitespace
+# from `AlignConsecutiveDeclarations`, which changed behaviour between versions.
+# If a diff ever shows up that is purely such alignment, that is why.
+#
+# Format one file:   clang-format -i <file>
+# Format the tree:   clang-format -i $(git ls-files 'include/*.hpp' 'src/*.cpp')
+#
+# The tree is not yet fully conformant, so a bulk reformat is a large diff. Do it
+# as its own commit and never together with functional changes.
+Language: Cpp
+Standard: c++17
+ColumnLimit: 120
+IndentWidth: 4
+TabWidth: 8
+UseTab: Never
+ContinuationIndentWidth: 4
+AccessModifierOffset: -2
+
+# --- argument and parameter layout -------------------------------------------
+# When an argument list exceeds ColumnLimit it is broken with one argument per
+# line, aligned under the opening parenthesis. clang-format has no rule that
+# forces a break based on the number of arguments: ColumnLimit is the only
+# automatic trigger.
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+PenaltyBreakBeforeFirstCallParameter: 1
+AlignEscapedNewlines: Left
+
+# --- alignment ----------------------------------------------------------------
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignOperands: true
+AlignTrailingComments: true
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# --- braces and bodies --------------------------------------------------------
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: false
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+# --- declarations -------------------------------------------------------------
+AlwaysBreakTemplateDeclarations: true
+AlwaysBreakAfterReturnType: None
+IndentWrappedFunctionNames: false
+PenaltyReturnTypeOnItsOwnLine: 200
+NamespaceIndentation: None
+FixNamespaceComments: true
+ConstructorInitializerIndentWidth: 2
+BreakConstructorInitializersBeforeComma: true
+
+# --- misc ---------------------------------------------------------------------
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+Cpp11BracedListStyle: true
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInCStyleCastParentheses: false
+SpacesInAngles: false
+SpacesInContainerLiterals: true
+SpacesInSquareBrackets: false
+SpacesBeforeTrailingComments: 2
+ReflowComments: true
+SortIncludes: true
+IncludeCategories:
+  - Regex: '<.*\.h>'
+    Priority: 1
+  - Regex: '<.*'
+    Priority: 2
+  - Regex: '.*'
+    Priority: 3
+ForEachMacros: [foreach, Q_FOREACH, BOOST_FOREACH]
+CommentPragmas: '^ IWYU pragma:'

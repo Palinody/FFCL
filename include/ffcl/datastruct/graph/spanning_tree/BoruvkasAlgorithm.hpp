@@ -108,7 +108,7 @@ class BoruvkasAlgorithm {
                          const CoreDistancesArrayType&    core_distances,
                          MSTBuilderType&                  mst_builder) const;
 
-    using NodePtr       = typename Indexer::NodePtr;
+    using NodePtr        = typename Indexer::NodePtr;
     using EdgeBufferType = search::buffer::EdgesBuffer<Indexer, Indexer>;
 
     // Merge the per-component shortest edges of one Boruvka step into the builder. The buffer works in
@@ -254,23 +254,21 @@ auto BoruvkasAlgorithm<Indexer>::make_tree(ForwardedIndexer&& indexer) const {
 // ---
 
 template <typename Indexer>
-void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(
-    const search::Searcher<Indexer>&     searcher,
-    const SquaredCoreDistancesArrayType& squared_core_distances,
-    MSTBuilderType&                      mst_builder) const {
+void BoruvkasAlgorithm<Indexer>::step_dual_tree_sequential(const search::Searcher<Indexer>&     searcher,
+                                                           const SquaredCoreDistancesArrayType& squared_core_distances,
+                                                           MSTBuilderType&                      mst_builder) const {
     // The MST has to be built on the mutual reachability distances, not on the raw ones, otherwise
     // `k_nearest_neighbors > 1` has no effect on the dual-tree path.
-    const auto& component_to_shortest_edges = searcher.dtt_shortest_edge(/**/ searcher.indexer(),
-                                                                       /**/ mst_builder.get_union_find_const_ref(),
-                                                                       /**/ squared_core_distances.data());
+    const auto& component_to_shortest_edges = searcher.dtt_shortest_edge(searcher.indexer(),
+                                                                         mst_builder.get_union_find_const_ref(),
+                                                                         squared_core_distances.data());
 
     merge_shortest_edges(component_to_shortest_edges, mst_builder);
 }
 
 template <typename Indexer>
-void BoruvkasAlgorithm<Indexer>::merge_shortest_edges(
-    const std::vector<EdgeType>& component_to_shortest_edges,
-    MSTBuilderType&              mst_builder) const {
+void BoruvkasAlgorithm<Indexer>::merge_shortest_edges(const std::vector<EdgeType>& component_to_shortest_edges,
+                                                      MSTBuilderType&              mst_builder) const {
     for (const auto& edge : component_to_shortest_edges) {
         // The buffer works in squared space. Floating point cancellation can leave a tiny negative value for
         // near-coincident samples, so the argument is clamped before the square root.
@@ -316,11 +314,11 @@ void BoruvkasAlgorithm<Indexer>::step_dual_tree_parallel(const search::Searcher<
     edge_buffers.reserve(n_threads);
 
     for (std::size_t thread_index = 0; thread_index < n_threads; ++thread_index) {
-        edge_buffers.emplace_back(std::make_unique<EdgeBufferType>(
-            search::buffer::make_edge_buffer(query_indexer,
-                                             query_indexer,
-                                             mst_builder.get_union_find_const_ref(),
-                                             squared_core_distances.data())));
+        edge_buffers.emplace_back(
+            std::make_unique<EdgeBufferType>(search::buffer::make_edge_buffer(query_indexer,
+                                                                              query_indexer,
+                                                                              mst_builder.get_union_find_const_ref(),
+                                                                              squared_core_distances.data())));
     }
 
 #pragma omp parallel for schedule(dynamic, 1)

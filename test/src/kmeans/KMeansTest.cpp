@@ -123,10 +123,10 @@ class KMeansErrorsTest : public ::testing::Test {
                 .patience(0)
                 .n_init(10));
 
-        const auto centroids = kmeans.fit<ffcl::Hamerly>(/**/ samples_first,
-                                                         /**/ samples_last,
-                                                         /**/ n_features,
-                                                         /**/ ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
+        const auto centroids = kmeans.fit<ffcl::Hamerly>(samples_first,
+                                                         samples_last,
+                                                         n_features,
+                                                         ffcl::kmeansplusplus::make_centroids<SamplesIterator>);
 
         const auto predictions = kmeans.predict(samples_first, samples_last, n_features);
 
@@ -166,15 +166,15 @@ TEST_F(KMeansErrorsTest, SilhouetteTest) {
         // map the samples to their closest centroid/medoid
         const auto predictions = kmeans.predict(data.begin(), data.end(), n_features);
         // compute the silhouette scores for each sample
-        const auto samples_silhouette_values = ffcl::common::math::heuristics::silhouette(
-            /**/ data.begin(),
-            /**/ data.end(),
-            /**/ n_features,
-            /**/ predictions.begin(),
-            /**/ predictions.end());
+        const auto samples_silhouette_values = ffcl::common::math::heuristics::silhouette(data.begin(),
+                                                                                          data.end(),
+                                                                                          n_features,
+                                                                                          predictions.begin(),
+                                                                                          predictions.end());
         // get the average score
-        const auto average_silhouette = ffcl::common::math::heuristics::get_average_silhouette(
-            samples_silhouette_values.begin(), samples_silhouette_values.end());
+        const auto average_silhouette =
+            ffcl::common::math::heuristics::get_average_silhouette(samples_silhouette_values.begin(),
+                                                                   samples_silhouette_values.end());
         // accumulate the current scores
         scores[k - k_min] = average_silhouette;
     }

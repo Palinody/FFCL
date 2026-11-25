@@ -64,10 +64,12 @@ template <typename Value>
 constexpr auto LowerBoundAndLength<Value>::centroid_impl() const {
     if constexpr (std::is_integral_v<ValueType>) {
         return common::compute_center_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second - 1);
+            segment_representation_.first,
+            segment_representation_.first + segment_representation_.second - 1);
     } else {
         return common::compute_center_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second);
+            segment_representation_.first,
+            segment_representation_.first + segment_representation_.second);
     }
 }
 
@@ -75,10 +77,12 @@ template <typename Value>
 constexpr auto LowerBoundAndLength<Value>::centroid_to_bound_distance_impl() const {
     if constexpr (std::is_integral_v<ValueType>) {
         return common::compute_size_from_center_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second - 1);
+            segment_representation_.first,
+            segment_representation_.first + segment_representation_.second - 1);
     } else {
         return common::compute_size_from_center_with_left_rounding(
-            segment_representation_.first, segment_representation_.first + segment_representation_.second);
+            segment_representation_.first,
+            segment_representation_.first + segment_representation_.second);
     }
 }
 

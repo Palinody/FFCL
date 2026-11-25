@@ -53,21 +53,25 @@ TEST(FunctionTest, EqualityTest) {
 
     ASSERT_TRUE(ffcl::common::equality(1.0, 1.0 - std::numeric_limits<double>::epsilon()));
     // 2 * std::numeric_limits<double>::epsilon() is too much slippage
-    ASSERT_FALSE(ffcl::common::equality(
-        1.0, 1.0 + std::numeric_limits<double>::epsilon() + std::numeric_limits<double>::epsilon()));
+    ASSERT_FALSE(
+        ffcl::common::equality(1.0,
+                               1.0 + std::numeric_limits<double>::epsilon() + std::numeric_limits<double>::epsilon()));
 
-    ASSERT_FALSE(ffcl::common::equality(
-        1.0, 1.0 - std::numeric_limits<double>::epsilon() - std::numeric_limits<double>::epsilon()));
+    ASSERT_FALSE(
+        ffcl::common::equality(1.0,
+                               1.0 - std::numeric_limits<double>::epsilon() - std::numeric_limits<double>::epsilon()));
 
     ASSERT_TRUE(ffcl::common::equality(1.0f, 1.0f + std::numeric_limits<float>::epsilon()));
 
     ASSERT_TRUE(ffcl::common::equality(1.0f, 1.0f - std::numeric_limits<float>::epsilon()));
 
-    ASSERT_FALSE(ffcl::common::equality(
-        1.0f, 1.0f + std::numeric_limits<float>::epsilon() + std::numeric_limits<float>::epsilon()));
+    ASSERT_FALSE(
+        ffcl::common::equality(1.0f,
+                               1.0f + std::numeric_limits<float>::epsilon() + std::numeric_limits<float>::epsilon()));
 
-    ASSERT_FALSE(ffcl::common::equality(
-        1.0f, 1.0f - std::numeric_limits<float>::epsilon() - std::numeric_limits<float>::epsilon()));
+    ASSERT_FALSE(
+        ffcl::common::equality(1.0f,
+                               1.0f - std::numeric_limits<float>::epsilon() - std::numeric_limits<float>::epsilon()));
 
     ASSERT_FALSE(ffcl::common::equality(std::numeric_limits<float>::min(), std::numeric_limits<float>::max()));
 }

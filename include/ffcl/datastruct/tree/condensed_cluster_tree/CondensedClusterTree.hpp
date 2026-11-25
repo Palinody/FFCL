@@ -230,8 +230,8 @@ auto CondensedClusterTree<IndexType, ValueType>::extract_flat_clusters() const {
         // assign all descendant samples in the node hierarchy with the same cluster label
         // then increment the cluster label for the next non-overlapping cluster
         preorder_traversal_single_linkage_clustering(cluster_label++,
-                                                     /**/ condensed_cluster_node->single_linkage_cluster_node_root_,
-                                                     /**/ flat_cluster);
+                                                     condensed_cluster_node->single_linkage_cluster_node_root_,
+                                                     flat_cluster);
     }
     return flat_cluster;
 }

@@ -145,8 +145,10 @@ constexpr auto AABBWithCentroid<Segment, NFeatures>::distance_to_centroid_impl(
     const OtherFeaturesIterator& features_range_last) const {
     assert(centroid_.size() == std::distance(features_range_first, features_range_last));
 
-    return common::math::heuristics::auto_distance(
-        features_range_first, features_range_last, centroid_.begin(), centroid_.end());
+    return common::math::heuristics::auto_distance(features_range_first,
+                                                   features_range_last,
+                                                   centroid_.begin(),
+                                                   centroid_.end());
 }
 
 template <typename Segment, std::size_t NFeatures>

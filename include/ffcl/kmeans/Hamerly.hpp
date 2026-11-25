@@ -126,9 +126,9 @@ void Hamerly<SamplesIterator>::swap_bounds() {
     auto& cluster_sizes         = buffers_ptr_->cluster_sizes_;
     auto& cluster_position_sums = buffers_ptr_->cluster_position_sums_;
 
-    const auto n_samples = common::get_n_samples(/**/ std::get<0>(dataset_descriptor_),
-                                                 /**/ std::get<1>(dataset_descriptor_),
-                                                 /**/ std::get<2>(dataset_descriptor_));
+    const auto n_samples = common::get_n_samples(std::get<0>(dataset_descriptor_),
+                                                 std::get<1>(dataset_descriptor_),
+                                                 std::get<2>(dataset_descriptor_));
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
@@ -272,9 +272,9 @@ auto Hamerly<SamplesIterator>::update_bounds() {
     auto& samples_to_second_nearest_centroid_distances = buffers_ptr_->samples_to_second_nearest_centroid_distances_;
     const auto& centroid_velocities                    = buffers_ptr_->centroid_velocities_;
 
-    const auto n_samples = common::get_n_samples(/**/ std::get<0>(dataset_descriptor_),
-                                                 /**/ std::get<1>(dataset_descriptor_),
-                                                 /**/ std::get<2>(dataset_descriptor_));
+    const auto n_samples = common::get_n_samples(std::get<0>(dataset_descriptor_),
+                                                 std::get<1>(dataset_descriptor_),
+                                                 std::get<2>(dataset_descriptor_));
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         const auto assigned_centroid_index = samples_to_nearest_centroid_indices[sample_index];
@@ -285,8 +285,10 @@ auto Hamerly<SamplesIterator>::update_bounds() {
             (assigned_centroid_index == furthest_moving_centroid_index) ? second_furthest_moving_centroid_distance
                                                                         : furthest_moving_centroid_distance;
     }
-    buffers_ptr_->centroid_to_nearest_centroid_distances_ = kmeans::utils::nearest_neighbor_distances(
-        centroids_.begin(), centroids_.end(), std::get<2>(dataset_descriptor_));
+    buffers_ptr_->centroid_to_nearest_centroid_distances_ =
+        kmeans::utils::nearest_neighbor_distances(centroids_.begin(),
+                                                  centroids_.end(),
+                                                  std::get<2>(dataset_descriptor_));
 
     return loss_;
 }

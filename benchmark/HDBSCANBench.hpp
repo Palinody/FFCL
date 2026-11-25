@@ -110,8 +110,9 @@ utils::DurationsSummary run_hdbscan(const fs::path&                filepath,
 
         } else {
             char message[100];
-            std::sprintf(
-                message, "File extension found '%s' but only supports .txt or .bin", filepath.extension().c_str());
+            std::sprintf(message,
+                         "File extension found '%s' but only supports .txt or .bin",
+                         filepath.extension().c_str());
             throw std::runtime_error(message);
         }
     }
@@ -204,8 +205,12 @@ void run_point_cloud_sequences() {
                 std::cout << "---\nSequence in folder: " << relative_path.c_str() << "\n\n";
 
                 timer.reset();
-                run_pointclouds_sequences_benchmark(
-                    &ffcl_::run_hdbscan, relative_path, true, "FFCL", knn, min_cluster_size);
+                run_pointclouds_sequences_benchmark(&ffcl_::run_hdbscan,
+                                                    relative_path,
+                                                    true,
+                                                    "FFCL",
+                                                    knn,
+                                                    min_cluster_size);
                 timer.print_elapsed_seconds();
 
                 std::cout << "\n---\n";

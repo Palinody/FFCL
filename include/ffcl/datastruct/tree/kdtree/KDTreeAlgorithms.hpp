@@ -74,16 +74,22 @@ std::size_t select_largest_variance_axis(const IndicesIterator& indices_range_fi
         const auto random_indices =
             common::math::random::select_n_elements(indices_range_first, indices_range_last, n_choices);
         // return the feature index with the maximum variance
-        return common::math::statistics::argmax_variance_per_feature(
-            random_indices.begin(), random_indices.end(), samples_range_first, samples_range_last, n_features);
+        return common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
+                                                                     random_indices.end(),
+                                                                     samples_range_first,
+                                                                     samples_range_last,
+                                                                     n_features);
     }
     // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
     // compute the variance with the minimum number of samples, which is 3
     if (n_samples > 2) {
         const auto random_indices = common::math::random::select_n_elements(indices_range_first, indices_range_last, 3);
         // return the feature index with the maximum variance
-        return common::math::statistics::argmax_variance_per_feature(
-            random_indices.begin(), random_indices.end(), samples_range_first, samples_range_last, n_features);
+        return common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
+                                                                     random_indices.end(),
+                                                                     samples_range_first,
+                                                                     samples_range_last,
+                                                                     n_features);
     }
     // select the axis according to the dimension with the most spread between 2 points
     if (n_samples == 2) {
@@ -220,8 +226,8 @@ auto shift_median_to_leftmost_equal_value(std::size_t                    median_
     // duplication the pivot samples only live in internal nodes, which forces a dual-tree traversal to visit
     // every node combination twice (query side and reference side) and makes it quadratic in the number of
     // nodes.
-    left_indices_range.second  = median_indices_range.second;
-    right_indices_range.first  = median_indices_range.second;
+    left_indices_range.second = median_indices_range.second;
+    right_indices_range.first = median_indices_range.second;
     return std::make_tuple(median_index,
                            std::forward<ForwardedIndicesIteratorPair>(left_indices_range),
                            std::forward<ForwardedIndicesIteratorPair>(median_indices_range),

@@ -199,11 +199,11 @@ struct static_base_traits<WithMemory<DistancesIterator, Bound, VisitedIndices>> 
                                               const OtherSamplesIterator&                           samples_range_first,
                                               const OtherSamplesIterator&                           samples_range_last,
                                               std::size_t                                           n_features) {
-        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
-                                             /**/ indices_range_last,
-                                             /**/ samples_range_first,
-                                             /**/ samples_range_last,
-                                             /**/ n_features);
+        unsorted_buffer->partial_search_impl(indices_range_first,
+                                             indices_range_last,
+                                             samples_range_first,
+                                             samples_range_last,
+                                             n_features);
     }
 
     template <typename OptionalType>
@@ -222,17 +222,17 @@ struct static_base_traits<WithMemory<DistancesIterator, Bound, VisitedIndices>> 
                                               const OtherSamplesIterator&                           samples_range_last,
                                               std::size_t                                           n_features,
                                               std::optional<OptionalType>& current_is_visited) {
-        unsorted_buffer->partial_search_impl(/**/ indices_range_first,
-                                             /**/ indices_range_last,
-                                             /**/ samples_range_first,
-                                             /**/ samples_range_last,
-                                             /**/ n_features,
-                                             /**/ current_is_visited);
+        unsorted_buffer->partial_search_impl(indices_range_first,
+                                             indices_range_last,
+                                             samples_range_first,
+                                             samples_range_last,
+                                             n_features,
+                                             current_is_visited);
     }
 };
 
 template <typename Bound>
-WithMemory(Bound &&) -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<std::size_t>>;
+WithMemory(Bound&&) -> WithMemory<typename Bound::IteratorType, Bound, std::unordered_set<std::size_t>>;
 
 template <typename Bound, typename VisitedIndices>
 WithMemory(Bound&&, const VisitedIndices&) -> WithMemory<typename Bound::IteratorType, Bound, VisitedIndices>;
@@ -252,7 +252,7 @@ WithMemory(const DistancesIterator&, const DistancesIterator&, const VisitedIndi
     -> WithMemory<DistancesIterator, datastruct::bounds::UnboundedBallView<DistancesIterator>, VisitedIndices>;
 
 template <typename DistancesIterator, typename VisitedIndices>
-WithMemory(const DistancesIterator&, const DistancesIterator&, VisitedIndices &&)
+WithMemory(const DistancesIterator&, const DistancesIterator&, VisitedIndices&&)
     -> WithMemory<DistancesIterator, datastruct::bounds::UnboundedBallView<DistancesIterator>, VisitedIndices>;
 
 template <typename DistancesIterator, typename VisitedIndicesIterator>
