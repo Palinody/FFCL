@@ -12,3 +12,4 @@ Testing/
 *.o
 __pycache__/
 build_rel/
+build_bench/
