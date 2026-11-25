@@ -60,13 +60,18 @@ noisy_moons = datasets.make_moons(
 blobs = datasets.make_blobs(
     n_samples=n_samples, n_features=n_features, random_state=random_state
 )
-no_structure = np.random.rand(n_samples, n_features), np.zeros((n_samples))
+# Seeded generators: drawing from the global RNG made `no_structure` and the anisotropic transformation
+# different on every run, so benchmarks were not comparable across regenerations.
+rng_no_structure = np.random.RandomState(random_state + 1)
+rng_aniso        = np.random.RandomState(random_state + 2)
+
+no_structure = rng_no_structure.rand(n_samples, n_features), np.zeros((n_samples))
 
 # Anisotropicly distributed data
 X, y = datasets.make_blobs(
     n_samples=n_samples, n_features=n_features, random_state=random_state
 )
-transformation = np.random.rand(n_features, n_features)  # [[0.6, -0.6], [-0.4, 0.8]]
+transformation = rng_aniso.rand(n_features, n_features)  # [[0.6, -0.6], [-0.4, 0.8]]
 X_aniso = np.dot(X, transformation)
 aniso = (X_aniso, y)
 
