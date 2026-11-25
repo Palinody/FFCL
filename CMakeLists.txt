@@ -60,9 +60,15 @@ find_package(OpenMP REQUIRED)
 #   MLPACK -> dual-tree Boruvka MST comparison
 #   HDBSCAN-> not a C++ dependency: compared against through the Python scripts
 find_package(PCL QUIET)
-find_package(FLANN QUIET)
 find_package(Armadillo QUIET)
 find_package(MLPACK QUIET)
+
+# CMake ships no FindFLANN module, so locate the headers and the library directly.
+find_path(FLANN_INCLUDE_DIR flann/flann.hpp)
+find_library(FLANN_LIBRARY NAMES flann_cpp flann)
+if(FLANN_INCLUDE_DIR AND FLANN_LIBRARY)
+    set(FLANN_FOUND TRUE)
+endif()
 
 option(VERBOSE "Print the per-stage timings (tree build, MST, full pipeline)" OFF)
 option(THREADS_ENABLED "Parallelise the independent loops with OpenMP" OFF)
@@ -301,6 +307,10 @@ if(MODE STREQUAL "benchmark")
 
     target_link_libraries(ffcl_benchmark PUBLIC ${PROJECT_NAME} OpenMP::OpenMP_CXX)
 
+    # Single-dataset driver, used by benchmark/scripts/CompareHDBSCAN.py and for ad-hoc timings.
+    add_executable(BoruvkasRunner benchmark/src/tools/BoruvkasRunner.cpp)
+    target_link_libraries(BoruvkasRunner PUBLIC ${PROJECT_NAME} OpenMP::OpenMP_CXX)
+
     if(PCL_FOUND)
         message("Benchmark: PCL found, enabling the PCL comparisons")
         include_directories(${PCL_INCLUDE_DIRS})
@@ -311,9 +321,11 @@ if(MODE STREQUAL "benchmark")
     endif()
 
     if(FLANN_FOUND)
-        message("Benchmark: FLANN found, enabling the FLANN comparisons")
-        include_directories(${FLANN_INCLUDE_DIRS})
-        target_link_libraries(ffcl_benchmark PUBLIC ${FLANN_LIBRARIES})
+        message("Benchmark: FLANN found (${FLANN_LIBRARY}), enabling the FLANN comparisons")
+        include_directories(${FLANN_INCLUDE_DIR})
+        # libflann_cpp pulls its serialization symbols from LZ4
+        find_library(LZ4_LIBRARY NAMES lz4)
+        target_link_libraries(ffcl_benchmark PUBLIC ${FLANN_LIBRARY} ${LZ4_LIBRARY})
         target_compile_definitions(ffcl_benchmark PUBLIC FFCL_BENCH_HAS_FLANN)
     else()
         message("Benchmark: FLANN not found, its comparisons will be reported as unavailable")

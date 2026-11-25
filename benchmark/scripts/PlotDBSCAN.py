@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import MakeClusteringDatasets
 from py_helpers import IO
 
-datapath = r"./clustering/"
+datapath = r"../benchmark/bin/datasets/"
 
 for dataset_name in MakeClusteringDatasets.datasets_names + ["unbalanced_blobs"]:
     print(dataset_name)

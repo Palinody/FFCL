@@ -9,7 +9,7 @@ from py_helpers import IO
 from PlotKDTree import KDTree, plot_bbox, plot_2dtree
 from typing import List
 
-datapath = r"./clustering/"
+datapath = r"../benchmark/bin/datasets/"
 
 
 def plot_closest_edge(

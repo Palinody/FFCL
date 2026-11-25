@@ -18,7 +18,7 @@ except:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "hdbscan"])
     import hdbscan
 
-datapath = r"./clustering/"
+datapath = r"../benchmark/bin/datasets/"
 
 
 def plot_ffcl_mst(dataset, mst, axis=None):

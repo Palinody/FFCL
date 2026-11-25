@@ -8,7 +8,7 @@ import MakeClusteringDatasets
 
 from typing import Tuple, List, Any
 
-datapath = r"./clustering/"
+datapath = r"../benchmark/bin/datasets/"
 
 
 def generate_colors_list(n_colors: int) -> List[int]:

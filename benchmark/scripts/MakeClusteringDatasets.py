@@ -285,8 +285,8 @@ if __name__ == "__main__":
     # ref lib: https://scikit-learn.org/stable/modules/classes.html
     # load datasets: https://scikit-learn.org/stable/auto_examples/cluster/plot_cluster_comparison.html#sphx-glr-auto-examples-cluster-plot-cluster-comparison-py
 
-    # where to place the datasets
+    # where to place the datasets: benchmark/bin/datasets/{inputs,targets}
     root_folder = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "clustering/"
+        os.path.dirname(os.path.realpath(__file__)), "..", "bin", "datasets"
     )
-    write_datasets(root_folder=root_folder)
+    write_datasets(root_folder=root_folder + os.sep)
