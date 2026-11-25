@@ -80,9 +80,6 @@ class Searcher {
               typename std::enable_if_t<std::is_same_v<ForwardedQueryIndexer, ReferenceIndexer>, bool> = true>
     auto dual_tree_shortest_edge(ForwardedQueryIndexer&& forwarded_query_indexer, BufferArgs&&... buffer_args) const;
 
-    // template <typename... BufferArgs>
-    // auto dual_tree_shortest_edge(BufferArgs&&... buffer_args) const;
-
     template <typename QueryIndexer,
               typename... BufferArgs,
               typename std::enable_if_t<std::is_same_v<QueryIndexer, ReferenceIndexer>, bool> = true>
@@ -208,13 +205,6 @@ auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge(ForwardedQueryIndexer&&
                                                    std::forward<BufferArgs>(buffer_args)...);
 }
 
-/*
-template <typename ReferenceIndexer>
-template <typename... BufferArgs>
-auto Searcher<ReferenceIndexer>::dual_tree_shortest_edge(BufferArgs&&... buffer_args) const {
-    return tree_traverser_.dual_tree_shortest_edge(std::forward<BufferArgs>(buffer_args)...);
-}
-*/
 
 template <typename ReferenceIndexer>
 template <typename QueryIndexer,

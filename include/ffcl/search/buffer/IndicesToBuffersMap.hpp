@@ -206,7 +206,6 @@ class IndicesToBuffersMap {
 
     std::unordered_map<QueryNodePtr, BoundsLimits> query_nodes_to_bounds_limits_map_{};
 
-    // std::unordered_map<QueryNodePtr, std::optional<IndexType>>     query_nodes_component_membership_map_{};
     std::unordered_map<ReferenceNodePtr, std::optional<IndexType>> reference_nodes_component_membership_map_{};
 
     KTHShortestEdgePriorityQueueType kth_closest_edge_priority_queue_{};
@@ -279,23 +278,12 @@ void IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::base_case(cons
             are_nodes_in_same_component = std::nullopt;
         }
     }
-    // update_nodes_membership(reference_node, are_nodes_in_same_component);
 }
 
 template <typename Buffer, typename QueryIndexer, typename ReferenceIndexer>
 auto IndicesToBuffersMap<Buffer, QueryIndexer, ReferenceIndexer>::cost(const QueryNodePtr&     query_node,
                                                                        const ReferenceNodePtr& reference_node)
     -> std::optional<DistanceType> {
-    /*
-    const auto reference_node_to_component_membership_it =
-        reference_nodes_component_membership_map_.find(reference_node);
-
-    if (reference_node_to_component_membership_it != reference_nodes_component_membership_map_.end() &&
-        reference_node_to_component_membership_it->second) {
-        std::cout << "PRUNNING OCCURED\n";
-        return std::nullopt;
-    }
-    */
     const auto min_distance = datastruct::bounds::min_distance(query_node->bound_, reference_node->bound_);
 
     return (query_node_furthest_bound(query_node) < min_distance) ? std::nullopt : std::make_optional(min_distance);
