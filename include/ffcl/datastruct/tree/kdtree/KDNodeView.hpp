@@ -47,6 +47,9 @@ struct KDNodeView {
     KDNodeView(const IteratorPairType&& indices_range, std::ptrdiff_t cut_axis_feature_index, const BoundType& bound);
 
     KDNodeView(const KDNodeView&) = delete;
+    // Only needed so that the tree can keep its nodes in a vector; with the array reserved to its final
+    // size no node is ever actually moved, so the raw links never have to be fixed up.
+    KDNodeView(KDNodeView&&) noexcept = default;
 
     constexpr auto begin() const;
 

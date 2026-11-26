@@ -27,10 +27,10 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <vector>
 
 namespace ffcl::datastruct {
 
@@ -177,6 +177,8 @@ class KDTree {
     // Recompute every node's bound from its subtree's samples, children before parents.
     void tighten_bounds(NodePtr kdnode);
 
+    void reserve_nodes();
+
     NodePtr build(const IndicesIterator& indices_range_first,
                   const IndicesIterator& indices_range_last,
                   std::size_t            feature_cut_index,
@@ -197,7 +199,7 @@ class KDTree {
     std::size_t n_nodes_;
     // Every node of the tree, in one container whose addresses stay valid as it grows. Shared so that
     // copying a tree keeps the same nodes, the way copies used to share the root.
-    std::shared_ptr<std::deque<NodeType>> nodes_;
+    std::shared_ptr<std::vector<NodeType>> nodes_;
     // A hyperrectangle (bounding box) specifying the value bounds of the subset of data represented by the index array
     // from the entire dataset. This hyperrectangle is defined with respect to each dimension.
     BoundType bound_;
@@ -227,7 +229,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
   , n_samples_{static_cast<std::size_t>(std::distance(indices_range_first, indices_range_last))}
   , n_features_{n_features}
   , n_nodes_{0}
-  , nodes_{std::make_shared<std::deque<NodeType>>()}
+  , nodes_{std::make_shared<std::vector<NodeType>>()}
   , bound_{make_tight_bound<IndicesIteratorType, SamplesIteratorType, BoundType>(indices_range_first,
                                                                                  indices_range_last,
                                                                                  samples_range_first_,
@@ -365,6 +367,16 @@ constexpr auto KDTree<IndicesIterator, SamplesIterator>::features_range_last(std
 }
 
 template <typename IndicesIterator, typename SamplesIterator>
+void KDTree<IndicesIterator, SamplesIterator>::reserve_nodes() {
+    // A tree over n samples has at most 2n - 1 nodes (n leaves, n - 1 internal). Reserving that up front
+    // means the node array never reallocates, so the raw child and parent pointers stay valid and the
+    // build makes no node allocation at all.
+    if (nodes_->capacity() == 0) {
+        nodes_->reserve(n_samples_ > 1 ? 2 * n_samples_ - 1 : 1);
+    }
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
 typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterator, SamplesIterator>::build(
     const IndicesIterator& indices_range_first,
     const IndicesIterator& indices_range_last,
@@ -372,6 +384,9 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
     std::size_t            depth,
     BoundType&             bound) {
     NodePtr kdnode;
+
+    reserve_nodes();
+
     // number of samples in the current node
     const std::size_t n_node_samples = std::distance(indices_range_first, indices_range_last);
     // if the current number of samples is greater than the target bucket size, the node is not leaf
