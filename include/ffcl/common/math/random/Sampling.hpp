@@ -14,10 +14,12 @@ template <typename Iterator>
 auto select_n_elements(const Iterator& first, const Iterator& last, std::size_t n_elements) {
     auto selected_elements = std::vector(first, last);
 
-    // Perform a partial shuffle of the first n_elements elements
+    // Partial Fisher-Yates: swap each position with a uniformly drawn position from the part of the
+    // range not yet fixed. Drawing only from [element_index, n_elements) drew from the first n_elements
+    // elements, so the "random" selection was always a permutation of those.
     for (std::size_t element_index = 0; element_index < n_elements; ++element_index) {
         std::swap(selected_elements[element_index],
-                  selected_elements[uniform_distribution{element_index, n_elements - 1}()]);
+                  selected_elements[uniform_distribution{element_index, selected_elements.size() - 1}()]);
     }
     // Resize the vector to keep only the first n_elements elements
     selected_elements.resize(n_elements);

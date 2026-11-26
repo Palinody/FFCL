@@ -71,14 +71,41 @@ std::size_t select_largest_variance_axis(const IndicesIterator& indices_range_fi
 
     // select the axis based on variance only if the number of selected samples is greater than 2
     if (n_choices > 2) {
-        const auto random_indices =
-            common::math::random::select_n_elements(indices_range_first, indices_range_last, n_choices);
-        // return the feature index with the maximum variance
-        return common::math::statistics::argmax_variance_per_feature(random_indices.begin(),
-                                                                     random_indices.end(),
-                                                                     samples_range_first,
-                                                                     samples_range_last,
-                                                                     n_features);
+        // Sample in place: draw positions uniformly from the node's own index range and accumulate the
+        // per-feature sums directly. Copying the range first and letting the statistics helpers allocate
+        // per sample they read was most of the build's allocation traffic.
+        auto sum_per_feature          = std::vector<double>(n_features, 0.0);
+        auto squared_sum_per_feature  = std::vector<double>(n_features, 0.0);
+
+        for (std::size_t choice_index = 0; choice_index < n_choices; ++choice_index) {
+            const auto sample_index =
+                indices_range_first[common::math::random::uniform_distribution<std::size_t>(0, n_samples - 1)()];
+
+            const auto sample_first = samples_range_first + static_cast<std::ptrdiff_t>(sample_index * n_features);
+
+            for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+                const auto value = static_cast<double>(sample_first[feature_index]);
+                sum_per_feature[feature_index] += value;
+                squared_sum_per_feature[feature_index] += value * value;
+            }
+        }
+        // variance of a sample of size m is E[x^2] - E[x]^2; the m / (m - 1) correction is a common
+        // positive factor for every feature, so it cannot change the argmax
+        std::size_t argmax_feature_index = 0;
+        auto        max_variance         = std::numeric_limits<double>::lowest();
+
+        const auto n_choices_as_double = static_cast<double>(n_choices);
+
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            const auto mean     = sum_per_feature[feature_index] / n_choices_as_double;
+            const auto variance = squared_sum_per_feature[feature_index] / n_choices_as_double - mean * mean;
+
+            if (variance > max_variance) {
+                max_variance         = variance;
+                argmax_feature_index = feature_index;
+            }
+        }
+        return argmax_feature_index;
     }
     // else if the number of samples is greater than or equal to the minimum number of samples to compute the variance,
     // compute the variance with the minimum number of samples, which is 3
