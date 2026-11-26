@@ -2,6 +2,8 @@
 
 Every number below is produced by the programs in `src/` and `scripts/`, and the tables are a pure function of the two result files (`bin/results/ffcl.json`, `bin/results/reference.json`). Re-run with `./ffcl_benchmark all` and `python3 scripts/benchmark_reference.py`, then `python3 scripts/make_tables.py`.
 
+The result files and the datasets are generated and therefore not versioned - `benchmark/bin/` is ignored. This file is the record of the run described below, regenerated from those files by `scripts/make_tables.py`; the numbers will not match exactly on another machine.
+
 ## How to read this
 
 - **Machine**: Intel(R) Core(TM) i5-9600KF CPU @ 3.70GHz, 6 cores, no SMT.

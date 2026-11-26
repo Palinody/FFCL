@@ -14,6 +14,7 @@ import math
 import os
 import platform
 import statistics
+import sys
 
 SCRIPTS_DIR = os.path.dirname(os.path.realpath(__file__))
 BENCHMARK_DIR = os.path.dirname(SCRIPTS_DIR)
@@ -32,9 +33,18 @@ DATASET_NAMES = [
 
 
 def load_results(path):
+    """Read one result file, or stop with an explanation.
+
+    The result files are generated and not versioned, so a fresh checkout reaches this point with
+    nothing to read.
+    """
     if not os.path.exists(path):
-        print(f"missing {path}: run the benchmark first")
-        return []
+        sys.exit(
+            f"missing {path}\n"
+            "The result files are generated, not versioned. Produce them first:\n"
+            "  ./build_bench/ffcl_benchmark all                  # -> bin/results/ffcl.json\n"
+            "  python3 benchmark/scripts/benchmark_reference.py   # -> bin/results/reference.json"
+        )
     with open(path) as stream:
         return [json.loads(line) for line in stream if line.strip()]
 
@@ -153,6 +163,12 @@ def main():
         "pure function of the two result files (`bin/results/ffcl.json`, `bin/results/reference.json`). "
         "Re-run with `./ffcl_benchmark all` and `python3 scripts/benchmark_reference.py`, then "
         "`python3 scripts/make_tables.py`."
+    )
+    lines.append("")
+    lines.append(
+        "The result files and the datasets are generated and therefore not versioned - `benchmark/bin/` "
+        "is ignored. This file is the record of the run described below, regenerated from those files "
+        "by `scripts/make_tables.py`; the numbers will not match exactly on another machine."
     )
     lines.append("")
     lines.append("## How to read this")
