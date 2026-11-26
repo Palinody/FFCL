@@ -174,6 +174,9 @@ class KDTree {
     void serialize(const fs::path& filepath) const;
 
   private:
+    // Recompute every node's bound from its subtree's samples, children before parents.
+    void tighten_bounds(NodePtr kdnode);
+
     NodePtr build(const IndicesIterator& indices_range_first,
                   const IndicesIterator& indices_range_last,
                   std::size_t            feature_cut_index,
@@ -240,7 +243,14 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
                                                        0,
                                                        bound_),
                 0,
-                bound_)} {}
+                bound_)} {
+    // Replace every node's cell by the bounding box of its own samples. The cell is what the split produced
+    // and it is loose: it spans the parent's extent on every axis but the cut one. The tight box is a valid
+    // (it still contains the subtree's samples) and strictly smaller bound, which strengthens the box
+    // distance used to prune node pairs in the dual-tree traversals and the radius visits of DBSCAN.
+    tighten_bounds(root_);
+    bound_ = root_->bound_;
+}
 
 template <typename IndicesIterator, typename SamplesIterator>
 KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
@@ -265,6 +275,39 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(KDTree&& other) noexcept
   , nodes_{std::move(other.nodes_)}
   , bound_{std::move(other.bound_)}
   , root_{std::move(other.root_)} {}
+
+template <typename IndicesIterator, typename SamplesIterator>
+void KDTree<IndicesIterator, SamplesIterator>::tighten_bounds(NodePtr kdnode) {
+    if (!kdnode) {
+        return;
+    }
+    if (kdnode->is_leaf()) {
+        kdnode->bound_ =
+            make_tight_bound<IndicesIteratorType, SamplesIteratorType, BoundType>(kdnode->indices_range_.first,
+                                                                                  kdnode->indices_range_.second,
+                                                                                  samples_range_first_,
+                                                                                  samples_range_last_,
+                                                                                  n_features_);
+    } else {
+        tighten_bounds(kdnode->left_);
+        tighten_bounds(kdnode->right_);
+
+        using SegmentType = typename BoundType::SegmentType;
+
+        auto segments = std::vector<SegmentType>{};
+        segments.reserve(n_features_);
+
+        for (std::size_t feature_index = 0; feature_index < n_features_; ++feature_index) {
+            const auto& left_segment  = kdnode->left_->bound_.segment_at(feature_index);
+            const auto& right_segment = kdnode->right_->bound_.segment_at(feature_index);
+
+            segments.emplace_back(std::min(left_segment.lower_bound(), right_segment.lower_bound()),
+                                  std::max(left_segment.upper_bound(), right_segment.upper_bound()));
+        }
+        kdnode->bound_ = BoundType{std::move(segments)};
+    }
+    kdnode->diameter_ = kdnode->bound_.diameter();
+}
 
 template <typename IndicesIterator, typename SamplesIterator>
 std::size_t KDTree<IndicesIterator, SamplesIterator>::n_nodes() const {
