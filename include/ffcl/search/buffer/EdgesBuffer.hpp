@@ -48,6 +48,18 @@ class EdgesBuffer {
     // Shortest outgoing edge of every component that found one (squared mutual reachability weights).
     auto component_to_shortest_edge() const -> std::vector<EdgeType>;
 
+    // Warm start for a Boruvka step: give every component a real candidate edge before the traversal runs.
+    //
+    // At the start of a step no component has a candidate, so every node bound is infinite and nothing
+    // prunes - the first descents of each step enumerate almost the whole leaf-pair matrix. Walking the
+    // samples once in tree order (leaves are contiguous in the index array, so consecutive samples are
+    // spatially close) and offering every adjacent cross-component pair as a real edge costs one distance
+    // per sample and leaves almost every component with a tight candidate. The node bounds are then
+    // initialised bottom-up from those candidates, so the traversal starts pruned.
+    //
+    // Seeds are real edges, so the spanning tree cannot change: the traversal still finds anything cheaper.
+    void seed();
+
     auto tightest_edge() const -> EdgeType;
 
     template <typename... BufferArgs>
@@ -100,6 +112,14 @@ class EdgesBuffer {
     auto node_min_squared_core_distance(const QueryNodePtr& node) -> DistanceType;
 
     void refresh_node_max_bound(const QueryNodePtr& leaf_node);
+
+    // Offer one real edge to both of its endpoint components.
+    void offer_edge(IndexType sample_index_1, IndexType sample_index_2, DistanceType squared_weight);
+
+    // Recompute every node's bound from the current candidates, children before parents.
+    void initialise_node_bounds_bottom_up();
+
+    void collect_nodes_preorder(const QueryNodePtr& node, std::vector<QueryNodePtr>& nodes) const;
 };
 
 template <typename QueryIndexer, typename ReferenceIndexer>
@@ -369,6 +389,121 @@ auto EdgesBuffer<QueryIndexer, ReferenceIndexer>::update_cost(const QueryNodePtr
                                                               const ReferenceNodePtr&,
                                                               const DistanceType& cost) -> std::optional<DistanceType> {
     return node_max_bound_vec_[query_node->node_id()] <= cost ? std::nullopt : std::make_optional(cost);
+}
+
+template <typename QueryIndexer, typename ReferenceIndexer>
+void EdgesBuffer<QueryIndexer, ReferenceIndexer>::offer_edge(IndexType    sample_index_1,
+                                                             IndexType    sample_index_2,
+                                                             DistanceType squared_weight) {
+    for (const auto sample_index : {sample_index_1, sample_index_2}) {
+        const auto component = representative_vec_[sample_index];
+
+        if (!component_has_edge_vec_[component]) {
+            component_has_edge_vec_[component] = 1;
+            components_with_edge_vec_.emplace_back(component);
+        }
+        if (squared_weight < std::get<2>(component_best_edge_vec_[component])) {
+            component_best_edge_vec_[component] =
+                ffcl::datastruct::mst::make_edge(sample_index_1, sample_index_2, squared_weight);
+        }
+    }
+}
+
+template <typename QueryIndexer, typename ReferenceIndexer>
+void EdgesBuffer<QueryIndexer, ReferenceIndexer>::collect_nodes_preorder(const QueryNodePtr&        node,
+                                                                         std::vector<QueryNodePtr>& nodes) const {
+    nodes[node->node_id()] = node;
+
+    if (!node->is_leaf()) {
+        collect_nodes_preorder(node->left_, nodes);
+        collect_nodes_preorder(node->right_, nodes);
+    }
+}
+
+template <typename QueryIndexer, typename ReferenceIndexer>
+void EdgesBuffer<QueryIndexer, ReferenceIndexer>::initialise_node_bounds_bottom_up() {
+    auto nodes = std::vector<QueryNodePtr>(query_indexer_const_ref_.n_nodes(), nullptr);
+
+    if (const auto root = query_indexer_const_ref_.root()) {
+        collect_nodes_preorder(root, nodes);
+    }
+    // Node ids are pre-order, so walking them backwards visits every child before its parent.
+    for (std::size_t node_index = nodes.size(); node_index-- > 0;) {
+        const auto& node = nodes[node_index];
+
+        if (!node) {
+            continue;
+        }
+        auto bound = DistanceType{};
+
+        if (node->is_leaf()) {
+            bound = kInfinitySquared;
+
+            for (auto index_it = node->indices_range_.first; index_it != node->indices_range_.second; ++index_it) {
+                const auto component = representative_vec_[static_cast<IndexType>(*index_it)];
+
+                // a component without a candidate still needs an infinite distance, so it must not lower
+                // the bound: the max below keeps it at kInfinitySquared
+                const auto component_bound = component_has_edge_vec_[component]
+                                                 ? std::get<2>(component_best_edge_vec_[component])
+                                                 : kInfinitySquared;
+                bound                      = std::max(bound, component_bound);
+            }
+        } else {
+            bound = std::max(node_max_bound_vec_[node->left_->node_id()], node_max_bound_vec_[node->right_->node_id()]);
+        }
+        node_max_bound_vec_[node->node_id()] = bound;
+    }
+}
+
+template <typename QueryIndexer, typename ReferenceIndexer>
+void EdgesBuffer<QueryIndexer, ReferenceIndexer>::seed() {
+    const auto root = query_indexer_const_ref_.root();
+
+    if (!root) {
+        return;
+    }
+    // Internal nodes own no samples, so the root's own range is empty. The sample range in tree order runs
+    // from the leftmost leaf's first index to the rightmost leaf's last one.
+    auto leftmost_leaf = root;
+    while (!leftmost_leaf->is_leaf()) {
+        leftmost_leaf = leftmost_leaf->left_;
+    }
+    auto rightmost_leaf = root;
+    while (!rightmost_leaf->is_leaf()) {
+        rightmost_leaf = rightmost_leaf->right_;
+    }
+    const auto n_features = query_indexer_const_ref_.n_features();
+    const auto samples    = query_indexer_const_ref_.begin();
+
+    auto previous_index = std::optional<IndexType>{};
+
+    for (auto index_it = leftmost_leaf->indices_range_.first; index_it != rightmost_leaf->indices_range_.second;
+         ++index_it) {
+        const auto sample_index = static_cast<IndexType>(*index_it);
+
+        if (previous_index) {
+            const auto previous_component = representative_vec_[*previous_index];
+            const auto component          = representative_vec_[sample_index];
+
+            if (previous_component != component) {
+                const auto squared_distance = common::math::heuristics::squared_euclidean_distance(
+                    samples + static_cast<std::ptrdiff_t>(*previous_index) * n_features,
+                    samples + static_cast<std::ptrdiff_t>(*previous_index + 1) * n_features,
+                    samples + static_cast<std::ptrdiff_t>(sample_index) * n_features,
+                    samples + static_cast<std::ptrdiff_t>(sample_index + 1) * n_features);
+
+                const auto squared_mutual_reachability =
+                    std::max(squared_distance,
+                             std::max(squared_core_distances_ptr_[static_cast<std::size_t>(*previous_index)],
+                                      squared_core_distances_ptr_[static_cast<std::size_t>(sample_index)]));
+
+                offer_edge(*previous_index, sample_index, squared_mutual_reachability);
+            }
+        }
+        previous_index = sample_index;
+    }
+    initialise_node_bounds_bottom_up();
 }
 
 }  // namespace ffcl::search::buffer

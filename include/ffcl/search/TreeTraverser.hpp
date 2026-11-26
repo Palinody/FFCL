@@ -370,6 +370,8 @@ void TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&     
                                                         EdgesBuffer&                         edge_buffer) const {
     common::ignore_parameters(query_indexer);
 
+    edge_buffer.seed();
+
     for (const auto& query_node : query_nodes) {
         dual_tree_traversal_with_core_distances(query_node,
                                                 reference_indexer_.root(),
@@ -389,6 +391,8 @@ auto TreeTraverser<ReferenceIndexer>::dtt_shortest_edge(const QueryIndexer&     
 
     auto edge_buffer =
         buffer::make_edge_buffer(query_indexer, reference_indexer_, union_find_const_ref, squared_core_distances_ptr);
+
+    edge_buffer.seed();
 
     dual_tree_traversal_with_core_distances(query_indexer.root(),
                                             reference_indexer_.root(),
