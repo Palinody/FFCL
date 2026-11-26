@@ -49,7 +49,16 @@ class StaticBuffer {
       , closest_distance_{common::infinity<DistanceType>()}
       , buffer_index_of_furthest_index_{0}
       , furthest_distance_{common::infinity<DistanceType>()}
-      , max_capacity_{max_capacity} {}
+      , max_capacity_{max_capacity} {
+        // A capacity-bounded buffer (kNN) knows its final size up front, so reserve it once instead of
+        // letting the two vectors grow geometrically: a k = 2 query used to allocate four times, a k = 10
+        // query ten times. An unbounded buffer (radius search) has no size to reserve for - its sentinel
+        // capacity is 0, see `common::infinity` for integer types.
+        if (max_capacity_ != 0) {
+            indices_.reserve(max_capacity_);
+            distances_.reserve(max_capacity_);
+        }
+    }
 
     constexpr auto centroid_begin() const {
         return bound_.centroid_begin();
