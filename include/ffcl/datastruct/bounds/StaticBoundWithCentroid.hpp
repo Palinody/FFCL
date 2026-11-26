@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 #include "ffcl/common/math/heuristics/Distances.hpp"
@@ -109,5 +110,13 @@ template <typename DerivedType>
 constexpr auto StaticBoundWithCentroid<DerivedClass>::centroid_end() const {
     return static_cast<const DerivedType*>(this)->centroid_end_impl();
 }
+
+// Whether a bound restricts which samples belong to a query - a ball of radius r - as opposed to a
+// bound that only carries a centroid and leaves the stopping decision to the buffer's capacity, as
+// the unbounded balls used by the k-nearest-neighbours queries do. The tree picks its pruning rule
+// from this: a distance-bounded query prunes by its bound, a capacity-bounded one by its k-th
+// distance.
+template <typename Bound>
+struct is_distance_bounded : std::false_type {};
 
 }  // namespace ffcl::datastruct::bounds

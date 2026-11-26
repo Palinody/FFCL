@@ -243,4 +243,11 @@ constexpr auto BallView<FeaturesIterator>::centroid_end_impl() const {
     return centroid_features_range_last_;
 }
 
+// A ball restricts which samples belong to the query: everything inside the radius, and nothing else.
+template <typename Value, std::size_t NFeatures>
+struct is_distance_bounded<Ball<Value, NFeatures>> : std::true_type {};
+
+template <typename FeaturesIterator>
+struct is_distance_bounded<BallView<FeaturesIterator>> : std::true_type {};
+
 }  // namespace ffcl::datastruct::bounds

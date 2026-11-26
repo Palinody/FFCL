@@ -83,6 +83,7 @@ class DBSCAN {
                        VisitedIndices&                  visited_indices,
                        Predictions&                     predictions,
                        const LabelType&                 cluster_label,
+                       const LabelType&                 entry_point_index,
                        const search::Searcher<Indexer>& searcher) const;
 
     enum class SampleStatus : LabelType { noise = 0 };
@@ -138,8 +139,20 @@ auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
                 predictions[entry_point_candidate_index] = cluster_label;
                 // we retrieve the nearby samples indices
                 auto neighbors_indices = std::move(nn_buffer_query).indices();
+                // Every sample joins the frontier at most once. The visited flag is set when a sample is
+                // queued rather than when it is dequeued, so a sample reachable from many of its
+                // neighbours is not queued again by each of them: the frontier stays the size of the
+                // cluster instead of the number of its edges.
+                for (const auto& neighbor_index : neighbors_indices) {
+                    visited_indices[neighbor_index] = true;
+                }
                 // neighbors_indices will be populated with all the nearby samples that satisfy the density criterion
-                predict_inner(neighbors_indices, visited_indices, predictions, cluster_label, searcher);
+                predict_inner(neighbors_indices,
+                              visited_indices,
+                              predictions,
+                              cluster_label,
+                              static_cast<LabelType>(entry_point_candidate_index),
+                              searcher);
             } else {
                 predictions[entry_point_candidate_index] = static_cast<LabelType>(SampleStatus::noise);
             }
@@ -154,16 +167,17 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndices&                neighbors_i
                                     VisitedIndices&                  visited_indices,
                                     Predictions&                     predictions,
                                     const LabelType&                 cluster_label,
+                                    const LabelType&                 entry_point_index,
                                     const search::Searcher<Indexer>& searcher) const {
-    // iterate over the samples that are assigned to the current cluster
+    // iterate over the samples that are assigned to the current cluster, appending the ones that are
+    // discovered along the way
     for (std::size_t cluster_sample_index = 0; cluster_sample_index < neighbors_indices.size();
          ++cluster_sample_index) {
         const auto neighbor_index = neighbors_indices[cluster_sample_index];
-        // enter the condition if the current neighbor index hasnt been visited
-        if (!visited_indices[neighbor_index]) {
-            // mark the current neighbor index as visited
-            visited_indices[neighbor_index] = true;
 
+        // every sample in the frontier is queued but not queried yet, except the entry point, which
+        // was queried to open this cluster
+        if (neighbor_index != entry_point_index) {
             auto ball_view = datastruct::bounds::BallView(searcher.features_range_first(neighbor_index),
                                                           searcher.features_range_last(neighbor_index),
                                                           options_.radius_);
@@ -173,14 +187,13 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndices&                neighbors_i
             if (inner_neighbors_buffer.size() > options_.min_samples_) {
                 auto inner_neighbors_indices = std::move(inner_neighbors_buffer).indices();
 
-                // iterate over each neighbor's neighbors and add them to the neighbors to visit only if
-                // they havent been visited already
-                std::copy_if(std::make_move_iterator(inner_neighbors_indices.begin()),
-                             std::make_move_iterator(inner_neighbors_indices.end()),
-                             std::back_inserter(neighbors_indices),
-                             [&visited_indices](const auto& inner_neighbor_index) {
-                                 return !visited_indices[inner_neighbor_index];
-                             });
+                // queue each newly discovered neighbor exactly once
+                for (const auto& inner_neighbor_index : inner_neighbors_indices) {
+                    if (!visited_indices[inner_neighbor_index]) {
+                        visited_indices[inner_neighbor_index] = true;
+                        neighbors_indices.push_back(inner_neighbor_index);
+                    }
+                }
             }
         }
         // assign neighbor_index to a cluster if its not already the case
