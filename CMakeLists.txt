@@ -109,14 +109,12 @@ set(HEADER_FILES
 
     include/ffcl/search/Search.hpp
     include/ffcl/search/TreeTraverser.hpp
-    include/ffcl/search/DualTreeTraverser.hpp
     include/ffcl/search/ClosestPairOfSamples.hpp
     include/ffcl/search/buffer/StaticBuffer.hpp
     include/ffcl/search/buffer/Unsorted.hpp
     include/ffcl/search/buffer/WithMemory.hpp
     include/ffcl/search/buffer/WithUnionFind.hpp
     include/ffcl/search/buffer/EdgesBuffer.hpp
-    include/ffcl/search/buffer/IndicesToBuffersMap.hpp
 
     include/ffcl/datastruct/tree/kdtree/KDTree.hpp
     include/ffcl/datastruct/tree/kdtree/KDNodeView.hpp

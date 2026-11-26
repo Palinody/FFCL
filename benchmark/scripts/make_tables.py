@@ -333,19 +333,11 @@ def main():
     lines.append("## Known discrepancies")
     lines.append("")
     lines.append(
-        "Two behaviours found while writing the unit tests, recorded here rather than hidden:"
+        "One behaviour found while writing the unit tests, recorded here rather than hidden:"
     )
     lines.append("")
     lines.append(
-        "1. **`dual_set_shortest_edge` is not exact.** On an 8-point fixture the brute-force answer is "
-        "12.0208 (the pair `(.5,.5) -> (9,9)`) while the accelerated traversal returns 12.7279 (the "
-        "longer corner diagonal), so it misses the closest pair. This is the `DualTreeTraverser` + "
-        "`IndicesToBuffersMap` path; the MST does **not** use it (it goes through `EdgesBuffer`, which "
-        "is exact), so the HDBSCAN rows above are unaffected. See the `DISABLED_` tests in "
-        "`test/src/search/SearchTest.cpp`."
-    )
-    lines.append(
-        "2. **Single-cluster silhouette is NaN.** `silhouette()` divides by zero when there is only one "
+        "1. **Single-cluster silhouette is NaN.** `silhouette()` divides by zero when there is only one "
         "cluster. It cannot be asserted in a unit test because the library is built with `-Ofast`, which "
         "implies `-ffinite-math-only` and makes `std::isnan()` a constant `false`."
     )

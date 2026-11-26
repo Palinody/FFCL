@@ -60,8 +60,7 @@ flowchart LR
     subgraph L3["Search engine — ffcl::search"]
         direction TB
         SEA["Searcher<br/>facade over an indexer"]
-        TT["TreeTraverser<br/>single-tree traversal"]
-        DTT["DualTreeTraverser<br/>dual-tree + node cache"]
+        TT["TreeTraverser<br/>single-tree and dual-tree traversal"]
         BUF["buffers (CRTP StaticBuffer)<br/>Unsorted · WithMemory<br/>WithUnionFind · EdgesBuffer"]
     end
 
@@ -133,12 +132,12 @@ Key entry points:
 > `sqrt(n_samples) / 3`, which is what hdbscan uses internally for its Boruvka tree
 > (`leaf_size // 3`). The tests and benchmarks use `sqrt(n_samples) / 3` (clamped to 16).
 - `ffcl::search::Searcher<Indexer>` — the single entry point used by all algorithms: `operator()` for
-  k-NN / radius queries, `dual_tree_shortest_edge*` and `dtt_shortest_edge` for dual-tree edge queries.
+  k-NN / radius queries and `dtt_shortest_edge` for dual-tree edge queries.
 - `ffcl::search::buffer::*` — CRTP static-polymorphic buffers. The buffer *is* the query: it carries the bound
   (unbounded ball, ball with radius, …) and the pruning rule (`WithUnionFind` skips same-component samples,
   `EdgesBuffer` keeps a per-component priority queue of shortest edges).
 - `ffcl::BoruvkasAlgorithm` — `make_tree` (single-tree steps, optional core distances) and `make_tree_2`
-  (dual-tree steps, the branch under active development on `dtt_with_union_find_pruning`).
+  (dual-tree steps, the path HDBSCAN uses).
 - `ffcl::HDBSCAN::predict` — Boruvka MST → single linkage tree → condensed tree → labels.
 
 ### Directory map
@@ -148,9 +147,8 @@ include/ffcl/
 ├── common/            Utils, Timer, math/{heuristics,statistics,random,linear_algebra,algorithms}
 ├── datastruct/        bounds/, tree/{kdtree,single_linkage_cluster_tree,condensed_cluster_tree},
 │                      graph/spanning_tree/, matrix/, vector/, UnionFind.hpp
-├── search/            Search.hpp, TreeTraverser.hpp, DualTreeTraverser.hpp,
-│                      ClosestPairOfSamples.hpp, buffer/{StaticBuffer,Unsorted,WithMemory,
-│                      WithUnionFind,EdgesBuffer,IndicesToBuffersMap}
+├── search/            Search.hpp, TreeTraverser.hpp, ClosestPairOfSamples.hpp,
+│                      buffer/{StaticBuffer,Unsorted,WithMemory,WithUnionFind,EdgesBuffer}
 ├── dbscan/            DBSCAN.hpp
 ├── hdbscan/           HDBSCAN.hpp
 ├── kmeans/            KMeans.hpp, Lloyd.hpp, Hamerly.hpp, KMeansPlusPlus.hpp, KMeansUtils.hpp

@@ -158,45 +158,4 @@ TEST(SearchTest, BruteForceShortestEdgeIsExact) {
     EXPECT_NEAR(std::get<2>(brute_force), 12.020815280171307, 1e-4);
 }
 
-// KNOWN DEFECT (disabled so the suite stays green, see benchmark/README.md):
-//
-// `dual_set_shortest_edge` does not return the true closest pair on this fixture. The brute-force
-// answer is 12.0208 (the pair (.5,.5) -> (9,9)); the accelerated traversal returns 12.7279 (the
-// corner-to-corner diagonal (.5,.5) -> (9.5,9.5)). It misses the closer pair, so it is not exact.
-//
-// This path (`DualTreeTraverser` + `IndicesToBuffersMap`) is not the one the Boruvka MST uses; the
-// MST goes through `EdgesBuffer`, which is exact. Enabling this test is the acceptance criterion for
-// fixing `dual_set_shortest_edge`.
-TEST(SearchTest, DISABLED_DualTreeShortestEdgeMatchesBruteForce) {
-    auto&       data       = Fixture::two_blobs();
-    const auto  n_features = std::size_t{2};
-
-    auto query_indices     = Fixture::make_indices(4);
-    auto reference_indices = std::vector<std::size_t>{4, 5, 6, 7};
-
-    const auto brute_force = ffcl::search::algorithms::simple_dual_set_shortest_edge(query_indices.begin(),
-                                                                                     query_indices.end(),
-                                                                                     data.begin(),
-                                                                                     data.end(),
-                                                                                     n_features,
-                                                                                     reference_indices.begin(),
-                                                                                     reference_indices.end(),
-                                                                                     data.begin(),
-                                                                                     data.end(),
-                                                                                     n_features);
-
-    const auto dual_tree = ffcl::search::algorithms::dual_set_shortest_edge(query_indices.begin(),
-                                                                           query_indices.end(),
-                                                                           data.begin(),
-                                                                           data.end(),
-                                                                           n_features,
-                                                                           reference_indices.begin(),
-                                                                           reference_indices.end(),
-                                                                           data.begin(),
-                                                                           data.end(),
-                                                                           n_features);
-
-    EXPECT_NEAR(std::get<2>(brute_force), std::get<2>(dual_tree), 1e-5);
-}
-
 }  // namespace

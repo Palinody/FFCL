@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ffcl/common/Timer.hpp"
 #include "ffcl/common/Utils.hpp"
 
 #include "ffcl/datastruct/UnionFind.hpp"
