@@ -57,6 +57,13 @@ class StaticBuffer {
         if (max_capacity_ != 0) {
             indices_.reserve(max_capacity_);
             distances_.reserve(max_capacity_);
+
+        } else {
+            // An unbounded buffer (radius search) has no final size, but most neighbourhoods are small, so
+            // a modest reservation removes the first growth steps without wasting anything on the rare
+            // dense one.
+            indices_.reserve(kDefaultUnboundedReserve);
+            distances_.reserve(kDefaultUnboundedReserve);
         }
     }
 
@@ -231,6 +238,8 @@ class StaticBuffer {
                 common::math::statistics::get_max_index_value_pair(distances_.begin(), distances_.end());
         }
     }
+
+    static constexpr std::size_t kDefaultUnboundedReserve = 64;
 
     BoundType bound_;
 
