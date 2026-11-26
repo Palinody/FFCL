@@ -4,14 +4,19 @@
 #include "ffcl/datastruct/graph/spanning_tree/MinimumSpanningTree.hpp"
 #include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterNode.hpp"
 
+#include <filesystem>
 #include <memory>
 #include <numeric>
 #include <unordered_map>
 #include <vector>
 
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 
+#include "rapidjson/document.h"
+#include "rapidjson/ostreamwrapper.h"
+#include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
 namespace ffcl::datastruct {

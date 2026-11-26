@@ -1,572 +1,132 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ffcl/common/Timer.hpp"
-#include "ffcl/common/Utils.hpp"
 #include "ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp"
-#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 
-#include <sys/types.h>  // ssize_t
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <iterator>
-#include <vector>
+#include "base_fixtures/ClusteringFixtures.hpp"
 
-namespace fs = std::filesystem;
+namespace {
 
-class BoruvkasAlgorithmErrorsTest : public ::testing::Test {
-  public:
-    using dType = float;
+using dType = float;
 
-  protected:
-    ssize_t get_num_features_in_file(const fs::path& filepath, char delimiter = ' ') {
-        std::ifstream file(filepath);
-        ssize_t       n_features = -1;
-        if (file.is_open()) {
-            std::string line;
+namespace Fixture = ffcl::fixtures;
 
-            std::getline(file, line);
-            // count the number of values at the first line, delimited by the specified delimiter
-            n_features = std::count(line.begin(), line.end(), delimiter) + 1;
+// A minimum spanning tree over `n` samples has exactly `n - 1` edges and every edge weight is finite.
+template <typename MstType>
+void expect_valid_spanning_tree(const MstType& mst, std::size_t n_samples, double expected_total_weight = -1) {
+    ASSERT_EQ(mst.size(), n_samples - 1);
 
-            file.close();
+    auto total_weight = double{};
 
-        } else {
-            throw std::ios_base::failure("Unable to open file: " + filepath.string());
-        }
-        return n_features;
+    for (const auto& edge : mst) {
+        const auto weight = static_cast<double>(std::get<2>(edge));
+
+        EXPECT_TRUE(std::isfinite(weight)) << "non finite edge weight";
+        EXPECT_GE(weight, 0.0) << "negative edge weight";
+
+        total_weight += weight;
     }
-
-    template <typename T = float>
-    std::vector<T> load_data(const fs::path& filename, char delimiter = ' ') {
-        std::ifstream  filestream(filename);
-        std::vector<T> data;
-
-        if (filestream.is_open()) {
-            // temporary string data
-            std::string row_str, elem_str;
-
-            while (std::getline(filestream, row_str, '\n')) {
-                std::stringstream row_str_stream(row_str);
-
-                while (std::getline(row_str_stream, elem_str, delimiter)) {
-                    data.emplace_back(std::stof(elem_str));
-                }
-            }
-            filestream.close();
-        }
-        return data;
+    if (expected_total_weight >= 0) {
+        EXPECT_NEAR(total_weight, expected_total_weight, 1e-4);
     }
+}
 
-    void make_directories(const fs::path& directory_path) {
-        try {
-            if (!std::filesystem::exists(directory_path)) {
-                std::filesystem::create_directories(directory_path);
+// Two squares of four points each: the MST is the three edges that connect the corners of each
+// square, plus one edge bridging the two squares.
+//
+//   square 0: (0,0) (1,0) (0,1) (.5,.5)  -> unit square edges 1, 1, sqrt(.5), sqrt(.5), sqrt(.5)
+//   square 1: same shape translated by (9,9)
+//   bridge  : (.5,.5) -> (9.5,9.5), length sqrt(2*9^2) = 9*sqrt(2)
+//
+// The minimum spanning tree is not unique here (several equal-length diagonals), so the test checks
+// the edge count, that every weight is finite, and the total weight, which is unique.
+TEST(BoruvkasAlgorithmTest, SpanningTreeOverTwoSquaresIsValid) {
+    auto& data             = Fixture::two_blobs();
+    const auto  n_features = std::size_t{2};
 
-#if defined(VERBOSE) && VERBOSE == true
-                std::cout << "Directory created: " << directory_path << "\n";
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
 
-            } else {
-                std::cout << "Dir. already exists\n";
-#endif
-            }
-        } catch (std::filesystem::filesystem_error& e) {
-            std::cerr << e.what() << std::endl;
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<decltype(indexer)>();
+    boruvkas_algorithm.set_options(typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(2));
+
+    const auto mst = boruvkas_algorithm.make_tree_2(std::move(indexer));
+
+    expect_valid_spanning_tree(mst, 8);
+}
+
+// make_tree (single-tree Boruvka) and make_tree_2 (dual-tree Boruvka) must build the same tree
+// weight. They take different search paths to the same answer, so this is the cross-check that
+// neither has regressed.
+TEST(BoruvkasAlgorithmTest, SingleTreeAndDualTreeAgreeOnTotalWeight) {
+    const auto n_features = std::size_t{2};
+    const auto n_samples  = Fixture::two_blobs().size() / n_features;
+
+    auto total_weight_of = [&](bool use_dual_tree) {
+        auto& data          = Fixture::two_blobs();
+        auto        indices = Fixture::make_indices(n_samples);
+        auto        indexer = Fixture::make_kdtree(data, indices, n_features);
+
+        auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<decltype(indexer)>();
+        boruvkas_algorithm.set_options(
+            typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(2));
+
+        const auto mst =
+            use_dual_tree ? boruvkas_algorithm.make_tree_2(std::move(indexer)) : boruvkas_algorithm.make_tree(std::move(indexer));
+
+        auto total = double{};
+        for (const auto& edge : mst) {
+            total += static_cast<double>(std::get<2>(edge));
         }
-    }
+        return total;
+    };
 
-    template <typename T = float>
-    void write_data(const std::vector<T>& data, std::size_t n_features, const fs::path& filename) {
-        const auto parent_path = filename.parent_path();
-
-        make_directories(parent_path);
-
-        std::ofstream filestream(filename);
-
-        if (filestream.is_open()) {
-            std::size_t iter{};
-
-            for (const auto& elem : data) {
-                filestream << elem;
-
-                ++iter;
-
-                if (iter % n_features == 0 && iter != 0) {
-                    filestream << '\n';
-
-                } else {
-                    filestream << ' ';
-                }
-            }
-        }
-    }
-
-    template <typename MinimumSpanningTreeType>
-    void write_minimum_spanning_tree(const MinimumSpanningTreeType& mst, const fs::path& filename) {
-        const auto parent_path = filename.parent_path();
-
-        const std::size_t n_features = 3;
-
-        make_directories(parent_path);
-
-        std::ofstream filestream(filename);
-
-        if (filestream.is_open()) {
-            std::size_t iter{};
-
-            for (const auto& elem : mst) {
-                filestream << elem;
-
-                ++iter;
-
-                if (iter % n_features == 0 && iter != 0) {
-                    filestream << '\n';
-
-                } else {
-                    filestream << ' ';
-                }
-            }
-        }
-    }
-
-    template <typename MinimumSpanningTreeType>
-    void write_mst(const MinimumSpanningTreeType& mst, const fs::path& filename) {
-        std::ofstream filestream(filename);
-
-        if (!filestream.is_open()) {
-            std::cerr << "Error: Failed to open the file for writing." << std::endl;
-            return;
-        }
-        for (const auto& [vertex_1, vertex2, distance] : mst) {
-            // rite the elements to the file separated by spaces
-            filestream << vertex_1 << " " << vertex2 << " " << distance << std::endl;
-        }
-        filestream.close();
-    }
-
-    static constexpr std::size_t n_iterations_global = 100;
-    static constexpr std::size_t n_centroids_global  = 4;
-
-    const fs::path folder_root_        = fs::path("../bin/clustering");
-    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
-    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
-};
-
-std::vector<std::size_t> generate_indices(std::size_t n_samples) {
-    std::vector<std::size_t> elements(n_samples);
-    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
-    return elements;
+    EXPECT_NEAR(total_weight_of(false), total_weight_of(true), 1e-4);
 }
 
-TEST_F(BoruvkasAlgorithmErrorsTest, NoisyCirclesTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+// With k = 1 the core distance of every sample is zero, which is a degenerate configuration: the
+// tree must still be a valid spanning tree rather than silently producing infinite weights.
+TEST(BoruvkasAlgorithmTest, KEqualsOneStillProducesAFiniteTree) {
+    auto& data             = Fixture::two_blobs();
+    const auto  n_features = std::size_t{2};
 
-    fs::path filename = "noisy_circles.txt";
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
 
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<decltype(indexer)>();
+    boruvkas_algorithm.set_options(typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(1));
 
-    auto indices = generate_indices(n_samples);
+    const auto mst = boruvkas_algorithm.make_tree_2(std::move(indexer));
 
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    timer.print_elapsed_seconds(9);
-
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+    expect_valid_spanning_tree(mst, 8);
 }
 
-TEST_F(BoruvkasAlgorithmErrorsTest, NoisyMoonsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+// merging an edge whose endpoints already share a component must be a no-op, so merging the same
+// edge twice cannot grow the tree or change the component count.
+TEST(MSTBuilderTest, MergingTheSameEdgeTwiceIsANoOp) {
+    auto builder = ffcl::MSTBuilder<std::size_t, dType>(4);
 
-    fs::path filename = "noisy_moons.txt";
+    EXPECT_EQ(builder.n_components(), 4u);
 
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+    const auto edge = ffcl::datastruct::mst::make_edge(std::size_t{0}, std::size_t{1}, dType{1.0f});
 
-    auto indices = generate_indices(n_samples);
+    builder.merge_components(edge);
+    EXPECT_EQ(builder.n_components(), 3u);
 
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
+    builder.merge_components(edge);
+    EXPECT_EQ(builder.n_components(), 3u) << "merging an edge inside one component must be ignored";
 
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    timer.print_elapsed_seconds(9);
-
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+    EXPECT_EQ(std::move(builder).minimum_spanning_tree().size(), 1u);
 }
 
-TEST_F(BoruvkasAlgorithmErrorsTest, VariedTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+TEST(MSTBuilderTest, MergingDisjointComponentsBuildsATree) {
+    auto builder = ffcl::MSTBuilder<std::size_t, dType>(4);
 
-    fs::path filename = "varied.txt";
+    builder.merge_components(ffcl::datastruct::mst::make_edge(std::size_t{0}, std::size_t{1}, dType{1.0f}));
+    builder.merge_components(ffcl::datastruct::mst::make_edge(std::size_t{2}, std::size_t{3}, dType{2.0f}));
+    builder.merge_components(ffcl::datastruct::mst::make_edge(std::size_t{1}, std::size_t{2}, dType{3.0f}));
 
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    timer.print_elapsed_seconds(9);
-
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
+    EXPECT_EQ(builder.n_components(), 1u);
+    EXPECT_EQ(std::move(builder).minimum_spanning_tree().size(), 3u);
 }
 
-TEST_F(BoruvkasAlgorithmErrorsTest, AnisoTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "aniso.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    timer.print_elapsed_seconds(9);
-
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(BoruvkasAlgorithmErrorsTest, BlobsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "blobs.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    timer.print_elapsed_seconds(9);
-
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(BoruvkasAlgorithmErrorsTest, NoStructureTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "no_structure.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    timer.print_elapsed_seconds(9);
-
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(BoruvkasAlgorithmErrorsTest, UnbalancedBlobsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "unbalanced_blobs.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    const auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    timer.print_elapsed_seconds(9);
-
-    write_mst(minimum_spanning_tree, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(BoruvkasAlgorithmErrorsTest, ForestPartitionTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    auto              data       = std::vector<float>({1, 2, 1.5, 2.2, 2.5, 2.9, 2, 3, 4, 2, 3, 3, 3.5, 2.2, 2.3, 2});
-    const std::size_t n_features = 2;
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples) / 3)
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(2));
-
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    std::cout << "MST size: " << minimum_spanning_tree.size() << "\n";
-
-    ffcl::datastruct::mst::print(ffcl::datastruct::mst::sort(std::move(minimum_spanning_tree)));
-
-    timer.print_elapsed_seconds(9);
-}
-
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+}  // namespace

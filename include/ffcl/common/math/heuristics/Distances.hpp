@@ -172,8 +172,6 @@ auto cosine_similarity(const LeftFeaturesIterator&  left_features_range_first,
     using ResultType = decltype(std::declval<typename std::iterator_traits<LeftFeaturesIterator>::value_type>() *
                                 std::declval<typename std::iterator_traits<RightFeaturesIterator>::value_type>());
 
-    const std::size_t n_features = std::distance(left_features_range_first, left_features_range_last);
-
     const ResultType dot_product = std::inner_product(left_features_range_first,
                                                       left_features_range_last,
                                                       right_features_range_first,

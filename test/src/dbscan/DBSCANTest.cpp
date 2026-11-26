@@ -1,466 +1,242 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ffcl/common/Timer.hpp"
-#include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/dbscan/DBSCAN.hpp"
 
-#include <sys/types.h>  // ssize_t
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <iterator>
+#include "base_fixtures/ClusteringFixtures.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <numeric>
 #include <vector>
 
-namespace fs = std::filesystem;
+namespace {
 
-class DBSCANErrorsTest : public ::testing::Test {
-  public:
-    using dType = float;
+using dType = float;
 
-  protected:
-    ssize_t get_num_features_in_file(const fs::path& filepath, char delimiter = ' ') {
-        std::ifstream file(filepath);
-        ssize_t       n_features = -1;
-        if (file.is_open()) {
-            std::string line;
+namespace Fixture = ffcl::fixtures;
 
-            std::getline(file, line);
-            // count the number of values at the first line, delimited by the specified delimiter
-            n_features = std::count(line.begin(), line.end(), delimiter) + 1;
+// With radius 2 only the four points of a square are mutual neighbours: the distance between the
+// corners of one square is sqrt(2) < 2 and the distance between the two squares is 8 > 2.
+TEST(DBSCANTest, SeparatesTwoWellSeparatedSquares) {
+    auto&      data       = Fixture::two_blobs();
+    const auto n_features = std::size_t{2};
 
-            file.close();
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
 
-        } else {
-            throw std::ios_base::failure("Unable to open file: " + filepath.string());
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(2.0f).min_samples(3));
+
+    const auto predictions = dbscan.predict(std::move(indexer));
+
+    ASSERT_EQ(predictions.size(), 8u);
+
+    // exactly two clusters, no noise
+    EXPECT_EQ(Fixture::count_clusters(predictions, std::size_t{0}), 2u);
+    EXPECT_EQ(std::count(predictions.begin(), predictions.end(), std::size_t{0}), 0);
+
+    // all four points of a square share a label, and the two squares do not
+    EXPECT_EQ(predictions[0], predictions[1]);
+    EXPECT_EQ(predictions[0], predictions[2]);
+    EXPECT_EQ(predictions[0], predictions[3]);
+
+    EXPECT_EQ(predictions[4], predictions[5]);
+    EXPECT_EQ(predictions[4], predictions[6]);
+    EXPECT_EQ(predictions[4], predictions[7]);
+
+    EXPECT_NE(predictions[0], predictions[4]);
+}
+
+// The isolated points are further than `radius` from everything else, so they cannot become core
+// points and must be labelled noise (label 0).
+TEST(DBSCANTest, IsolatedPointsAreNoise) {
+    auto&      data       = Fixture::two_blobs_with_outliers();
+    const auto n_features = std::size_t{2};
+
+    constexpr std::size_t kLeftOutlier  = 8;
+    constexpr std::size_t kRightOutlier = 9;
+
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
+
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(2.0f).min_samples(3));
+
+    const auto predictions = dbscan.predict(std::move(indexer));
+
+    ASSERT_EQ(predictions.size(), 10u);
+
+    EXPECT_EQ(predictions[kLeftOutlier], 0u);
+    EXPECT_EQ(predictions[kRightOutlier], 0u);
+
+    // the two squares are still recovered
+    EXPECT_EQ(predictions[0], predictions[1]);
+    EXPECT_NE(predictions[0], predictions[4]);
+    EXPECT_NE(predictions[0], 0u);
+    EXPECT_NE(predictions[4], 0u);
+}
+
+// A radius large enough to bridge the two squares makes the whole fixture a single cluster.
+TEST(DBSCANTest, LargeRadiusMergesEverything) {
+    auto&      data       = Fixture::two_blobs();
+    const auto n_features = std::size_t{2};
+
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
+
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(20.0f).min_samples(2));
+
+    const auto predictions = dbscan.predict(std::move(indexer));
+
+    EXPECT_EQ(Fixture::count_clusters(predictions, std::size_t{0}), 1u);
+}
+
+// Every sample is its own label source: a radius with no neighbours at all must leave everything
+// labelled noise.
+TEST(DBSCANTest, TinyRadiusLabelsEverythingAsNoise) {
+    auto&      data       = Fixture::two_blobs();
+    const auto n_features = std::size_t{2};
+
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
+
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(0.01f).min_samples(2));
+
+    const auto predictions = dbscan.predict(std::move(indexer));
+
+    EXPECT_EQ(Fixture::count_clusters(predictions, std::size_t{0}), 0u);
+    EXPECT_EQ(std::count(predictions.begin(), predictions.end(), std::size_t{0}), predictions.size());
+}
+
+// A reference DBSCAN over every pair, used to check the tree-accelerated one.
+//
+// The accelerated query prunes whole subtrees: a sibling is skipped as soon as its bounding box
+// misses the radius. An error there does not crash, it silently loses neighbours, which changes the
+// clusters. So the labels are compared against an implementation that cannot prune anything.
+auto reference_dbscan(const std::vector<dType>& data, std::size_t n_features, dType radius, std::size_t min_samples)
+    -> std::vector<std::size_t> {
+    const std::size_t n_samples = data.size() / n_features;
+
+    auto neighbours_of = [&](std::size_t sample_index) {
+        auto neighbours = std::vector<std::size_t>{};
+        for (std::size_t other_index = 0; other_index < n_samples; ++other_index) {
+            auto squared_distance = dType{0};
+            for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+                const auto difference =
+                    data[sample_index * n_features + feature_index] - data[other_index * n_features + feature_index];
+                squared_distance += difference * difference;
+            }
+            if (squared_distance < radius * radius) {
+                neighbours.push_back(other_index);
+            }
         }
-        return n_features;
-    }
+        return neighbours;
+    };
 
-    template <typename T = float>
-    std::vector<T> load_data(const fs::path& filename, char delimiter = ' ') {
-        std::ifstream  filestream(filename);
-        std::vector<T> data;
+    auto        visited       = std::vector<bool>(n_samples, false);
+    auto        predictions   = std::vector<std::size_t>(n_samples, 0);
+    std::size_t cluster_label = 0;
 
-        if (filestream.is_open()) {
-            // temporary string data
-            std::string row_str, elem_str;
+    for (std::size_t candidate = 0; candidate < n_samples; ++candidate) {
+        if (visited[candidate]) {
+            continue;
+        }
+        visited[candidate] = true;
 
-            while (std::getline(filestream, row_str, '\n')) {
-                std::stringstream row_str_stream(row_str);
+        auto neighbours = neighbours_of(candidate);
 
-                while (std::getline(row_str_stream, elem_str, delimiter)) {
-                    data.emplace_back(std::stof(elem_str));
+        // same comparison as the implementation under test
+        if (neighbours.size() > min_samples) {
+            predictions[candidate] = ++cluster_label;
+
+            for (std::size_t k = 0; k < neighbours.size(); ++k) {
+                const auto neighbour = neighbours[k];
+                if (!visited[neighbour]) {
+                    visited[neighbour] = true;
+                    auto inner         = neighbours_of(neighbour);
+                    if (inner.size() > min_samples) {
+                        neighbours.insert(neighbours.end(), inner.begin(), inner.end());
+                    }
+                    predictions[neighbour] = cluster_label;
+                } else if (predictions[neighbour] == 0) {
+                    predictions[neighbour] = cluster_label;
                 }
             }
-            filestream.close();
-        }
-        return data;
-    }
-
-    void make_directories(const fs::path& directory_path) {
-        try {
-            if (!std::filesystem::exists(directory_path)) {
-                std::filesystem::create_directories(directory_path);
-
-#if defined(VERBOSE) && VERBOSE == true
-                std::cout << "Directory created: " << directory_path << "\n";
-
-            } else {
-                std::cout << "Dir. already exists\n";
-#endif
-            }
-        } catch (std::filesystem::filesystem_error& e) {
-            std::cerr << e.what() << std::endl;
         }
     }
+    return predictions;
+}
 
-    template <typename T = float>
-    void write_data(const std::vector<T>& data, std::size_t n_features, const fs::path& filename) {
-        const auto parent_path = filename.parent_path();
+// Deterministic points spread over a grid with jitter, so the fixture exercises many clusters, noise
+// and pruning decisions instead of a single clean split.
+auto gapped_grid(std::size_t n_side) -> std::vector<dType> {
+    auto data = std::vector<dType>{};
 
-        make_directories(parent_path);
+    std::size_t state = 12345;
 
-        std::ofstream filestream(filename);
+    auto next_random = [&state]() {
+        state = state * 1103515245 + 12345;
+        return static_cast<dType>((state / 65536) % 1000) / 1000.0F;
+    };
 
-        if (filestream.is_open()) {
-            std::size_t iter{};
-
-            for (const auto& elem : data) {
-                filestream << elem;
-
-                ++iter;
-
-                if (iter % n_features == 0 && iter != 0) {
-                    filestream << '\n';
-
-                } else {
-                    filestream << ' ';
-                }
-            }
+    for (std::size_t i = 0; i < n_side; ++i) {
+        for (std::size_t j = 0; j < n_side; ++j) {
+            data.push_back(static_cast<dType>(i) + next_random());
+            data.push_back(static_cast<dType>(j) + next_random());
         }
     }
-
-    static constexpr std::size_t n_iterations_global = 100;
-    static constexpr std::size_t n_centroids_global  = 4;
-
-    const fs::path folder_root_        = fs::path("../bin/clustering");
-    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
-    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
-};
-
-std::vector<std::size_t> generate_indices(std::size_t n_samples) {
-    std::vector<std::size_t> elements(n_samples);
-    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
-    return elements;
+    return data;
 }
 
-TEST_F(DBSCANErrorsTest, NoisyCirclesTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+// The accelerated labels must match the ones a pruning-free implementation produces, including which
+// samples end up as noise.
+TEST(DBSCANTest, MatchesReferenceOnAGridWithWidelySpreadPoints) {
+    auto       data       = gapped_grid(/*n_side=*/18);  // 324 samples
+    const auto n_features = std::size_t{2};
+    const auto radius     = 1.05F;
 
-    fs::path filename = "noisy_circles.txt";
+    const auto expected = reference_dbscan(data, n_features, radius, 5);
 
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
 
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = typename IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples(5));
-
-    timer.reset();
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(radius).min_samples(5));
 
     const auto predictions = dbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    ASSERT_EQ(predictions.size(), expected.size());
+    for (std::size_t sample_index = 0; sample_index < predictions.size(); ++sample_index) {
+        EXPECT_EQ(predictions[sample_index] == 0, expected[sample_index] == 0)
+            << "sample " << sample_index << " disagrees on being noise";
+    }
+    EXPECT_TRUE(Fixture::same_partition(predictions, expected)) << "the partitions differ";
+    EXPECT_GT(Fixture::count_clusters(predictions, std::size_t{0}), 1u) << "the fixture must split";
 }
 
-TEST_F(DBSCANErrorsTest, NoisyMoonsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+// A radius large enough to reach across the whole grid: one cluster, no pruning can be too aggressive
+// without changing that.
+TEST(DBSCANTest, MatchesReferenceWithARadiusSpanningEveryPoint) {
+    auto       data       = gapped_grid(/*n_side=*/12);  // 144 samples
+    const auto n_features = std::size_t{2};
+    const auto radius     = 50.0F;
 
-    fs::path filename = "noisy_moons.txt";
+    const auto expected = reference_dbscan(data, n_features, radius, 3);
 
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
 
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = typename IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(5));
-
-    timer.reset();
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(radius).min_samples(3));
 
     const auto predictions = dbscan.predict(std::move(indexer));
 
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    ASSERT_EQ(predictions.size(), expected.size());
+    EXPECT_TRUE(Fixture::same_partition(predictions, expected));
+    EXPECT_EQ(Fixture::count_clusters(predictions, std::size_t{0}), 1u);
 }
 
-TEST_F(DBSCANErrorsTest, VariedTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "varied.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = typename IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(3));
-
-    timer.reset();
-
-    const auto predictions = dbscan.predict(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(DBSCANErrorsTest, AnisoTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "aniso.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = typename IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1.2).min_samples(10));
-
-    timer.reset();
-
-    const auto predictions = dbscan.predict(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(DBSCANErrorsTest, BlobsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "blobs.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = typename IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(10));
-
-    timer.reset();
-
-    const auto predictions = dbscan.predict(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(DBSCANErrorsTest, NoStructureTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "no_structure.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = typename IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(1).min_samples(5));
-
-    timer.reset();
-
-    const auto predictions = dbscan.predict(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(DBSCANErrorsTest, UnbalancedBlobsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "unbalanced_blobs.txt";
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = typename IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto dbscan = ffcl::DBSCAN<IndexerType>();
-
-    dbscan.set_options(ffcl::DBSCAN<IndexerType>::Options().radius(2).min_samples(5));
-
-    timer.reset();
-
-    const auto predictions = dbscan.predict(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+}  // namespace

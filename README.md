@@ -2,13 +2,24 @@
 
 **FFCL**: **F**lexible and (probably not the) **f**ast(est) c++ **c**lustering **l**ibrary.
 
+- [Where things are](#where-things-are)
 - [Architecture](#architecture)
-- [Branches](#branches)
-- [Current features](#current-features)
-- [Performance](#performance)
+- [Features](#features)
 - [Installation](#installation)
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
+- [Benchmark results](benchmark/README.md)
+
+## Where things are
+
+```
+include/ src/   the library (header-only; src/ holds one translation unit)
+test/           fast functional unit tests, mirroring include/ffcl
+benchmark/      dataset-driven measurements against the reference libraries,
+                with the results tables in benchmark/README.md
+```
+
+The unit tests are the place to check correctness; `benchmark/` is where FFCL is compared to FLANN, scikit-learn, scipy and hdbscan on real datasets. See [benchmark/README.md](benchmark/README.md) for the tables and the exact settings used.
 
 ## Architecture
 
@@ -23,9 +34,9 @@ The code is organized in four layers plus a tooling layer:
 | --- | --- | --- |
 | Common | `ffcl::common` | `Utils`, `Timer`, distances, statistics, sorting, random distributions/sampling, linear algebra, silhouette method |
 | Data structures | `ffcl::datastruct` | feature containers, bounding volumes, `UnionFind`, pairwise distance matrices, `KDTree`, cluster trees, MST / Boruvka |
-| Search engine | `ffcl::search` | `Searcher` facade, single-tree and dual-tree traversers, pruning buffers, node-combination cache |
+| Search engine | `ffcl::search` | `Searcher` facade, single-tree and dual-tree traversals, pruning buffers |
 | Clustering | `ffcl` | `DBSCAN`, `HDBSCAN`, `KMeans`, `KMedoids` |
-| Tooling | — | `benchmark/`, `test/`, `bin/*.py` (dataset generation, plotting) |
+| Tooling | — | `benchmark/` (datasets, measurements, result tables), `test/` (unit tests) |
 
 ### Layered view
 
@@ -33,9 +44,8 @@ The code is organized in four layers plus a tooling layer:
 flowchart LR
     subgraph L0["Tooling"]
         direction TB
-        TP["bin/*.py<br/>dataset generation · plots"]
-        TB["benchmark/<br/>MODE=benchmark"]
-        TG["test/<br/>MODE=gtest"]
+        TB["benchmark/<br/>MODE=benchmark<br/>datasets · measurements · tables"]
+        TG["test/<br/>MODE=gtest<br/>unit tests"]
     end
 
     subgraph L4["Clustering algorithms — ffcl"]
@@ -49,8 +59,7 @@ flowchart LR
     subgraph L3["Search engine — ffcl::search"]
         direction TB
         SEA["Searcher<br/>facade over an indexer"]
-        TT["TreeTraverser<br/>single-tree traversal"]
-        DTT["DualTreeTraverser<br/>dual-tree + node cache"]
+        TT["TreeTraverser<br/>single-tree and dual-tree traversal"]
         BUF["buffers (CRTP StaticBuffer)<br/>Unsorted · WithMemory<br/>WithUnionFind · EdgesBuffer"]
     end
 
@@ -71,7 +80,6 @@ flowchart LR
 
     TB --> L4
     TG --> L4
-    TP --> TB
     L4 --> L3
     L3 --> L2
     L2 --> L1
@@ -122,12 +130,12 @@ Key entry points:
 > `sqrt(n_samples) / 3`, which is what hdbscan uses internally for its Boruvka tree
 > (`leaf_size // 3`). The tests and benchmarks use `sqrt(n_samples) / 3` (clamped to 16).
 - `ffcl::search::Searcher<Indexer>` — the single entry point used by all algorithms: `operator()` for
-  k-NN / radius queries, `dual_tree_shortest_edge*` and `dtt_shortest_edge` for dual-tree edge queries.
+  k-NN / radius queries and `dtt_shortest_edge` for dual-tree edge queries.
 - `ffcl::search::buffer::*` — CRTP static-polymorphic buffers. The buffer *is* the query: it carries the bound
   (unbounded ball, ball with radius, …) and the pruning rule (`WithUnionFind` skips same-component samples,
   `EdgesBuffer` keeps a per-component priority queue of shortest edges).
 - `ffcl::BoruvkasAlgorithm` — `make_tree` (single-tree steps, optional core distances) and `make_tree_2`
-  (dual-tree steps, the branch under active development on `dtt_with_union_find_pruning`).
+  (dual-tree steps, the path HDBSCAN uses).
 - `ffcl::HDBSCAN::predict` — Boruvka MST → single linkage tree → condensed tree → labels.
 
 ### Directory map
@@ -137,60 +145,18 @@ include/ffcl/
 ├── common/            Utils, Timer, math/{heuristics,statistics,random,linear_algebra,algorithms}
 ├── datastruct/        bounds/, tree/{kdtree,single_linkage_cluster_tree,condensed_cluster_tree},
 │                      graph/spanning_tree/, matrix/, vector/, UnionFind.hpp
-├── search/            Search.hpp, TreeTraverser.hpp, DualTreeTraverser.hpp,
-│                      ClosestPairOfSamples.hpp, buffer/{StaticBuffer,Unsorted,WithMemory,
-│                      WithUnionFind,EdgesBuffer,IndicesToBuffersMap}
+├── search/            Search.hpp, TreeTraverser.hpp, ClosestPairOfSamples.hpp,
+│                      buffer/{StaticBuffer,Unsorted,WithMemory,WithUnionFind,EdgesBuffer}
 ├── dbscan/            DBSCAN.hpp
 ├── hdbscan/           HDBSCAN.hpp
 ├── kmeans/            KMeans.hpp, Lloyd.hpp, Hamerly.hpp, KMeansPlusPlus.hpp, KMeansUtils.hpp
 └── kmedoids/          KMedoids.hpp, FasterPAM.hpp, FasterMSC.hpp, PAMBuild.hpp, PAMUtils.hpp
 include/rapidjson/     vendored JSON parser (KDTree / cluster-tree serialization)
-benchmark/             benchmark drivers, optional PCL comparison (MODE=benchmark)
+benchmark/             benchmark sources, scripts and results (see benchmark/README.md)
 test/                  gtest sources + fixtures (MODE=gtest)
-bin/                   python dataset generators, benchmarks and plotters
 ```
 
-## Branches
-
-- **`main`** — the default and published branch (`origin/HEAD`), last commit `2024-09-24`
-  ("minor refacto"). It contains HDBSCAN built on the *single-tree* Boruvka MST.
-- **`dtt_with_union_find_pruning`** — the **most up-to-date** branch, last commit `2025-01-12`
-  ("savestate"), **13 commits ahead of `main`** and in sync with `origin`. It is the current working branch
-  and adds the `MSTBuilder`, the `EdgesBuffer`, the dual-tree `dtt_shortest_edge` path and the union-find
-  pruning used by `BoruvkasAlgorithm::make_tree_2`.
-
-Everything else is a historical feature branch (kept for reference, all older than `main`):
-`dual_depth_first_traversal`, `dual_tree_traversal`, `refacto_with_searcher_instead_of_indexer_search`,
-`buffers_with_shapes_dev`, `nearest_neighbors_refacto`, `knn_function_with_index`, `minimum_spanning_tree`,
-`dbscan`, `compile_time_feature_mask`, `nearest_neighbor_functions`, `indexed_nearest_neighbor`,
-`kdtree_with_indexing`, `improve_kd_bounding_box_speed`, `template_build`, `no_local_rapidjson`,
-`hamerly_kmeans`, `lloyd`, `ffcl_with_kdtree_without_index`, `static_dynamic_mode_storage_variant`, `ffcl`.
-
-> Note: `main` is an ancestor of `dtt_with_union_find_pruning`, so the latter is a strict superset of it.
-> The working tree currently also holds uncommitted local edits (`CMakeLists.txt`, `.gitignore`,
-> `bin/*.py`, `BoruvkasAlgorithmTest.cpp`).
-
-## TODO | New features | Updates
-
-- **TODO**
-  - performance tests comaring `ffcl` to the most popular libraries (done for kdtrees with PCA and FLANN and DBSCAN from sklearn)
-  - Some optimization for the nearest neighbors computations of KMeans and KMedoids. I might enable KDTree acceleration but its not beneficial unless a large number of centroids/medoids is needed. Its not a priority for now.
-  - Proper unit testing (**update**: all the generic code is now unit tested)
-  - **OPTICS**: **might do** if it can be done very quickly. Otherwise I wont do since HDBSCAN* is supposed to be better.
-  - **HDBSCAN*** (**ongoing**):
-    - **MST** with **Boruvka's algorithm**: **done**
-    - **Single Linkage Cluster Tree**: **done**. **Dendrogram python** plots are also **done**
-    - **Condensed cluster tree**: **done**.
-    - **HDBSCAN***: assembly of the aforementionned parts **done**.
-    - The performance of HDBSCAN* can be improved by using a **Dual Tree Traversal** instead of the single one currently used to build the MST.
-    - A few options to add such as `cluster_selection_epsilon`, `max_cluster_size`, `alpha` to conform with the python hdbscan library's features.
-  - **Dual tree traversal**: **done** for dual set closest edge. Need to replace the single tree method in boruvka by the dual tree one.
-
-- **Last features**
-  - HDBSCAN
-  - Dual tree traversal for dual set closest edge (not added to boruvka yet)
-
-## Current features (not up to date)
+## Features
 
 - ### HDBSCAN (kdtree)
   - HDBSCAN
@@ -241,45 +207,6 @@ Everything else is a historical feature branch (kept for reference, all older th
 
   - silhouette method
 
-## Performance
-
-- Cpu: `Intel® Core™ i5-9600KF CPU @ 3.70GHz × 6`
-
-### KDTree
-
-| KDTree library               | build time (s) | 10K queries time (s) | build + queries (%) |
-| ---------------------------- | -------------- | -------------------- | ------------------- |
-| KDTree (FFCL) 10000 queries  | 0.000694       | 0.097632             | 0.098638            |
-| KDTree (PCL) 10000 queries   | 0.001181       | 0.119764             | 0.121376            |
-| KDTree (FLANN) 10000 queries | 0.000558       | 0.125653             | 0.126366            |
-
-| KDTree library  | build speedup (%) | 10K queries speedup (%) | build + queries (%) |
-| --------------- | ----------------- | ----------------------- | ------------------- |
-| FFCL over PCL   | 41.235            | 18.480                  | 18.733              |
-| FFCL over FLANN | -24.326           | 22.300                  | 21.943              |
-
-### KMedoids algorithms
-
-- Dataset: MNIST
-- initialization: random uniform
-
-The following table summarizes the results of single runs made with different parameters. It provides a rough estimate about what one could expect from the present library. For a more in depth analysis of the performance of the algorithms, refer to the articles [(1)](https://arxiv.org/pdf/2209.12553.pdf) and [(2)](https://arxiv.org/pdf/2008.05171.pdf)
-
-|                            | **type** | **n_samples** | **n_features** | **n_centroids** | **n_iter (converged)** | **n_threads** | **computation time (s)** |
-| -------------------------- | -------- | ------------- | -------------- | --------------- | ---------------------- | ------------- | ------------------------ |
-| **FasterPAM**              | float    | 15,000        | 784            | 10              | 2                      | 1             | 1.7                      |
-| **FasterPAM**              | float    | 15,000        | 784            | 100             | 4                      | 1             | 4.5                      |
-| **FasterPAM**              | float    | 30,000        | 784            | 10              | 3                      | 1             | 11.1                     |
-| **FasterPAM**              | float    | 30,000        | 784            | 100             | 4                      | 1             | 17                       |
-| **FasterMSC**              | float    | 15,000        | 784            | 10              | 2                      | 1             | 3.3                      |
-| **FasterMSC**              | float    | 15,000        | 784            | 100             | 2                      | 1             | 6.4                      |
-| **FasterMSC**              | float    | 30,000        | 784            | 10              | 2                      | 1             | 12.8                     |
-| **FasterMSC**              | float    | 30,000        | 784            | 100             | 3                      | 1             | 27.1                     |
-| **PairwiseDistanceMatrix** | float    | 15,000        | 784            |                 |                        | 1             | 40                       |
-| **PairwiseDistanceMatrix** | float    | 30,000        | 784            |                 |                        | 1             | 162                      |
-| **PairwiseDistanceMatrix** | float    | 15,000        | 784            |                 |                        | 6             | 6.27                     |
-| **PairwiseDistanceMatrix** | float    | 30,000        | 784            |                 |                        | 6             | 25.6                     |
-
 ## Installation
 
 ```sh
@@ -298,103 +225,44 @@ cmake ..
 make
 ```
 
-This will create a `libcpp_clustering.a` file in the `build/` firectory
+This creates `libffcl.so` in `build/`. FFCL is header-only, so you can also just add `include/` to
+your include path.
 
-### 2) To run the benchmarks
-
-Generate the datasets automatically:
-
-```sh
-python3 ../bin/MakeClusteringDatasets.py
-```
-
-This will create the following files in `../bin/clustering/`
+### 2) To run the unit tests
 
 ```sh
-.
-├── inputs
-│   ├── aniso.txt
-│   ├── blobs.txt
-│   ├── iris.txt
-│   ├── mnist.txt
-│   ├── noisy_circles.txt
-│   ├── noisy_moons.txt
-│   ├── no_structure.txt
-│   ├── unbalanced_blobs.txt
-│   └── varied.txt
-└── targets
-    ├── aniso.txt
-    ├── blobs.txt
-    ├── iris.txt
-    ├── mnist.txt
-    ├── noisy_circles.txt
-    ├── noisy_moons.txt
-    ├── no_structure.txt
-    ├── unbalanced_blobs.txt
-    └── varied.txt
+cmake .. -DMODE=gtest
+make -j"$(nproc)"
+ctest
 ```
 
-The average default number of samples for the datasets is ~2000 samples. This can be changed in the `MakeClusteringDatasets.py` script. MNIST can have up to 70000 samples and 784 features. Setting `n_samples_mnist=None` results in loading mnist with the maximum number of samples.
+The suite is fast (well under a second) and covers the library function by function.
 
-Compile (this can also be done before generating the datasets except running the benchmarks)
+### 3) To run the benchmark
+
+The benchmark is a separate build mode: it measures FFCL against FLANN, scikit-learn, scipy and
+hdbscan on generated datasets.
 
 ```sh
-cmake .. -DMODE="benchmark"
-make
+python3 benchmark/scripts/MakeClusteringDatasets.py        # -> benchmark/bin/datasets/
+cmake .. -DMODE=benchmark
+make -j"$(nproc)"
+./ffcl_benchmark all                                        # -> benchmark/bin/results/ffcl.json
+python3 benchmark/scripts/benchmark_reference.py            # -> benchmark/bin/results/reference.json
+python3 benchmark/scripts/make_tables.py                    # -> benchmark/README.md
 ```
 
-This will create a `ffcl` executable in the `build` folder. To run the benchmarks, simply:
+`./ffcl_benchmark` also accepts a single stage: `kdtree`, `flann`, `mst`, `hdbscan`, `dbscan`,
+`kmeans`, `kmedoids`. The reference libraries are optional at configure time (PCL, MLPACK); FLANN is
+detected automatically. The resulting tables, the machine they were measured on and the exact settings
+are in [benchmark/README.md](benchmark/README.md).
 
-```sh
-./ffcl
-```
+### 4) CMake options
 
-The results will be written in `../bin/clustering/` and the folder structure might now look like this:
-
-```sh
-├── centroids
-│   ├── aniso.txt
-<...>
-│   └── varied.txt
-├── inputs
-│   ├── aniso.txt
-<...>
-│   └── varied.txt
-├── predictions
-│   ├── aniso.txt
-<...>
-│   └── varied.txt
-└── targets
-    ├── aniso.txt
-<...>
-    └── varied.txt
-```
-
-The clusters can be visualised:
-
-```sh
-python3 ../bin/plot.py
-```
-
-### 3) To run the unit tests
-
-```sh
-cmake .. -DMODE="gtest"
-make
-```
-
-Run the gtests:
-
-```sh
-ctest -V
-```
-
-### \*) All cmake options (the ones with a (\*) can be accumulated)
-
-- `-DMODE="gtest"`
-- `-DMODE="benchmark"`
-- `-DVERBOSE=true` (\*)
-- `-DTHREADS_ENABLED=true` (\*)
+- `-DMODE="gtest"` — build the unit tests
+- `-DMODE="benchmark"` — build the benchmark
+- `-DVERBOSE=true` — print the per-stage timings
+- `-DTHREADS_ENABLED=true` — parallelise the independent loops with OpenMP
 
 ## How to use
 

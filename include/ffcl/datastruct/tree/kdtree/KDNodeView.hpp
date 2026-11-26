@@ -85,6 +85,11 @@ struct KDNodeView {
                              const QueryBuffer&              query_buffer) const
         -> std::enable_if_t<common::is_crtp_of<QueryBuffer, search::buffer::StaticBuffer>::value, NodePtr>;
 
+    // Whether a query bound reaches into a node's bounding box. The boxes the tree stores contain
+    // every sample of their subtree, so a box that misses the bound cannot contribute a sample.
+    template <typename QueryBuffer>
+    static bool reaches_bound(const KDNodeView& node, const QueryBuffer& query_buffer);
+
     template <typename ReferenceSamplesIterator, typename QuerySamplesIterator>
     auto select_closest_child(const ReferenceSamplesIterator& reference_samples_range_first,
                               const ReferenceSamplesIterator& reference_samples_range_last,
@@ -259,29 +264,70 @@ auto KDNodeView<IndicesIterator, Bound>::select_sibling_node(
     auto parent_node = parent_.lock();
 
     if (parent_node) {
-        // get the pivot sample index in the dataset
-        const auto pivot_index = parent_node->pivot_index_;
-        // get the split value according to the current split dimension
-        const auto pivot_split_value =
-            reference_samples_range_first[pivot_index * reference_n_features + parent_node->cut_axis_feature_index_];
-        // get the value of the query according to the split dimension
-        const auto query_split_value = query_buffer.centroid_begin()[parent_node->cut_axis_feature_index_];
-
         const bool is_left_child_ret = is_left_child();
-        // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
-        // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
-        // put to the right
-        auto visit_sibling = [&]() {
-            return is_left_child_ret ? common::abs(pivot_split_value - query_split_value) <=
-                                           query_buffer.furthest_distance(parent_node->cut_axis_feature_index_)
-                                     : common::abs(pivot_split_value - query_split_value) <
-                                           query_buffer.furthest_distance(parent_node->cut_axis_feature_index_);
-        };
-        return query_buffer.remaining_capacity() || visit_sibling()
-                   ? (is_left_child_ret ? parent_node->right_ : parent_node->left_)
-                   : nullptr;
+
+        const auto sibling_node = is_left_child_ret ? parent_node->right_ : parent_node->left_;
+
+        // the decision depends on the bound of the query, not on the box this node stores
+        if constexpr (bounds::is_distance_bounded<typename QueryBuffer::BoundType>::value) {
+            // A distance-bounded query wants every sample inside its bound, so the sibling has to be
+            // visited whenever its box reaches into it. Neither test below can rule the sibling out
+            // here: the buffer never fills up (a radius query has no k), and the distance of the
+            // samples it holds so far says nothing about the ones still to come.
+            return sibling_node && reaches_bound(*sibling_node, query_buffer) ? sibling_node : nullptr;
+
+        } else {
+            // get the pivot sample index in the dataset
+            const auto pivot_index = parent_node->pivot_index_;
+            // get the split value according to the current split dimension
+            const auto pivot_split_value = reference_samples_range_first[pivot_index * reference_n_features +
+                                                                         parent_node->cut_axis_feature_index_];
+            // get the value of the query according to the split dimension
+            const auto query_split_value = query_buffer.centroid_begin()[parent_node->cut_axis_feature_index_];
+
+            // if the axiswise distance is equal to the current furthest nearest neighbor distance, there could be a
+            // nearest neighbor to the other side of the hyperrectangle since the values that are equal to the pivot are
+            // put to the right
+            auto visit_sibling = [&]() {
+                return is_left_child_ret ? common::abs(pivot_split_value - query_split_value) <=
+                                               query_buffer.furthest_distance(parent_node->cut_axis_feature_index_)
+                                         : common::abs(pivot_split_value - query_split_value) <
+                                               query_buffer.furthest_distance(parent_node->cut_axis_feature_index_);
+            };
+            return query_buffer.remaining_capacity() || visit_sibling() ? sibling_node : nullptr;
+        }
     }
     return nullptr;
+}
+
+template <typename IndicesIterator, typename Bound>
+template <typename QueryBuffer>
+bool KDNodeView<IndicesIterator, Bound>::reaches_bound(const KDNodeView& node, const QueryBuffer& query_buffer) {
+    const auto bound_of_query = query_buffer.bound().centroid_to_furthest_bound_distance();
+
+    const auto query_features_first = query_buffer.centroid_begin();
+
+    const auto n_features = node.bound_.n_features();
+
+    auto squared_gap = DataType{0};
+
+    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+        const auto& segment = node.bound_.segment_at(feature_index);
+
+        const auto query_value = query_features_first[feature_index];
+
+        const auto lower_bound = segment.lower_bound();
+        const auto upper_bound = segment.upper_bound();
+
+        // a query outside the segment is at least the length of the gap away from every sample the
+        // box can hold, a query inside it is within no distance at all
+        const auto gap = query_value < lower_bound
+                             ? lower_bound - query_value
+                             : (upper_bound < query_value ? query_value - upper_bound : DataType{0});
+
+        squared_gap += gap * gap;
+    }
+    return squared_gap <= bound_of_query * bound_of_query;
 }
 
 template <typename IndicesIterator, typename Bound>
@@ -324,20 +370,28 @@ void KDNodeView<IndicesIterator, Bound>::serialize(rapidjson::Writer<rapidjson::
 
     writer.StartArray();
     // An internal node owns no sample (its pivot lives in a leaf), so the pivot is written instead to keep
-    // one entry per node in the serialized tree.
-    const auto subrange_first = is_leaf() ? indices_range_first : &pivot_index_;
-    const auto subrange_last  = is_leaf() ? indices_range_last : &pivot_index_ + 1;
-    for (auto subrange_index_it = subrange_first; subrange_index_it != subrange_last; ++subrange_index_it) {
+    // one entry per node in the serialized tree. The pivot is a member rather than part of the index range,
+    // so the two cases are written separately: their iterators do not share a type.
+    const auto write_sample = [&](std::size_t sample_index) {
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < reference_n_features; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(reference_samples_range_first[*subrange_index_it * reference_n_features + feature_index]);
+                writer.Int64(reference_samples_range_first[sample_index * reference_n_features + feature_index]);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(reference_samples_range_first[*subrange_index_it * reference_n_features + feature_index]);
+                writer.Double(reference_samples_range_first[sample_index * reference_n_features + feature_index]);
             }
         }
         writer.EndArray();
+    };
+
+    if (is_leaf()) {
+        for (auto indices_it = indices_range_first; indices_it != indices_range_last; ++indices_it) {
+            write_sample(static_cast<std::size_t>(*indices_it));
+        }
+
+    } else {
+        write_sample(pivot_index_);
     }
     writer.EndArray();
 }

@@ -1,14 +1,24 @@
-# Ignore the following folders
+# Build directories
 build/
-bin/clustering/
-bin/kdtree/
-bin/dual_tree_traversal/
-bin/single_linkage_cluster_tree/
+build_*/
+cmake-build-*/
 Testing/
-.vscode/
-.venv/
 
-# Ignore all files with the extension ".<ext>" in any directory
-*.o
+# Everything the benchmark generates: datasets (mnist.txt alone is ~187 MB), plots and the raw
+# result files. All of it is produced by the scripts in benchmark/scripts/, so it stays out of the
+# repository; benchmark/README.md holds the tables, which are what a reader wants.
+benchmark/bin/
+
+# Python
+.venv/
 __pycache__/
-build_rel/
+*.py[cod]
+
+# Compiled objects and editor/OS noise
+*.o
+*.a
+*.so
+.vscode/
+.idea/
+*.swp
+.DS_Store
