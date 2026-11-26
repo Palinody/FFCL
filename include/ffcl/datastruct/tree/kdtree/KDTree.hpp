@@ -27,6 +27,7 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
+#include <deque>
 #include <filesystem>
 #include <fstream>
 
@@ -188,6 +189,9 @@ class KDTree {
     std::size_t n_features_;
     // Number of nodes of the tree, used to size the flat per-node caches of the search buffers.
     std::size_t n_nodes_;
+    // Every node of the tree, in one container whose addresses stay valid as it grows. Shared so that
+    // copying a tree keeps the same nodes, the way copies used to share the root.
+    std::shared_ptr<std::deque<NodeType>> nodes_;
     // A hyperrectangle (bounding box) specifying the value bounds of the subset of data represented by the index array
     // from the entire dataset. This hyperrectangle is defined with respect to each dimension.
     BoundType bound_;
@@ -217,6 +221,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(IndicesIterator indices_range_f
   , n_samples_{static_cast<std::size_t>(std::distance(indices_range_first, indices_range_last))}
   , n_features_{n_features}
   , n_nodes_{0}
+  , nodes_{std::make_shared<std::deque<NodeType>>()}
   , bound_{make_tight_bound<IndicesIteratorType, SamplesIteratorType, BoundType>(indices_range_first,
                                                                                  indices_range_last,
                                                                                  samples_range_first_,
@@ -242,6 +247,7 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(const KDTree& other)
   , n_samples_{other.n_samples_}
   , n_features_{other.n_features_}
   , n_nodes_{other.n_nodes_}
+  , nodes_{other.nodes_}
   , bound_{other.bound_}
   , root_{other.root_} {}
 
@@ -250,8 +256,10 @@ KDTree<IndicesIterator, SamplesIterator>::KDTree(KDTree&& other) noexcept
   : options_{std::move(other.options_)}
   , samples_range_first_{std::move(other.samples_range_first_)}
   , samples_range_last_{std::move(other.samples_range_last_)}
+  , n_samples_{std::move(other.n_samples_)}
   , n_features_{std::move(other.n_features_)}
   , n_nodes_{std::move(other.n_nodes_)}
+  , nodes_{std::move(other.nodes_)}
   , bound_{std::move(other.bound_)}
   , root_{std::move(other.root_)} {}
 
@@ -348,9 +356,9 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
         // make the current node. Its pivot sample is owned by the left child (so that the leaves of the
         // tree cover every sample exactly once) and only its index is kept here for the query routing.
         {
-            kdnode = std::make_shared<NodeType>(std::make_pair(indices_range_first, indices_range_first),
-                                                feature_cut_index,
-                                                bound);
+            kdnode = &nodes_->emplace_back(std::make_pair(indices_range_first, indices_range_first),
+                                           feature_cut_index,
+                                           bound);
             kdnode->set_pivot_index(static_cast<std::size_t>(cut_indices_range.first[0]));
             kdnode->set_node_id(n_nodes_++);
         }
@@ -383,7 +391,7 @@ typename KDTree<IndicesIterator, SamplesIterator>::NodePtr KDTree<IndicesIterato
                 .update_lower_bound(kdnode->bound_.segment_at(feature_cut_index).lower_bound());
         }
     } else {
-        kdnode = std::make_shared<NodeType>(std::make_pair(indices_range_first, indices_range_last), bound);
+        kdnode = &nodes_->emplace_back(std::make_pair(indices_range_first, indices_range_last), bound);
         kdnode->set_node_id(n_nodes_++);
     }
     return kdnode;

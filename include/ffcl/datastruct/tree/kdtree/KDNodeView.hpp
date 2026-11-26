@@ -27,7 +27,9 @@ struct KDNodeView {
     static_assert(std::is_trivial_v<DataType>, "DataType must be trivial.");
 
     using NodeType = KDNodeView<IndicesIterator, Bound>;
-    using NodePtr  = std::shared_ptr<NodeType>;
+    // The tree owns every node in one container with stable addresses, so links are plain pointers:
+    // no reference counting on the way down or up the tree, and nothing to keep alive per node.
+    using NodePtr = NodeType*;
 
     using IteratorPairType = std::pair<IndicesIterator, IndicesIterator>;
 
@@ -125,12 +127,12 @@ struct KDNodeView {
     BoundType bound_;
     // A child node representing the left partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
-    NodePtr left_;
+    NodePtr left_{nullptr};
     // A child node representing the right partition of the dataset concerning the chosen cut dimension.
     // This child node may be empty if no further partitioning occurs.
-    NodePtr right_;
-    // A weak pointer to the unique parent node of this node. It allows traversal up the tree hierarchy.
-    std::weak_ptr<NodeType> parent_;
+    NodePtr right_{nullptr};
+    // The unique parent node, nullptr at the root. Ownership flows downward only, through the children.
+    NodePtr parent_{nullptr};
 
   private:
     bool is_left_child() const;
@@ -228,19 +230,19 @@ template <typename IndicesIterator, typename Bound>
 bool KDNodeView<IndicesIterator, Bound>::is_left_child() const {
     assert(has_parent());
 
-    return this == parent_.lock()->left_.get();
+    return this == parent_->left_;
 }
 
 template <typename IndicesIterator, typename Bound>
 bool KDNodeView<IndicesIterator, Bound>::is_right_child() const {
     assert(has_parent());
 
-    return this == parent_.lock()->right_.get();
+    return this == parent_->right_;
 }
 
 template <typename IndicesIterator, typename Bound>
 bool KDNodeView<IndicesIterator, Bound>::has_parent() const {
-    return parent_.lock() != nullptr;
+    return parent_ != nullptr;
 }
 
 template <typename IndicesIterator, typename Bound>
@@ -261,7 +263,7 @@ auto KDNodeView<IndicesIterator, Bound>::select_sibling_node(
     assert(has_parent());
     common::ignore_parameters(reference_samples_range_last);
 
-    auto parent_node = parent_.lock();
+    const auto parent_node = parent_;
 
     if (parent_node) {
         const bool is_left_child_ret = is_left_child();

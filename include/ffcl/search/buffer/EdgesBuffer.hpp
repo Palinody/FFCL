@@ -248,7 +248,7 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::refresh_node_max_bound(const Q
     node_max_bound_vec_[leaf_node->node_id()] = max_bound;
 
     // Propagate upwards while the parent's bound actually improves.
-    auto parent_node = leaf_node->parent_.lock();
+    auto parent_node = leaf_node->parent_;
 
     while (parent_node) {
         const auto parent_id = parent_node->node_id();
@@ -259,7 +259,7 @@ void EdgesBuffer<QueryIndexer, ReferenceIndexer>::refresh_node_max_bound(const Q
             break;
         }
         node_max_bound_vec_[parent_id] = new_bound;
-        parent_node                    = parent_node->parent_.lock();
+        parent_node                    = parent_node->parent_;
     }
 }
 

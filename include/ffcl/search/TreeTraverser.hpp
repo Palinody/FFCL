@@ -111,13 +111,6 @@ class TreeTraverser {
     template <typename Buffer>
     void single_tree_traversal(ReferenceNodePtr node, Buffer& buffer) const;
 
-    template <typename Buffer>
-    auto recursive_search_to_leaf_node(ReferenceNodePtr node, Buffer& buffer) const -> ReferenceNodePtr;
-
-    template <typename Buffer>
-    auto get_parent_node_after_sibling_traversal(const ReferenceNodePtr& node, Buffer& buffer) const
-        -> ReferenceNodePtr;
-
     template <typename QueryNodePtr, typename EdgesBuffer, typename... BufferArgs>
     void descend_query_children(const QueryNodePtr&     query_node,
                                 const ReferenceNodePtr& reference_node,
@@ -227,54 +220,37 @@ ForwardedBufferBatch TreeTraverser<ReferenceIndexer>::operator()(ForwardedBuffer
 template <typename ReferenceIndexer>
 template <typename Buffer>
 void TreeTraverser<ReferenceIndexer>::single_tree_traversal(ReferenceNodePtr reference_node, Buffer& buffer) const {
-    // current_node is a leaf node (and root in the special case where the entire tree is in a single node)
-    auto current_reference_node = recursive_search_to_leaf_node(reference_node, buffer);
-    // performs a partial search one step at a time from the leaf node until the input node is reached if
-    // node parameter is a subtree
-    while (current_reference_node != reference_node) {
-        // performs a partial search starting from the specified node then returns its parent if it exists
-        // (nullptr otherwise)
-        current_reference_node = get_parent_node_after_sibling_traversal(current_reference_node, buffer);
-    }
-}
-
-template <typename ReferenceIndexer>
-template <typename Buffer>
-auto TreeTraverser<ReferenceIndexer>::recursive_search_to_leaf_node(ReferenceNodePtr reference_node,
-                                                                    Buffer&          buffer) const -> ReferenceNodePtr {
+    // Scan what this node owns. An internal node owns no sample (its pivot lives in a leaf), so this only
+    // does work at the leaves.
     buffer.partial_search(reference_node->indices_range_.first,
                           reference_node->indices_range_.second,
                           reference_indexer_.begin(),
                           reference_indexer_.end(),
                           reference_indexer_.n_features());
-    // continue to recurse down the tree if the current node is not leaf until we reach a terminal node
-    if (!reference_node->is_leaf()) {
-        reference_node =
-            recursive_search_to_leaf_node(reference_node->select_closest_child(reference_indexer_.begin(),
-                                                                               reference_indexer_.end(),
-                                                                               reference_indexer_.n_features(),
-                                                                               buffer.centroid_begin(),
-                                                                               buffer.centroid_end()),
-                                          buffer);
-    }
-    return reference_node;
-}
 
-template <typename ReferenceIndexer>
-template <typename Buffer>
-auto TreeTraverser<ReferenceIndexer>::get_parent_node_after_sibling_traversal(const ReferenceNodePtr& reference_node,
-                                                                              Buffer&                 buffer) const
-    -> ReferenceNodePtr {
-    // if a sibling node has been selected (is not nullptr)
-    if (auto sibling_node = reference_node->select_sibling_node(reference_indexer_.begin(),
-                                                                reference_indexer_.end(),
-                                                                reference_indexer_.n_features(),
-                                                                buffer)) {
-        // search for other candidates from the sibling node
+    if (reference_node->is_leaf()) {
+        return;
+    }
+    // Visit the child on the query's side first, then the other one only if the buffer's current bound can
+    // still reach it. Same visiting order and same pruning test as the descend-then-climb traversal this
+    // replaces, without the climb: the recursion returns through the call stack instead of through parent
+    // links.
+    const auto closest_child = reference_node->select_closest_child(reference_indexer_.begin(),
+                                                                    reference_indexer_.end(),
+                                                                    reference_indexer_.n_features(),
+                                                                    buffer.centroid_begin(),
+                                                                    buffer.centroid_end());
+
+    single_tree_traversal(closest_child, buffer);
+
+    // the sibling of the child just visited, not of this node: `select_sibling_node` answers for the node
+    // it is called on
+    if (const auto sibling_node = closest_child->select_sibling_node(reference_indexer_.begin(),
+                                                                     reference_indexer_.end(),
+                                                                     reference_indexer_.n_features(),
+                                                                     buffer)) {
         single_tree_traversal(sibling_node, buffer);
     }
-    // returns nullptr if node doesnt have parent (or is root)
-    return reference_node->parent_.lock();
 }
 
 template <typename ReferenceIndexer>
