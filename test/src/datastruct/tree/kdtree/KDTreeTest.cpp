@@ -1,134 +1,138 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ffcl/common/Timer.hpp"
-#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
+#include "base_fixtures/ClusteringFixtures.hpp"
 
-#include <sys/types.h>  // ssize_t
+#include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
-#include <iterator>
+#include <numeric>
+#include <string>
 #include <vector>
 
-namespace fs = std::filesystem;
+namespace {
 
-class KDTreeErrorsTest : public ::testing::Test {
-  public:
-    using dType = float;
+namespace fixtures = ffcl::fixtures;
 
-  protected:
-    ssize_t get_num_features_in_file(const fs::path& filepath, char delimiter = ' ') {
-        std::ifstream file(filepath);
-        ssize_t       n_features = -1;
-        if (file.is_open()) {
-            std::string line;
+using DataType = float;
 
-            std::getline(file, line);
-            // count the number of values at the first line, delimited by the specified delimiter
-            n_features = std::count(line.begin(), line.end(), delimiter) + 1;
+constexpr std::size_t kSampleCount = 8;  // fixtures::two_blobs() has 8 samples
+constexpr std::size_t kFeatures    = 2;
 
-            file.close();
+// The tree reports the shape of the range it was built over.
+TEST(KDTreeTest, SizeAndFeatureCountMatchTheInput) {
+    auto& data    = fixtures::two_blobs();
+    auto  indices = fixtures::make_indices(kSampleCount);
 
-        } else {
-            throw std::ios_base::failure("Unable to open file: " + filepath.string());
-        }
-        return n_features;
-    }
+    const auto tree = fixtures::make_kdtree(data, indices, kFeatures);
 
-    template <typename T = float>
-    std::vector<T> load_data(const fs::path& filename, char delimiter = ' ') {
-        std::ifstream  filestream(filename);
-        std::vector<T> data;
-
-        if (filestream.is_open()) {
-            // temporary string data
-            std::string row_str, elem_str;
-
-            while (std::getline(filestream, row_str, '\n')) {
-                std::stringstream row_str_stream(row_str);
-
-                while (std::getline(row_str_stream, elem_str, delimiter)) {
-                    data.emplace_back(std::stof(elem_str));
-                }
-            }
-            filestream.close();
-        }
-        return data;
-    }
-
-    void make_directories(const fs::path& directory_path) {
-        try {
-            if (!std::filesystem::exists(directory_path)) {
-                std::filesystem::create_directories(directory_path);
-
-#if defined(VERBOSE) && VERBOSE == true
-                std::cout << "Directory created: " << directory_path << "\n";
-
-            } else {
-                std::cout << "Dir. already exists\n";
-#endif
-            }
-        } catch (std::filesystem::filesystem_error& e) {
-            std::cerr << e.what() << std::endl;
-        }
-    }
-
-    template <typename T = float>
-    void write_data(const std::vector<T>& data, std::size_t n_features, const fs::path& filename) {
-        const auto parent_path = filename.parent_path();
-
-        make_directories(parent_path);
-
-        std::ofstream filestream(filename);
-
-        if (filestream.is_open()) {
-            std::size_t iter{};
-
-            for (const auto& elem : data) {
-                filestream << elem;
-
-                ++iter;
-
-                if (iter % n_features == 0 && iter != 0) {
-                    filestream << '\n';
-
-                } else {
-                    filestream << ' ';
-                }
-            }
-        }
-    }
-
-    const fs::path kdtree_folder_root_     = fs::path("../bin/kdtree");
-    const fs::path clustering_folder_root_ = fs::path("../bin/clustering");
-    const fs::path inputs_folder_          = clustering_folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_         = clustering_folder_root_ / fs::path("targets");
-
-    const std::size_t n_neighbors_ = 5;
-    const dType       radius_      = 1;
-};
-
-std::vector<std::size_t> generate_indices(std::size_t n_samples) {
-    std::vector<std::size_t> elements(n_samples);
-    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
-    return elements;
+    EXPECT_EQ(tree.n_samples(), kSampleCount);
+    EXPECT_EQ(tree.n_features(), kFeatures);
 }
 
-template <typename Type>
-void print_data(const std::vector<Type>& data, std::size_t n_features) {
-    if (!n_features) {
-        return;
-    }
-    const std::size_t n_samples = data.size() / n_features;
+// Building a tree rearranges the indices in place, splitting them into the node ranges. That is the
+// only thing the build is allowed to do to them: losing or duplicating a sample would silently drop
+// it from every query.
+TEST(KDTreeTest, TheIndicesArePermutedNotLost) {
+    auto& data    = fixtures::two_blobs();
+    auto  indices = fixtures::make_indices(kSampleCount);
 
-    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
-        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
-            std::cout << data[sample_index * n_features + feature_index] << " ";
+    const auto tree = fixtures::make_kdtree(data, indices, kFeatures);
+    (void)tree;
+
+    auto sorted_indices = indices;
+    std::sort(sorted_indices.begin(), sorted_indices.end());
+
+    auto expected = fixtures::make_indices(kSampleCount);
+
+    EXPECT_EQ(sorted_indices, expected);
+}
+
+// A bucket large enough to hold every sample stops the build immediately: the root is a leaf.
+TEST(KDTreeTest, ABucketHoldingEverySampleStopsAtTheRoot) {
+    auto& data    = fixtures::two_blobs();
+    auto  indices = fixtures::make_indices(kSampleCount);
+
+    const auto tree = fixtures::make_kdtree(data, indices, kFeatures, /*bucket_size=*/kSampleCount);
+
+    const auto root = tree.root();
+
+    ASSERT_NE(root, nullptr);
+    EXPECT_TRUE(root->is_leaf());
+    EXPECT_EQ(root->n_samples(), kSampleCount);
+}
+
+// The opposite: a bucket of one sample forces the recursion down to single samples. An internal node
+// owns no sample at all - its pivot lives in the left child, so that the leaves cover every sample
+// exactly once - and only keeps the pivot index for routing queries.
+TEST(KDTreeTest, ABucketOfOneSampleKeepsSplitting) {
+    auto& data    = fixtures::two_blobs();
+    auto  indices = fixtures::make_indices(kSampleCount);
+
+    const auto tree = fixtures::make_kdtree(data, indices, kFeatures, /*bucket_size=*/1);
+
+    const auto root = tree.root();
+
+    ASSERT_NE(root, nullptr);
+    EXPECT_FALSE(root->is_leaf());
+    EXPECT_EQ(root->n_samples(), 0u) << "an internal node holds no samples";
+    EXPECT_LT(root->pivot_index(), kSampleCount) << "but it does keep a pivot index";
+}
+
+// The feature accessors must hand back the sample they are asked for, even though the indices were
+// permuted by the build.
+TEST(KDTreeTest, EachSampleExposesItsOwnFeatures) {
+    auto& data    = fixtures::two_blobs();
+    auto  indices = fixtures::make_indices(kSampleCount);
+
+    const auto tree = fixtures::make_kdtree(data, indices, kFeatures);
+
+    for (std::size_t sample_index = 0; sample_index < kSampleCount; ++sample_index) {
+        const auto features_first = tree.features_range_first(sample_index);
+        const auto features_last  = tree.features_range_last(sample_index);
+
+        ASSERT_EQ(std::distance(features_first, features_last), static_cast<std::ptrdiff_t>(kFeatures));
+
+        for (std::size_t feature_index = 0; feature_index < kFeatures; ++feature_index) {
+            EXPECT_FLOAT_EQ(*(features_first + feature_index), data[sample_index * kFeatures + feature_index])
+                << "sample " << sample_index << ", feature " << feature_index;
         }
-        std::cout << "\n";
     }
 }
+
+// Serialisation is written for the plotting tools, so all this can check is that a JSON object lands
+// on disk and that every sample is mentioned.
+TEST(KDTreeTest, SerializeWritesAJsonObject) {
+    auto& data    = fixtures::two_blobs();
+    auto  indices = fixtures::make_indices(kSampleCount);
+
+    const auto tree = fixtures::make_kdtree(data, indices, kFeatures);
+
+    const auto filepath = std::filesystem::temp_directory_path() / "ffcl_kdtree_test.json";
+
+    std::filesystem::remove(filepath);
+
+    tree.serialize(filepath);
+
+    ASSERT_TRUE(std::filesystem::exists(filepath));
+    EXPECT_GT(std::filesystem::file_size(filepath), 0u);
+
+    auto contents = std::string{};
+    {
+        auto filestream = std::ifstream(filepath);
+        ASSERT_TRUE(filestream.is_open());
+
+        contents.assign(std::istreambuf_iterator<char>(filestream), std::istreambuf_iterator<char>());
+    }
+
+    ASSERT_FALSE(contents.empty());
+    EXPECT_EQ(contents.front(), '{') << "the serialised tree must be a JSON object";
+    EXPECT_EQ(contents.back(), '}');
+
+    std::filesystem::remove(filepath);
+}
+
+}  // namespace
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

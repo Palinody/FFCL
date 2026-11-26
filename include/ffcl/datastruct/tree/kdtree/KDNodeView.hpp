@@ -324,20 +324,28 @@ void KDNodeView<IndicesIterator, Bound>::serialize(rapidjson::Writer<rapidjson::
 
     writer.StartArray();
     // An internal node owns no sample (its pivot lives in a leaf), so the pivot is written instead to keep
-    // one entry per node in the serialized tree.
-    const auto subrange_first = is_leaf() ? indices_range_first : &pivot_index_;
-    const auto subrange_last  = is_leaf() ? indices_range_last : &pivot_index_ + 1;
-    for (auto subrange_index_it = subrange_first; subrange_index_it != subrange_last; ++subrange_index_it) {
+    // one entry per node in the serialized tree. The pivot is a member rather than part of the index range,
+    // so the two cases are written separately: their iterators do not share a type.
+    const auto write_sample = [&](std::size_t sample_index) {
         writer.StartArray();
         for (std::size_t feature_index = 0; feature_index < reference_n_features; ++feature_index) {
             if constexpr (std::is_integral_v<DataType>) {
-                writer.Int64(reference_samples_range_first[*subrange_index_it * reference_n_features + feature_index]);
+                writer.Int64(reference_samples_range_first[sample_index * reference_n_features + feature_index]);
 
             } else if constexpr (std::is_floating_point_v<DataType>) {
-                writer.Double(reference_samples_range_first[*subrange_index_it * reference_n_features + feature_index]);
+                writer.Double(reference_samples_range_first[sample_index * reference_n_features + feature_index]);
             }
         }
         writer.EndArray();
+    };
+
+    if (is_leaf()) {
+        for (auto indices_it = indices_range_first; indices_it != indices_range_last; ++indices_it) {
+            write_sample(static_cast<std::size_t>(*indices_it));
+        }
+
+    } else {
+        write_sample(pivot_index_);
     }
     writer.EndArray();
 }

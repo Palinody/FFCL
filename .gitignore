@@ -10,12 +10,6 @@ Testing/
 benchmark/bin/datasets/
 benchmark/bin/plots/
 
-# Legacy output locations, kept ignored so that an old checkout does not stage them by accident
-bin/clustering/
-bin/kdtree/
-bin/dual_tree_traversal/
-bin/single_linkage_cluster_tree/
-
 # Python
 .venv/
 __pycache__/
