@@ -28,9 +28,9 @@
 #include "rapidjson/writer.h"
 
 #include <deque>
-#include <limits>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 
 namespace ffcl::datastruct {
 
@@ -61,10 +61,9 @@ class KDTree {
 
     struct Options {
         Options()
-          : bucket_size_{40}
-          // `infinity` is 0 for integer types, which used to make a default-constructed tree a
-          // single leaf and every query a brute-force scan. Keep `infinity` itself as the sentinel
-          // other code expects and use the largest depth here instead.
+          : bucket_size_{40}  // `infinity` is 0 for integer types, which used to make a default-constructed tree a
+                              // single leaf and every query a brute-force scan. Keep `infinity` itself as the sentinel
+                              // other code expects and use the largest depth here instead.
           , max_depth_{std::numeric_limits<std::size_t>::max()}
           , axis_selection_policy_ptr_{std::make_shared<
                 kdtree::policy::HighestVarianceBuild<IndicesIteratorType, SamplesIteratorType, BoundType>>()}

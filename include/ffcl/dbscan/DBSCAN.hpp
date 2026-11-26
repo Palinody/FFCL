@@ -192,6 +192,13 @@ void DBSCAN<Indexer>::predict_inner(NeighborsIndices&                neighbors_i
                     if (!visited_indices[inner_neighbor_index]) {
                         visited_indices[inner_neighbor_index] = true;
                         neighbors_indices.push_back(inner_neighbor_index);
+
+                    } else if (predictions[inner_neighbor_index] == static_cast<LabelType>(SampleStatus::noise)) {
+                        // A border point: already visited, found not to be core, and labelled noise before
+                        // any cluster reached it. It belongs to this cluster, but it is not core, so it
+                        // does not expand the frontier. "Noise" is provisional until every core point has
+                        // been expanded.
+                        predictions[inner_neighbor_index] = cluster_label;
                     }
                 }
             }

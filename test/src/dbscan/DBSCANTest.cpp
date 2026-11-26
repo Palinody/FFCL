@@ -239,4 +239,60 @@ TEST(DBSCANTest, MatchesReferenceWithARadiusSpanningEveryPoint) {
     EXPECT_EQ(Fixture::count_clusters(predictions, std::size_t{0}), 1u);
 }
 
+// A border point visited and labelled noise before any cluster reaches it must still end up in the
+// cluster whose core point covers it.
+//
+// The sample at index 0 is the border point: it sits within the radius of the second dense block but
+// not of the first, so it is only reached once the expansion has already moved on to the second block.
+// Being visited first, it is labelled noise and skipped by the frontier, which is the order that used
+// to lose it.
+TEST(DBSCANTest, BorderPointsVisitedBeforeTheirClusterAreNotLost) {
+    const auto n_features  = std::size_t{2};
+    const auto radius      = 0.5F;
+    const auto min_samples = std::size_t{5};
+
+    auto data = std::vector<dType>{
+        // index 0: the border point, four neighbours, so not core at this minimum
+        0.80F,
+        0.00F,
+        // indices 1-5: first dense block, core
+        0.00F,
+        0.00F,
+        0.05F,
+        0.00F,
+        0.00F,
+        0.05F,
+        0.05F,
+        0.05F,
+        0.10F,
+        0.00F,
+        // indices 6-8: second dense block, core, and within reach of the border point
+        0.40F,
+        0.00F,
+        0.42F,
+        0.02F,
+        0.42F,
+        -0.02F,
+        // index 9: genuine noise
+        10.0F,
+        10.0F,
+    };
+
+    const auto expected = reference_dbscan(data, n_features, radius, min_samples);
+
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
+
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(radius).min_samples(min_samples));
+
+    const auto predictions = dbscan.predict(std::move(indexer));
+
+    ASSERT_EQ(predictions.size(), expected.size());
+    EXPECT_NE(predictions[0], 0u) << "the border point belongs to the block's cluster";
+    EXPECT_EQ(predictions[0], predictions[1]) << "and carries that cluster's label";
+    EXPECT_EQ(predictions[9], 0u) << "the far sample stays noise";
+    EXPECT_TRUE(Fixture::same_partition(predictions, expected));
+}
+
 }  // namespace

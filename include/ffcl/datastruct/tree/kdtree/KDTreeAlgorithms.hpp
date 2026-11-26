@@ -74,8 +74,8 @@ std::size_t select_largest_variance_axis(const IndicesIterator& indices_range_fi
         // Sample in place: draw positions uniformly from the node's own index range and accumulate the
         // per-feature sums directly. Copying the range first and letting the statistics helpers allocate
         // per sample they read was most of the build's allocation traffic.
-        auto sum_per_feature          = std::vector<double>(n_features, 0.0);
-        auto squared_sum_per_feature  = std::vector<double>(n_features, 0.0);
+        auto sum_per_feature         = std::vector<double>(n_features, 0.0);
+        auto squared_sum_per_feature = std::vector<double>(n_features, 0.0);
 
         for (std::size_t choice_index = 0; choice_index < n_choices; ++choice_index) {
             const auto sample_index =
