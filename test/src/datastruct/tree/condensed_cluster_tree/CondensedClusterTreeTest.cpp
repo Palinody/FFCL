@@ -1,783 +1,96 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ffcl/common/Timer.hpp"
-#include "ffcl/common/Utils.hpp"
-#include "ffcl/datastruct/graph/spanning_tree/BoruvkasAlgorithm.hpp"
 #include "ffcl/datastruct/tree/condensed_cluster_tree/CondensedClusterTree.hpp"
-#include "ffcl/datastruct/tree/kdtree/KDTree.hpp"
 #include "ffcl/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTree.hpp"
 
-#include <sys/types.h>  // ssize_t
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <iterator>
+#include "base_fixtures/ClusteringFixtures.hpp"
+
 #include <vector>
 
-namespace fs = std::filesystem;
+namespace {
 
-class CondensedClusterTreeErrorsTest : public ::testing::Test {
-  public:
-    using dType = float;
+namespace fixtures = ffcl::fixtures;
 
-  protected:
-    ssize_t get_num_features_in_file(const fs::path& filepath, char delimiter = ' ') {
-        std::ifstream file(filepath);
-        ssize_t       n_features = -1;
-        if (file.is_open()) {
-            std::string line;
+using ValueType = float;
+using IndexType = std::size_t;
 
-            std::getline(file, line);
-            // count the number of values at the first line, delimited by the specified delimiter
-            n_features = std::count(line.begin(), line.end(), delimiter) + 1;
+using SingleLinkageClusterTreeType = ffcl::datastruct::SingleLinkageClusterTree<IndexType, ValueType>;
 
-            file.close();
+// The condensed tree is built from a single linkage tree; the single linkage options do not change
+// its shape, so they are left at their defaults here.
+auto make_condensed_tree(const fixtures::MSTType&                                                     mst,
+                         const ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options& options) {
+    auto single_linkage_tree = SingleLinkageClusterTreeType(mst);
 
-        } else {
-            throw std::ios_base::failure("Unable to open file: " + filepath.string());
-        }
-        return n_features;
-    }
-
-    template <typename T = float>
-    std::vector<T> load_data(const fs::path& filename, char delimiter = ' ') {
-        std::ifstream  filestream(filename);
-        std::vector<T> data;
-
-        if (filestream.is_open()) {
-            // temporary string data
-            std::string row_str, elem_str;
-
-            while (std::getline(filestream, row_str, '\n')) {
-                std::stringstream row_str_stream(row_str);
-
-                while (std::getline(row_str_stream, elem_str, delimiter)) {
-                    data.emplace_back(std::stof(elem_str));
-                }
-            }
-            filestream.close();
-        }
-        return data;
-    }
-
-    void make_directories(const fs::path& directory_path) {
-        try {
-            if (!std::filesystem::exists(directory_path)) {
-                std::filesystem::create_directories(directory_path);
-
-#if defined(VERBOSE) && VERBOSE == true
-                std::cout << "Directory created: " << directory_path << "\n";
-
-            } else {
-                std::cout << "Dir. already exists\n";
-#endif
-            }
-        } catch (std::filesystem::filesystem_error& e) {
-            std::cerr << e.what() << std::endl;
-        }
-    }
-
-    template <typename T = float>
-    void write_data(const std::vector<T>& data, std::size_t n_features, const fs::path& filename) {
-        const auto parent_path = filename.parent_path();
-
-        make_directories(parent_path);
-
-        std::ofstream filestream(filename);
-
-        if (filestream.is_open()) {
-            std::size_t iter{};
-
-            for (const auto& elem : data) {
-                filestream << elem;
-
-                ++iter;
-
-                if (iter % n_features == 0 && iter != 0) {
-                    filestream << '\n';
-
-                } else {
-                    filestream << ' ';
-                }
-            }
-        }
-    }
-
-    static constexpr std::size_t n_iterations_global = 100;
-    static constexpr std::size_t n_centroids_global  = 4;
-
-    const fs::path folder_root_        = fs::path("../bin/clustering");
-    const fs::path inputs_folder_      = folder_root_ / fs::path("inputs");
-    const fs::path targets_folder_     = folder_root_ / fs::path("targets");
-    const fs::path predictions_folder_ = folder_root_ / fs::path("predictions");
-};
-
-std::vector<std::size_t> generate_indices(std::size_t n_samples) {
-    std::vector<std::size_t> elements(n_samples);
-    std::iota(elements.begin(), elements.end(), static_cast<std::size_t>(0));
-    return elements;
+    return ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>(single_linkage_tree.root(), options);
 }
 
-/*
-TEST_F(CondensedClusterTreeErrorsTest, MainTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+using CondensedOptions = ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options;
 
-    using IndexType = int;
-    using ValueType = float;
+// Both sides of the bridge hold enough samples to be their own cluster, so the bridge is a real split
+// and the two pairs are separated. Labels start at 1; 0 means noise.
+TEST(CondensedClusterTreeTest, TwoSeparatedPairsBecomeTwoClusters) {
+    auto tree = make_condensed_tree(fixtures::two_pairs_mst(), CondensedOptions().min_cluster_size(2));
 
-    printf("Boruvka's MST build:\n");
-    timer.reset();
+    const auto labels = tree.predict();
 
-    auto minimum_spanning_tree =
-        ffcl::datastruct::mst::EdgesList<IndexType, ValueType>{ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{},
-                                                               ffcl::mst::Edge<IndexType, ValueType>{}};
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-}
-*/
-
-TEST_F(CondensedClusterTreeErrorsTest, NoisyCirclesTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "noisy_circles.txt";
-
-    // Interim: this test is dataset driven and belongs in benchmark/.
-    if (!fs::exists(inputs_folder_ / filename)) {
-        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
-    }
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndexType       = std::size_t /*decltype(indices[0])*/;
-    using ValueType       = dType /*decltype(data[0])*/;
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    printf("Indexer build:\n");
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(10));
-
-    printf("Boruvka's MST build:\n");
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    ASSERT_EQ(labels.size(), 4u);
+    EXPECT_EQ(labels[0], labels[1]);
+    EXPECT_EQ(labels[2], labels[3]);
+    EXPECT_NE(labels[0], labels[2]);
+    EXPECT_EQ(fixtures::count_clusters(labels, IndexType{0}), 2u);
+    EXPECT_EQ(fixtures::count_clusters(labels, IndexType{0}) * 2, labels.size()) << "no sample is left as noise";
 }
 
-TEST_F(CondensedClusterTreeErrorsTest, NoisyMoonsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+// Raising the minimum cluster size above both sides leaves no split candidate, so the branch
+// terminates at the root: the root becomes a leaf and keeps every sample in a single cluster.
+TEST(CondensedClusterTreeTest, NoSplitCandidateCollapsesToASingleCluster) {
+    auto tree = make_condensed_tree(fixtures::two_pairs_mst(), CondensedOptions().min_cluster_size(3));
 
-    fs::path filename = "noisy_moons.txt";
+    const auto labels = tree.predict();
 
-    // Interim: this test is dataset driven and belongs in benchmark/.
-    if (!fs::exists(inputs_folder_ / filename)) {
-        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
-    }
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndexType       = std::size_t /*decltype(indices[0])*/;
-    using ValueType       = dType /*decltype(data[0])*/;
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    printf("Indexer build:\n");
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(10));
-
-    printf("Boruvka's MST build:\n");
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    ASSERT_EQ(labels.size(), 4u);
+    EXPECT_EQ(fixtures::count_distinct_labels(labels), 1u);
+    EXPECT_EQ(fixtures::count_clusters(labels, IndexType{0}), 1u);
 }
 
-TEST_F(CondensedClusterTreeErrorsTest, VariedTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+// `return_leaf_nodes` stops the build from running the stability selection. The condensed tree that
+// comes out has the same shape, so it must recover the same partition.
+TEST(CondensedClusterTreeTest, ReturnLeafNodesMatchesTheStabilitySelection) {
+    const auto mst = fixtures::two_pairs_mst();
 
-    fs::path filename = "varied.txt";
+    auto with_selection = make_condensed_tree(mst, CondensedOptions().min_cluster_size(2));
 
-    // Interim: this test is dataset driven and belongs in benchmark/.
-    if (!fs::exists(inputs_folder_ / filename)) {
-        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
-    }
+    auto without_selection = make_condensed_tree(mst, CondensedOptions().min_cluster_size(2).return_leaf_nodes(true));
 
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndexType       = std::size_t /*decltype(indices[0])*/;
-    using ValueType       = dType /*decltype(data[0])*/;
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    printf("Indexer build:\n");
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(10));
-
-    printf("Boruvka's MST build:\n");
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    EXPECT_TRUE(fixtures::same_partition(with_selection.predict(), without_selection.predict()));
 }
 
-TEST_F(CondensedClusterTreeErrorsTest, AnisoTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
+// `min_cluster_size` decides which sides of a split count as clusters. The 3-sample side survives
+// either way; the 2-sample side is a cluster at a minimum of 2 and stops being one at a minimum of 3,
+// at which point no split candidate is left and the branch terminates at the root as a single cluster.
+TEST(CondensedClusterTreeTest, MinClusterSizeDecidesWhichSidesBecomeClusters) {
+    const auto small_minimum = make_condensed_tree(fixtures::lopsided_mst(), CondensedOptions().min_cluster_size(2));
 
-    fs::path filename = "aniso.txt";
+    const auto small_minimum_labels = small_minimum.predict();
 
-    // Interim: this test is dataset driven and belongs in benchmark/.
-    if (!fs::exists(inputs_folder_ / filename)) {
-        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
-    }
+    ASSERT_EQ(small_minimum_labels.size(), 5u);
+    EXPECT_EQ(fixtures::count_clusters(small_minimum_labels, IndexType{0}), 2u);
+    EXPECT_EQ(small_minimum_labels[0], small_minimum_labels[1]);
+    EXPECT_EQ(small_minimum_labels[1], small_minimum_labels[2]);
+    EXPECT_EQ(small_minimum_labels[3], small_minimum_labels[4]) << "the 2-sample side is its own cluster";
+    EXPECT_NE(small_minimum_labels[2], small_minimum_labels[3]);
 
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
+    const auto large_minimum = make_condensed_tree(fixtures::lopsided_mst(), CondensedOptions().min_cluster_size(3));
 
-    auto indices = generate_indices(n_samples);
+    const auto large_minimum_labels = large_minimum.predict();
 
-    using IndexType       = std::size_t /*decltype(indices[0])*/;
-    using ValueType       = dType /*decltype(data[0])*/;
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    printf("Indexer build:\n");
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(10));
-
-    printf("Boruvka's MST build:\n");
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
+    ASSERT_EQ(large_minimum_labels.size(), 5u);
+    EXPECT_EQ(fixtures::count_clusters(large_minimum_labels, IndexType{0}), 1u)
+        << "the 2-sample side is below the minimum and no longer splits";
 }
 
-TEST_F(CondensedClusterTreeErrorsTest, BlobsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "blobs.txt";
-
-    // Interim: this test is dataset driven and belongs in benchmark/.
-    if (!fs::exists(inputs_folder_ / filename)) {
-        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
-    }
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndexType       = std::size_t /*decltype(indices[0])*/;
-    using ValueType       = dType /*decltype(data[0])*/;
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    printf("Indexer build:\n");
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(10));
-
-    printf("Boruvka's MST build:\n");
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(CondensedClusterTreeErrorsTest, NoStructureTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "no_structure.txt";
-
-    // Interim: this test is dataset driven and belongs in benchmark/.
-    if (!fs::exists(inputs_folder_ / filename)) {
-        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
-    }
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndexType       = std::size_t /*decltype(indices[0])*/;
-    using ValueType       = dType /*decltype(data[0])*/;
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    printf("Indexer build:\n");
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(10));
-
-    printf("Boruvka's MST build:\n");
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
-
-TEST_F(CondensedClusterTreeErrorsTest, UnbalancedBlobsTest) {
-    ffcl::common::Timer<ffcl::common::Nanoseconds> timer;
-
-    fs::path filename = "unbalanced_blobs.txt";
-
-    // Interim: this test is dataset driven and belongs in benchmark/.
-    if (!fs::exists(inputs_folder_ / filename)) {
-        GTEST_SKIP() << "dataset not generated: " << (inputs_folder_ / filename);
-    }
-
-    auto              data       = load_data<dType>(inputs_folder_ / filename, ' ');
-    const std::size_t n_features = get_num_features_in_file(inputs_folder_ / filename);
-    const std::size_t n_samples  = ffcl::common::get_n_samples(data.begin(), data.end(), n_features);
-
-    auto indices = generate_indices(n_samples);
-
-    using IndexType       = std::size_t /*decltype(indices[0])*/;
-    using ValueType       = dType /*decltype(data[0])*/;
-    using IndicesIterator = decltype(indices)::iterator;
-    using SamplesIterator = decltype(data)::iterator;
-    using IndexerType     = ffcl::datastruct::KDTree<IndicesIterator, SamplesIterator>;
-    using OptionsType     = IndexerType::Options;
-    using AxisSelectionPolicyType =
-        ffcl::datastruct::kdtree::policy::HighestVarianceBuild<IndicesIterator, SamplesIterator>;
-    using SplittingRulePolicyType =
-        ffcl::datastruct::kdtree::policy::QuickselectMedianRange<IndicesIterator, SamplesIterator>;
-
-    printf("Indexer build:\n");
-    timer.reset();
-
-    // HighestVarianceBuild, MaximumSpreadBuild, CycleThroughAxesBuild
-    auto indexer = IndexerType(indices.begin(),
-                               indices.end(),
-                               data.begin(),
-                               data.end(),
-                               n_features,
-                               OptionsType()
-                                   .bucket_size(std::sqrt(n_samples))
-                                   .max_depth(std::log2(n_samples))
-                                   .axis_selection_policy(AxisSelectionPolicyType{})
-                                   .splitting_rule_policy(SplittingRulePolicyType{}));
-
-    timer.print_elapsed_seconds(9);
-
-    auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<IndexerType>();
-
-    boruvkas_algorithm.set_options(ffcl::BoruvkasAlgorithm<IndexerType>::Options().k_nearest_neighbors(10));
-
-    printf("Boruvka's MST build:\n");
-    timer.reset();
-
-    auto minimum_spanning_tree = boruvkas_algorithm.make_tree(std::move(indexer));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("SingleLinkageClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::SingleLinkageClusterTree single_linkage_cluster_tree(std::move(minimum_spanning_tree));
-
-    timer.print_elapsed_seconds(9);
-
-    auto single_linkage_cluster_tree_root = single_linkage_cluster_tree.root();
-
-    printf("CondensedClusterTree build:\n");
-    timer.reset();
-
-    ffcl::datastruct::CondensedClusterTree<IndexType, ValueType> condensed_cluster_tree(
-        single_linkage_cluster_tree_root,
-        ffcl::datastruct::CondensedClusterTree<IndexType, ValueType>::Options()
-            .min_cluster_size(15)
-            .return_leaf_nodes(false)
-            .allow_single_cluster(true));
-
-    timer.print_elapsed_seconds(9);
-
-    printf("CondensedClusterTree prediction:\n");
-    timer.reset();
-
-    const auto predictions = condensed_cluster_tree.predict();
-
-    timer.print_elapsed_seconds(9);
-
-    write_data<std::size_t>(predictions, 1, predictions_folder_ / fs::path(filename));
-}
+}  // namespace
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
