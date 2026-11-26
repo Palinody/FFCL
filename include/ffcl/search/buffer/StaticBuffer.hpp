@@ -55,6 +55,10 @@ class StaticBuffer {
         return bound_.centroid_begin();
     }
 
+    const BoundType& bound() const {
+        return bound_;
+    }
+
     constexpr auto centroid_end() const {
         return bound_.centroid_end();
     }
