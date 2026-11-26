@@ -34,9 +34,9 @@ The code is organized in four layers plus a tooling layer:
 | --- | --- | --- |
 | Common | `ffcl::common` | `Utils`, `Timer`, distances, statistics, sorting, random distributions/sampling, linear algebra, silhouette method |
 | Data structures | `ffcl::datastruct` | feature containers, bounding volumes, `UnionFind`, pairwise distance matrices, `KDTree`, cluster trees, MST / Boruvka |
-| Search engine | `ffcl::search` | `Searcher` facade, single-tree and dual-tree traversers, pruning buffers, node-combination cache |
+| Search engine | `ffcl::search` | `Searcher` facade, single-tree and dual-tree traversals, pruning buffers |
 | Clustering | `ffcl` | `DBSCAN`, `HDBSCAN`, `KMeans`, `KMedoids` |
-| Tooling | — | `benchmark/`, `test/`, `bin/*.py` (dataset generation, plotting) |
+| Tooling | — | `benchmark/` (datasets, measurements, result tables), `test/` (unit tests) |
 
 ### Layered view
 
@@ -44,9 +44,8 @@ The code is organized in four layers plus a tooling layer:
 flowchart LR
     subgraph L0["Tooling"]
         direction TB
-        TP["bin/*.py<br/>dataset generation · plots"]
-        TB["benchmark/<br/>MODE=benchmark"]
-        TG["test/<br/>MODE=gtest"]
+        TB["benchmark/<br/>MODE=benchmark<br/>datasets · measurements · tables"]
+        TG["test/<br/>MODE=gtest<br/>unit tests"]
     end
 
     subgraph L4["Clustering algorithms — ffcl"]
@@ -81,7 +80,6 @@ flowchart LR
 
     TB --> L4
     TG --> L4
-    TP --> TB
     L4 --> L3
     L3 --> L2
     L2 --> L1

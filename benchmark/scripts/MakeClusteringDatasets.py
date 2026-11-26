@@ -221,7 +221,7 @@ def load_mnist(n_samples_limit):
     Falls back to (2) a cache-less download and (3) truncating an already generated mnist.txt, so that
     re-running the script never fails just because the upstream archive changed.
     """
-    inputs_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "clustering/inputs/mnist.txt")
+    inputs_path = os.path.join(DATASETS_ROOT, "inputs", "mnist.txt")
 
     for use_cache in (True, False):
         try:
@@ -281,12 +281,11 @@ def write_datasets(root_folder):
     save_dataset(X, y, root_folder=root_folder, dataset_name="iris", elapsed=time.perf_counter() - t0)
 
 
+# Where the datasets live: benchmark/bin/datasets/{inputs,targets}
+DATASETS_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "bin", "datasets")
+
 if __name__ == "__main__":
     # ref lib: https://scikit-learn.org/stable/modules/classes.html
     # load datasets: https://scikit-learn.org/stable/auto_examples/cluster/plot_cluster_comparison.html#sphx-glr-auto-examples-cluster-plot-cluster-comparison-py
 
-    # where to place the datasets: benchmark/bin/datasets/{inputs,targets}
-    root_folder = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "bin", "datasets"
-    )
-    write_datasets(root_folder=root_folder + os.sep)
+    write_datasets(root_folder=DATASETS_ROOT + os.sep)

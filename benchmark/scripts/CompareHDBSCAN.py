@@ -14,12 +14,15 @@ internally for its Boruvka tree when `leaf_size = sqrt(n_samples)`).
 FFCL is driven through two pre-built binaries so the sequential and the OpenMP
 build can be compared without recompiling:
 
-    cmake .. -DMODE=gtest -DTHREADS_ENABLED=false && make BoruvkasRunner
+    cmake .. -DMODE=benchmark -DTHREADS_ENABLED=false && make BoruvkasRunner
     cp build/BoruvkasRunner /tmp/ffcl_seq
-    cmake .. -DMODE=gtest -DTHREADS_ENABLED=true  && make BoruvkasRunner
+    cmake .. -DMODE=benchmark -DTHREADS_ENABLED=true  && make BoruvkasRunner
     cp build/BoruvkasRunner /tmp/ffcl_par
 
-    python3 bin/CompareHDBSCAN.py --seq-binary /tmp/ffcl_seq --par-binary /tmp/ffcl_par --repeats 5
+    python3 benchmark/scripts/CompareHDBSCAN.py \
+        --seq-binary /tmp/ffcl_seq --par-binary /tmp/ffcl_par --repeats 5
+
+The datasets come from benchmark/scripts/MakeClusteringDatasets.py.
 
 Every repeat is recorded, so the report shows the mean and the median.
 """
@@ -47,7 +50,7 @@ except ImportError:  # pragma: no cover
     from hdbscan._hdbscan_boruvka import KDTreeBoruvkaAlgorithm
     from sklearn.neighbors import KDTree
 
-ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "clustering/inputs")
+ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "bin", "datasets", "inputs")
 NAMES = [
     "noisy_circles",
     "noisy_moons",
