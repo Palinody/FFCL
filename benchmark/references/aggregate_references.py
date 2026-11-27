@@ -438,13 +438,6 @@ def main():
     out.append("FFCL's weak dimension for DBSCAN, as it was in the published tables. DBSCAN does not use")
     out.append("the extra threads in either build.\n")
 
-    out.append("**The DBSCAN `min_samples` mismatch was real and is now fixed in the measurement.** The")
-    out.append("published rows used `min_samples` = 5, one stricter than the references' `min_pts` = 5.")
-    out.append("Re-measured at 4, FFCL's DBSCAN is")
-    out.append(", ".join(f"{ratio(m.get('ffcl-ser','dbscan','full',d,1), m.get('ffcl-par','dbscan','full',d,1)):.2f}x" for d in DIMS))
-    out.append("of the published numbers. The effect is small (a few percent) and does not change any")
-    out.append("ranking, but the published rows were not quite like-for-like and are now corrected.\n")
-
     out.append("**Leaf 16 is only a trap for the parallel build.** Dual-tree MST, leaf 40 against")
     out.append("leaf 16, 1 thread:\n")
     out.append("| build | 2-D l40 | 2-D l16 | 3-D l40 | 3-D l16 | 4-D l40 | 4-D l16 |")
@@ -469,10 +462,11 @@ def main():
     out.append("symptom of the parallel path, not of the traversal itself. Leaf 16 still helps kNN")
     out.append("slightly and hurts the build by 1.5x.\n")
 
-    out.append("**DBSCAN convention.** The `min_samples` fix moves FFCL's DBSCAN by")
-    out.append(", ".join(f"{ratio(published.get('ffcl-par','dbscan','full',d,1), m.get('ffcl-par','dbscan','full',d,1)):.2f}x at {d}-D"
+    out.append("**DBSCAN convention.** The published rows used `min_samples` = 5, one stricter than the")
+    out.append("references' `min_pts` = 5. Re-measured at 4, FFCL's DBSCAN time changes by")
+    out.append(", ".join(f"{(1 / ratio(published.get('ffcl-par','dbscan','full',d,1), m.get('ffcl-par','dbscan','full',d,1)) - 1) * 100:+.0f}% at {d}-D"
                          for d in DIMS))
-    out.append("of the published time. The effect is small and does not change any ranking, but the")
+    out.append("— within run-to-run noise. The effect is small and does not change any ranking, but the")
     out.append("published rows were not quite like-for-like and are now corrected.\n")
 
     out.append("## Reproducing\n")
