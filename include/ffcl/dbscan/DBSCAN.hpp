@@ -401,14 +401,15 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
             (cell_start[cell_index + 1] - cell_start[cell_index]) > min_samples ? char{1} : char{0};
     }
 
+    const auto average_candidates =
+        static_cast<double>(n_samples) * static_cast<double>(offsets.size() + 1) / static_cast<double>(n_cells);
+
     // --- phase 1: core points ----------------------------------------------------------------------
     auto core = std::vector<char>(n_samples, 0);
 
     // When the neighbourhood of a cell holds no more samples than `min_samples` on average, most cells
     // cannot produce a core point at all and the count can stop as soon as the remaining candidates
     // cannot reach the threshold. On denser data that bookkeeping only costs time, so it is skipped.
-    const auto average_candidates =
-        static_cast<double>(n_samples) * static_cast<double>(offsets.size() + 1) / static_cast<double>(n_cells);
     const bool use_bounds = average_candidates <= static_cast<double>(min_samples);
 
     if (!use_bounds) {
