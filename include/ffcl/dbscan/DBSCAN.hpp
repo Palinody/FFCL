@@ -211,11 +211,12 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
     const DataType    radius_sq   = radius * radius;
     const std::size_t min_samples = options_.min_samples_;
 
-    // The cell diagonal is exactly the radius: sqrt(n_features) * radius / sqrt(n_features). A pair of
-    // samples in one cell is therefore always strictly closer than the radius (the cells are half open,
-    // so the diagonal is a supremum that is not attained), and a sample within the radius is at most
-    // ceil(radius / cell_width) cells away on each axis.
-    const double cell_width = static_cast<double>(radius) / std::sqrt(static_cast<double>(n_features));
+    // The cell diagonal is sqrt(n_features) * cell_width. At 0.9 of the radius it stays strictly below
+    // the radius, so every pair of samples in one cell is a neighbour without a distance computation,
+    // and a sample within the radius is at most ceil(radius / cell_width) cells away on each axis. The
+    // slightly smaller cells also keep fewer candidate samples in the neighbourhood than the exact
+    // radius / sqrt(n_features) would.
+    const double cell_width = static_cast<double>(radius) / std::sqrt(static_cast<double>(n_features)) * 0.9;
 
     auto squared_distance = [&](std::size_t left_index, std::size_t right_index) -> DataType {
         const auto left  = searcher.features_range_first(left_index);
