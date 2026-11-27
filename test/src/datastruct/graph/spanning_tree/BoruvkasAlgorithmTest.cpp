@@ -40,14 +40,15 @@ void expect_valid_spanning_tree(const MstType& mst, std::size_t n_samples, doubl
 // The minimum spanning tree is not unique here (several equal-length diagonals), so the test checks
 // the edge count, that every weight is finite, and the total weight, which is unique.
 TEST(BoruvkasAlgorithmTest, SpanningTreeOverTwoSquaresIsValid) {
-    auto& data             = Fixture::two_blobs();
-    const auto  n_features = std::size_t{2};
+    auto&      data       = Fixture::two_blobs();
+    const auto n_features = std::size_t{2};
 
     auto indices = Fixture::make_indices(data.size() / n_features);
     auto indexer = Fixture::make_kdtree(data, indices, n_features);
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<decltype(indexer)>();
-    boruvkas_algorithm.set_options(typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(2));
+    boruvkas_algorithm.set_options(
+        typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(2));
 
     const auto mst = boruvkas_algorithm.make_tree_2(std::move(indexer));
 
@@ -62,16 +63,16 @@ TEST(BoruvkasAlgorithmTest, SingleTreeAndDualTreeAgreeOnTotalWeight) {
     const auto n_samples  = Fixture::two_blobs().size() / n_features;
 
     auto total_weight_of = [&](bool use_dual_tree) {
-        auto& data          = Fixture::two_blobs();
-        auto        indices = Fixture::make_indices(n_samples);
-        auto        indexer = Fixture::make_kdtree(data, indices, n_features);
+        auto& data    = Fixture::two_blobs();
+        auto  indices = Fixture::make_indices(n_samples);
+        auto  indexer = Fixture::make_kdtree(data, indices, n_features);
 
         auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<decltype(indexer)>();
         boruvkas_algorithm.set_options(
             typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(2));
 
-        const auto mst =
-            use_dual_tree ? boruvkas_algorithm.make_tree_2(std::move(indexer)) : boruvkas_algorithm.make_tree(std::move(indexer));
+        const auto mst = use_dual_tree ? boruvkas_algorithm.make_tree_2(std::move(indexer))
+                                       : boruvkas_algorithm.make_tree(std::move(indexer));
 
         auto total = double{};
         for (const auto& edge : mst) {
@@ -83,17 +84,60 @@ TEST(BoruvkasAlgorithmTest, SingleTreeAndDualTreeAgreeOnTotalWeight) {
     EXPECT_NEAR(total_weight_of(false), total_weight_of(true), 1e-4);
 }
 
+// The two Boruvka variants must agree on the total weight: the MST weight is unique, so any difference
+// means one of them is not minimal.
+//
+// At k = 2 this holds trivially (the core distance is the nearest-neighbour distance, so mutual
+// reachability equals the Euclidean distance), which is why the bug it guards against only showed up at
+// larger k. Note that this fixture does *not* reproduce that bug - it needs the scale and the density
+// variation of the benchmark datasets (blobs, varied, no_structure at k = 10, where the single tree used
+// to come out 1.1-1.5% heavy). It is kept as an invariant check over three k values.
+TEST(BoruvkasAlgorithmTest, SingleTreeIsExactAtLargeK) {
+    const auto n_features = std::size_t{2};
+
+    // a tight cluster, a loose one, and two stragglers: core distances differ a lot between them
+    auto data = std::vector<dType>{
+        0.00F, 0.00F, 0.02F, 0.00F, 0.00F, 0.02F, 0.02F, 0.02F, 0.04F, 0.00F, 0.00F, 0.04F, 0.04F, 0.04F, 0.06F, 0.02F,
+        0.02F, 0.06F, 0.06F, 0.06F, 1.00F, 1.00F, 1.30F, 1.00F, 1.00F, 1.30F, 1.30F, 1.30F, 1.60F, 1.60F, 2.20F, 2.20F,
+    };
+    const auto n_samples = data.size() / n_features;
+
+    auto total_weight_of = [&](bool use_dual_tree, std::size_t k) {
+        auto indices = Fixture::make_indices(n_samples);
+        auto indexer = Fixture::make_kdtree(data, indices, n_features);
+
+        auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<decltype(indexer)>();
+        boruvkas_algorithm.set_options(
+            typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(k));
+
+        const auto mst = use_dual_tree ? boruvkas_algorithm.make_tree_2(std::move(indexer))
+                                       : boruvkas_algorithm.make_tree(std::move(indexer));
+
+        auto total = double{};
+        for (const auto& edge : mst) {
+            total += static_cast<double>(std::get<2>(edge));
+        }
+        return total;
+    };
+
+    for (const auto k : {2u, 5u, 10u}) {
+        EXPECT_NEAR(total_weight_of(false, k), total_weight_of(true, k), 1e-2)
+            << "single-tree MST is not minimal at k = " << k;
+    }
+}
+
 // With k = 1 the core distance of every sample is zero, which is a degenerate configuration: the
 // tree must still be a valid spanning tree rather than silently producing infinite weights.
 TEST(BoruvkasAlgorithmTest, KEqualsOneStillProducesAFiniteTree) {
-    auto& data             = Fixture::two_blobs();
-    const auto  n_features = std::size_t{2};
+    auto&      data       = Fixture::two_blobs();
+    const auto n_features = std::size_t{2};
 
     auto indices = Fixture::make_indices(data.size() / n_features);
     auto indexer = Fixture::make_kdtree(data, indices, n_features);
 
     auto boruvkas_algorithm = ffcl::BoruvkasAlgorithm<decltype(indexer)>();
-    boruvkas_algorithm.set_options(typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(1));
+    boruvkas_algorithm.set_options(
+        typename ffcl::BoruvkasAlgorithm<decltype(indexer)>::Options().k_nearest_neighbors(1));
 
     const auto mst = boruvkas_algorithm.make_tree_2(std::move(indexer));
 

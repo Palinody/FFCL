@@ -194,15 +194,26 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
         const auto component_representative = mst_builder.find(query_index);
         // Initialize a nearest neighbor buffer to compare the query_index with sample indices that don't belong to
         // the same component using the UnionFind data structure
-        auto nn_buffer_query = searcher(search::buffer::WithUnionFind(searcher.features_range_first(query_index),
-                                                                      searcher.features_range_last(query_index),
-                                                                      mst_builder.get_union_find_const_ref(),
-                                                                      component_representative,
-                                                                      static_cast<IndexType>(1)));
+        auto nn_buffer_query = search::buffer::WithUnionFind(searcher.features_range_first(query_index),
+                                                             searcher.features_range_last(query_index),
+                                                             mst_builder.get_union_find_const_ref(),
+                                                             component_representative,
+                                                             static_cast<IndexType>(1));
+
+        // Rank the candidates by mutual reachability, not by Euclidean distance. The buffer has supported this
+        // all along; the step simply never turned it on, which is why the single-tree MST was 1.1-1.5% too
+        // heavy for k > 2: the Euclidean-nearest neighbour of a sample is not necessarily its
+        // mutual-reachability-nearest one, so Boruvka merged components through edges that were not their
+        // cheapest. The pruning stays valid, because mutual reachability is never smaller than the Euclidean
+        // distance a plane test is compared against.
+        nn_buffer_query.set_core_distances(core_distances.data(), static_cast<IndexType>(query_index));
+
+        const auto nn_buffer_result = searcher(std::move(nn_buffer_query));
 
         // The furthest nearest neighbor is also the closest in this case since we query only 1 neighbor
-        const auto nearest_neighbor_index    = nn_buffer_query.furthest_index();
-        const auto nearest_neighbor_distance = nn_buffer_query.furthest_distance();
+        const auto nearest_neighbor_index = nn_buffer_result.furthest_index();
+        // already the mutual reachability distance, so it is used as it is
+        const auto k_mutual_reachability_distance = nn_buffer_result.furthest_distance();
 
         // Set the default distance using common::infinity if no edge exists for this component
         auto current_closest_edge_distance = common::infinity<ValueType>();
@@ -210,8 +221,6 @@ void BoruvkasAlgorithm<Indexer>::step_sequential(const search::Searcher<Indexer>
         if (components_closest_edge.find(component_representative) != components_closest_edge.end()) {
             current_closest_edge_distance = std::get<2>(components_closest_edge[component_representative]);
         }
-        const auto k_mutual_reachability_distance =
-            std::max({core_distances[query_index], core_distances[nearest_neighbor_index], nearest_neighbor_distance});
 
         // Update the current shortest edge if the k_mutual_reachability_distance is indeed shorter
         if (k_mutual_reachability_distance < current_closest_edge_distance) {
