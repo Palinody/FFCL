@@ -6,6 +6,7 @@
 #include "ffcl/benchmark/Dataset.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -34,6 +35,17 @@ constexpr std::size_t kNCentroids       = 8;
 constexpr std::size_t kNMedoids         = 8;
 constexpr float       kDbscanRadius     = 0.5f;
 constexpr std::size_t kDbscanMinSamples = 5;
+
+// FFCL's core test is strictly `size() > min_samples` and its radius buffer includes the query
+// sample, so FFCL min_samples = 5 means 6 points including itself, while every reference library's
+// min_pts = 5 means 5 including itself. FFCL_DBSCAN_MIN_SAMPLES=4 matches the references; the
+// published tables were measured at 5 and are therefore one stricter.
+auto dbscan_min_samples() -> std::size_t {
+    if (const auto* value = std::getenv("FFCL_DBSCAN_MIN_SAMPLES")) {
+        return std::stoul(value);
+    }
+    return kDbscanMinSamples;
+}
 
 }  // namespace
 
@@ -78,7 +90,7 @@ int main(int argument_count, char** argument_values) {
         }
         if (wanted("dbscan")) {
             std::cout << "dbscan...\n" << std::flush;
-            ffcl::benchmark::benchmark_dbscan(results, kDbscanRadius, kDbscanMinSamples);
+            ffcl::benchmark::benchmark_dbscan(results, kDbscanRadius, dbscan_min_samples());
         }
         if (wanted("kmeans")) {
             std::cout << "kmeans...\n" << std::flush;
