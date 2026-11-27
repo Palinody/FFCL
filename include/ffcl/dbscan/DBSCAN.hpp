@@ -404,52 +404,124 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
     // --- phase 1: core points ----------------------------------------------------------------------
     auto core = std::vector<char>(n_samples, 0);
 
-    for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
-        const auto begin = cell_start[cell_index];
-        const auto end   = cell_start[cell_index + 1];
-        if (begin == end) {
-            continue;
-        }
-        const auto cell_size = end - begin;
+    // When the neighbourhood of a cell holds no more samples than `min_samples` on average, most cells
+    // cannot produce a core point at all and the count can stop as soon as the remaining candidates
+    // cannot reach the threshold. On denser data that bookkeeping only costs time, so it is skipped.
+    const auto average_candidates =
+        static_cast<double>(n_samples) * static_cast<double>(offsets.size() + 1) / static_cast<double>(n_cells);
+    const bool use_bounds = average_candidates <= static_cast<double>(min_samples);
 
-        if (cell_is_dense[cell_index]) {
-            // A dense cell has more than `min_samples` samples and all of them are within the radius
-            // of each other, so every sample is core without a single distance computation.
-            for (auto item = begin; item < end; ++item) {
-                core[cell_items[item]] = 1;
-            }
-            continue;
-        }
-
-        decode(cell_index);
-        for (auto item = begin; item < end; ++item) {
-            const auto sample_index = cell_items[item];
-            // the samples of the own cell are all within the radius
-            auto neighbour_count = cell_size;
-            if (neighbour_count > min_samples) {
-                core[sample_index] = 1;
+    if (!use_bounds) {
+        for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+            const auto begin = cell_start[cell_index];
+            const auto end   = cell_start[cell_index + 1];
+            if (begin == end) {
                 continue;
             }
-            // the own cell was already counted
-            for (const auto& offset : offsets) {
-                const auto neighbour_cell = neighbour_of(offset);
-                if (neighbour_cell == kNoCell) {
+            const auto cell_size = end - begin;
+
+            if (cell_is_dense[cell_index]) {
+                for (auto item = begin; item < end; ++item) {
+                    core[cell_items[item]] = 1;
+                }
+                continue;
+            }
+
+            decode(cell_index);
+            for (auto item = begin; item < end; ++item) {
+                const auto sample_index    = cell_items[item];
+                auto       neighbour_count = cell_size;
+                if (neighbour_count > min_samples) {
+                    core[sample_index] = 1;
                     continue;
                 }
-                for (auto neighbour_item = cell_start[neighbour_cell]; neighbour_item < cell_start[neighbour_cell + 1];
-                     ++neighbour_item) {
-                    if (squared_distance(sample_index, cell_items[neighbour_item]) < radius_sq) {
-                        ++neighbour_count;
-                        if (neighbour_count > min_samples) {
-                            break;
+                for (const auto& offset : offsets) {
+                    const auto neighbour_cell = neighbour_of(offset);
+                    if (neighbour_cell == kNoCell) {
+                        continue;
+                    }
+                    for (auto neighbour_item = cell_start[neighbour_cell];
+                         neighbour_item < cell_start[neighbour_cell + 1];
+                         ++neighbour_item) {
+                        if (squared_distance(sample_index, cell_items[neighbour_item]) < radius_sq) {
+                            ++neighbour_count;
+                            if (neighbour_count > min_samples) {
+                                break;
+                            }
                         }
                     }
+                    if (neighbour_count > min_samples) {
+                        break;
+                    }
                 }
-                if (neighbour_count > min_samples) {
-                    break;
+                core[sample_index] = neighbour_count > min_samples ? char{1} : char{0};
+            }
+        }
+    } else {
+        for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+            const auto begin = cell_start[cell_index];
+            const auto end   = cell_start[cell_index + 1];
+            if (begin == end) {
+                continue;
+            }
+            const auto cell_size = end - begin;
+
+            if (cell_is_dense[cell_index]) {
+                for (auto item = begin; item < end; ++item) {
+                    core[cell_items[item]] = 1;
+                }
+                continue;
+            }
+
+            decode(cell_index);
+
+            // The whole neighbourhood cannot hold enough samples: every sample of the cell is noise.
+            auto neighbourhood_size = cell_size;
+            for (const auto& offset : offsets) {
+                const auto neighbour_cell = neighbour_of(offset);
+                if (neighbour_cell != kNoCell) {
+                    neighbourhood_size += cell_start[neighbour_cell + 1] - cell_start[neighbour_cell];
                 }
             }
-            core[sample_index] = neighbour_count > min_samples ? char{1} : char{0};
+            if (neighbourhood_size <= min_samples) {
+                continue;
+            }
+
+            for (auto item = begin; item < end; ++item) {
+                const auto sample_index    = cell_items[item];
+                auto       neighbour_count = cell_size;
+                if (neighbour_count > min_samples) {
+                    core[sample_index] = 1;
+                    continue;
+                }
+                auto remaining = neighbourhood_size - cell_size;
+                for (const auto& offset : offsets) {
+                    const auto neighbour_cell = neighbour_of(offset);
+                    if (neighbour_cell == kNoCell) {
+                        continue;
+                    }
+                    const auto neighbour_size = cell_start[neighbour_cell + 1] - cell_start[neighbour_cell];
+                    for (auto neighbour_item = cell_start[neighbour_cell];
+                         neighbour_item < cell_start[neighbour_cell + 1];
+                         ++neighbour_item) {
+                        if (squared_distance(sample_index, cell_items[neighbour_item]) < radius_sq) {
+                            ++neighbour_count;
+                            if (neighbour_count > min_samples) {
+                                break;
+                            }
+                        }
+                    }
+                    if (neighbour_count > min_samples) {
+                        break;
+                    }
+                    remaining -= neighbour_size;
+                    // even counting every remaining candidate cannot reach the threshold
+                    if (neighbour_count + remaining <= min_samples) {
+                        break;
+                    }
+                }
+                core[sample_index] = neighbour_count > min_samples ? char{1} : char{0};
+            }
         }
     }
 
@@ -460,6 +532,25 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         if (core[sample_index]) {
             cell_has_core[sample_cell[sample_index]] = 1;
+        }
+    }
+
+    // Cells whose own or neighbouring cells hold a core sample. A non-core sample outside of that
+    // region is noise and does not have to look at its neighbourhood at all.
+    auto cell_has_core_nearby = std::vector<char>(n_cells, use_bounds ? 0 : 1);
+    if (use_bounds) {
+        for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+            if (!cell_has_core[cell_index]) {
+                continue;
+            }
+            cell_has_core_nearby[cell_index] = 1;
+            decode(cell_index);
+            for (const auto& offset : offsets) {
+                const auto neighbour_cell = neighbour_of(offset);
+                if (neighbour_cell != kNoCell) {
+                    cell_has_core_nearby[neighbour_cell] = 1;
+                }
+            }
         }
     }
 
@@ -542,6 +633,9 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
             continue;
         }
         const auto cell_index = sample_cell[sample_index];
+        if (!cell_has_core_nearby[cell_index]) {
+            continue;
+        }
         // every sample of the own cell is within the radius, so its smallest label is a valid choice
         auto best_label = cell_min_label[cell_index];
         if (best_label > static_cast<LabelType>(1)) {
