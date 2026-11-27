@@ -220,7 +220,18 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
     auto squared_distance = [&](std::size_t left_index, std::size_t right_index) -> DataType {
         const auto left  = searcher.features_range_first(left_index);
         const auto right = searcher.features_range_first(right_index);
-        auto       sum   = DataType{0};
+        if (n_features == 2) {
+            const auto dx = left[0] - right[0];
+            const auto dy = left[1] - right[1];
+            return dx * dx + dy * dy;
+        }
+        if (n_features == 3) {
+            const auto dx = left[0] - right[0];
+            const auto dy = left[1] - right[1];
+            const auto dz = left[2] - right[2];
+            return dx * dx + dy * dy + dz * dz;
+        }
+        auto sum = DataType{0};
         for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
             const auto difference = left[feature_index] - right[feature_index];
             sum += difference * difference;
@@ -344,6 +355,25 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
         }
         offsets.push_back(std::move(offset));
     }
+
+    // Visit the closest cells first: a sample usually reaches the density threshold in the nearby
+    // cells, so the scan stops earlier.
+    auto offset_gap_sq = [&](const std::vector<int>& offset) {
+        auto gap_sq = 0.0;
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            if (offset[feature_index] != 0) {
+                const auto gap = static_cast<double>(std::abs(offset[feature_index]) - 1) * cell_width;
+                gap_sq += gap * gap;
+            }
+        }
+        return gap_sq;
+    };
+    std::stable_sort(offsets.begin(), offsets.end(), [&](const auto& left, const auto& right) {
+        return offset_gap_sq(left) < offset_gap_sq(right);
+    });
+    std::stable_sort(half_offsets.begin(), half_offsets.end(), [&](const auto& left, const auto& right) {
+        return offset_gap_sq(left) < offset_gap_sq(right);
+    });
 
     auto coordinates = std::vector<std::ptrdiff_t>(n_features, 0);
     auto decode      = [&](std::size_t cell_index) {
