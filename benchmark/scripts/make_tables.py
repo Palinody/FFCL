@@ -18,7 +18,7 @@ import sys
 
 SCRIPTS_DIR = os.path.dirname(os.path.realpath(__file__))
 BENCHMARK_DIR = os.path.dirname(SCRIPTS_DIR)
-RESULTS_DIR = os.path.join(BENCHMARK_DIR, "bin", "results")
+RESULTS_DIR = os.environ.get("FFCL_RESULTS_DIR") or os.path.join(BENCHMARK_DIR, "bin", "results")
 README_PATH = os.path.join(BENCHMARK_DIR, "README.md")
 
 DATASET_NAMES = [

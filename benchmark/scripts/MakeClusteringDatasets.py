@@ -42,7 +42,7 @@ DATA_TYPE = np.float32
 
 # n_samples for all the toy datasets except mnist
 n_samples = 10000
-n_features = 2
+n_features = int(os.environ.get("FFCL_N_FEATURES") or 2)
 # None to load everything else specify
 n_samples_mnist = None
 n_samples_mnist = n_samples
@@ -282,7 +282,9 @@ def write_datasets(root_folder):
 
 
 # Where the datasets live: benchmark/bin/datasets/{inputs,targets}
-DATASETS_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "bin", "datasets")
+DATASETS_ROOT = os.environ.get("FFCL_DATASETS_ROOT") or os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "..", "bin", "datasets"
+)
 
 if __name__ == "__main__":
     # ref lib: https://scikit-learn.org/stable/modules/classes.html

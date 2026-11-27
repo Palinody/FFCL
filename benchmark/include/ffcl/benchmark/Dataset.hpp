@@ -9,7 +9,9 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <cstdlib>
 #include <fstream>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -35,11 +37,28 @@ inline void set_repository_root_from_executable(const std::string& executable_pa
     repository_root() = executable_directory.parent_path();
 }
 
+// Overridable so that the same binary can measure a different dimension or leaf size:
+//   FFCL_DATASETS_DIR  directory holding <name>.txt
+//   FFCL_RESULTS_DIR   directory the JSON is written to
+//   FFCL_LEAF_SIZE     leaf size for every dataset instead of sqrt(n)/3
+inline auto environment_path(const char* name) -> std::optional<fs::path> {
+    if (const auto* value = std::getenv(name)) {
+        return fs::path{value};
+    }
+    return std::nullopt;
+}
+
 inline auto datasets_root() -> fs::path {
+    if (const auto from_environment = environment_path("FFCL_DATASETS_DIR")) {
+        return *from_environment;
+    }
     return repository_root() / "benchmark" / "bin" / "datasets" / "inputs";
 }
 
 inline auto results_root() -> fs::path {
+    if (const auto from_environment = environment_path("FFCL_RESULTS_DIR")) {
+        return *from_environment;
+    }
     return repository_root() / "benchmark" / "bin" / "results";
 }
 
@@ -123,6 +142,9 @@ inline constexpr std::size_t kFFCLLeafSize = 0;  // 0 means sqrt(n) / 3, resolve
 inline constexpr std::size_t kReferenceLeafSize = 40;
 
 inline auto ffcl_leaf_size_for(std::size_t n_samples) -> std::size_t {
+    if (const auto from_environment = environment_path("FFCL_LEAF_SIZE")) {
+        return static_cast<std::size_t>(std::stoul(from_environment->string()));
+    }
     return std::max<std::size_t>(16, static_cast<std::size_t>(std::sqrt(static_cast<double>(n_samples)) / 3.0));
 }
 

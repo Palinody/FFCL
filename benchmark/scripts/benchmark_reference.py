@@ -36,8 +36,8 @@ warnings.filterwarnings("ignore")
 
 SCRIPTS_DIR = os.path.dirname(os.path.realpath(__file__))
 BENCHMARK_DIR = os.path.dirname(SCRIPTS_DIR)
-DATASETS_DIR = os.path.join(BENCHMARK_DIR, "bin", "datasets", "inputs")
-RESULTS_DIR = os.path.join(BENCHMARK_DIR, "bin", "results")
+DATASETS_DIR = os.environ.get("FFCL_DATASETS_DIR") or os.path.join(BENCHMARK_DIR, "bin", "datasets", "inputs")
+RESULTS_DIR = os.environ.get("FFCL_RESULTS_DIR") or os.path.join(BENCHMARK_DIR, "bin", "results")
 
 # Must match benchmark/src/main.cpp
 N_QUERIES = 1000
@@ -51,7 +51,7 @@ DBSCAN_MIN_SAMPLES = 5
 TRIES = 3
 
 # One reference leaf size for every dataset and library, as agreed.
-REFERENCE_LEAF_SIZE = 40
+REFERENCE_LEAF_SIZE = int(os.environ.get("FFCL_REFERENCE_LEAF_SIZE") or 40)
 
 DATASET_NAMES = [
     "noisy_circles",
