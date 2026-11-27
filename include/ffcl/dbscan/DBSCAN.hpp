@@ -8,10 +8,15 @@
 
 #include "ffcl/search/Search.hpp"
 
+#include "ffcl/datastruct/UnionFind.hpp"
+
 #include "ffcl/datastruct/vector/FeaturesVector.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <tuple>
 #include <type_traits>
@@ -86,7 +91,25 @@ class DBSCAN {
                        const LabelType&                 entry_point_index,
                        const search::Searcher<Indexer>& searcher) const;
 
+    // The original frontier expansion, kept as the general fallback for dimensions where a grid is not
+    // worth it (or for a grid that would be too large).
+    auto predict_frontier(const search::Searcher<Indexer>& searcher) const -> std::vector<LabelType>;
+
+    // Grid accelerated DBSCAN. The samples are bucketed into cells whose diagonal is the radius, so
+    // every pair of samples in one cell is a neighbour without any distance computation. Core points
+    // are found cell by cell, connected with a union-find over core-core pairs, and the labels are
+    // assigned afterwards: core samples take their component's label, the others take the label of the
+    // earliest component that reaches them, or stay noise.
+    auto predict_grid(const search::Searcher<Indexer>& searcher) const -> std::vector<LabelType>;
+
     enum class SampleStatus : LabelType { noise = 0 };
+
+    // Above this many features the (2k+1)^d cell neighbourhood of the grid grows faster than the tree
+    // traversal it replaces, so the frontier expansion is used instead.
+    static constexpr std::size_t kMaxGridFeatures = 3;
+    // A grid larger than this is not worth building either; fall back to the tree.
+    static constexpr std::size_t kMaxGridCells = 4'000'000;
+    static constexpr std::size_t kNoCell       = std::numeric_limits<std::size_t>::max();
 
     Options options_;
 };
@@ -105,6 +128,25 @@ template <typename Indexer>
 auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
     const auto searcher = search::Searcher(std::forward<Indexer>(indexer));
 
+    const std::size_t n_samples  = searcher.n_samples();
+    const std::size_t n_features = searcher.n_features();
+
+    if (n_samples == 0) {
+        return std::vector<LabelType>{};
+    }
+
+    const bool grid_is_worth_it =
+        n_features > 0 && n_features <= kMaxGridFeatures && options_.radius_ > static_cast<DataType>(0);
+
+    if (!grid_is_worth_it) {
+        return predict_frontier(searcher);
+    }
+
+    return predict_grid(searcher);
+}
+
+template <typename Indexer>
+auto DBSCAN<Indexer>::predict_frontier(const search::Searcher<Indexer>& searcher) const -> std::vector<LabelType> {
     // the total number of samples that will be searched by index
     const std::size_t n_samples = searcher.n_samples();
 
@@ -158,6 +200,369 @@ auto DBSCAN<Indexer>::predict(Indexer&& indexer) const {
             }
         }
     }
+    return predictions;
+}
+
+template <typename Indexer>
+auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) const -> std::vector<LabelType> {
+    const std::size_t n_samples   = searcher.n_samples();
+    const std::size_t n_features  = searcher.n_features();
+    const DataType    radius      = options_.radius_;
+    const DataType    radius_sq   = radius * radius;
+    const std::size_t min_samples = options_.min_samples_;
+
+    // The cell diagonal is exactly the radius: sqrt(n_features) * radius / sqrt(n_features). A pair of
+    // samples in one cell is therefore always strictly closer than the radius (the cells are half open,
+    // so the diagonal is a supremum that is not attained), and a sample within the radius is at most
+    // ceil(radius / cell_width) cells away on each axis.
+    const double cell_width = static_cast<double>(radius) / std::sqrt(static_cast<double>(n_features));
+
+    auto squared_distance = [&](std::size_t left_index, std::size_t right_index) -> DataType {
+        const auto left  = searcher.features_range_first(left_index);
+        const auto right = searcher.features_range_first(right_index);
+        auto       sum   = DataType{0};
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            const auto difference = left[feature_index] - right[feature_index];
+            sum += difference * difference;
+        }
+        return sum;
+    };
+
+    // --- grid extent -------------------------------------------------------------------------------
+    auto min_bound = std::vector<DataType>(n_features, std::numeric_limits<DataType>::max());
+    auto max_bound = std::vector<DataType>(n_features, std::numeric_limits<DataType>::lowest());
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        const auto features = searcher.features_range_first(sample_index);
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            min_bound[feature_index] = std::min(min_bound[feature_index], features[feature_index]);
+            max_bound[feature_index] = std::max(max_bound[feature_index], features[feature_index]);
+        }
+    }
+
+    auto           n_cells_per_feature = std::vector<std::size_t>(n_features, 1);
+    std::size_t    n_cells             = 1;
+    constexpr auto kMaxCells           = kMaxGridCells;
+
+    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+        const auto extent =
+            static_cast<double>(max_bound[feature_index]) - static_cast<double>(min_bound[feature_index]);
+        auto cells = static_cast<std::size_t>(std::floor(extent / cell_width)) + 1;
+        if (cells < 1) {
+            cells = 1;
+        }
+        if (n_cells > kMaxCells / cells) {
+            return predict_frontier(searcher);
+        }
+        n_cells *= cells;
+        n_cells_per_feature[feature_index] = cells;
+    }
+
+    // --- bucket the samples into cells (counting sort, so the samples of a cell are contiguous) ---
+    auto sample_cell = std::vector<std::size_t>(n_samples);
+    auto cell_of     = [&](std::size_t sample_index) -> std::size_t {
+        const auto features = searcher.features_range_first(sample_index);
+        auto       cell     = std::size_t{0};
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            const auto quotient =
+                (static_cast<double>(features[feature_index]) - static_cast<double>(min_bound[feature_index])) /
+                cell_width;
+            auto coordinate = quotient <= 0.0 ? std::size_t{0} : static_cast<std::size_t>(quotient);
+            if (coordinate >= n_cells_per_feature[feature_index]) {
+                coordinate = n_cells_per_feature[feature_index] - 1;
+            }
+            cell = cell * n_cells_per_feature[feature_index] + coordinate;
+        }
+        return cell;
+    };
+
+    auto cell_start = std::vector<std::size_t>(n_cells + 1, 0);
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        sample_cell[sample_index] = cell_of(sample_index);
+        ++cell_start[sample_cell[sample_index] + 1];
+    }
+    for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+        cell_start[cell_index + 1] += cell_start[cell_index];
+    }
+
+    auto cell_items = std::vector<std::size_t>(n_samples);
+    {
+        auto cursor = std::vector<std::size_t>(cell_start.begin(), cell_start.end() - 1);
+        for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+            cell_items[cursor[sample_cell[sample_index]]++] = sample_index;
+        }
+    }
+
+    // --- cell neighbourhood ------------------------------------------------------------------------
+    // All offsets whose cells can hold a sample within the radius. The minimum gap between a cell and
+    // the cell at `offset` is sum(max(0, |offset| - 1) * cell_width)^2, which has to stay below the
+    // radius for the cell to be reachable at all.
+    const auto  reach          = static_cast<int>(std::ceil(static_cast<double>(radius) / cell_width - 1e-9));
+    const auto  span           = static_cast<std::size_t>(2 * reach + 1);
+    const auto  radius_sq_d    = static_cast<double>(radius) * static_cast<double>(radius);
+    std::size_t n_combinations = 1;
+    for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+        n_combinations *= span;
+    }
+
+    auto offsets      = std::vector<std::vector<int>>{};
+    auto half_offsets = std::vector<std::vector<int>>{};
+    offsets.reserve(n_combinations);
+    half_offsets.reserve(n_combinations / 2);
+
+    for (std::size_t combination = 0; combination < n_combinations; ++combination) {
+        auto   offset      = std::vector<int>(n_features, 0);
+        auto   remainder   = combination;
+        double min_gap_sq  = 0.0;
+        bool   is_half     = false;
+        bool   found_first = false;
+        bool   is_zero     = true;
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            const auto digit = static_cast<int>(remainder % span);
+            remainder /= span;
+            const auto value      = digit - reach;
+            offset[feature_index] = value;
+            if (value != 0) {
+                is_zero        = false;
+                const auto gap = static_cast<double>(std::abs(value) - 1) * cell_width;
+                min_gap_sq += gap * gap;
+                if (!found_first) {
+                    is_half     = value > 0;
+                    found_first = true;
+                }
+            }
+        }
+        if (min_gap_sq >= radius_sq_d) {
+            continue;
+        }
+        // the zero offset is the own cell, which every phase handles explicitly
+        if (is_zero) {
+            continue;
+        }
+        if (is_half) {
+            half_offsets.push_back(offset);
+        }
+        offsets.push_back(std::move(offset));
+    }
+
+    auto coordinates = std::vector<std::ptrdiff_t>(n_features, 0);
+    auto decode      = [&](std::size_t cell_index) {
+        for (std::size_t feature_index = n_features; feature_index-- > 0;) {
+            coordinates[feature_index] = static_cast<std::ptrdiff_t>(cell_index % n_cells_per_feature[feature_index]);
+            cell_index /= n_cells_per_feature[feature_index];
+        }
+    };
+    auto neighbour_of = [&](const std::vector<int>& offset) -> std::size_t {
+        auto cell = std::size_t{0};
+        for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
+            const auto coordinate = coordinates[feature_index] + offset[feature_index];
+            if (coordinate < 0 || coordinate >= static_cast<std::ptrdiff_t>(n_cells_per_feature[feature_index])) {
+                return kNoCell;
+            }
+            cell = cell * n_cells_per_feature[feature_index] + static_cast<std::size_t>(coordinate);
+        }
+        return cell;
+    };
+
+    auto cell_is_dense = std::vector<char>(n_cells, 0);
+    for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+        cell_is_dense[cell_index] =
+            (cell_start[cell_index + 1] - cell_start[cell_index]) > min_samples ? char{1} : char{0};
+    }
+
+    // --- phase 1: core points ----------------------------------------------------------------------
+    auto core = std::vector<char>(n_samples, 0);
+
+    for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+        const auto begin = cell_start[cell_index];
+        const auto end   = cell_start[cell_index + 1];
+        if (begin == end) {
+            continue;
+        }
+        const auto cell_size = end - begin;
+
+        if (cell_is_dense[cell_index]) {
+            // A dense cell has more than `min_samples` samples and all of them are within the radius
+            // of each other, so every sample is core without a single distance computation.
+            for (auto item = begin; item < end; ++item) {
+                core[cell_items[item]] = 1;
+            }
+            continue;
+        }
+
+        decode(cell_index);
+        for (auto item = begin; item < end; ++item) {
+            const auto sample_index = cell_items[item];
+            // the samples of the own cell are all within the radius
+            auto neighbour_count = cell_size;
+            if (neighbour_count > min_samples) {
+                core[sample_index] = 1;
+                continue;
+            }
+            // the own cell was already counted
+            for (const auto& offset : offsets) {
+                const auto neighbour_cell = neighbour_of(offset);
+                if (neighbour_cell == kNoCell) {
+                    continue;
+                }
+                for (auto neighbour_item = cell_start[neighbour_cell]; neighbour_item < cell_start[neighbour_cell + 1];
+                     ++neighbour_item) {
+                    if (squared_distance(sample_index, cell_items[neighbour_item]) < radius_sq) {
+                        ++neighbour_count;
+                        if (neighbour_count > min_samples) {
+                            break;
+                        }
+                    }
+                }
+                if (neighbour_count > min_samples) {
+                    break;
+                }
+            }
+            core[sample_index] = neighbour_count > min_samples ? char{1} : char{0};
+        }
+    }
+
+    // --- phase 2: connectivity of the core points --------------------------------------------------
+    auto union_find = datastruct::UnionFind<LabelType>(n_samples);
+
+    // Every core sample of a cell is connected to every other one, so one representative per cell is
+    // enough to keep the cell connected.
+    auto cell_representative = std::vector<std::size_t>(n_cells, kNoCell);
+
+    for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+        for (auto item = cell_start[cell_index]; item < cell_start[cell_index + 1]; ++item) {
+            const auto sample_index = cell_items[item];
+            if (!core[sample_index]) {
+                continue;
+            }
+            if (cell_representative[cell_index] == kNoCell) {
+                cell_representative[cell_index] = sample_index;
+            } else {
+                union_find.merge(static_cast<LabelType>(cell_representative[cell_index]),
+                                 static_cast<LabelType>(sample_index));
+            }
+        }
+    }
+
+    // Only the half of the offsets with a positive first non-zero component is visited, so each pair
+    // of neighbouring cells is handled once. As soon as one core pair of two cells is within the
+    // radius the cells are connected and the remaining pairs cannot change that, so the scan stops.
+    for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
+        if (cell_representative[cell_index] == kNoCell) {
+            continue;
+        }
+        decode(cell_index);
+        for (const auto& offset : half_offsets) {
+            const auto neighbour_cell = neighbour_of(offset);
+            if (neighbour_cell == kNoCell || cell_representative[neighbour_cell] == kNoCell) {
+                continue;
+            }
+            if (union_find.find(static_cast<LabelType>(cell_representative[cell_index])) ==
+                union_find.find(static_cast<LabelType>(cell_representative[neighbour_cell]))) {
+                continue;
+            }
+            bool connected = false;
+            for (auto item = cell_start[cell_index]; item < cell_start[cell_index + 1] && !connected; ++item) {
+                const auto sample_index = cell_items[item];
+                if (!core[sample_index]) {
+                    continue;
+                }
+                for (auto neighbour_item = cell_start[neighbour_cell]; neighbour_item < cell_start[neighbour_cell + 1];
+                     ++neighbour_item) {
+                    const auto neighbour_index = cell_items[neighbour_item];
+                    if (!core[neighbour_index]) {
+                        continue;
+                    }
+                    if (squared_distance(sample_index, neighbour_index) < radius_sq) {
+                        union_find.merge(static_cast<LabelType>(sample_index), static_cast<LabelType>(neighbour_index));
+                        connected = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // --- phase 3: labels ---------------------------------------------------------------------------
+    // Components are numbered by their smallest core sample index, which is exactly the order in which
+    // the sequential frontier expansion discovers them.
+    auto      predictions     = std::vector<LabelType>(n_samples, static_cast<LabelType>(SampleStatus::noise));
+    auto      component_label = std::vector<LabelType>(n_samples, static_cast<LabelType>(0));
+    LabelType next_label      = 0;
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        if (!core[sample_index]) {
+            continue;
+        }
+        const auto root = union_find.find(static_cast<LabelType>(sample_index));
+        if (component_label[root] == static_cast<LabelType>(0)) {
+            component_label[root] = ++next_label;
+        }
+    }
+
+    auto core_label     = std::vector<LabelType>(n_samples, static_cast<LabelType>(0));
+    auto cell_min_label = std::vector<LabelType>(n_cells, std::numeric_limits<LabelType>::max());
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        if (!core[sample_index]) {
+            continue;
+        }
+        const auto label           = component_label[union_find.find(static_cast<LabelType>(sample_index))];
+        core_label[sample_index]   = label;
+        predictions[sample_index]  = label;
+        const auto cell_index      = sample_cell[sample_index];
+        cell_min_label[cell_index] = std::min(cell_min_label[cell_index], label);
+    }
+
+    const auto no_label = std::numeric_limits<LabelType>::max();
+
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        if (core[sample_index]) {
+            continue;
+        }
+        const auto cell_index = sample_cell[sample_index];
+        // every sample of the own cell is within the radius, so its smallest label is a valid choice
+        auto best_label = cell_min_label[cell_index];
+        if (best_label > static_cast<LabelType>(1)) {
+            decode(cell_index);
+            for (const auto& offset : half_offsets) {
+                // the mirrored offset covers the other side of the neighbourhood
+                for (int sign = 0; sign < 2; ++sign) {
+                    auto mirrored = offset;
+                    if (sign == 1) {
+                        for (auto& value : mirrored) {
+                            value = -value;
+                        }
+                    }
+                    const auto neighbour_cell = neighbour_of(mirrored);
+                    if (neighbour_cell == kNoCell || cell_min_label[neighbour_cell] >= best_label) {
+                        continue;
+                    }
+                    for (auto neighbour_item = cell_start[neighbour_cell];
+                         neighbour_item < cell_start[neighbour_cell + 1];
+                         ++neighbour_item) {
+                        const auto neighbour_index = cell_items[neighbour_item];
+                        if (!core[neighbour_index]) {
+                            continue;
+                        }
+                        if (squared_distance(sample_index, neighbour_index) < radius_sq) {
+                            best_label = std::min(best_label, core_label[neighbour_index]);
+                        }
+                    }
+                    if (best_label == static_cast<LabelType>(1)) {
+                        break;
+                    }
+                }
+                if (best_label == static_cast<LabelType>(1)) {
+                    break;
+                }
+            }
+        }
+        if (best_label != no_label) {
+            predictions[sample_index] = best_label;
+        }
+    }
+
     return predictions;
 }
 
