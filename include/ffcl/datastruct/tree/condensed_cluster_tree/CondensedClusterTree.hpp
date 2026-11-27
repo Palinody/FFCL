@@ -165,7 +165,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
                 condensed_cluster_node->left_ =
                     std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node->left_);
                 // link the new created left branch node to the current node
-                condensed_cluster_node->left_->parent_ = condensed_cluster_node;
+                condensed_cluster_node->left_->parent_ = condensed_cluster_node.get();
                 // continue to traverse the tree with the new condensed_cluster_node and the left single linkage node
                 // that didn't fall out of the cluster
                 preorder_traversal_build(condensed_cluster_node->left_, single_linkage_cluster_node->left_);
@@ -176,7 +176,7 @@ void CondensedClusterTree<IndexType, ValueType>::preorder_traversal_build(
                 condensed_cluster_node->right_ =
                     std::make_shared<CondensedClusterNodeType>(single_linkage_cluster_node->right_);
                 // link the new created right branch node to the current node
-                condensed_cluster_node->right_->parent_ = condensed_cluster_node;
+                condensed_cluster_node->right_->parent_ = condensed_cluster_node.get();
                 // continue to traverse the tree with the new condensed_cluster_node and the right single linkage node
                 // that didn't fall out of the cluster
                 preorder_traversal_build(condensed_cluster_node->right_, single_linkage_cluster_node->right_);

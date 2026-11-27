@@ -37,8 +37,10 @@ struct SingleLinkageClusterNode {
     ValueType level_;
     // the number of nodes that this node is an ancestor of (counting itself)
     std::size_t cluster_size_;
-    // parent pointer used to parse from the leaves to the root and the left/right ones for the opposite direction
-    NodePtr parent_, left_, right_;
+    // Ownership flows downward only: children are owned, the parent is a plain pointer. A shared parent
+    // pointer closes a reference cycle with its children, so nothing in the tree is ever freed.
+    NodeType* parent_ = nullptr;
+    NodePtr   left_, right_;
 };
 
 template <typename IndexType, typename ValueType>

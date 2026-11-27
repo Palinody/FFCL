@@ -46,7 +46,9 @@ struct CondensedClusterNode {
     // selected cluster if marked as true if shallower cluster nodes are also marked as selected.
     bool is_selected_;
     // parent pointer used to parse from the leaves to the root and the left/right ones for the opposite direction
-    NodePtr parent_, left_, right_;
+    // as in the single linkage node: children are owned, the parent is not
+    NodeType* parent_ = nullptr;
+    NodePtr   left_, right_;
 };
 
 template <typename IndexType, typename ValueType>

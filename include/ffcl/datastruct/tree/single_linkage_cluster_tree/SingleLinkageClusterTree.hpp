@@ -36,6 +36,7 @@ class SingleLinkageClusterTree {
     using UnionFindType           = UnionFind<IndexType>;
 
     using SingleLinkageClusterNodeType = SingleLinkageClusterNode<IndexType, ValueType>;
+    using NodeStorageType              = std::vector<SingleLinkageClusterNodeType>;
     using SingleLinkageClusterNodePtr  = typename SingleLinkageClusterNodeType::NodePtr;
 
     using ClusterIndexType = IndexType;
@@ -97,6 +98,11 @@ class SingleLinkageClusterTree {
     void print_node(const SingleLinkageClusterNodePtr& node) const;
 
     MinimumSpanningTreeType sorted_mst_;
+
+    // Every node of the tree, in one array. The root handle aliases it, so a condensed tree built from the
+    // root keeps the nodes alive even if this tree goes away first. Declared before the root: `build()` runs
+    // in the root's initialiser and assigns this member, so it has to be constructed first.
+    std::shared_ptr<NodeStorageType> nodes_;
 
     SingleLinkageClusterNodePtr root_;
 
@@ -183,46 +189,54 @@ template <typename IndexType, typename ValueType>
 auto SingleLinkageClusterTree<IndexType, ValueType>::build() -> SingleLinkageClusterNodePtr {
     const std::size_t n_samples = sorted_mst_.size() + 1;
 
-    // union find data structure to keep track of the cluster id
+    // Every merge creates one internal node over the n leaves, so the tree has exactly 2n - 1 nodes. They are
+    // all allocated once, in one array reserved to that size, and linked with plain pointers: no per-node
+    // allocation and no reference counting anywhere in the tree. The children handles alias the array, so
+    // they share ownership of it instead of owning their targets.
+    auto nodes = std::make_shared<NodeStorageType>();
+    nodes->reserve(2 * n_samples - 1);
+
     UnionFindType union_find(n_samples);
 
-    // cluster indices mapped to their node that may contain descendants
-    auto nodes = std::unordered_map<ClusterIndexType, SingleLinkageClusterNodePtr>{};
+    // the current node of every live component, indexed by its union-find representative
+    auto component_to_node = std::vector<SingleLinkageClusterNodeType*>(n_samples, nullptr);
 
-    // init each sample as its own cluster/component
     for (std::size_t cluster_index = 0; cluster_index < n_samples; ++cluster_index) {
-        nodes[cluster_index] = std::make_shared<SingleLinkageClusterNodeType>(cluster_index);
+        component_to_node[cluster_index] = &nodes->emplace_back(static_cast<ClusterIndexType>(cluster_index));
     }
     for (const auto& [sample_index_1, sample_index_2, samples_edge_weight] : sorted_mst_) {
-        // find in which cluster index the samples are currently in, before being merged
         const auto representative_1 = union_find.find(sample_index_1);
         const auto representative_2 = union_find.find(sample_index_2);
-        // merge the disjoints sets based on the 2 samples and return the common representative of the newly formed set
+
         const auto common_representative = union_find.merge(sample_index_1, sample_index_2);
-        // this condition checks if a merge happened based on the old representative values
+
         if (common_representative != representative_1 || common_representative != representative_2) {
-            // create a new node, if we have reached a new level, that will agglomerate its children
-            auto cluster_node = std::make_shared<SingleLinkageClusterNodeType>(
-                common_representative,
-                samples_edge_weight,
-                nodes[representative_1]->size() + nodes[representative_2]->size());
+            auto* const left_node  = component_to_node[representative_1];
+            auto* const right_node = component_to_node[representative_2];
 
-            // link the nodes to their new parent node
-            nodes[representative_1]->parent_ = cluster_node;
-            nodes[representative_2]->parent_ = cluster_node;
+            auto& cluster_node =
+                nodes->emplace_back(common_representative, samples_edge_weight, left_node->size() + right_node->size());
 
-            // add them as children of their common parent node
-            cluster_node->left_  = std::move(nodes[representative_1]);
-            cluster_node->right_ = std::move(nodes[representative_2]);
+            left_node->parent_  = &cluster_node;
+            right_node->parent_ = &cluster_node;
 
-            // erase the representatives that are now children
-            nodes.erase(representative_1);
-            nodes.erase(representative_2);
-            // place the new cluster node. It might be created at one of the prevous nodes' emplacement
-            nodes[common_representative] = std::move(cluster_node);
+            // Non-owning handles: the arena owns every node, so a child must not also own the arena, or the
+            // arena would keep itself alive through its own nodes.
+            cluster_node.left_  = SingleLinkageClusterNodePtr(left_node, [](auto*) {});
+            cluster_node.right_ = SingleLinkageClusterNodePtr(right_node, [](auto*) {});
+
+            // the common representative is one of the two, so clear them before setting it
+            component_to_node[representative_1]      = nullptr;
+            component_to_node[representative_2]      = nullptr;
+            component_to_node[common_representative] = &cluster_node;
         }
     }
-    return nodes.begin()->second;
+    auto* const root_node = &nodes->back();
+
+    nodes_ = std::move(nodes);
+
+    // the root handle aliases the array, so it keeps every node alive
+    return SingleLinkageClusterNodePtr(nodes_, root_node);
 }
 
 template <typename IndexType, typename ValueType>
