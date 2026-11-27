@@ -4,6 +4,8 @@ Every number below is produced by the programs in `src/` and `scripts/`, and the
 
 The result files and the datasets are generated and therefore not versioned - `benchmark/bin/` is ignored. This file is the record of the run described below, regenerated from those files by `scripts/make_tables.py`; the numbers will not match exactly on another machine.
 
+This file is the single-dimension (2-D) FFCL-vs-Python/FLANN run. The multi-dimension, all-library matrix — pico_tree, ArborX, mlpack, pdbscan, pargeo, nanoflann, FLANN, sklearn, scipy and hdbscan at 2-, 3- and 4-D, 1 and 6 threads — is in [references/README.md](references/README.md).
+
 ## How to read this
 
 - **Machine**: Intel(R) Core(TM) i5-9600KF CPU @ 3.70GHz, 6 cores, no SMT.

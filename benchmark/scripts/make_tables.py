@@ -171,6 +171,13 @@ def main():
         "by `scripts/make_tables.py`; the numbers will not match exactly on another machine."
     )
     lines.append("")
+    lines.append(
+        "This file is the single-dimension (2-D) FFCL-vs-Python/FLANN run. The multi-dimension, "
+        "all-library matrix — pico_tree, ArborX, mlpack, pdbscan, pargeo, nanoflann, FLANN, "
+        "sklearn, scipy and hdbscan at 2-, 3- and 4-D, 1 and 6 threads — is in "
+        "[references/README.md](references/README.md)."
+    )
+    lines.append("")
     lines.append("## How to read this")
     lines.append("")
     lines.append(f"- **Machine**: {cpu_description()}, {core_count()} cores, no SMT.")

@@ -319,7 +319,7 @@ def main():
     parser.add_argument("--parallel-dir", default="/tmp/perf/matrix")
     parser.add_argument("--dbscan4-dir", default="/tmp/perf/matrix4")
     parser.add_argument("--dbscan4-par-dir", default="/tmp/perf/matrix4_par")
-    parser.add_argument("--out", default="/tmp/REFERENCE_MATRIX_RESULTS.md")
+    parser.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md"))
     args = parser.parse_args()
 
     m = build_measurements(args.perf_dir, args.serial_dir, args.parallel_dir,
@@ -338,7 +338,11 @@ def main():
                           dim, default_threads=threads)
 
     out = []
-    out.append("# FFCL vs reference libraries across 2-D, 3-D and 4-D\n")
+    out.append("# FFCL reference-library benchmark\n")
+    out.append("FFCL against every library cloned under `benchmark_references/`, on 2-, 3- and")
+    out.append("4-dimensional data, for KD-tree build, kNN, radius, DBSCAN, mutual-reachability MST,")
+    out.append("dendrogram and HDBSCAN. The tables are a pure function of the JSON the runners write;")
+    out.append("nothing here is hand-edited. See [Reproducing](#reproducing) for the commands.\n")
     out.append("## Context\n")
     out.append(f"- **CPU** {cpu_model()}, 6 cores, no SMT, governor `performance`.")
     out.append(f"- **Compiler** {compiler()}, `-O3 -march=native`, OpenMP on.")
@@ -515,7 +519,7 @@ def main():
     out.append("./benchmark/references/run_ffcl_dbscan4.sh ./build_bench /tmp/perf/matrix4")
     out.append("./benchmark/references/run_ffcl_dbscan4.sh ./build_par   /tmp/perf/matrix4_par")
     out.append("")
-    out.append("python3 benchmark/references/aggregate_references.py --out FFCL_REFERENCE_MATRIX.md")
+    out.append("python3 benchmark/references/aggregate_references.py   # writes benchmark/references/README.md")
     out.append("```")
     out.append("")
     out.append("The Python reference rows need numpy, sklearn, scipy and hdbscan. The bundled venv at")

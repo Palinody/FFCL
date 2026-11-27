@@ -9,6 +9,7 @@
 - [Compiling](#compiling)
 - [How to use](#how-to-use)
 - [Benchmark results](benchmark/README.md)
+- [Multi-dimension, all-library matrix](benchmark/references/README.md)
 
 ## Where things are
 
@@ -19,7 +20,7 @@ benchmark/      dataset-driven measurements against the reference libraries,
                 with the results tables in benchmark/README.md
 ```
 
-The unit tests are the place to check correctness; `benchmark/` is where FFCL is compared to FLANN, scikit-learn, scipy and hdbscan on real datasets. See [benchmark/README.md](benchmark/README.md) for the tables and the exact settings used.
+The unit tests are the place to check correctness; `benchmark/` is where FFCL is compared to FLANN, scikit-learn, scipy and hdbscan on real datasets. See [benchmark/README.md](benchmark/README.md) for the tables and the exact settings used, and [benchmark/references/README.md](benchmark/references/README.md) for the multi-dimension comparison against pico_tree, ArborX, mlpack, pdbscan, pargeo, nanoflann and FLANN.
 
 ## Architecture
 
