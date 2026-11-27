@@ -453,42 +453,32 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
     }
 
     // --- phase 2: connectivity of the core points --------------------------------------------------
-    auto union_find = datastruct::UnionFind<LabelType>(n_samples);
-
-    // Every core sample of a cell is connected to every other one, so one representative per cell is
-    // enough to keep the cell connected.
-    auto cell_representative = std::vector<std::size_t>(n_cells, kNoCell);
-
-    for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
-        for (auto item = cell_start[cell_index]; item < cell_start[cell_index + 1]; ++item) {
-            const auto sample_index = cell_items[item];
-            if (!core[sample_index]) {
-                continue;
-            }
-            if (cell_representative[cell_index] == kNoCell) {
-                cell_representative[cell_index] = sample_index;
-            } else {
-                union_find.merge(static_cast<LabelType>(cell_representative[cell_index]),
-                                 static_cast<LabelType>(sample_index));
-            }
+    // All core samples of a cell are within the radius of each other, so they form a clique and the
+    // union-find can run over cells instead of samples.
+    auto cell_has_core = std::vector<char>(n_cells, 0);
+    for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
+        if (core[sample_index]) {
+            cell_has_core[sample_cell[sample_index]] = 1;
         }
     }
+
+    auto union_find = datastruct::UnionFind<LabelType>(n_cells);
 
     // Only the half of the offsets with a positive first non-zero component is visited, so each pair
     // of neighbouring cells is handled once. As soon as one core pair of two cells is within the
     // radius the cells are connected and the remaining pairs cannot change that, so the scan stops.
     for (std::size_t cell_index = 0; cell_index < n_cells; ++cell_index) {
-        if (cell_representative[cell_index] == kNoCell) {
+        if (!cell_has_core[cell_index]) {
             continue;
         }
         decode(cell_index);
         for (const auto& offset : half_offsets) {
             const auto neighbour_cell = neighbour_of(offset);
-            if (neighbour_cell == kNoCell || cell_representative[neighbour_cell] == kNoCell) {
+            if (neighbour_cell == kNoCell || !cell_has_core[neighbour_cell]) {
                 continue;
             }
-            if (union_find.find(static_cast<LabelType>(cell_representative[cell_index])) ==
-                union_find.find(static_cast<LabelType>(cell_representative[neighbour_cell]))) {
+            if (union_find.find(static_cast<LabelType>(cell_index)) ==
+                union_find.find(static_cast<LabelType>(neighbour_cell))) {
                 continue;
             }
             bool connected = false;
@@ -504,7 +494,7 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
                         continue;
                     }
                     if (squared_distance(sample_index, neighbour_index) < radius_sq) {
-                        union_find.merge(static_cast<LabelType>(sample_index), static_cast<LabelType>(neighbour_index));
+                        union_find.merge(static_cast<LabelType>(cell_index), static_cast<LabelType>(neighbour_cell));
                         connected = true;
                         break;
                     }
@@ -517,14 +507,14 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
     // Components are numbered by their smallest core sample index, which is exactly the order in which
     // the sequential frontier expansion discovers them.
     auto      predictions     = std::vector<LabelType>(n_samples, static_cast<LabelType>(SampleStatus::noise));
-    auto      component_label = std::vector<LabelType>(n_samples, static_cast<LabelType>(0));
+    auto      component_label = std::vector<LabelType>(n_cells, static_cast<LabelType>(0));
     LabelType next_label      = 0;
 
     for (std::size_t sample_index = 0; sample_index < n_samples; ++sample_index) {
         if (!core[sample_index]) {
             continue;
         }
-        const auto root = union_find.find(static_cast<LabelType>(sample_index));
+        const auto root = union_find.find(static_cast<LabelType>(sample_cell[sample_index]));
         if (component_label[root] == static_cast<LabelType>(0)) {
             component_label[root] = ++next_label;
         }
@@ -537,10 +527,10 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
         if (!core[sample_index]) {
             continue;
         }
-        const auto label           = component_label[union_find.find(static_cast<LabelType>(sample_index))];
+        const auto cell_index      = sample_cell[sample_index];
+        const auto label           = component_label[union_find.find(static_cast<LabelType>(cell_index))];
         core_label[sample_index]   = label;
         predictions[sample_index]  = label;
-        const auto cell_index      = sample_cell[sample_index];
         cell_min_label[cell_index] = std::min(cell_min_label[cell_index], label);
     }
 

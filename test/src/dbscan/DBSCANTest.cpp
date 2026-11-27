@@ -214,6 +214,7 @@ TEST(DBSCANTest, MatchesReferenceOnAGridWithWidelySpreadPoints) {
             << "sample " << sample_index << " disagrees on being noise";
     }
     EXPECT_TRUE(Fixture::same_partition(predictions, expected)) << "the partitions differ";
+    EXPECT_EQ(predictions, expected) << "the labels differ";
     EXPECT_GT(Fixture::count_clusters(predictions, std::size_t{0}), 1u) << "the fixture must split";
 }
 
@@ -293,6 +294,161 @@ TEST(DBSCANTest, BorderPointsVisitedBeforeTheirClusterAreNotLost) {
     EXPECT_EQ(predictions[0], predictions[1]) << "and carries that cluster's label";
     EXPECT_EQ(predictions[9], 0u) << "the far sample stays noise";
     EXPECT_TRUE(Fixture::same_partition(predictions, expected));
+}
+
+// A deterministic jittered grid in `n_features` dimensions, for the dimensions the grid path is used
+// in. The points are spread far enough apart that many of them are noise and the pruning decisions
+// matter.
+auto gapped_grid_nd(std::size_t n_side, std::size_t n_features) -> std::vector<dType> {
+    auto        data  = std::vector<dType>{};
+    std::size_t state = 424242;
+
+    auto next_random = [&state]() {
+        state = state * 1103515245 + 12345;
+        return static_cast<dType>((state / 65536) % 1000) / 1000.0F;
+    };
+
+    // straightforward nested loops for the dimensions the tests use
+    if (n_features == 1) {
+        for (std::size_t i = 0; i < n_side; ++i) {
+            data.push_back(static_cast<dType>(i) + next_random());
+        }
+    } else if (n_features == 2) {
+        for (std::size_t i = 0; i < n_side; ++i) {
+            for (std::size_t j = 0; j < n_side; ++j) {
+                data.push_back(static_cast<dType>(i) + next_random());
+                data.push_back(static_cast<dType>(j) + next_random());
+            }
+        }
+    } else {
+        for (std::size_t i = 0; i < n_side; ++i) {
+            for (std::size_t j = 0; j < n_side; ++j) {
+                for (std::size_t k = 0; k < n_side; ++k) {
+                    data.push_back(static_cast<dType>(i) + next_random());
+                    data.push_back(static_cast<dType>(j) + next_random());
+                    data.push_back(static_cast<dType>(k) + next_random());
+                }
+            }
+        }
+    }
+    return data;
+}
+
+auto run_dbscan(std::vector<dType>& data, std::size_t n_features, dType radius, std::size_t min_samples)
+    -> std::vector<std::size_t> {
+    auto indices = Fixture::make_indices(data.size() / n_features);
+    auto indexer = Fixture::make_kdtree(data, indices, n_features);
+
+    auto dbscan = ffcl::DBSCAN<decltype(indexer)>();
+    dbscan.set_options(ffcl::DBSCAN<decltype(indexer)>::Options().radius(radius).min_samples(min_samples));
+
+    return dbscan.predict(std::move(indexer));
+}
+
+// The grid path is used up to three features; one and three dimensions must agree with the reference
+// just like two do.
+TEST(DBSCANTest, MatchesReferenceInOneDimension) {
+    auto data = std::vector<dType>{0.0F, 0.1F, 0.2F, 0.25F, 1.0F, 1.1F, 3.0F, 3.05F, 3.1F, 3.15F, 10.0F};
+
+    for (const auto min_samples : {std::size_t{1}, std::size_t{2}, std::size_t{4}}) {
+        const auto expected = reference_dbscan(data, 1, 0.5F, min_samples);
+        const auto actual   = run_dbscan(data, 1, 0.5F, min_samples);
+
+        ASSERT_EQ(actual.size(), expected.size());
+        EXPECT_EQ(actual, expected) << "min_samples " << min_samples;
+    }
+}
+
+TEST(DBSCANTest, MatchesReferenceInThreeDimensions) {
+    auto       data       = gapped_grid_nd(/*n_side=*/6, /*n_features=*/3);  // 216 samples
+    const auto n_features = std::size_t{3};
+    const auto radius     = 1.05F;
+
+    for (const auto min_samples : {std::size_t{2}, std::size_t{4}, std::size_t{7}}) {
+        const auto expected = reference_dbscan(data, n_features, radius, min_samples);
+        const auto actual   = run_dbscan(data, n_features, radius, min_samples);
+
+        ASSERT_EQ(actual.size(), expected.size());
+        for (std::size_t sample_index = 0; sample_index < actual.size(); ++sample_index) {
+            EXPECT_EQ(actual[sample_index] == 0, expected[sample_index] == 0)
+                << "sample " << sample_index << " disagrees on being noise";
+        }
+        EXPECT_TRUE(Fixture::same_partition(actual, expected)) << "min_samples " << min_samples;
+        EXPECT_EQ(actual, expected) << "min_samples " << min_samples;
+    }
+}
+
+// A whole dense cell is core without any distance computation, so a fixture that fits in a single
+// cell must come out as one cluster with no noise.
+TEST(DBSCANTest, DenseSingleCellIsOneCluster) {
+    auto data = std::vector<dType>{};
+    for (std::size_t i = 0; i < 100; ++i) {
+        data.push_back(static_cast<dType>(i % 10) * 0.005F);
+        data.push_back(static_cast<dType>(i / 10) * 0.005F);
+    }
+
+    const auto expected = reference_dbscan(data, 2, 1.0F, 5);
+    const auto actual   = run_dbscan(data, 2, 1.0F, 5);
+
+    ASSERT_EQ(actual.size(), expected.size());
+    EXPECT_EQ(Fixture::count_clusters(actual, std::size_t{0}), 1u);
+    EXPECT_EQ(std::count(actual.begin(), actual.end(), std::size_t{0}), 0);
+    EXPECT_EQ(actual, expected);
+}
+
+// A border point can be within the radius of two different clusters. It is not core itself (it only
+// reaches one core point of each side), so it must join the cluster that the sequential scan reaches
+// first, which is the one with the smaller core index.
+TEST(DBSCANTest, BorderPointBetweenTwoClustersJoinsTheEarlierOne) {
+    const auto n_features  = std::size_t{2};
+    const auto radius      = 1.0F;
+    const auto min_samples = std::size_t{3};
+
+    // Two chains running away from each other, so the bridge point only reaches their innermost
+    // samples and stays below the core threshold itself.
+    auto data = std::vector<dType>{};
+    for (std::size_t i = 0; i <= 10; ++i) {
+        data.push_back(-0.1F * static_cast<dType>(i));
+        data.push_back(0.0F);
+    }
+    data.push_back(0.99F);  // index 11: the border point
+    data.push_back(0.0F);
+    for (std::size_t i = 0; i <= 10; ++i) {
+        data.push_back(1.98F + 0.1F * static_cast<dType>(i));
+        data.push_back(0.0F);
+    }
+
+    const auto expected = reference_dbscan(data, n_features, radius, min_samples);
+    const auto actual   = run_dbscan(data, n_features, radius, min_samples);
+
+    ASSERT_EQ(actual.size(), expected.size());
+    EXPECT_NE(actual[11], 0u) << "the bridge point is a border point, not noise";
+    EXPECT_EQ(actual[11], actual[0]) << "and it joins the first chain";
+    EXPECT_NE(actual[0], actual[12]) << "the chains stay separate";
+    EXPECT_EQ(actual, expected);
+}
+
+// The grid shortcut must not change the meaning of min_samples, and it has to survive the whole
+// parameter range the benchmarks use.
+TEST(DBSCANTest, MatchesReferenceAcrossRadiiAndMinSamples) {
+    auto       data       = gapped_grid(/*n_side=*/10);  // 100 samples
+    const auto n_features = std::size_t{2};
+
+    for (const auto radius : {0.6F, 1.05F, 1.6F}) {
+        for (const auto min_samples : {std::size_t{1}, std::size_t{3}, std::size_t{8}}) {
+            const auto expected = reference_dbscan(data, n_features, radius, min_samples);
+            const auto actual   = run_dbscan(data, n_features, radius, min_samples);
+
+            ASSERT_EQ(actual.size(), expected.size());
+            for (std::size_t sample_index = 0; sample_index < actual.size(); ++sample_index) {
+                EXPECT_EQ(actual[sample_index] == 0, expected[sample_index] == 0)
+                    << "radius " << radius << " min_samples " << min_samples << " sample " << sample_index;
+            }
+            EXPECT_TRUE(Fixture::same_partition(actual, expected))
+                << "radius " << radius << " min_samples " << min_samples;
+            EXPECT_EQ(actual, expected) << "radius " << radius << " min_samples " << min_samples;
+        }
+    }
 }
 
 }  // namespace
