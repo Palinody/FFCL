@@ -405,13 +405,14 @@ def main():
     out.append(", ".join(f"{ratio(m.get('sklearn','kdtree','knn',d,1), m.get('ffcl-ser','kdtree','knn',d,1)):.2f}x at {d}-D"
                          for d in DIMS) + " and scipy by")
     out.append(", ".join(f"{ratio(m.get('scipy','kdtree','knn',d,1), m.get('ffcl-ser','kdtree','knn',d,1)):.2f}x at {d}-D"
-                         for d in DIMS) + ".\n")
+                         for d in DIMS) + ". It is 5th of the 8 kNN implementations, also behind FLANN and ArborX.\n")
 
     out.append("**Build.** FFCL builds in")
     out.append(", ".join(f"{m.get('ffcl-ser','kdtree','tree_build',d,1):.2f} ms at {d}-D" for d in DIMS) + ", against")
     out.append(", ".join(f"{m.get('pico_tree','kdtree','tree_build',d,1):.2f}" for d in DIMS) +
                " ms for pico_tree and")
-    out.append(", ".join(f"{m.get('arborx','kdtree','tree_build',d,1):.2f}" for d in DIMS) + " ms for ArborX. It is 2nd or 3rd.\n")
+    out.append(", ".join(f"{m.get('arborx','kdtree','tree_build',d,1):.2f}" for d in DIMS) + " ms for ArborX. It is 4th of 8,")
+    out.append("behind pico_tree, ArborX and FLANN.\n")
 
     out.append("**MST.** With the serial build FFCL takes")
     out.append(", ".join(f"{m.get('ffcl-ser','boruvka','dual_tree',d,1):.0f} ms at {d}-D" for d in DIMS) + ",")
