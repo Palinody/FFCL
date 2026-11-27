@@ -223,6 +223,7 @@ if(MODE STREQUAL "gtest")
         test/src/datastruct/tree/kdtree/KDTreeAlgorithmsTest.cpp
         test/src/datastruct/tree/kdtree/policy/AxisSelectionPolicyTest.cpp
         test/src/datastruct/tree/kdtree/policy/SplittingRulePolicyTest.cpp
+        test/src/datastruct/tree/kdtree/policy/MidpointRangeTest.cpp
         test/src/datastruct/tree/single_linkage_cluster_tree/SingleLinkageClusterTreeTest.cpp
         test/src/datastruct/tree/condensed_cluster_tree/CondensedClusterTreeTest.cpp
         test/src/datastruct/graph/spanning_tree/BoruvkasAlgorithmTest.cpp
@@ -262,7 +263,7 @@ if(MODE STREQUAL "gtest")
         PROPERTIES LABELS "datastruct"
     )
     set_tests_properties(
-        KDTreeTest KDTreeAlgorithmsTest AxisSelectionPolicyTest SplittingRulePolicyTest
+        KDTreeTest KDTreeAlgorithmsTest AxisSelectionPolicyTest SplittingRulePolicyTest MidpointRangeTest
         PROPERTIES LABELS "indexing"
     )
     set_tests_properties(

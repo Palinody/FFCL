@@ -43,7 +43,7 @@ class QuickselectMedianRange : public SplittingRulePolicy<IndicesIterator, Sampl
                     const SamplesIterator& samples_range_first,
                     const SamplesIterator& samples_range_last,
                     std::size_t            n_features,
-                    std::size_t feature_index) const -> std::tuple<std::size_t,
+                    std::size_t            feature_index) const -> std::tuple<std::size_t,
                                                                    std::pair<IndicesIterator, IndicesIterator>,
                                                                    std::pair<IndicesIterator, IndicesIterator>,
                                                                    std::pair<IndicesIterator, IndicesIterator>>;
@@ -66,6 +66,41 @@ auto QuickselectMedianRange<IndicesIterator, SamplesIterator>::operator()(const 
                                                   samples_range_last,
                                                   n_features,
                                                   feature_index);
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+class MidpointRange : public SplittingRulePolicy<IndicesIterator, SamplesIterator> {
+  public:
+    MidpointRange() = default;
+
+    auto operator()(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    std::size_t            feature_index) const -> std::tuple<std::size_t,
+                                                                   std::pair<IndicesIterator, IndicesIterator>,
+                                                                   std::pair<IndicesIterator, IndicesIterator>,
+                                                                   std::pair<IndicesIterator, IndicesIterator>>;
+};
+
+template <typename IndicesIterator, typename SamplesIterator>
+auto MidpointRange<IndicesIterator, SamplesIterator>::operator()(const IndicesIterator& indices_range_first,
+                                                                 const IndicesIterator& indices_range_last,
+                                                                 const SamplesIterator& samples_range_first,
+                                                                 const SamplesIterator& samples_range_last,
+                                                                 std::size_t            n_features,
+                                                                 std::size_t            feature_index) const
+    -> std::tuple<std::size_t,
+                  std::pair<IndicesIterator, IndicesIterator>,
+                  std::pair<IndicesIterator, IndicesIterator>,
+                  std::pair<IndicesIterator, IndicesIterator>> {
+    return kdtree::algorithms::midpoint_range(indices_range_first,
+                                              indices_range_last,
+                                              samples_range_first,
+                                              samples_range_last,
+                                              n_features,
+                                              feature_index);
 }
 
 }  // namespace ffcl::datastruct::kdtree::policy

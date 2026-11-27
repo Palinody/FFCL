@@ -7,6 +7,7 @@
 #include "ffcl/common/math/statistics/Statistics.hpp"
 #include "ffcl/datastruct/Interval.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>  // std::size_t
 #include <limits>
@@ -127,6 +128,114 @@ std::size_t select_largest_variance_axis(const IndicesIterator& indices_range_fi
     }
     // return a random axis if theres only one sample left
     return common::math::random::uniform_distribution<std::size_t>(0, n_features - 1)();
+}
+
+template <typename IndicesIterator, typename SamplesIterator>
+auto quickselect_median(const IndicesIterator& indices_range_first,
+                        const IndicesIterator& indices_range_last,
+                        const SamplesIterator& samples_range_first,
+                        const SamplesIterator& samples_range_last,
+                        std::size_t            n_features,
+                        std::size_t            feature_index) -> std::tuple<std::size_t,
+                                                                 std::pair<IndicesIterator, IndicesIterator>,
+                                                                 std::pair<IndicesIterator, IndicesIterator>,
+                                                                 std::pair<IndicesIterator, IndicesIterator>>;
+
+// Split at the middle of the node's own extent along the axis: one pass to find the extent, one partition
+// pass, no selection at all. This is why it builds faster than the median rule.
+//
+// The contract matches `quickselect_median`: the pivot is the last element of the left range, so it stays
+// owned by the left child and the leaves still cover every sample exactly once. The pivot is the largest
+// value on the left side, which keeps the query routing (`query < pivot ? left : right`) and the cell bounds
+// valid, because every value on the right side is strictly greater than the pivot.
+//
+// Falls back to the median when the axis has no extent (all values equal) or when the partition would leave
+// one side empty, so neither child can ever be empty.
+template <typename IndicesIterator, typename SamplesIterator>
+auto midpoint_range(const IndicesIterator& indices_range_first,
+                    const IndicesIterator& indices_range_last,
+                    const SamplesIterator& samples_range_first,
+                    const SamplesIterator& samples_range_last,
+                    std::size_t            n_features,
+                    std::size_t            feature_index) -> std::tuple<std::size_t,
+                                                             std::pair<IndicesIterator, IndicesIterator>,
+                                                             std::pair<IndicesIterator, IndicesIterator>,
+                                                             std::pair<IndicesIterator, IndicesIterator>> {
+    using DataType = typename std::iterator_traits<SamplesIterator>::value_type;
+
+    const auto n_samples = std::distance(indices_range_first, indices_range_last);
+
+    if (n_samples < 3) {
+        return quickselect_median(indices_range_first,
+                                  indices_range_last,
+                                  samples_range_first,
+                                  samples_range_last,
+                                  n_features,
+                                  feature_index);
+    }
+    auto lower_bound = std::numeric_limits<DataType>::max();
+    auto upper_bound = std::numeric_limits<DataType>::lowest();
+
+    for (auto index_it = indices_range_first; index_it != indices_range_last; ++index_it) {
+        const auto value = samples_range_first[*index_it * n_features + feature_index];
+
+        lower_bound = std::min(lower_bound, value);
+        upper_bound = std::max(upper_bound, value);
+    }
+    if (!(lower_bound < upper_bound)) {
+        return quickselect_median(indices_range_first,
+                                  indices_range_last,
+                                  samples_range_first,
+                                  samples_range_last,
+                                  n_features,
+                                  feature_index);
+    }
+    const auto cut_value = lower_bound + (upper_bound - lower_bound) / 2;
+
+    const auto median_it = std::partition(indices_range_first, indices_range_last, [&](const auto& index) {
+        return samples_range_first[index * n_features + feature_index] < cut_value;
+    });
+
+    // A midpoint split can be very unbalanced - one outlier on one side and everything else on the other -
+    // and FFCL's traversal pays a function call, a bound test and a sibling test per node, so it only
+    // amortises on reasonably full leaves. Fall back to the median when a side would hold less than a
+    // quarter of the samples: the cheap rule is then used where it is cheap *and* balanced.
+    const auto n_left  = std::distance(indices_range_first, median_it);
+    const auto n_right = std::distance(median_it, indices_range_last);
+
+    if (n_left < static_cast<std::ptrdiff_t>(n_samples / 4) || n_right < static_cast<std::ptrdiff_t>(n_samples / 4)) {
+        return quickselect_median(indices_range_first,
+                                  indices_range_last,
+                                  samples_range_first,
+                                  samples_range_last,
+                                  n_features,
+                                  feature_index);
+    }
+    if (median_it == indices_range_first || median_it == indices_range_last) {
+        return quickselect_median(indices_range_first,
+                                  indices_range_last,
+                                  samples_range_first,
+                                  samples_range_last,
+                                  n_features,
+                                  feature_index);
+    }
+    // `std::partition` does not sort, so the last element of the left range is not necessarily its largest.
+    // The routing test compares against the pivot, so the pivot has to be the maximum of the left side:
+    // move that maximum to the end of the left range and use it.
+    const auto max_it   = std::max_element(indices_range_first, median_it, [&](const auto& lhs, const auto& rhs) {
+        return samples_range_first[lhs * n_features + feature_index] <
+               samples_range_first[rhs * n_features + feature_index];
+    });
+    const auto pivot_it = std::prev(median_it);
+
+    std::iter_swap(max_it, pivot_it);
+
+    const auto pivot_index = static_cast<std::size_t>(*pivot_it);
+
+    return std::make_tuple(pivot_index,
+                           std::make_pair(indices_range_first, median_it),
+                           std::make_pair(pivot_it, median_it),
+                           std::make_pair(median_it, indices_range_last));
 }
 
 template <typename IndicesIterator, typename SamplesIterator, typename Bound>
