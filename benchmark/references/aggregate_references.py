@@ -272,6 +272,24 @@ def table(m, dim, threads):
     return "\n".join(lines)
 
 
+def workload_table(m, row, threads):
+    """One row per library, one column per dimension, for a single workload."""
+    libraries = [lib for lib in LIBS if lib in ROWS[row]]
+    if threads == 6:
+        libraries = [lib for lib in libraries if lib in PARALLEL]
+
+    lines = ["| library | 2-D | 3-D | 4-D |", "|---|---|---|---|"]
+    for library in libraries:
+        cells = []
+        for dim in DIMS:
+            text = fmt(cell(m, row, library, dim, threads))
+            if (library, row) in FOOTNOTE:
+                text += " †"
+            cells.append(text)
+        lines.append(f"| {SHORT[library]} | " + " | ".join(cells) + " |")
+    return "\n".join(lines)
+
+
 def ratio(a, b):
     return a / b if a and b else float("nan")
 
@@ -356,6 +374,21 @@ def main():
     for dim in DIMS:
         out.append(f"### {dim}-D\n")
         out.append(table(m, dim, 6))
+        out.append("")
+
+    # ---- by workload ------------------------------------------------------------------------
+    out.append("## By workload, 1 thread\n")
+    out.append("The same numbers as above, regrouped so every library that implements a workload is on")
+    out.append("one row. `—` means the library has no implementation for that workload.\n")
+    for row in ROWS:
+        out.append(f"### {row}\n")
+        out.append(workload_table(m, row, 1))
+        out.append("")
+
+    out.append("## By workload, 6 threads\n")
+    for row in ("build", "kNN", "radius", "MST", "dendrogram", "HDBSCAN", "DBSCAN"):
+        out.append(f"### {row}\n")
+        out.append(workload_table(m, row, 6))
         out.append("")
 
     # ---- findings ---------------------------------------------------------------------------
