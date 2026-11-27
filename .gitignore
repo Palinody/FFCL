@@ -22,3 +22,6 @@ __pycache__/
 .idea/
 *.swp
 .DS_Store
+
+# Reference libraries cloned next to the build for comparison work; not part of the project
+benchmark_references/
