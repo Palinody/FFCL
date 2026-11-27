@@ -95,8 +95,8 @@ class DBSCAN {
     // worth it (or for a grid that would be too large).
     auto predict_frontier(const search::Searcher<Indexer>& searcher) const -> std::vector<LabelType>;
 
-    // Grid accelerated DBSCAN. The samples are bucketed into cells whose diagonal is the radius, so
-    // every pair of samples in one cell is a neighbour without any distance computation. Core points
+    // Grid accelerated DBSCAN. The samples are bucketed into cells whose diagonal is below the radius,
+    // so every pair of samples in one cell is a neighbour without any distance computation. Core points
     // are found cell by cell, connected with a union-find over core-core pairs, and the labels are
     // assigned afterwards: core samples take their component's label, the others take the label of the
     // earliest component that reaches them, or stay noise.
@@ -252,9 +252,8 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
         }
     }
 
-    auto           n_cells_per_feature = std::vector<std::size_t>(n_features, 1);
-    std::size_t    n_cells             = 1;
-    constexpr auto kMaxCells           = kMaxGridCells;
+    auto        n_cells_per_feature = std::vector<std::size_t>(n_features, 1);
+    std::size_t n_cells             = 1;
 
     for (std::size_t feature_index = 0; feature_index < n_features; ++feature_index) {
         const auto extent =
@@ -263,7 +262,7 @@ auto DBSCAN<Indexer>::predict_grid(const search::Searcher<Indexer>& searcher) co
         if (cells < 1) {
             cells = 1;
         }
-        if (n_cells > kMaxCells / cells) {
+        if (n_cells > kMaxGridCells / cells) {
             return predict_frontier(searcher);
         }
         n_cells *= cells;
