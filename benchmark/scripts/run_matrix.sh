@@ -25,7 +25,8 @@ for dim in ${FFCL_MATRIX_DIMS:-2 3 4}; do
     inputs="$REPO/benchmark/bin/datasets_${dim}d/inputs"
     [ -d "$inputs" ] || inputs="$REPO/benchmark/bin/datasets/inputs"
 
-    for leaf in ${FFCL_MATRIX_LEAVES:-"$LEAF_REFERENCE $LEAF_TUNED"}; do
+    leaves="${FFCL_MATRIX_LEAVES:-$LEAF_REFERENCE $LEAF_TUNED}"
+    for leaf in $leaves; do
         for threads in 1 "$THREADS"; do
             label="ffcl_${dim}d_l${leaf}_t${threads}"
             out="$OUT/$label.json"
@@ -54,8 +55,12 @@ PY
         done
     done
 
-    FFCL_DATASETS_DIR="$inputs" FFCL_RESULTS_DIR="$OUT" \
-        python3 "$REPO/benchmark/scripts/benchmark_reference.py" >/dev/null 2>&1
-    mv "$OUT/reference.json" "$OUT/reference_${dim}d.json"
-    echo "  reference ${dim}d done"
+    if FFCL_DATASETS_DIR="$inputs" FFCL_RESULTS_DIR="$OUT" \
+        python3 "$REPO/benchmark/scripts/benchmark_reference.py" >/dev/null 2>&1 && [ -f "$OUT/reference.json" ]; then
+        mv "$OUT/reference.json" "$OUT/reference_${dim}d.json"
+        echo "  reference ${dim}d done"
+    else
+        echo "  warning: python references not regenerated for ${dim}d" \
+             "(needs numpy, sklearn, scipy and hdbscan)" >&2
+    fi
 done
